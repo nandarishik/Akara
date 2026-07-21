@@ -139,5 +139,31 @@ button p, button span, [data-testid="stSidebar"] span, [data-testid="baseButton-
     border: 1px solid rgba(255,255,255,.12) !important;
     border-radius: 12px !important;
 }
+
+/* ── Voice Input Widget ──────────────────────────────────────────────── */
+[data-testid="stAudioInput"] {
+    background: rgba(255,255,255,.04) !important;
+    border: 1px solid rgba(245,158,11,.25) !important;
+    border-radius: 12px !important;
+    padding: .5rem !important;
+}
+[data-testid="stAudioInput"] button {
+    background: linear-gradient(135deg,#f59e0b,#f97316) !important;
+    border: none !important;
+    border-radius: 50% !important;
+    transition: transform .15s, box-shadow .2s !important;
+}
+[data-testid="stAudioInput"] button:hover {
+    transform: scale(1.08) !important;
+    box-shadow: 0 0 16px rgba(245,158,11,.5) !important;
+}
+@keyframes voice-pulse {
+    0%   { box-shadow: 0 0 0 0 rgba(245,158,11,.5); }
+    70%  { box-shadow: 0 0 0 12px rgba(245,158,11,0); }
+    100% { box-shadow: 0 0 0 0 rgba(245,158,11,0); }
+}
+[data-testid="stAudioInput"] button[aria-pressed="true"] {
+    animation: voice-pulse 1.4s infinite !important;
+}
 </style>
 """

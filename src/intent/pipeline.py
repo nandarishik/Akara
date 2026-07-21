@@ -8,7 +8,6 @@ via `guarded_execute` (parameterized where possible).
 
 from __future__ import annotations
 
-import datetime
 import hashlib
 import re
 from dataclasses import dataclass
@@ -82,9 +81,7 @@ def _try_match(question: str, base_dir: Path) -> IntentMatch | None:
     if not outlets:
         return None
     ph = _outlet_placeholders(len(outlets))
-    # Fallback to LLM if any resolved date is outside historical bounds
-    if ds > bounds.max_date.isoformat() or de > bounds.max_date.isoformat():
-        return None
+    dates = _extract_dates(q)
 
     # Compare two explicit ISO dates
     if len(dates) >= 2 and re.search(r"\b(compare|vs\.?|versus)\b", low):

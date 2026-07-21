@@ -3,7 +3,7 @@ QAFFEINE Sales Dashboard — v2 with Gemini AI Assistant
 =======================================================
 Tabbed Streamlit app: Tab 1 = KPI Dashboard, Tab 2 = AI Assistant
 Run: streamlit run app/dashboard.py
-# Last Updated: 2026-05-07T23:10:00
+# Last Updated: 2026-05-07T17:35:00
 """
 
 import sys, os, pathlib, html
@@ -24,6 +24,7 @@ from src.config.runtime_check import DatabaseConfigError, validate_database_path
 from src.config.settings import resolve_db_path
 from src.services.kpi_service import load_kpi_tab_data, load_sidebar_filter_options
 from src.services.query_service import investigate_copilot_for_ui
+from src.services.voice_service import transcribe_audio
 
 # ─── Load .env and import LLMManager from context engine ─────────────────────
 load_app_dotenv(_BASE_DIR)
@@ -274,6 +275,8 @@ with tab_ai:
     # ── Chat state ───────────────────────────────────────────────────────────
     if "chat_history" not in st.session_state:
         st.session_state.chat_history = []
+    if "voice_recorder_key" not in st.session_state:
+        st.session_state.voice_recorder_key = 0
 
     pending_q = st.session_state.pop("copilot_question_pending", None)
     if pending_q:
@@ -413,6 +416,47 @@ with tab_ai:
                             )
             except Exception as exc:
                 st.error(f"Could not render this Copilot reply: {exc}")
+
+    # ── Voice input ──────────────────────────────────────────────────────────
+    with st.expander("🎤 Ask with Voice", expanded=False):
+        st.markdown(
+            "<div style='font-size:.78rem;color:#94a3b8;margin-bottom:.5rem'>"
+            "Record your question and the Copilot will transcribe &amp; answer it automatically."
+            "</div>",
+            unsafe_allow_html=True,
+        )
+        _voice_audio = st.audio_input(
+            "Click the mic to record your question",
+            key=f"voice_recorder_{st.session_state.voice_recorder_key}",
+        )
+        if _voice_audio is not None:
+            _audio_bytes = _voice_audio.read()
+            if _audio_bytes and len(_audio_bytes) > 100:
+                import hashlib
+                audio_hash = hashlib.md5(_audio_bytes).hexdigest()
+                
+                # Prevent reprocessing the same audio recording on reruns
+                if st.session_state.get("last_processed_audio_hash") != audio_hash:
+                    st.session_state.last_processed_audio_hash = audio_hash
+                    
+                    with st.status("👂 Transcribing your voice…", expanded=True) as _voice_status:
+                        st.write("🎙️ Sending audio to Whisper (via OpenRouter)…")
+                        _voice_result = transcribe_audio(
+                            _audio_bytes,
+                            filename=_voice_audio.name or "recording.wav",
+                            mime_type=_voice_audio.type,
+                        )
+                        if _voice_result.success and _voice_result.text.strip():
+                            st.write(f'✅ Heard: "{_voice_result.text[:120]}"')
+                            _voice_status.update(label="✅ Transcribed!", state="complete", expanded=False)
+                            st.session_state.copilot_question_pending = _voice_result.text.strip()
+                            # Reset widget key to clear recording
+                            st.session_state.voice_recorder_key += 1
+                            st.rerun()
+                        else:
+                            err_msg = _voice_result.error or "Could not understand the audio."
+                            st.write(f"⚠️ {err_msg}")
+                            _voice_status.update(label="⚠️ Transcription issue", state="error")
 
     # ── Chat input ───────────────────────────────────────────────────────────
     user_q = st.chat_input("Ask the Copilot anything about your business…")
