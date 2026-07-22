@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link, useLocation, Outlet } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
+import { isAdmin } from "@/lib/auth-utils";
 import { Button } from "@/components/ui/button";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import {
@@ -33,7 +34,7 @@ const ADMIN_NAV_ITEMS = [
 ];
 
 export function AppShell() {
-  const { user, signOut } = useAuth();
+  const { user, session, signOut } = useAuth();
   const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
@@ -41,7 +42,7 @@ export function AppShell() {
     setSidebarOpen(false);
   }
 
-  const isAdmin = user?.role === "admin";
+  const admin = isAdmin(user, session);
 
   return (
     <div className="flex h-screen bg-slate-50">
@@ -104,7 +105,7 @@ export function AppShell() {
           ))}
 
           {/* Admin-only section */}
-          {isAdmin && (
+          {admin && (
             <>
               <div className="pt-4 pb-1 px-3">
                 <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">

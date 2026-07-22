@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { supabase } from "@/lib/supabase";
+import { isAdmin } from "@/lib/auth-utils";
 
 interface ImportResult {
   rows_inserted: number;
@@ -253,8 +254,16 @@ function UploadPanel({
 }
 
 export function DataPage() {
-  const { user } = useAuth();
-  const isAdmin = user?.role === "admin";
+  const { user, session, loading } = useAuth();
+  const admin = isAdmin(user, session);
+
+  if (loading) {
+    return (
+      <div className="flex h-full items-center justify-center p-8">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-slate-900" />
+      </div>
+    );
+  }
 
   return (
     <div className="p-8 max-w-3xl mx-auto space-y-6">
@@ -266,7 +275,7 @@ export function DataPage() {
         </p>
       </div>
 
-      {!isAdmin && (
+      {!admin && (
         <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 text-sm text-amber-800 flex items-start gap-2">
           <AlertCircle className="h-4 w-4 mt-0.5 shrink-0 text-amber-600" />
           <span>
@@ -280,7 +289,7 @@ export function DataPage() {
         title="Primary Sales (ERP / Tally)"
         description="Dispatch invoices from Tally or your ERP. What you shipped to distributors."
         sourceType="primary"
-        isAdmin={isAdmin}
+        isAdmin={admin}
         accentColor="slate"
         columns={[
           "invoice_date",
@@ -305,7 +314,7 @@ export function DataPage() {
         title="Secondary Sales (DMS Offtake)"
         description="What distributors actually sold to retailers. Export from Bizom, Botree, FieldAssist, or your DMS."
         sourceType="secondary"
-        isAdmin={isAdmin}
+        isAdmin={admin}
         accentColor="blue"
         columns={[
           "invoice_date",
@@ -323,7 +332,7 @@ export function DataPage() {
         title="Scheme Master (Distributor Claims)"
         description="Scheme claims filed by distributors. Used to detect leakage vs. actual secondary offtake."
         sourceType="scheme"
-        isAdmin={isAdmin}
+        isAdmin={admin}
         accentColor="purple"
         columns={[
           "scheme_name",

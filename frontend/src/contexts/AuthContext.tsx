@@ -19,6 +19,19 @@ interface AuthContextValue {
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
+function userFromSession(supabaseUser: SupabaseUser): User {
+  const meta = supabaseUser.user_metadata ?? {};
+  const role =
+    meta.role === "admin" || meta.role === "user" ? meta.role : "user";
+  return {
+    id: supabaseUser.id,
+    email: supabaseUser.email ?? "",
+    tenantId: String(meta.tenant_id ?? ""),
+    role,
+    displayName: meta.display_name ?? undefined,
+  };
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);
@@ -42,7 +55,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         role: data.role,
       });
     } catch {
-      setUser(null);
+      // Fallback when /auth/me fails — use metadata from Supabase Auth signup.
+      setUser(userFromSession(_supabaseUser));
     }
   }
 

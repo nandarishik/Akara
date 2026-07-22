@@ -39,8 +39,12 @@ def _fetch_jwks() -> dict[str, Any]:
         return _JWKS_CACHE
 
     url = f"{settings.supabase_url.rstrip('/')}/auth/v1/.well-known/jwks.json"
-    response = httpx.get(url, timeout=10.0)
-    response.raise_for_status()
+    try:
+        response = httpx.get(url, timeout=10.0)
+        response.raise_for_status()
+    except httpx.HTTPError as exc:
+        raise JWTError(f"Failed to fetch JWKS: {exc}") from exc
+
     _JWKS_CACHE = response.json()
     _JWKS_CACHE_AT = now
     return _JWKS_CACHE

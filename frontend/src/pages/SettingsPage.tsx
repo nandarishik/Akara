@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { CheckCircle, AlertCircle } from "lucide-react";
+import { roleLabel } from "@/lib/auth-utils";
 
 const BASE = import.meta.env.VITE_API_BASE_URL as string;
 
@@ -66,7 +67,7 @@ export function SettingsPage() {
     }
   }
 
-  const roleLabel = user?.role === "admin" ? "Admin" : "Viewer";
+  const role = roleLabel(user, session);
 
   return (
     <div className="p-8 max-w-2xl mx-auto space-y-6">
@@ -92,7 +93,7 @@ export function SettingsPage() {
             <div>
               <p className="font-medium text-slate-900">{user?.email}</p>
               <Badge variant="outline" className="text-xs mt-0.5">
-                {roleLabel}
+                {role}
               </Badge>
             </div>
           </div>

@@ -2,6 +2,7 @@ import logging
 from decimal import Decimal
 from uuid import UUID
 
+from postgrest.exceptions import APIError
 from supabase import Client
 
 from app.services.kpi.models import (
@@ -51,18 +52,22 @@ class KPIService:
     def get_top_products(
         self, tenant_id: UUID, start_date: str, end_date: str
     ) -> list[TopProduct]:
-        result = (
-            self._supabase.table("sales_data")
-            .select(
-                "product_name, total_amount.sum(), quantity.sum(), invoice_number.count()"
+        try:
+            result = (
+                self._supabase.table("sales_data")
+                .select(
+                    "product_name, total_amount.sum(), quantity.sum(), invoice_number.count()"
+                )
+                .eq("tenant_id", str(tenant_id))
+                .gte("invoice_date", start_date)
+                .lte("invoice_date", end_date)
+                .order("total_amount", desc=True)
+                .limit(_TOP_N)
+                .execute()
             )
-            .eq("tenant_id", str(tenant_id))
-            .gte("invoice_date", start_date)
-            .lte("invoice_date", end_date)
-            .order("total_amount", desc=True)
-            .limit(_TOP_N)
-            .execute()
-        )
+        except APIError as exc:
+            logger.warning("get_top_products failed: %s", exc)
+            return []
         return [
             TopProduct(
                 product_name=row.get("product_name", ""),
@@ -76,17 +81,21 @@ class KPIService:
     def get_zone_breakdown(
         self, tenant_id: UUID, start_date: str, end_date: str
     ) -> list[ZoneBreakdown]:
-        result = (
-            self._supabase.table("sales_data")
-            .select("party_zone, total_amount.sum(), invoice_number.count()")
-            .eq("tenant_id", str(tenant_id))
-            .gte("invoice_date", start_date)
-            .lte("invoice_date", end_date)
-            .not_.is_("party_zone", "null")
-            .order("total_amount", desc=True)
-            .limit(_ZONE_LIMIT)
-            .execute()
-        )
+        try:
+            result = (
+                self._supabase.table("sales_data")
+                .select("party_zone, total_amount.sum(), invoice_number.count()")
+                .eq("tenant_id", str(tenant_id))
+                .gte("invoice_date", start_date)
+                .lte("invoice_date", end_date)
+                .not_.is_("party_zone", "null")
+                .order("total_amount", desc=True)
+                .limit(_ZONE_LIMIT)
+                .execute()
+            )
+        except APIError as exc:
+            logger.warning("get_zone_breakdown failed: %s", exc)
+            return []
         rows = result.data or []
         total_rev = sum(Decimal(str(r.get("total_amount", 0))) for r in rows)
         zones = []
@@ -106,15 +115,19 @@ class KPIService:
     def get_revenue_trend(
         self, tenant_id: UUID, start_date: str, end_date: str
     ) -> list[RevenueByDate]:
-        result = (
-            self._supabase.table("sales_data")
-            .select("invoice_date, total_amount.sum(), invoice_number.count()")
-            .eq("tenant_id", str(tenant_id))
-            .gte("invoice_date", start_date)
-            .lte("invoice_date", end_date)
-            .order("invoice_date")
-            .execute()
-        )
+        try:
+            result = (
+                self._supabase.table("sales_data")
+                .select("invoice_date, total_amount.sum(), invoice_number.count()")
+                .eq("tenant_id", str(tenant_id))
+                .gte("invoice_date", start_date)
+                .lte("invoice_date", end_date)
+                .order("invoice_date")
+                .execute()
+            )
+        except APIError as exc:
+            logger.warning("get_revenue_trend failed: %s", exc)
+            return []
         return [
             RevenueByDate(
                 invoice_date=row["invoice_date"],
