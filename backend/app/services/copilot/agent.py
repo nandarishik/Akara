@@ -6,7 +6,7 @@ from datetime import date
 from uuid import UUID
 
 from app.services.copilot.guardrails.checks import GuardrailResult, run_all_guardrails
-from app.services.copilot.planner import Planner
+from app.services.copilot.planner import Planner, is_conversational
 from app.services.copilot.synthesizer import Synthesizer
 from app.services.copilot.tools.context_tool import ContextTool
 from app.services.copilot.tools.sql_tool import SQLTool
@@ -67,7 +67,9 @@ class CopilotAgent:
         all_results: list[dict] = []
         queries_run: list[str] = []
         for step in plan.steps:
-            result = self._sql_tool.run(step.sql)
+            result = self._sql_tool.run(
+                step.sql, start_date=date_range[0], end_date=date_range[1]
+            )
             all_results.extend(result.get("rows", []))
             queries_run.append(step.sql)
 
@@ -78,7 +80,7 @@ class CopilotAgent:
             if context_data:
                 break
 
-        if not plan.steps:
+        if is_conversational(question):
             response_text = await self._synthesizer.conversational(
                 question=question,
                 system_addendum=synthesizer_addendum,
@@ -137,14 +139,16 @@ class CopilotAgent:
 
         all_results: list[dict] = []
         for step in plan.steps:
-            result = self._sql_tool.run(step.sql)
+            result = self._sql_tool.run(
+                step.sql, start_date=date_range[0], end_date=date_range[1]
+            )
             all_results.extend(result.get("rows", []))
 
         context_data = None
         for ctx_type in plan.requires_context:
             context_data = self._context_tool.get_context(date.today(), ctx_type)
 
-        if not plan.steps:
+        if is_conversational(question):
             stream = self._synthesizer.conversational_stream(
                 question=question,
                 system_addendum=synthesizer_addendum,

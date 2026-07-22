@@ -1,10 +1,13 @@
 import logging
+import re
 from uuid import UUID
 
 from app.sql.executor import SQLExecutor
 from app.sql.guard import SQLGuardError
 
 logger = logging.getLogger(__name__)
+
+_DATE_PATTERN = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 
 
 class SQLTool:
@@ -17,9 +20,15 @@ class SQLTool:
         self._executor = executor
         self._tenant_id = tenant_id
 
-    def run(self, query: str) -> dict:
+    def run(
+        self,
+        query: str,
+        start_date: str = "2024-01-01",
+        end_date: str = "2099-12-31",
+    ) -> dict:
         try:
-            rows = self._executor.execute(query, tenant_id=self._tenant_id)
+            bound = self._bind_params(query, start_date, end_date)
+            rows = self._executor.execute(bound, tenant_id=self._tenant_id)
             return {"success": True, "rows": rows, "row_count": len(rows)}
         except SQLGuardError as exc:
             logger.warning("SQLGuard blocked query: %s", exc)
@@ -27,3 +36,11 @@ class SQLTool:
         except RuntimeError as exc:
             logger.error("SQL execution error: %s", exc)
             return {"success": False, "error": str(exc), "rows": []}
+
+    def _bind_params(self, query: str, start_date: str, end_date: str) -> str:
+        if not _DATE_PATTERN.match(start_date) or not _DATE_PATTERN.match(end_date):
+            raise ValueError("Invalid date parameter for SQL binding")
+        bound = query.replace(":tenant_id", f"'{self._tenant_id}'")
+        bound = bound.replace(":start_date", f"'{start_date}'")
+        bound = bound.replace(":end_date", f"'{end_date}'")
+        return bound
