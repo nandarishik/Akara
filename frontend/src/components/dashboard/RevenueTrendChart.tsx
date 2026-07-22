@@ -8,15 +8,10 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import type { RevenueByDate } from "@/types/kpi";
+import { formatINRCompact, toNum } from "@/lib/format";
 
 interface Props {
   data: RevenueByDate[];
-}
-
-function formatINR(value: number): string {
-  if (value >= 10_00_000) return `₹${(value / 10_00_000).toFixed(1)}L`;
-  if (value >= 1_000) return `₹${(value / 1_000).toFixed(0)}K`;
-  return `₹${value.toFixed(0)}`;
 }
 
 export function RevenueTrendChart({ data }: Props) {
@@ -31,11 +26,11 @@ export function RevenueTrendChart({ data }: Props) {
         />
         <YAxis
           tick={{ fontSize: 12, fill: "#94a3b8" }}
-          tickFormatter={formatINR}
+          tickFormatter={formatINRCompact}
           width={60}
         />
         <Tooltip
-          formatter={(v: number) => [formatINR(v), "Revenue"]}
+          formatter={(v) => [formatINRCompact(toNum(v as number | string)), "Revenue"]}
           labelStyle={{ color: "#1e293b" }}
         />
         <Line

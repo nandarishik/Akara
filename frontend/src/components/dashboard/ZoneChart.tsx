@@ -9,6 +9,7 @@ import {
   Cell,
 } from "recharts";
 import type { ZoneBreakdown } from "@/types/kpi";
+import { toNum } from "@/lib/format";
 
 const COLORS = ["#0f172a", "#334155", "#64748b", "#94a3b8", "#cbd5e1"];
 
@@ -33,7 +34,7 @@ export function ZoneChart({ data }: Props) {
           width={60}
         />
         <Tooltip
-          formatter={(v: number) => [`${v.toFixed(1)}%`, "Revenue share"]}
+          formatter={(v) => [`${toNum(v as number | string).toFixed(1)}%`, "Revenue share"]}
         />
         <Bar dataKey="revenue_pct" radius={[0, 4, 4, 0]}>
           {data.slice(0, 5).map((_, index) => (

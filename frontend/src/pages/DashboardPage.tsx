@@ -18,6 +18,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { formatINR } from "@/lib/format";
 
 function getDateRange(period: string): [string, string] {
   const end = new Date();
@@ -30,13 +31,6 @@ function getDateRange(period: string): [string, string] {
     default: start.setDate(end.getDate() - 30);
   }
   return [start.toISOString().slice(0, 10), end.toISOString().slice(0, 10)];
-}
-
-function formatINR(value: number): string {
-  if (value >= 1_00_00_000) return `₹${(value / 1_00_00_000).toFixed(2)}Cr`;
-  if (value >= 1_00_000) return `₹${(value / 1_00_000).toFixed(1)}L`;
-  if (value >= 1_000) return `₹${(value / 1_000).toFixed(0)}K`;
-  return `₹${value.toFixed(0)}`;
 }
 
 export function DashboardPage() {
