@@ -54,16 +54,10 @@ def _authorize(x_service_key: str | None, request: Request) -> None:
     supabase = get_supabase_service_client()
 
     try:
-        import jose.jwt as jwt  # python-jose already installed
+        from app.core.auth import decode_supabase_jwt
 
-        payload = jwt.decode(
-            token,
-            settings.jwt_secret,
-            algorithms=[settings.jwt_algorithm],
-        )
-        user_id = payload.get("sub")
-        if not user_id:
-            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
+        payload = decode_supabase_jwt(token)
+        user_id = payload.sub
 
         profile = (
             supabase.table("profiles")
