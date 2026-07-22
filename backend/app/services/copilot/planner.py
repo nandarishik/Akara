@@ -3,35 +3,45 @@ import logging
 import re
 from dataclasses import dataclass
 
+from app.services.copilot.date_range import parse_result_limit
+from app.services.copilot.fallback_queries import (
+    sales_by_location_sql,
+    top_products_sql,
+    total_revenue_sql,
+)
 from app.services.llm.manager import LLMManager
+from app.services.schema.columns import (
+    DEFAULT_RESULT_LIMIT,
+    MAX_RESULT_LIMIT,
+    SALES_DATA_TABLE,
+)
 
 logger = logging.getLogger(__name__)
 
-_PLAN_SYSTEM = """
+_PLAN_SYSTEM = f"""
 You are a data analytics planning assistant for a sales analytics platform.
 Given a user question, you must output a JSON plan with SQL queries to answer it.
 
 Output ONLY valid JSON in this exact format:
-{
+{{
   "intent": "brief description of what the user wants",
   "steps": [
-    {
+    {{
       "step_id": 1,
       "description": "what this step computes",
-      "sql": "SELECT ... FROM public.sales_data WHERE tenant_id = :tenant_id AND ..."
-    }
+      "sql": "SELECT ... FROM {SALES_DATA_TABLE} WHERE tenant_id = :tenant_id AND ..."
+    }}
   ],
   "requires_context": [],
   "response_format": "table"
-}
+}}
 
 Rules:
-- Always filter by tenant_id = :tenant_id (parameterized, never hardcoded)
-- Always filter by invoice_date using :start_date and :end_date when a time range applies
-- Only use table: public.sales_data
+- Always filter by tenant_id = :tenant_id (parameterized, never hardcoded UUIDs)
+- Always filter by invoice_date using :start_date and :end_date from the provided date range
+- Only use table: {SALES_DATA_TABLE}
 - Maximum 3 SQL steps
-- Use :start_date and :end_date placeholders for date ranges
-- For top products: GROUP BY product_name, ORDER BY SUM(total_amount) DESC, LIMIT 5
+- Parse LIMIT from the user's question when they say "top N"; otherwise omit LIMIT or use a reasonable default
 - For greetings or chitchat with no data question, return "steps": []
 """
 
@@ -119,7 +129,8 @@ class Planner:
 
         prompt = (
             f"Schema context:\n{schema_context}\n\n"
-            f"Date range available: {date_range[0]} to {date_range[1]}\n\n"
+            f"Query date range (use :start_date and :end_date): "
+            f"{date_range[0]} to {date_range[1]}\n\n"
             f"User question: {question}\n\n"
             f"Output the JSON plan:"
         )
@@ -167,7 +178,7 @@ class Planner:
     ) -> Plan:
         if is_conversational(question):
             return self._greeting_plan()
-        analytics = self._fallback_analytics_plan(question, date_range)
+        analytics = self._fallback_analytics_plan(question)
         if analytics:
             return analytics
         return Plan(intent=intent, steps=[], requires_context=[], response_format="summary")
@@ -180,35 +191,19 @@ class Planner:
             response_format="summary",
         )
 
-    def _fallback_analytics_plan(
-        self, question: str, date_range: tuple[str, str]
-    ) -> Plan | None:
-        """Deterministic SQL when the LLM plan cannot be parsed."""
+    def _fallback_analytics_plan(self, question: str) -> Plan | None:
+        """Deterministic SQL templates when the LLM plan cannot be parsed."""
         q = question.lower()
+        limit = parse_result_limit(question, DEFAULT_RESULT_LIMIT, MAX_RESULT_LIMIT)
 
         if any(w in q for w in ("top", "best", "selling", "product")):
-            limit = 5
-            m = re.search(r"top\s+(\d+)", q)
-            if m:
-                limit = min(int(m.group(1)), 20)
             return Plan(
                 intent="top products by revenue",
                 steps=[
                     PlanStep(
                         step_id=1,
                         description=f"Top {limit} products by revenue",
-                        sql=(
-                            "SELECT product_name, "
-                            "SUM(total_amount) AS revenue, "
-                            "SUM(quantity) AS quantity "
-                            "FROM public.sales_data "
-                            "WHERE tenant_id = :tenant_id "
-                            "AND invoice_date BETWEEN :start_date AND :end_date "
-                            "AND product_name IS NOT NULL AND product_name != '' "
-                            "GROUP BY product_name "
-                            "ORDER BY revenue DESC "
-                            f"LIMIT {limit}"
-                        ),
+                        sql=top_products_sql(limit),
                     )
                 ],
                 requires_context=[],
@@ -222,14 +217,7 @@ class Planner:
                     PlanStep(
                         step_id=1,
                         description="Total revenue in date range",
-                        sql=(
-                            "SELECT SUM(total_amount) AS total_revenue, "
-                            "COUNT(DISTINCT invoice_number) AS order_count, "
-                            "COUNT(DISTINCT party_name) AS unique_parties "
-                            "FROM public.sales_data "
-                            "WHERE tenant_id = :tenant_id "
-                            "AND invoice_date BETWEEN :start_date AND :end_date"
-                        ),
+                        sql=total_revenue_sql(),
                     )
                 ],
                 requires_context=[],
@@ -242,18 +230,8 @@ class Planner:
                 steps=[
                     PlanStep(
                         step_id=1,
-                        description="Revenue by party/location",
-                        sql=(
-                            "SELECT party_name, party_city, "
-                            "SUM(total_amount) AS revenue, "
-                            "SUM(quantity) AS quantity "
-                            "FROM public.sales_data "
-                            "WHERE tenant_id = :tenant_id "
-                            "AND invoice_date BETWEEN :start_date AND :end_date "
-                            "GROUP BY party_name, party_city "
-                            "ORDER BY revenue DESC "
-                            "LIMIT 10"
-                        ),
+                        description=f"Top {limit} parties/locations by revenue",
+                        sql=sales_by_location_sql(limit),
                     )
                 ],
                 requires_context=[],

@@ -23,8 +23,9 @@ class SQLTool:
     def run(
         self,
         query: str,
-        start_date: str = "2024-01-01",
-        end_date: str = "2099-12-31",
+        *,
+        start_date: str,
+        end_date: str,
     ) -> dict:
         try:
             bound = self._bind_params(query, start_date, end_date)

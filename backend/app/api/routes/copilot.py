@@ -1,5 +1,4 @@
 import logging
-from datetime import date
 from uuid import UUID
 
 from fastapi import APIRouter
@@ -10,6 +9,7 @@ from app.core.auth import CurrentUser
 from app.core.config import settings
 from app.core.tenant import TenantCtx, get_supabase_service_client
 from app.services.copilot.agent import CopilotAgent
+from app.services.copilot.date_range import resolve_date_range_for_question
 from app.services.copilot.planner import Planner
 from app.services.copilot.synthesizer import Synthesizer
 from app.services.copilot.tools.context_tool import ContextTool
@@ -78,11 +78,8 @@ async def chat(
     )
 
     agent = _build_agent(tenant.tenant_id)
-    data_range = schema.get_data_date_range(tenant.tenant_id)
-    if data_range:
-        date_range = data_range
-    else:
-        date_range = ("2024-01-01", date.today().isoformat())
+    available_range = schema.get_data_date_range(tenant.tenant_id)
+    date_range = resolve_date_range_for_question(request.question, available_range)
 
     if request.stream:
 
