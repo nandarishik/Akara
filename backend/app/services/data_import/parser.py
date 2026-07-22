@@ -253,6 +253,12 @@ class SalesDataParser:
                 df[col] = pd.to_numeric(df[col], errors="coerce").fillna(0.0)
         if "total_amount" in df.columns:
             df = df[df["total_amount"] > 0]
+        # Excel exports leave NaN in many optional columns — normalize for DB insert.
+        for col in df.columns:
+            if pd.api.types.is_numeric_dtype(df[col]):
+                df[col] = df[col].fillna(0.0)
+            else:
+                df[col] = df[col].fillna("").astype(str).replace("nan", "")
         return df
 
 

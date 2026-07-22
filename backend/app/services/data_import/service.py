@@ -1,6 +1,9 @@
+import json
 import logging
+import math
 from uuid import UUID
 
+import pandas as pd
 from supabase import Client
 
 from app.services.data_import.models import ImportResult
@@ -9,6 +12,39 @@ from app.services.data_import.parser import SalesDataParser
 logger = logging.getLogger(__name__)
 
 _BATCH_SIZE = 500
+
+
+def _safe_float(value: object, default: float = 0.0) -> float:
+    if value is None or (isinstance(value, float) and (math.isnan(value) or math.isinf(value))):
+        return default
+    try:
+        num = float(value)  # type: ignore[arg-type]
+    except (TypeError, ValueError):
+        return default
+    if math.isnan(num) or math.isinf(num):
+        return default
+    return num
+
+
+def _safe_str(value: object, default: str = "") -> str:
+    if value is None or pd.isna(value):
+        return default
+    text = str(value).strip()
+    return default if text.lower() == "nan" else text
+
+
+def _sanitize_for_json(value: object) -> object:
+    if isinstance(value, dict):
+        return {str(k): _sanitize_for_json(v) for k, v in value.items()}
+    if isinstance(value, list):
+        return [_sanitize_for_json(v) for v in value]
+    if isinstance(value, float):
+        if math.isnan(value) or math.isinf(value):
+            return None
+        return value
+    if pd.isna(value):
+        return None
+    return value
 
 
 class DataImportService:
@@ -42,28 +78,31 @@ class DataImportService:
             enriched = []
             for row in batch:
                 try:
+                    clean_row = _sanitize_for_json(row)
                     enriched.append(
                         {
                             "tenant_id": str(tenant_id),
-                            "invoice_date": str(row.get("invoice_date", "")),
-                            "invoice_number": str(row.get("invoice_number", "")),
-                            "party_name": str(row.get("party_name", "")),
-                            "party_city": str(row.get("party_city", "")),
-                            "party_zone": str(row.get("party_zone", "")),
-                            "route": str(row.get("route", "")),
-                            "product_name": str(row.get("product_name", "")),
-                            "product_group": str(row.get("product_group", "")),
-                            "product_category": str(row.get("product_category", "")),
-                            "hsn_code": str(row.get("hsn_code", "")),
-                            "quantity": float(row.get("quantity", 0)),
-                            "gross_amount": float(row.get("gross_amount", 0)),
-                            "discount_amount": float(row.get("discount_amount", 0)),
-                            "net_amount": float(row.get("net_amount", 0)),
-                            "tax_amount": float(row.get("tax_amount", 0)),
-                            "total_amount": float(row.get("total_amount", 0)),
-                            "raw_data": row,
+                            "invoice_date": _safe_str(row.get("invoice_date")),
+                            "invoice_number": _safe_str(row.get("invoice_number")),
+                            "party_name": _safe_str(row.get("party_name")),
+                            "party_city": _safe_str(row.get("party_city")),
+                            "party_zone": _safe_str(row.get("party_zone")),
+                            "route": _safe_str(row.get("route")),
+                            "product_name": _safe_str(row.get("product_name")),
+                            "product_group": _safe_str(row.get("product_group")),
+                            "product_category": _safe_str(row.get("product_category")),
+                            "hsn_code": _safe_str(row.get("hsn_code")),
+                            "quantity": _safe_float(row.get("quantity")),
+                            "gross_amount": _safe_float(row.get("gross_amount")),
+                            "discount_amount": _safe_float(row.get("discount_amount")),
+                            "net_amount": _safe_float(row.get("net_amount")),
+                            "tax_amount": _safe_float(row.get("tax_amount")),
+                            "total_amount": _safe_float(row.get("total_amount")),
+                            "raw_data": clean_row,
                         }
                     )
+                    # Fail fast on bad payloads before hitting Supabase.
+                    json.dumps(enriched[-1])
                 except (TypeError, ValueError) as exc:
                     rows_skipped += 1
                     warnings.append(f"Row {i}: {exc}")
