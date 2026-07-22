@@ -1,0 +1,20 @@
+# Pin uv install — Railway/Nixpacks sometimes leaves NIXPACKS_UV_VERSION empty,
+# which breaks the default install phase (pip install uv==).
+[variables]
+NIXPACKS_UV_VERSION = "0.4.30"
+NIXPACKS_PYTHON_VERSION = "3.12"
+
+[phases.install]
+dependsOn = ["setup"]
+cmds = [
+  "python -m venv --copies /opt/venv",
+  ". /opt/venv/bin/activate && pip install uv==0.4.30",
+  ". /opt/venv/bin/activate && uv sync --no-dev --frozen",
+]
+paths = ["/opt/venv/bin"]
+
+[phases.build]
+cmds = []
+
+[start]
+cmd = "/opt/venv/bin/python -m uvicorn app.main:app --host 0.0.0.0 --port $PORT"
