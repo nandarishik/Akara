@@ -52,10 +52,14 @@ class CopilotAgent:
         schema_context: str,
         available_columns: list[str],
         date_range: tuple[str, str],
+        planner_addendum: str = "",
+        synthesizer_addendum: str = "",
     ) -> CopilotResponse:
         start_ms = int(time.time() * 1000)
 
-        plan = await self._planner.plan(question, schema_context, date_range)
+        plan = await self._planner.plan(
+            question, schema_context, date_range, system_addendum=planner_addendum
+        )
         logger.info(
             "Plan produced with %d steps for intent: %s", len(plan.steps), plan.intent
         )
@@ -79,6 +83,7 @@ class CopilotAgent:
             sql_results=all_results,
             context_data=context_data,
             intent=plan.intent,
+            system_addendum=synthesizer_addendum,
         )
 
         guardrail_results: list[GuardrailResult] = run_all_guardrails(
@@ -116,9 +121,13 @@ class CopilotAgent:
         schema_context: str,
         available_columns: list[str],
         date_range: tuple[str, str],
+        planner_addendum: str = "",
+        synthesizer_addendum: str = "",
     ) -> AsyncGenerator[str, None]:
         """Streaming version — yields text chunks as they arrive."""
-        plan = await self._planner.plan(question, schema_context, date_range)
+        plan = await self._planner.plan(
+            question, schema_context, date_range, system_addendum=planner_addendum
+        )
 
         all_results: list[dict] = []
         for step in plan.steps:
@@ -134,5 +143,6 @@ class CopilotAgent:
             sql_results=all_results,
             context_data=context_data,
             intent=plan.intent,
+            system_addendum=synthesizer_addendum,
         ):
             yield chunk

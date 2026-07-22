@@ -21,6 +21,10 @@ class UserRoleUpdate(BaseModel):
     role: str
 
 
+class UserPreferencesUpdate(BaseModel):
+    morning_brief_enabled: bool | None = None
+
+
 @router.get("/{tenant_id}", response_model=list[UserOut])
 def list_users_for_tenant(
     tenant_id: UUID,
@@ -53,6 +57,53 @@ def update_user_role(
     result = (
         supabase.table("profiles")
         .update({"role": body.role})
+        .eq("id", str(user_id))
+        .execute()
+    )
+    if not result.data:
+        raise HTTPException(status_code=404, detail="User not found")
+    return UserOut(**result.data[0])
+
+
+@router.patch("/{user_id}/preferences", response_model=UserOut)
+def update_user_preferences(
+    user_id: UUID,
+    body: UserPreferencesUpdate,
+    user: CurrentUser,
+) -> UserOut:
+    """Update notification preferences for the authenticated user (self only).
+
+    Only the user themselves can update their own preferences.
+    """
+    # Users can only update their own preferences
+    if str(user.user_id) != str(user_id):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You can only update your own preferences",
+        )
+
+    supabase = get_supabase_service_client()
+
+    # Fetch current preferences
+    current = (
+        supabase.table("profiles")
+        .select("preferences")
+        .eq("id", str(user_id))
+        .single()
+        .execute()
+    )
+    if not current.data:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    existing_prefs: dict = current.data.get("preferences") or {}
+
+    # Merge new values
+    if body.morning_brief_enabled is not None:
+        existing_prefs["morning_brief_enabled"] = body.morning_brief_enabled
+
+    result = (
+        supabase.table("profiles")
+        .update({"preferences": existing_prefs})
         .eq("id", str(user_id))
         .execute()
     )

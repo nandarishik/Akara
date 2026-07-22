@@ -1,37 +1,20 @@
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { AppShell } from "@/components/layout/AppShell";
 import { LoginPage } from "@/pages/LoginPage";
 import { DashboardPage } from "@/pages/DashboardPage";
-
-// Placeholder pages (built Days 8–10)
-const Copilot = () => (
-  <div className="p-8">
-    <h1 className="text-2xl font-bold">Copilot — coming Day 8</h1>
-  </div>
-);
-const Data = () => (
-  <div className="p-8">
-    <h1 className="text-2xl font-bold">Data — coming Day 9</h1>
-  </div>
-);
-const Reports = () => (
-  <div className="p-8">
-    <h1 className="text-2xl font-bold">Reports — coming Day 10</h1>
-  </div>
-);
-const Simulator = () => (
-  <div className="p-8">
-    <h1 className="text-2xl font-bold">Simulator — coming Day 10</h1>
-  </div>
-);
-const SettingsPage = () => (
-  <div className="p-8">
-    <h1 className="text-2xl font-bold">Settings — coming Day 9</h1>
-  </div>
-);
+import { CopilotPage } from "@/pages/CopilotPage";
+import { DataPage } from "@/pages/DataPage";
+import { SettingsPage } from "@/pages/SettingsPage";
+import { ReportsPage } from "@/pages/ReportsPage";
+import { SimulatorPage } from "@/pages/SimulatorPage";
+import { NotFoundPage } from "@/pages/NotFoundPage";
+import { PrivacyPage } from "@/pages/PrivacyPage";
+import { TermsPage } from "@/pages/TermsPage";
+import { TenantsPage } from "@/pages/admin/TenantsPage";
+import { UsersPage } from "@/pages/admin/UsersPage";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -46,17 +29,21 @@ export default function App() {
         <BrowserRouter>
           <Routes>
             <Route path="/login" element={<LoginPage />} />
+            <Route path="/privacy" element={<PrivacyPage />} />
+            <Route path="/terms" element={<TermsPage />} />
             <Route element={<ProtectedRoute />}>
               <Route element={<AppShell />}>
                 <Route path="/dashboard" element={<DashboardPage />} />
-                <Route path="/copilot" element={<Copilot />} />
-                <Route path="/data" element={<Data />} />
-                <Route path="/reports" element={<Reports />} />
-                <Route path="/simulator" element={<Simulator />} />
+                <Route path="/copilot" element={<CopilotPage />} />
+                <Route path="/data" element={<DataPage />} />
+                <Route path="/reports" element={<ReportsPage />} />
+                <Route path="/simulator" element={<SimulatorPage />} />
                 <Route path="/settings" element={<SettingsPage />} />
+                <Route path="/admin/tenants" element={<TenantsPage />} />
+                <Route path="/admin/users" element={<UsersPage />} />
               </Route>
             </Route>
-            <Route path="*" element={<Navigate to="/dashboard" replace />} />
+            <Route path="*" element={<NotFoundPage />} />
           </Routes>
         </BrowserRouter>
       </AuthProvider>

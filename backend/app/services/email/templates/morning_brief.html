@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AKARA Daily Brief — {{ brief_date }}</title>
+</head>
+<body style="margin:0;padding:0;background-color:#f8fafc;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#1e293b;">
+
+  <!-- Preheader (hidden preview text) -->
+  <span style="display:none;font-size:1px;color:#f8fafc;max-height:0;max-width:0;opacity:0;overflow:hidden;">
+    {{ summary.total_revenue_fmt }} revenue · {{ summary.total_orders }} orders · Top action: {{ insights[0].title if insights else 'Check AKARA dashboard' }}
+  </span>
+
+  <!-- Wrapper -->
+  <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#f8fafc;padding:24px 0;">
+    <tr>
+      <td align="center">
+        <!-- Email card -->
+        <table width="600" cellpadding="0" cellspacing="0" border="0" style="max-width:600px;width:100%;background:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.08);">
+
+          <!-- Header bar -->
+          <tr>
+            <td style="background:linear-gradient(135deg,#4f46e5 0%,#6366f1 100%);padding:28px 32px;">
+              <table width="100%" cellpadding="0" cellspacing="0" border="0">
+                <tr>
+                  <td>
+                    <span style="font-size:22px;font-weight:700;color:#ffffff;letter-spacing:-0.3px;">AKARA</span>
+                    <span style="font-size:13px;color:#c7d2fe;margin-left:8px;font-weight:400;">Daily Brief</span>
+                  </td>
+                  <td align="right">
+                    <span style="font-size:12px;color:#c7d2fe;">{{ brief_date }}</span>
+                  </td>
+                </tr>
+              </table>
+              <p style="margin:8px 0 0;font-size:14px;color:#e0e7ff;">
+                Good morning, {{ recipient_name }}! Here's your sales snapshot for yesterday.
+              </p>
+            </td>
+          </tr>
+
+          <!-- KPI summary grid -->
+          <tr>
+            <td style="padding:24px 32px 0;">
+              <table width="100%" cellpadding="0" cellspacing="0" border="0">
+                <tr>
+                  <!-- Revenue -->
+                  <td width="25%" style="padding:0 6px 0 0;">
+                    <div style="background:#f0f9ff;border-radius:8px;padding:14px 12px;text-align:center;border:1px solid #bae6fd;">
+                      <div style="font-size:18px;font-weight:700;color:#0369a1;">{{ summary.total_revenue_fmt }}</div>
+                      <div style="font-size:10px;color:#64748b;margin-top:2px;text-transform:uppercase;letter-spacing:0.5px;">Revenue</div>
+                    </div>
+                  </td>
+                  <!-- Orders -->
+                  <td width="25%" style="padding:0 6px;">
+                    <div style="background:#f0fdf4;border-radius:8px;padding:14px 12px;text-align:center;border:1px solid #bbf7d0;">
+                      <div style="font-size:18px;font-weight:700;color:#15803d;">{{ summary.total_orders }}</div>
+                      <div style="font-size:10px;color:#64748b;margin-top:2px;text-transform:uppercase;letter-spacing:0.5px;">Orders</div>
+                    </div>
+                  </td>
+                  <!-- Parties -->
+                  <td width="25%" style="padding:0 6px;">
+                    <div style="background:#fdf4ff;border-radius:8px;padding:14px 12px;text-align:center;border:1px solid #e9d5ff;">
+                      <div style="font-size:18px;font-weight:700;color:#7c3aed;">{{ summary.unique_parties }}</div>
+                      <div style="font-size:10px;color:#64748b;margin-top:2px;text-transform:uppercase;letter-spacing:0.5px;">Parties</div>
+                    </div>
+                  </td>
+                  <!-- Avg Order -->
+                  <td width="25%" style="padding:0 0 0 6px;">
+                    <div style="background:#fff7ed;border-radius:8px;padding:14px 12px;text-align:center;border:1px solid #fed7aa;">
+                      <div style="font-size:18px;font-weight:700;color:#c2410c;">{{ summary.avg_order_fmt }}</div>
+                      <div style="font-size:10px;color:#64748b;margin-top:2px;text-transform:uppercase;letter-spacing:0.5px;">Avg Order</div>
+                    </div>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- Divider -->
+          <tr>
+            <td style="padding:20px 32px 0;">
+              <div style="border-top:1px solid #e2e8f0;"></div>
+            </td>
+          </tr>
+
+          <!-- Top 3 Actions section -->
+          <tr>
+            <td style="padding:20px 32px 0;">
+              <h2 style="margin:0 0 4px;font-size:14px;font-weight:700;color:#0f172a;text-transform:uppercase;letter-spacing:0.5px;">
+                Today's Top 3 Actions
+              </h2>
+              <p style="margin:0 0 16px;font-size:12px;color:#94a3b8;">Ranked by ₹ impact — act on these today</p>
+            </td>
+          </tr>
+
+          {% for insight in insights %}
+          <tr>
+            <td style="padding:0 32px {{ '16px' if not loop.last else '0' }};">
+              <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#f8fafc;border-radius:10px;border:1px solid #e2e8f0;overflow:hidden;">
+                <tr>
+                  <!-- Priority indicator bar -->
+                  <td width="4" style="background:{{ '#ef4444' if insight.priority == 'high' else ('#f59e0b' if insight.priority == 'medium' else '#22c55e') }};padding:0;">
+                    &nbsp;
+                  </td>
+                  <td style="padding:14px 16px;">
+                    <table width="100%" cellpadding="0" cellspacing="0" border="0">
+                      <tr>
+                        <td>
+                          <!-- Priority badge + rank -->
+                          <span style="display:inline-block;font-size:10px;font-weight:600;padding:2px 8px;border-radius:20px;background:{{ '#fef2f2' if insight.priority == 'high' else ('#fffbeb' if insight.priority == 'medium' else '#f0fdf4') }};color:{{ '#dc2626' if insight.priority == 'high' else ('#d97706' if insight.priority == 'medium' else '#16a34a') }};border:1px solid {{ '#fecaca' if insight.priority == 'high' else ('#fde68a' if insight.priority == 'medium' else '#bbf7d0') }};text-transform:uppercase;letter-spacing:0.5px;">
+                            {{ '🔴' if insight.priority == 'high' else ('🟡' if insight.priority == 'medium' else '🟢') }} {{ insight.priority }}
+                          </span>
+                          <span style="font-size:10px;color:#94a3b8;margin-left:8px;">Action {{ loop.index }}</span>
+                        </td>
+                        <td align="right">
+                          <span style="font-size:11px;font-weight:600;color:#4f46e5;">{{ insight.revenue_impact_fmt }}</span>
+                        </td>
+                      </tr>
+                      <tr>
+                        <td colspan="2" style="padding-top:6px;">
+                          <p style="margin:0 0 4px;font-size:14px;font-weight:600;color:#0f172a;">{{ insight.title }}</p>
+                          <p style="margin:0;font-size:13px;color:#475569;line-height:1.5;">{{ insight.description }}</p>
+                        </td>
+                      </tr>
+                      {% if insight.data_points %}
+                      <tr>
+                        <td colspan="2" style="padding-top:8px;">
+                          {% for point in insight.data_points %}
+                          <div style="font-size:11px;color:#64748b;padding:2px 0;padding-left:12px;position:relative;">
+                            <span style="position:absolute;left:0;color:#94a3b8;">›</span>
+                            {{ point }}
+                          </div>
+                          {% endfor %}
+                        </td>
+                      </tr>
+                      {% endif %}
+                    </table>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+          {% endfor %}
+
+          <!-- CTA Button -->
+          <tr>
+            <td style="padding:24px 32px;">
+              <table cellpadding="0" cellspacing="0" border="0">
+                <tr>
+                  <td style="background:#4f46e5;border-radius:8px;">
+                    <a href="{{ dashboard_url }}" style="display:inline-block;padding:12px 24px;font-size:14px;font-weight:600;color:#ffffff;text-decoration:none;letter-spacing:0.1px;">
+                      Open AKARA Dashboard →
+                    </a>
+                  </td>
+                </tr>
+              </table>
+              <p style="margin:12px 0 0;font-size:11px;color:#94a3b8;">
+                Or ask the Copilot directly from your dashboard for deeper analysis.
+              </p>
+            </td>
+          </tr>
+
+          <!-- Divider -->
+          <tr>
+            <td style="padding:0 32px;">
+              <div style="border-top:1px solid #e2e8f0;"></div>
+            </td>
+          </tr>
+
+          <!-- Footer -->
+          <tr>
+            <td style="padding:20px 32px 24px;">
+              <table width="100%" cellpadding="0" cellspacing="0" border="0">
+                <tr>
+                  <td>
+                    <p style="margin:0;font-size:11px;color:#94a3b8;line-height:1.6;">
+                      You're receiving this because you're an admin of <strong style="color:#64748b;">{{ tenant_name }}</strong> on AKARA.<br/>
+                      Data is for yesterday ({{ brief_date }}) · Generated at 7:00 AM IST
+                    </p>
+                  </td>
+                  <td align="right">
+                    <a href="{{ unsubscribe_url }}" style="font-size:11px;color:#94a3b8;text-decoration:none;">
+                      Unsubscribe
+                    </a>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+        </table>
+        <!-- End email card -->
+
+        <!-- Sub-footer -->
+        <p style="margin:16px 0 0;font-size:11px;color:#94a3b8;text-align:center;">
+          AKARA · AI-powered analytics for FMCG distributors
+        </p>
+
+      </td>
+    </tr>
+  </table>
+
+</body>
+</html>

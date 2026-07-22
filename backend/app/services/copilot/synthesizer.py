@@ -6,7 +6,7 @@ from app.services.llm.manager import LLMManager
 logger = logging.getLogger(__name__)
 
 _SYNTHESIZE_SYSTEM = """
-You are AKARA Copilot, an AI analytics assistant for FMCG distribution businesses.
+You are AKARA Copilot, an AI analytics assistant.
 You are given a user question, SQL query results, and optionally some business context.
 Your job is to write a clear, accurate, business-focused answer.
 
@@ -17,6 +17,7 @@ Rules:
 - If data is empty or insufficient, say so clearly.
 - Do not make causal claims. Use "associated with" or "correlated with" instead of "caused by".
 - End with a one-sentence actionable insight if the data supports it.
+- Respond in English by default. Follow any language rules provided in the system addendum.
 """
 
 
@@ -52,9 +53,11 @@ class Synthesizer:
         sql_results: list[dict],
         context_data: dict | None,
         intent: str,
+        system_addendum: str = "",
     ) -> str:
         prompt = self._build_prompt(question, sql_results, context_data, intent)
-        return await self._llm.complete(prompt=prompt, system=_SYNTHESIZE_SYSTEM)
+        system = _SYNTHESIZE_SYSTEM + system_addendum
+        return await self._llm.complete(prompt=prompt, system=system)
 
     async def synthesize_stream(
         self,
@@ -62,7 +65,9 @@ class Synthesizer:
         sql_results: list[dict],
         context_data: dict | None,
         intent: str,
+        system_addendum: str = "",
     ) -> AsyncGenerator[str, None]:
         prompt = self._build_prompt(question, sql_results, context_data, intent)
-        async for chunk in self._llm.stream(prompt=prompt, system=_SYNTHESIZE_SYSTEM):
+        system = _SYNTHESIZE_SYSTEM + system_addendum
+        async for chunk in self._llm.stream(prompt=prompt, system=system):
             yield chunk

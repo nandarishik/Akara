@@ -21,9 +21,13 @@ class Settings(BaseSettings):
     gemini_api_key: str
     openrouter_api_key: str
 
-    # Email (optional during development)
-    gmail_user: str = ""
-    gmail_app_password: str = ""
+    # SendGrid (production email delivery)
+    sendgrid_api_key: str = ""
+    sendgrid_from_email: str = "insights@akara.ai"
+    sendgrid_from_name: str = "AKARA Insights"
+
+    # Service key for Edge Function → backend auth bypass
+    backend_service_key: str = ""
 
     # External context APIs (optional during development)
     weather_api_key: str = ""

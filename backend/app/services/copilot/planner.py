@@ -62,6 +62,7 @@ class Planner:
         question: str,
         schema_context: str,
         date_range: tuple[str, str],
+        system_addendum: str = "",
     ) -> Plan:
         prompt = (
             f"Schema context:\n{schema_context}\n\n"
@@ -69,7 +70,8 @@ class Planner:
             f"User question: {question}\n\n"
             f"Output the JSON plan:"
         )
-        raw = await self._llm.complete(prompt=prompt, system=_PLAN_SYSTEM)
+        system = _PLAN_SYSTEM + system_addendum
+        raw = await self._llm.complete(prompt=prompt, system=system)
         return self._parse_plan(raw)
 
     def _parse_plan(self, raw: str) -> Plan:

@@ -23,6 +23,10 @@ class TenantCreate(BaseModel):
     config: dict = {}
 
 
+class TenantConfigUpdate(BaseModel):
+    config: dict
+
+
 def _require_superadmin(tenant: TenantCtx) -> TenantContext:
     """Guard: raises 403 if the caller is not a tenant admin."""
     if not tenant.is_admin:
@@ -56,6 +60,30 @@ def create_tenant(
         .insert({"name": body.name, "slug": body.slug, "config": body.config})
         .execute()
     )
+    return TenantOut(**result.data[0])
+
+
+@router.patch("/{tenant_id}/config", response_model=TenantOut)
+def update_tenant_config(
+    tenant_id: UUID,
+    body: TenantConfigUpdate,
+    user: CurrentUser,
+    tenant: TenantContext = Depends(_require_superadmin),
+) -> TenantOut:
+    """Merge-update a tenant's config JSONB.
+    Existing keys not in the request body are preserved (concat operator ||).
+    Use this endpoint to set language, industry, currency, or any config field
+    after tenant creation — e.g. from the Settings page.
+    """
+    supabase = get_supabase_service_client()
+    result = (
+        supabase.rpc(
+            "update_tenant_config",
+            {"p_tenant_id": str(tenant_id), "p_patch": body.config},
+        ).execute()
+    )
+    if not result.data:
+        raise HTTPException(status_code=404, detail="Tenant not found")
     return TenantOut(**result.data[0])
 
 

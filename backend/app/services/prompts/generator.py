@@ -4,10 +4,11 @@ from uuid import UUID
 from app.services.schema.discovery import SchemaDiscovery
 
 # ── Industry-specific addendum registry ──────────────────────────────────────
-# Each key is an industry slug (tenants.config.industry).
-# Values are addendum strings appended to the generic _PLAN_SYSTEM /
-# _SYNTHESIZE_SYSTEM constants at request time.
-# Adding a new vertical = one new dict entry here. No other file changes needed.
+#
+# Each entry maps an industry slug (from tenants.config.industry) to a pair of
+# addendum strings appended to the generic _PLAN_SYSTEM and _SYNTHESIZE_SYSTEM
+# constants. Language rules are NOT stored here — see _LANGUAGE_NAMES below.
+# Adding a new vertical = one new entry in _INDUSTRY_ADDENDUMS.
 
 _FMCG_DISTRIBUTION_SYNTHESIZER = """
 Currency and number formatting:
@@ -16,11 +17,6 @@ Currency and number formatting:
   Threshold: < ₹1 lakh → ₹X,XXX; ≥ ₹1 lakh → ₹X.X lakh; ≥ ₹1 crore → ₹X.XX crore.
 - Where the data supports it, estimate the business impact in ₹ lakh or ₹ crore.
   Example: "This represents an estimated ₹6.8 lakh in recoverable revenue if corrected."
-
-Language:
-- If the user's question is in Hindi (Devanagari script) or Hinglish, respond entirely in Hindi.
-  SQL generation always stays in English internally.
-- If the question is in English, respond in English.
 
 Domain knowledge:
 - Parties = distributors or retailers. Zones = geographic sales territories. Routes = distributor beats.
@@ -43,18 +39,39 @@ _INDUSTRY_ADDENDUMS: dict[str, dict[str, str]] = {
         "synthesizer": _FMCG_DISTRIBUTION_SYNTHESIZER,
         "planner": _FMCG_DISTRIBUTION_PLANNER,
     },
-    # Add new verticals here — no other file changes needed.
+    # Future verticals:
+    # "pharma_distribution": { "synthesizer": ..., "planner": ... },
+    # "retail": { "synthesizer": ..., "planner": ... },
+}
+
+
+# ── Language registry ─────────────────────────────────────────────────────────
+#
+# Maps ISO-639-1 code → (language name, script description).
+# Used by build_language_addendum() to produce a mirror-language instruction
+# that is completely independent of industry.
+# Adding a new language = one new entry here.
+
+_LANGUAGE_NAMES: dict[str, tuple[str, str]] = {
+    "hi": ("Hindi", "Devanagari script"),
+    "te": ("Telugu", "Telugu script"),
+    "ta": ("Tamil", "Tamil script"),
+    "mr": ("Marathi", "Devanagari script"),
+    "kn": ("Kannada", "Kannada script"),
+    "bn": ("Bengali", "Bengali script"),
+    "gu": ("Gujarati", "Gujarati script"),
 }
 
 
 class PromptGenerator:
-    """
-    Builds context-aware system prompts for the copilot.
+    """Builds context-aware system prompts for the copilot.
 
-    Two responsibilities:
-    1. Schema context — dynamic per-tenant string describing available tables/columns.
-    2. Industry addendum registry — FMCG/pharma/retail-specific rules appended to base
-       _PLAN_SYSTEM / _SYNTHESIZE_SYSTEM constants based on tenant config.
+    Injects tenant-specific schema context, industry-specific addendums, and
+    a mirror-language instruction derived from the tenant's configured language.
+    Language and industry concerns are fully decoupled:
+      - build_synthesizer_addendum() → industry rules only (currency, domain)
+      - build_language_addendum()    → language mirror rules only
+    The copilot route concatenates both before passing to the synthesizer.
     """
 
     def __init__(self, schema_discovery: SchemaDiscovery) -> None:
@@ -64,14 +81,34 @@ class PromptGenerator:
         return self._schema.get_schema_context(tenant_id)
 
     def build_synthesizer_addendum(self, tenant_config: dict) -> str:
-        """Returns the industry-specific synthesizer addendum, or '' for unknown industries."""
+        """Returns the industry-specific addendum for the synthesizer system prompt
+        (currency formatting, domain knowledge). Language rules are NOT included here.
+        Returns empty string for unknown or unconfigured industries."""
         industry = tenant_config.get("industry", "")
         return _INDUSTRY_ADDENDUMS.get(industry, {}).get("synthesizer", "")
 
     def build_planner_addendum(self, tenant_config: dict) -> str:
-        """Returns the industry-specific planner addendum, or '' for unknown industries."""
+        """Returns the industry-specific addendum for the planner system prompt."""
         industry = tenant_config.get("industry", "")
         return _INDUSTRY_ADDENDUMS.get(industry, {}).get("planner", "")
+
+    def build_language_addendum(self, tenant_config: dict) -> str:
+        """Returns a universal mirror-language instruction for the synthesizer.
+        Completely independent of industry — any tenant type gets this behavior.
+        Returns empty string for English-only tenants (language = 'en' or not set)."""
+        language = tenant_config.get("language", "en")
+        if language == "en" or language not in _LANGUAGE_NAMES:
+            return ""
+        name, script = _LANGUAGE_NAMES[language]
+        return f"""
+Language rules:
+This user has selected English and {name} as their languages.
+Mirror the language of the user's question exactly:
+- If the question is in English, respond in English.
+- If the question is in {name} ({script}), respond in {name}. English technical or business terms are acceptable where there is no natural {name} equivalent.
+- If the question mixes English and {name}, mirror that same mix in your response.
+SQL is always generated in English internally regardless of response language.
+"""
 
     def build_system_prompt(
         self,
@@ -80,7 +117,8 @@ class PromptGenerator:
         start_date: str,
         end_date: str,
     ) -> str:
-        """Legacy helper — kept for backward compatibility."""
+        """Legacy method — kept for backward compatibility. Returns a planner-style
+        context prompt embedding schema + date range."""
         schema_context = self._schema.get_schema_context(tenant_id)
         return (
             f"You are AKARA Copilot, analytics assistant for {tenant_name}.\n"

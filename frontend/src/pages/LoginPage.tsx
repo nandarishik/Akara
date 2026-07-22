@@ -80,6 +80,17 @@ export function LoginPage() {
               {loading ? "Signing in..." : "Sign in"}
             </Button>
           </form>
+          <p className="text-xs text-center text-slate-400 mt-4">
+            By signing in, you agree to our{" "}
+            <a href="/terms" className="underline hover:text-slate-600">
+              Terms
+            </a>{" "}
+            and{" "}
+            <a href="/privacy" className="underline hover:text-slate-600">
+              Privacy Policy
+            </a>
+            .
+          </p>
         </CardContent>
       </Card>
     </div>
