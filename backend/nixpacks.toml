@@ -9,7 +9,7 @@ dependsOn = ["setup"]
 cmds = [
   "python -m venv --copies /opt/venv",
   ". /opt/venv/bin/activate && pip install uv==0.4.30",
-  ". /opt/venv/bin/activate && uv sync --no-dev --frozen",
+  "UV_PROJECT_ENVIRONMENT=/opt/venv /opt/venv/bin/uv sync --no-dev --frozen",
 ]
 paths = ["/opt/venv/bin"]
 
