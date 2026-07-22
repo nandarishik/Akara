@@ -1,6 +1,7 @@
 import json
 import logging
 import math
+from datetime import date, datetime
 from uuid import UUID
 
 import pandas as pd
@@ -38,13 +39,23 @@ def _sanitize_for_json(value: object) -> object:
         return {str(k): _sanitize_for_json(v) for k, v in value.items()}
     if isinstance(value, list):
         return [_sanitize_for_json(v) for v in value]
+    if isinstance(value, (date, datetime)):
+        return value.isoformat()
     if isinstance(value, float):
         if math.isnan(value) or math.isinf(value):
             return None
         return value
+    if isinstance(value, (int, str, bool)) or value is None:
+        return value
     if pd.isna(value):
         return None
-    return value
+    # numpy / decimal scalars
+    if hasattr(value, "item"):
+        try:
+            return _sanitize_for_json(value.item())
+        except (TypeError, ValueError):
+            pass
+    return str(value)
 
 
 class DataImportService:

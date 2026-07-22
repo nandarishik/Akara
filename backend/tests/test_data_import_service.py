@@ -1,6 +1,7 @@
 import io
 import json
 import math
+from datetime import date
 
 import pandas as pd
 import pytest
@@ -26,7 +27,12 @@ def test_sanitize_for_json_removes_nan() -> None:
     assert clean["nested"]["rate"] is None
 
 
-def test_import_records_are_json_serializable() -> None:
+def test_sanitize_for_json_handles_date() -> None:
+    payload = {"invoice_date": date(2025, 12, 1), "qty": 1.0}
+    clean = _sanitize_for_json(payload)
+    json.dumps(clean)
+    assert clean["invoice_date"] == "2025-12-01"
+
     df = pd.DataFrame(
         [
             {
