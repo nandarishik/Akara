@@ -19,7 +19,6 @@ export function CopilotPage() {
   } = useCopilot();
   const {
     conversations,
-    createConversation,
     renameConversation,
     deleteConversation,
     refetch,
