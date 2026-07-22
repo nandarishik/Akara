@@ -91,7 +91,7 @@ export function useCopilot() {
         const { done, value } = await reader.read();
         if (done) break;
         buffer += decoder.decode(value, { stream: true });
-        const lines = buffer.split("\n");
+        const lines = buffer.split(/\r?\n/);
         buffer = lines.pop() || "";
 
         for (const line of lines) {
@@ -110,9 +110,18 @@ export function useCopilot() {
       }
 
       setMessages((prev) =>
-        prev.map((m) =>
-          m.id === assistantMsgId ? { ...m, streaming: false } : m
-        )
+        prev.map((m) => {
+          if (m.id !== assistantMsgId) return m;
+          if (!m.content.trim()) {
+            return {
+              ...m,
+              content: "Sorry, something went wrong. Please try again.",
+              streaming: false,
+              error: true,
+            };
+          }
+          return { ...m, streaming: false };
+        })
       );
     } catch (err) {
       setMessages((prev) =>

@@ -83,15 +83,19 @@ async def chat(
     if request.stream:
 
         async def event_stream():
-            async for chunk in agent.answer_stream(
-                question=request.question,
-                schema_context=schema_context,
-                available_columns=available_columns,
-                date_range=date_range,
-                planner_addendum=planner_addendum,
-                synthesizer_addendum=synthesizer_addendum,
-            ):
-                yield f"data: {chunk}\n\n"
+            try:
+                async for chunk in agent.answer_stream(
+                    question=request.question,
+                    schema_context=schema_context,
+                    available_columns=available_columns,
+                    date_range=date_range,
+                    planner_addendum=planner_addendum,
+                    synthesizer_addendum=synthesizer_addendum,
+                ):
+                    yield f"data: {chunk}\n\n"
+            except Exception as exc:
+                logger.exception("Copilot stream failed")
+                yield f"data: Sorry, I couldn't process that request. ({exc})\n\n"
             yield "data: [DONE]\n\n"
 
         return StreamingResponse(event_stream(), media_type="text/event-stream")

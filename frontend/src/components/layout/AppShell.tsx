@@ -43,6 +43,7 @@ export function AppShell() {
   }
 
   const admin = isAdmin(user, session);
+  const isCopilot = location.pathname.startsWith("/copilot");
 
   return (
     <div className="flex h-screen bg-slate-50">
@@ -161,7 +162,12 @@ export function AppShell() {
         </header>
 
         {/* Page content — wrapped in ErrorBoundary */}
-        <main className="flex-1 overflow-auto">
+        <main
+          className={cn(
+            "flex-1 min-h-0",
+            isCopilot ? "overflow-hidden" : "overflow-auto"
+          )}
+        >
           <ErrorBoundary>
             <Outlet />
           </ErrorBoundary>

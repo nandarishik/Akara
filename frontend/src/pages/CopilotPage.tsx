@@ -63,27 +63,32 @@ export function CopilotPage() {
   }
 
   return (
-    <div className="flex h-full">
-      {/* Sidebar */}
-      <ConversationSidebar
-        conversations={conversations}
-        activeConversationId={conversationId}
-        onSelectConversation={handleSelectConversation}
-        onNewChat={handleNewChat}
-        onRenameConversation={renameConversation}
-        onDeleteConversation={handleDeleteConversation}
-      />
-
-      {/* Main chat area */}
-      <div className="flex flex-col flex-1">
-        {/* Header */}
-        <div className="px-8 py-5 border-b border-slate-200 bg-white">
+    <div className="flex flex-col h-full min-h-0">
+      {/* Full-width header — aligns with app shell, no staggered top bars */}
+      <div className="shrink-0 flex items-center justify-between gap-4 px-6 py-4 border-b border-slate-200 bg-white min-h-[4.5rem]">
+        <div>
           <h1 className="text-xl font-bold text-slate-900">AKARA Copilot</h1>
           <p className="text-sm text-slate-500 mt-0.5">
             Ask anything about your sales data
           </p>
         </div>
+        <Button onClick={handleNewChat} size="sm" variant="outline">
+          + New Chat
+        </Button>
+      </div>
 
+      <div className="flex flex-1 min-h-0">
+      {/* Sidebar */}
+      <ConversationSidebar
+        conversations={conversations}
+        activeConversationId={conversationId}
+        onSelectConversation={handleSelectConversation}
+        onRenameConversation={renameConversation}
+        onDeleteConversation={handleDeleteConversation}
+      />
+
+      {/* Main chat area */}
+      <div className="flex flex-col flex-1 min-h-0">
         {/* Messages */}
         <div className="flex-1 overflow-y-auto px-8 py-6 space-y-6">
         {messages.length === 0 && (
@@ -131,6 +136,7 @@ export function CopilotPage() {
             Press Enter to send · Shift+Enter for new line
           </p>
         </div>
+      </div>
       </div>
     </div>
   );

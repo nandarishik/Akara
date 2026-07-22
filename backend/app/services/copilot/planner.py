@@ -77,8 +77,18 @@ class Planner:
     def _parse_plan(self, raw: str) -> Plan:
         json_match = re.search(r"\{.*\}", raw, re.DOTALL)
         if not json_match:
-            raise ValueError(f"LLM did not return valid JSON plan. Raw: {raw[:200]}")
-        data = json.loads(json_match.group())
+            logger.warning("No JSON object in planner output, using fallback")
+            return self._fallback_plan("general inquiry")
+
+        json_str = json_match.group()
+        # LLM SQL strings often contain raw newlines — strip control chars that break json.loads.
+        json_str = re.sub(r"[\x00-\x08\x0b\x0c\x0e-\x1f]", " ", json_str)
+        try:
+            data = json.loads(json_str)
+        except json.JSONDecodeError:
+            logger.warning("Invalid planner JSON, using fallback. Raw: %s", raw[:200])
+            return self._fallback_plan("general inquiry")
+
         return Plan(
             intent=data.get("intent", ""),
             steps=[
@@ -91,4 +101,13 @@ class Planner:
             ],
             requires_context=data.get("requires_context", []),
             response_format=data.get("response_format", "summary"),
+        )
+
+    def _fallback_plan(self, intent: str) -> Plan:
+        """Used when the planner LLM returns unparseable JSON (e.g. greetings)."""
+        return Plan(
+            intent=intent,
+            steps=[],
+            requires_context=[],
+            response_format="summary",
         )
