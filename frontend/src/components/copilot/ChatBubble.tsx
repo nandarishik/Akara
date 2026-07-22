@@ -1,5 +1,6 @@
 import { cn } from "@/lib/utils";
 import type { ChatMessage } from "@/hooks/useCopilot";
+import { ChatMarkdown } from "./ChatMarkdown";
 
 interface Props {
   message: ChatMessage;
@@ -10,8 +11,8 @@ export function ChatBubble({ message }: Props) {
   return (
     <div
       className={cn(
-        "flex gap-3 max-w-3xl",
-        isUser ? "ml-auto flex-row-reverse" : "mr-auto"
+        "flex gap-3 w-full",
+        isUser ? "ml-auto flex-row-reverse max-w-3xl" : "mr-auto max-w-2xl"
       )}
     >
       <div
@@ -26,15 +27,19 @@ export function ChatBubble({ message }: Props) {
       </div>
       <div
         className={cn(
-          "rounded-2xl px-4 py-3 text-sm max-w-lg",
+          "rounded-2xl px-4 py-3 text-sm min-w-0 flex-1",
           isUser
-            ? "bg-slate-900 text-white rounded-tr-sm"
+            ? "bg-slate-900 text-white rounded-tr-sm max-w-lg"
             : message.error
             ? "bg-red-50 text-red-700 border border-red-200 rounded-tl-sm"
             : "bg-white border border-slate-200 text-slate-800 rounded-tl-sm shadow-sm"
         )}
       >
-        <p className="whitespace-pre-wrap leading-relaxed">{message.content}</p>
+        {isUser ? (
+          <p className="whitespace-pre-wrap leading-relaxed">{message.content}</p>
+        ) : (
+          <ChatMarkdown content={message.content} />
+        )}
         {message.streaming && (
           <span className="inline-block w-1.5 h-4 bg-indigo-500 ml-0.5 animate-pulse" />
         )}

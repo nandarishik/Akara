@@ -92,6 +92,7 @@ class CopilotAgent:
                 context_data=context_data,
                 intent=plan.intent,
                 system_addendum=synthesizer_addendum,
+                date_range=date_range,
             )
 
         guardrail_results: list[GuardrailResult] = run_all_guardrails(
@@ -160,6 +161,7 @@ class CopilotAgent:
                 context_data=context_data,
                 intent=plan.intent,
                 system_addendum=synthesizer_addendum,
+                date_range=date_range,
             )
         async for chunk in stream:
             yield chunk
