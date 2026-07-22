@@ -78,13 +78,19 @@ class CopilotAgent:
             if context_data:
                 break
 
-        response_text = await self._synthesizer.synthesize(
-            question=question,
-            sql_results=all_results,
-            context_data=context_data,
-            intent=plan.intent,
-            system_addendum=synthesizer_addendum,
-        )
+        if not plan.steps:
+            response_text = await self._synthesizer.conversational(
+                question=question,
+                system_addendum=synthesizer_addendum,
+            )
+        else:
+            response_text = await self._synthesizer.synthesize(
+                question=question,
+                sql_results=all_results,
+                context_data=context_data,
+                intent=plan.intent,
+                system_addendum=synthesizer_addendum,
+            )
 
         guardrail_results: list[GuardrailResult] = run_all_guardrails(
             question=question,
@@ -138,11 +144,18 @@ class CopilotAgent:
         for ctx_type in plan.requires_context:
             context_data = self._context_tool.get_context(date.today(), ctx_type)
 
-        async for chunk in self._synthesizer.synthesize_stream(
-            question=question,
-            sql_results=all_results,
-            context_data=context_data,
-            intent=plan.intent,
-            system_addendum=synthesizer_addendum,
-        ):
+        if not plan.steps:
+            stream = self._synthesizer.conversational_stream(
+                question=question,
+                system_addendum=synthesizer_addendum,
+            )
+        else:
+            stream = self._synthesizer.synthesize_stream(
+                question=question,
+                sql_results=all_results,
+                context_data=context_data,
+                intent=plan.intent,
+                system_addendum=synthesizer_addendum,
+            )
+        async for chunk in stream:
             yield chunk

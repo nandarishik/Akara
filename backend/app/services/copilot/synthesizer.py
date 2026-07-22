@@ -11,6 +11,8 @@ You are given a user question, SQL query results, and optionally some business c
 Your job is to write a clear, accurate, business-focused answer.
 
 Rules:
+- Write the answer directly to the user. Never describe, explain, or comment on your response.
+- Never use phrases like "here is a response" or "I have greeted the user".
 - Ground every number in the data provided. Do not invent figures.
 - Be concise but complete. Use bullet points for lists.
 - Mention the time range covered by the data.
@@ -18,6 +20,18 @@ Rules:
 - Do not make causal claims. Use "associated with" or "correlated with" instead of "caused by".
 - End with a one-sentence actionable insight if the data supports it.
 - Respond in English by default. Follow any language rules provided in the system addendum.
+"""
+
+_CONVERSATIONAL_SYSTEM = """
+You are AKARA Copilot, an AI assistant for sales and distribution analytics.
+The user sent a greeting or general message — not a data question.
+
+Rules:
+- Reply naturally and briefly (1-3 sentences).
+- Introduce yourself as AKARA Copilot and offer to help with sales data
+  (revenue, orders, products, zones, trends).
+- Write only the message the user should read — no meta-commentary.
+- Do not mention SQL, queries, planners, or internal processes.
 """
 
 
@@ -70,4 +84,21 @@ class Synthesizer:
         prompt = self._build_prompt(question, sql_results, context_data, intent)
         system = _SYNTHESIZE_SYSTEM + system_addendum
         async for chunk in self._llm.stream(prompt=prompt, system=system):
+            yield chunk
+
+    async def conversational(
+        self,
+        question: str,
+        system_addendum: str = "",
+    ) -> str:
+        system = _CONVERSATIONAL_SYSTEM + system_addendum
+        return await self._llm.complete(prompt=question, system=system)
+
+    async def conversational_stream(
+        self,
+        question: str,
+        system_addendum: str = "",
+    ) -> AsyncGenerator[str, None]:
+        system = _CONVERSATIONAL_SYSTEM + system_addendum
+        async for chunk in self._llm.stream(prompt=question, system=system):
             yield chunk
