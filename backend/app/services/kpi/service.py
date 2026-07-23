@@ -1,4 +1,5 @@
 import logging
+from collections import defaultdict
 from decimal import Decimal
 from uuid import UUID
 
@@ -53,60 +54,59 @@ class KPIService:
         self, tenant_id: UUID, start_date: str, end_date: str
     ) -> list[TopProduct]:
         try:
-            result = (
-                self._supabase.table("sales_data")
-                .select(
-                    "product_name, total_amount.sum(), quantity.sum(), invoice_number.count()"
-                )
-                .eq("tenant_id", str(tenant_id))
-                .gte("invoice_date", start_date)
-                .lte("invoice_date", end_date)
-                .order("total_amount", desc=True)
-                .limit(_TOP_N)
-                .execute()
-            )
+            result = self._supabase.rpc(
+                "get_top_products",
+                {
+                    "p_tenant_id": str(tenant_id),
+                    "p_start_date": start_date,
+                    "p_end_date": end_date,
+                    "p_limit": _TOP_N,
+                },
+            ).execute()
         except APIError as exc:
             logger.warning("get_top_products failed: %s", exc)
+            return []
+        rows = result.data or []
+        if not isinstance(rows, list):
             return []
         return [
             TopProduct(
                 product_name=row.get("product_name", ""),
-                total_revenue=Decimal(str(row.get("total_amount", 0))),
+                total_revenue=Decimal(str(row.get("revenue", 0))),
                 quantity=Decimal(str(row.get("quantity", 0))),
-                order_count=int(row.get("invoice_number", 0)),
+                order_count=int(row.get("orders", 0)),
             )
-            for row in (result.data or [])
+            for row in rows
         ]
 
     def get_zone_breakdown(
         self, tenant_id: UUID, start_date: str, end_date: str
     ) -> list[ZoneBreakdown]:
         try:
-            result = (
-                self._supabase.table("sales_data")
-                .select("party_zone, total_amount.sum(), invoice_number.count()")
-                .eq("tenant_id", str(tenant_id))
-                .gte("invoice_date", start_date)
-                .lte("invoice_date", end_date)
-                .not_.is_("party_zone", "null")
-                .order("total_amount", desc=True)
-                .limit(_ZONE_LIMIT)
-                .execute()
-            )
+            result = self._supabase.rpc(
+                "get_zone_breakdown",
+                {
+                    "p_tenant_id": str(tenant_id),
+                    "p_start_date": start_date,
+                    "p_end_date": end_date,
+                },
+            ).execute()
         except APIError as exc:
             logger.warning("get_zone_breakdown failed: %s", exc)
             return []
         rows = result.data or []
-        total_rev = sum(Decimal(str(r.get("total_amount", 0))) for r in rows)
+        if not isinstance(rows, list):
+            return []
+        total_rev = sum(Decimal(str(r.get("revenue", 0))) for r in rows)
         zones = []
-        for row in rows:
-            rev = Decimal(str(row.get("total_amount", 0)))
+        for row in rows[:_ZONE_LIMIT]:
+            rev = Decimal(str(row.get("revenue", 0)))
             pct = float(rev / total_rev * 100) if total_rev else 0.0
             zones.append(
                 ZoneBreakdown(
-                    zone=row.get("party_zone", ""),
+                    zone=row.get("zone", ""),
                     revenue=rev,
-                    order_count=int(row.get("invoice_number", 0)),
+                    order_count=int(row.get("orders", 0)),
                     revenue_pct=round(pct, 2),
                 )
             )
@@ -118,23 +118,32 @@ class KPIService:
         try:
             result = (
                 self._supabase.table("sales_data")
-                .select("invoice_date, total_amount.sum(), invoice_number.count()")
+                .select("invoice_date, total_amount, invoice_number")
                 .eq("tenant_id", str(tenant_id))
                 .gte("invoice_date", start_date)
                 .lte("invoice_date", end_date)
-                .order("invoice_date")
                 .execute()
             )
         except APIError as exc:
             logger.warning("get_revenue_trend failed: %s", exc)
             return []
+
+        by_date_rev: dict[str, Decimal] = defaultdict(lambda: Decimal(0))
+        by_date_orders: dict[str, set[str]] = defaultdict(set)
+        for row in result.data or []:
+            day = str(row["invoice_date"])
+            by_date_rev[day] += Decimal(str(row.get("total_amount") or 0))
+            invoice = row.get("invoice_number")
+            if invoice:
+                by_date_orders[day].add(str(invoice))
+
         return [
             RevenueByDate(
-                invoice_date=row["invoice_date"],
-                revenue=Decimal(str(row.get("total_amount", 0))),
-                orders=int(row.get("invoice_number", 0)),
+                invoice_date=day,
+                revenue=by_date_rev[day],
+                orders=len(by_date_orders[day]),
             )
-            for row in (result.data or [])
+            for day in sorted(by_date_rev)
         ]
 
     def get_all(
