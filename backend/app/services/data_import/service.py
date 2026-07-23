@@ -1,86 +1,117 @@
-import json
 import logging
-import math
-from datetime import date, datetime
+import uuid as uuid_lib
+from typing import Literal
 from uuid import UUID
 
-import pandas as pd
 from supabase import Client
 
 from app.services.data_import.models import ImportResult
-from app.services.data_import.parser import SalesDataParser
+from app.services.data_import.parser import (
+    SalesDataParser,
+    SchemeDataParser,
+    SecondarySalesParser,
+)
 
 logger = logging.getLogger(__name__)
 
 _BATCH_SIZE = 500
 
+SourceType = Literal["primary", "secondary", "scheme"]
 
-def _safe_float(value: object, default: float = 0.0) -> float:
-    if value is None or (isinstance(value, float) and (math.isnan(value) or math.isinf(value))):
-        return default
-    try:
-        num = float(value)  # type: ignore[arg-type]
-    except (TypeError, ValueError):
-        return default
-    if math.isnan(num) or math.isinf(num):
-        return default
-    return num
+_TABLE_MAP: dict[SourceType, str] = {
+    "primary": "sales_data",
+    "secondary": "secondary_sales_data",
+    "scheme": "scheme_master",
+}
 
-
-def _safe_str(value: object, default: str = "") -> str:
-    if value is None or pd.isna(value):
-        return default
-    text = str(value).strip()
-    return default if text.lower() == "nan" else text
+_PRIMARY_KNOWN = {
+    "invoice_date", "invoice_number", "party_name", "party_city", "party_zone",
+    "route", "product_name", "product_group", "product_category", "hsn_code",
+    "quantity", "gross_amount", "discount_amount", "net_amount",
+    "tax_amount", "total_amount", "outstanding_amount",
+}
 
 
-def _sanitize_for_json(value: object) -> object:
-    if isinstance(value, dict):
-        return {str(k): _sanitize_for_json(v) for k, v in value.items()}
-    if isinstance(value, list):
-        return [_sanitize_for_json(v) for v in value]
-    if isinstance(value, (date, datetime)):
-        return value.isoformat()
-    if isinstance(value, float):
-        if math.isnan(value) or math.isinf(value):
-            return None
-        return value
-    if isinstance(value, (int, str, bool)) or value is None:
-        return value
-    if pd.isna(value):
-        return None
-    # numpy / decimal scalars
-    if hasattr(value, "item"):
-        try:
-            return _sanitize_for_json(value.item())
-        except (TypeError, ValueError):
-            pass
-    return str(value)
+def _build_raw_data(row: dict) -> dict:
+    """
+    Aggregate all columns NOT in the DB schema into raw_data JSONB.
+    This preserves extra columns from any ERP/POS export (e.g. Petpooja
+    columns like WOKID, CASHIER, HOURS) so the copilot can query them
+    via raw_data->>'column_name'.
+    """
+    return {
+        k: (None if str(v) in ("nan", "NaT", "None") else str(v))
+        for k, v in row.items()
+        if k not in _PRIMARY_KNOWN
+    }
+
+
+def _enrich_primary(row: dict, tenant_id: UUID) -> dict:
+    record: dict = {
+        "tenant_id": str(tenant_id),
+        "invoice_date": str(row.get("invoice_date", "")),
+        "invoice_number": str(row.get("invoice_number", "")),
+        "party_name": str(row.get("party_name", "")),
+        "party_city": str(row.get("party_city", "")),
+        "party_zone": str(row.get("party_zone", "")),
+        "route": str(row.get("route", "")),
+        "product_name": str(row.get("product_name", "")),
+        "product_group": str(row.get("product_group", "")),
+        "product_category": str(row.get("product_category", "")),
+        "hsn_code": str(row.get("hsn_code", "")),
+        "quantity": float(row.get("quantity", 0)),
+        "gross_amount": float(row.get("gross_amount", 0)),
+        "discount_amount": float(row.get("discount_amount", 0)),
+        "net_amount": float(row.get("net_amount", 0)),
+        "tax_amount": float(row.get("tax_amount", 0)),
+        "total_amount": float(row.get("total_amount", 0)),
+        "raw_data": _build_raw_data(row),   # ← changed from {k: str(v) for k, v in row.items()}
+    }
+    if row.get("outstanding_amount") is not None:
+        record["outstanding_amount"] = float(row["outstanding_amount"])
+    return record
 
 
 class DataImportService:
-    """Handles parsing and batch-inserting sales data for a tenant."""
+    """
+    Handles parsing and batch-inserting sales data for a tenant.
+    source_type controls which Supabase table receives the rows:
+      - "primary"   → sales_data (ERP/Tally dispatch invoices)
+      - "secondary" → secondary_sales_data (DMS offtake)
+      - "scheme"    → scheme_master (distributor scheme claims)
+    """
 
     def __init__(self, supabase: Client) -> None:
         self._supabase = supabase
-        self._parser = SalesDataParser()
 
     def import_file(
-        self, file_content: bytes, filename: str, tenant_id: UUID
+        self,
+        file_content: bytes,
+        filename: str,
+        tenant_id: UUID,
+        source_type: SourceType = "primary",
+        sheet_name: str | int | None = None,
     ) -> ImportResult:
         errors: list[str] = []
         warnings: list[str] = []
         rows_inserted = 0
         rows_skipped = 0
+        import_id = uuid_lib.uuid4()
 
         try:
-            df = self._parser.parse(file_content, filename)
+            if source_type == "primary":
+                df = SalesDataParser(sheet_name=sheet_name).parse(file_content, filename)
+            elif source_type == "secondary":
+                df = SecondarySalesParser(sheet_name=sheet_name).parse(file_content, filename)
+            else:
+                df = SchemeDataParser().parse(file_content, filename)
         except ValueError as exc:
             return ImportResult(
                 rows_inserted=0,
                 rows_skipped=0,
                 errors=[str(exc)],
                 warnings=[],
+                import_id=str(import_id),
             )
 
         records = df.to_dict(orient="records")
@@ -89,46 +120,58 @@ class DataImportService:
             enriched = []
             for row in batch:
                 try:
-                    clean_row = _sanitize_for_json(row)
-                    enriched.append(
-                        {
+                    if source_type == "scheme":
+                        record = {
                             "tenant_id": str(tenant_id),
-                            "invoice_date": _safe_str(row.get("invoice_date")),
-                            "invoice_number": _safe_str(row.get("invoice_number")),
-                            "party_name": _safe_str(row.get("party_name")),
-                            "party_city": _safe_str(row.get("party_city")),
-                            "party_zone": _safe_str(row.get("party_zone")),
-                            "route": _safe_str(row.get("route")),
-                            "product_name": _safe_str(row.get("product_name")),
-                            "product_group": _safe_str(row.get("product_group")),
-                            "product_category": _safe_str(row.get("product_category")),
-                            "hsn_code": _safe_str(row.get("hsn_code")),
-                            "quantity": _safe_float(row.get("quantity")),
-                            "gross_amount": _safe_float(row.get("gross_amount")),
-                            "discount_amount": _safe_float(row.get("discount_amount")),
-                            "net_amount": _safe_float(row.get("net_amount")),
-                            "tax_amount": _safe_float(row.get("tax_amount")),
-                            "total_amount": _safe_float(row.get("total_amount")),
-                            "raw_data": clean_row,
+                            "scheme_name": str(row.get("scheme_name", "")),
+                            "party_name": str(row.get("party_name", "")),
+                            "product_name": str(row.get("product_name", "")),
+                            "product_group": str(row.get("product_group", "")),
+                            "discount_pct": float(row.get("discount_pct", 0)),
+                            "claimed_amount": float(row.get("claimed_amount", 0)),
+                            "scheme_start": str(row.get("scheme_start", "")) or None,
+                            "scheme_end": str(row.get("scheme_end", "")) or None,
+                            "raw_data": row,
                         }
-                    )
-                    # Fail fast on bad payloads before hitting Supabase.
-                    json.dumps(enriched[-1])
+                    elif source_type == "secondary":
+                        record = _enrich_primary(row, tenant_id)
+                        record["data_source"] = "manual_upload"
+                    else:
+                        record = _enrich_primary(row, tenant_id)
+                    record["import_id"] = str(import_id)
+                    enriched.append(record)
                 except (TypeError, ValueError) as exc:
                     rows_skipped += 1
                     warnings.append(f"Row {i}: {exc}")
                     continue
 
             try:
-                self._supabase.table("sales_data").insert(enriched).execute()
+                table_name = _TABLE_MAP[source_type]
+                self._supabase.table(table_name).insert(enriched).execute()
                 rows_inserted += len(enriched)
             except Exception as exc:
                 errors.append(f"Batch {i // _BATCH_SIZE}: {exc}")
                 rows_skipped += len(enriched)
+
+        if rows_inserted > 0:
+            self._supabase.table("generated_reports").insert({
+                "tenant_id":   str(tenant_id),
+                "report_type": "csv_import",
+                "title":       filename,
+                "metadata": {
+                    "import_id":     str(import_id),
+                    "source_type":   source_type,
+                    "rows_inserted": rows_inserted,
+                    "rows_skipped":  rows_skipped,
+                    "filename":      filename,
+                    "sheet_name":    sheet_name,
+                },
+            }).execute()
 
         return ImportResult(
             rows_inserted=rows_inserted,
             rows_skipped=rows_skipped,
             errors=errors,
             warnings=warnings,
+            import_id=str(import_id),
         )

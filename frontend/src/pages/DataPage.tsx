@@ -1,7 +1,13 @@
 import { useState, useRef } from "react";
 import { Upload, CheckCircle, AlertCircle, FileText } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import { useImportHistory, useUndoImport } from "@/hooks/useImportHistory";
 import { Button } from "@/components/ui/button";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel,
+  AlertDialogContent, AlertDialogDescription, AlertDialogFooter,
+  AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import {
   Card,
   CardContent,
@@ -253,6 +259,89 @@ function UploadPanel({
   );
 }
 
+function ImportHistoryPanel() {
+  const { data: history, isLoading } = useImportHistory();
+  const undoMutation = useUndoImport();
+
+  if (isLoading) return <p className="text-sm text-slate-400">Loading history…</p>;
+  if (!history || history.length === 0)
+    return <p className="text-sm text-slate-400">No uploads yet.</p>;
+
+  return (
+    <div className="mt-8">
+      <h3 className="text-sm font-semibold text-slate-700 mb-3">Upload History</h3>
+      <table className="w-full text-sm">
+        <thead>
+          <tr className="text-left text-slate-400 border-b text-xs">
+            <th className="pb-2 font-medium">File</th>
+            <th className="pb-2 font-medium">Type</th>
+            <th className="pb-2 font-medium">Rows</th>
+            <th className="pb-2 font-medium">Uploaded</th>
+            <th className="pb-2 font-medium"></th>
+          </tr>
+        </thead>
+        <tbody>
+          {history.map((item, idx) => (
+            <tr key={item.id} className="border-b border-slate-100">
+              <td className="py-2 text-slate-800 font-medium truncate max-w-[200px]">
+                {item.metadata.filename}
+              </td>
+              <td className="py-2 text-slate-500 capitalize">
+                {item.metadata.source_type}
+              </td>
+              <td className="py-2 text-slate-600">
+                {item.metadata.rows_inserted.toLocaleString()}
+              </td>
+              <td className="py-2 text-slate-400 text-xs">
+                {new Date(item.created_at).toLocaleString()}
+              </td>
+              <td className="py-2">
+                {idx === 0 ? (
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <button className="text-xs text-red-500 hover:underline">
+                        Undo
+                      </button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Undo this import?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          This will permanently delete {item.metadata.rows_inserted} rows
+                          from <strong>{item.metadata.filename}</strong>.
+                          This action cannot be undone.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction
+                          onClick={() =>
+                            undoMutation.mutate(item.metadata.import_id)
+                          }
+                          className="bg-red-600 hover:bg-red-700"
+                        >
+                          Yes, undo
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                ) : (
+                  <span className="text-xs text-slate-300 cursor-not-allowed">
+                    Undo
+                  </span>
+                )}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      <p className="text-xs text-slate-400 mt-2">
+        Only the most recent upload can be undone.
+      </p>
+    </div>
+  );
+}
+
 export function DataPage() {
   const { user, session, loading } = useAuth();
   const admin = isAdmin(user, session);
@@ -344,6 +433,8 @@ export function DataPage() {
           "discount_pct (optional)",
         ]}
       />
+
+      <ImportHistoryPanel />
     </div>
   );
 }
