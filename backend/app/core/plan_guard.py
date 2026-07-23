@@ -17,13 +17,14 @@ from __future__ import annotations
 import logging
 from uuid import UUID
 
-from fastapi import HTTPException, status
+from fastapi import Depends, HTTPException, status
 
 from app.core.plan_limits import (
     get_limit,
     is_feature_enabled,
     required_plan_for_feature,
 )
+from app.core.tenant import TenantContext, get_tenant_context
 
 logger = logging.getLogger(__name__)
 
@@ -120,20 +121,19 @@ def _get_total_rows(tenant_id: UUID) -> int:
 # ---------------------------------------------------------------------------
 
 
-def require_copilot_quota(tenant=None):  # type: ignore[assignment]
+def require_copilot_quota():
     """Dependency: blocks /copilot/chat when monthly copilot_calls limit reached.
 
     Usage:
-        _quota: None = Depends(require_copilot_quota)
+        _quota: None = Depends(require_copilot_quota())
 
     The increment (copilot_calls + 1) is done *after* a successful answer,
     not here. Free plan blocks at 10; Pro at 400; Business at 800.
     Dashboard and debrief endpoints are NOT gated by this guard.
     """
-    # Imported here so this module is importable before TenantCtx is defined
-    from app.core.tenant import TenantCtx
-
-    async def _check(tenant: TenantCtx) -> None:  # noqa: F811
+    async def _check(
+        tenant: TenantContext = Depends(get_tenant_context),
+    ) -> None:
         plan = tenant.plan
         limit = get_limit(plan, "copilot_calls_per_month")
         if limit == -1:
@@ -174,15 +174,9 @@ def require_import_quota(row_count: int):
       3. Row storage cap — all plans.
     """
 
-    async def _check(tenant=None) -> None:  # type: ignore[assignment]
-
-        # Handle both direct tenant arg and FastAPI Depends injection
-        t = tenant
-        if t is None:
-            raise HTTPException(status_code=500, detail="TenantCtx required")
-
-        plan = t.plan
-        usage = _get_current_usage(t.tenant_id)
+    async def _check(tenant: TenantContext) -> None:
+        plan = tenant.plan
+        usage = _get_current_usage(tenant.tenant_id)
 
         # 1. Daily upload cap (ALL plans, hard limit)
         daily_limit = get_limit(plan, "uploads_per_day")  # always 3
@@ -210,7 +204,7 @@ def require_import_quota(row_count: int):
         # 3. Row storage cap
         rows_limit = get_limit(plan, "rows_total")
         if rows_limit != -1:
-            current_rows = _get_total_rows(t.tenant_id)
+            current_rows = _get_total_rows(tenant.tenant_id)
             if current_rows + row_count > rows_limit:
                 raise UsageExceeded(
                     message=(
@@ -237,9 +231,9 @@ def require_undo_quota():
     Without this limit, a user could loop: import → delete → import → delete
     endlessly, hammering Supabase and burning server CPU.
     """
-    from app.core.tenant import TenantCtx
-
-    async def _check(tenant: TenantCtx) -> None:
+    async def _check(
+        tenant: TenantContext = Depends(get_tenant_context),
+    ) -> None:
         usage = _get_current_usage(tenant.tenant_id)
         daily_limit = get_limit(tenant.plan, "undos_per_day")  # always 2
         undos_today = usage.get("undos_today", 0)
@@ -269,9 +263,9 @@ def require_feature(feature_name: str):
 
     Superadmin can enable any feature per-tenant via tenants.feature_overrides.
     """
-    from app.core.tenant import TenantCtx
-
-    async def _check(tenant: TenantCtx) -> None:
+    async def _check(
+        tenant: TenantContext = Depends(get_tenant_context),
+    ) -> None:
         if not is_feature_enabled(tenant.plan, feature_name, tenant.feature_overrides):
             required = required_plan_for_feature(feature_name)
             raise FeatureBlocked(

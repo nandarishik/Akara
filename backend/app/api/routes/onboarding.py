@@ -139,13 +139,12 @@ def _seed_sample_data(client, tenant_id: str) -> None:
         rows = [
             {
                 "tenant_id": tenant_id,
-                "sale_date": "2025-12-01",
-                "distributor_name": r["distributor"],
-                "zone": r["zone"],
+                "invoice_date": "2025-12-01",
+                "party_name": r["distributor"],
+                "party_zone": r["zone"],
                 "product_name": r["product"],
                 "quantity": r["quantity"],
-                "revenue": r["revenue"],
-                "is_sample": True,
+                "total_amount": r["revenue"],
             }
             for r in _SAMPLE_ROWS
         ]

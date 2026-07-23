@@ -152,7 +152,18 @@ class DataImportService:
                 self._supabase.table(table_name).insert(enriched).execute()
                 rows_inserted += len(enriched)
             except Exception as exc:
-                errors.append(f"Batch {i // _BATCH_SIZE}: {exc}")
+                err_msg = str(exc)
+                # Retry without import_job_id if column missing (partial 011 migration)
+                if import_job_id and "import_job_id" in err_msg.lower():
+                    for rec in enriched:
+                        rec.pop("import_job_id", None)
+                    try:
+                        self._supabase.table(table_name).insert(enriched).execute()
+                        rows_inserted += len(enriched)
+                        continue
+                    except Exception as retry_exc:
+                        err_msg = str(retry_exc)
+                errors.append(f"Batch {i // _BATCH_SIZE}: {err_msg}")
                 rows_skipped += len(enriched)
 
         if rows_inserted > 0:

@@ -184,6 +184,14 @@ async def import_data(
     )
 
     rows_inserted = result.rows_inserted or 0
+    if result.errors and rows_inserted < row_count:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=(
+                f"Import stopped after {rows_inserted:,} of {row_count:,} rows. "
+                f"{result.errors[0]}"
+            ),
+        )
 
     # Update import_job with actual row count
     if import_job_id:

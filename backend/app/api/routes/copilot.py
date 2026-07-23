@@ -87,7 +87,8 @@ async def chat(
     )
 
     agent = _build_agent(tenant.tenant_id)
-    date_range = ("2024-01-01", date.today().isoformat())
+    data_bounds = schema.get_data_date_range(tenant.tenant_id)
+    date_range = data_bounds or ("2024-01-01", date.today().isoformat())
 
     if request.stream:
 
