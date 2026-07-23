@@ -1,6 +1,17 @@
-import logging
+from __future__ import annotations
 
-import sentry_sdk
+import logging
+import sys
+from collections.abc import AsyncGenerator
+from contextlib import asynccontextmanager
+
+try:
+    import sentry_sdk as _sentry_sdk  # optional; not installed in all envs
+    _SENTRY_AVAILABLE = True
+except ImportError:
+    _sentry_sdk = None  # type: ignore[assignment]
+    _SENTRY_AVAILABLE = False
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -17,31 +28,92 @@ from app.api.routes.admin import reports as admin_reports_router
 from app.api.routes.admin import tenants as admin_tenants_router
 from app.api.routes.admin import users as admin_users_router
 from app.core.config import settings
+from app.core.errors import AkaraHTTPException, akara_exception_handler
+from app.core.middleware import RequestIDMiddleware
 
-logging.basicConfig(level=settings.log_level)
+logging.basicConfig(
+    level=settings.log_level,
+    format="%(asctime)s %(levelname)s %(name)s %(message)s",
+)
+logger = logging.getLogger("akara.startup")
 
-if settings.sentry_dsn:
-    sentry_sdk.init(
+
+@asynccontextmanager
+async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
+    """Startup validation — fail fast on critical misconfiguration.
+
+    In production/staging: any validation error exits with code 1 so the
+    deployment fails visibly rather than silently serving broken responses.
+    In development: errors are logged as warnings so the dev loop stays fast.
+    """
+    errors = settings.validate_for_environment()
+    if errors:
+        if settings.is_production or settings.is_staging:
+            logger.critical(
+                "STARTUP FAILED — missing required configuration:\n%s",
+                "\n".join(f"  • {e}" for e in errors),
+            )
+            sys.exit(1)
+        else:
+            logger.warning(
+                "Configuration warnings (non-fatal in development):\n%s",
+                "\n".join(f"  • {e}" for e in errors),
+            )
+    else:
+        logger.info(
+            "Startup OK — environment=%s model=%s",
+            settings.environment,
+            settings.openrouter_model,
+        )
+
+    yield  # --- application running ---
+
+    logger.info("Shutdown complete.")
+
+
+# ---------------------------------------------------------------------------
+# Sentry (optional — not installed in all environments)
+# ---------------------------------------------------------------------------
+if _SENTRY_AVAILABLE and settings.sentry_dsn:
+    _sentry_sdk.init(
         dsn=settings.sentry_dsn,
         environment=settings.environment,
         traces_sample_rate=0.1,
+        profiles_sample_rate=0.05,
     )
 
+# ---------------------------------------------------------------------------
+# Application
+# ---------------------------------------------------------------------------
 app = FastAPI(
     title="AKARA API",
-    version="0.1.0",
+    version="2.0.0",
     docs_url="/docs" if not settings.is_production else None,
     redoc_url="/redoc" if not settings.is_production else None,
+    lifespan=lifespan,
 )
 
+# ---------------------------------------------------------------------------
+# Middleware (outermost first)
+# ---------------------------------------------------------------------------
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.allowed_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+    expose_headers=["X-Request-ID"],
 )
+app.add_middleware(RequestIDMiddleware)
 
+# ---------------------------------------------------------------------------
+# Exception handlers
+# ---------------------------------------------------------------------------
+app.add_exception_handler(AkaraHTTPException, akara_exception_handler)  # type: ignore[arg-type]
+
+# ---------------------------------------------------------------------------
+# Routers
+# ---------------------------------------------------------------------------
 app.include_router(health.router)
 app.include_router(auth_router.router)
 app.include_router(copilot_router.router)

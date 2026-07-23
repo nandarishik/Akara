@@ -7,12 +7,12 @@ on:
     branches: [main]
 
 jobs:
-  backend-lint-test:
+  backend:
     name: Backend — Lint + Test
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: akara/backend
+        working-directory: backend
 
     steps:
       - name: Checkout
@@ -32,24 +32,26 @@ jobs:
       - name: Ruff lint
         run: uv run ruff check .
 
-      - name: Run tests
+      - name: Ruff format check
+        run: uv run ruff format --check .
+
+      - name: Run tests with coverage
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
           JWT_SECRET: ${{ secrets.JWT_SECRET }}
-          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
           ENVIRONMENT: ci
           LOG_LEVEL: WARNING
-        run: uv run pytest tests/ -v --tb=short
+        run: uv run pytest tests/ -v --tb=short --cov=app --cov-report=term-missing
 
-  frontend-build:
-    name: Frontend — Build
+  frontend-unit:
+    name: Frontend — Unit Tests
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: akara/frontend
+        working-directory: frontend
 
     steps:
       - name: Checkout
@@ -65,17 +67,126 @@ jobs:
         with:
           node-version: "20"
           cache: "pnpm"
-          cache-dependency-path: akara/frontend/pnpm-lock.yaml
+          cache-dependency-path: frontend/pnpm-lock.yaml
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Build
+      - name: Type check
+        run: pnpm exec tsc --noEmit
+
+      - name: Vitest unit tests
+        run: pnpm test --run
+
+  frontend-build:
+    name: Frontend — Build
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v3
+        with:
+          version: 9
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "pnpm"
+          cache-dependency-path: frontend/pnpm-lock.yaml
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Production build
         env:
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
           VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
           VITE_API_BASE_URL: ${{ secrets.VITE_API_BASE_URL }}
         run: pnpm build
 
-      - name: Type check
-        run: pnpm exec tsc --noEmit
+  e2e:
+    name: Frontend — E2E
+    if: github.event_name == 'pull_request'
+    needs: [frontend-build]
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v3
+        with:
+          version: 9
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "pnpm"
+          cache-dependency-path: frontend/pnpm-lock.yaml
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Install Playwright browsers
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: Build for E2E
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+          VITE_API_BASE_URL: ${{ secrets.VITE_API_BASE_URL }}
+        run: pnpm build
+
+      - name: Run Playwright smoke tests
+        run: |
+          pnpm preview --port 5173 --host 127.0.0.1 &
+          for i in $(seq 1 30); do
+            curl -sf http://127.0.0.1:5173/ > /dev/null && break
+            sleep 1
+          done
+          E2E_STAGING_URL=http://127.0.0.1:5173 pnpm exec playwright test
+
+  migrations:
+    name: Migrations — Convention Check
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Verify migration naming and sequence
+        run: |
+          cd supabase/migrations
+          shopt -s nullglob
+          files=(*.sql)
+          if [ ${#files[@]} -eq 0 ]; then
+            echo "No migration files found"
+            exit 1
+          fi
+          expected=1
+          for f in $(ls -1 *.sql | sort); do
+            num=$(echo "$f" | sed 's/_.*//')
+            if ! echo "$num" | grep -qE '^[0-9]{3}$'; then
+              echo "Invalid migration name (expected NNN_description.sql): $f"
+              exit 1
+            fi
+            num_int=$((10#$num))
+            if [ "$num_int" -ne "$expected" ]; then
+              echo "Migration sequence gap: expected $(printf '%03d' $expected), found $f"
+              exit 1
+            fi
+            expected=$((expected + 1))
+          done
+          echo "Migration sequence OK (${#files[@]} files, 001–$(printf '%03d' $((expected - 1))))"

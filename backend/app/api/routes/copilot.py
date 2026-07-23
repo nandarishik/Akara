@@ -41,10 +41,7 @@ class ChatResponse(BaseModel):
 
 def _build_agent(tenant_id: UUID) -> CopilotAgent:
     """Factory: build a CopilotAgent with all dependencies wired."""
-    llm = LLMManager(
-        gemini_api_key=settings.gemini_api_key,
-        openrouter_api_key=settings.openrouter_api_key,
-    )
+    llm = LLMManager(openrouter_api_key=settings.openrouter_api_key)
     supabase = get_supabase_service_client()
     executor = SQLExecutor(client=supabase)
     return CopilotAgent(
