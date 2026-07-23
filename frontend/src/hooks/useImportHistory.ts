@@ -47,6 +47,7 @@ export function useUndoImport() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["import-history"] });
       queryClient.invalidateQueries({ queryKey: ["kpi"] });
+      queryClient.invalidateQueries({ queryKey: ["kpi-data-bounds"] });
       queryClient.invalidateQueries({ queryKey: ["dashboard"] });
     },
   });

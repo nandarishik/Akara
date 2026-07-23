@@ -5,8 +5,11 @@ import {
   Users,
   TrendingUp,
   Package,
+  Info,
 } from "lucide-react";
 import { useKPIs } from "@/hooks/useKPIs";
+import { useDataBounds } from "@/hooks/useDataBounds";
+import { getDateRangeForPeriod } from "@/lib/dateRange";
 import { KPICard } from "@/components/dashboard/KPICard";
 import { RevenueTrendChart } from "@/components/dashboard/RevenueTrendChart";
 import { ZoneChart } from "@/components/dashboard/ZoneChart";
@@ -20,23 +23,26 @@ import {
 } from "@/components/ui/select";
 import { formatINR } from "@/lib/format";
 
-function getDateRange(period: string): [string, string] {
-  const end = new Date();
-  const start = new Date();
-  switch (period) {
-    case "7d": start.setDate(end.getDate() - 7); break;
-    case "30d": start.setDate(end.getDate() - 30); break;
-    case "90d": start.setDate(end.getDate() - 90); break;
-    case "ytd": start.setMonth(0, 1); break;
-    default: start.setDate(end.getDate() - 30);
-  }
-  return [start.toISOString().slice(0, 10), end.toISOString().slice(0, 10)];
-}
-
 export function DashboardPage() {
   const [period, setPeriod] = useState("30d");
-  const [start, end] = getDateRange(period);
-  const { data, isLoading, error } = useKPIs(start, end);
+  const { data: bounds, isLoading: boundsLoading } = useDataBounds();
+  const [start, end] = getDateRangeForPeriod(period, bounds);
+  const { data, isLoading, error } = useKPIs(start, end, {
+    enabled: !boundsLoading,
+  });
+  const loading = boundsLoading || isLoading;
+
+  const dataIsStale =
+    bounds &&
+    (() => {
+      const latest = new Date(bounds.end);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const daysSince = Math.floor(
+        (today.getTime() - latest.getTime()) / (1000 * 60 * 60 * 24)
+      );
+      return daysSince > 7;
+    })();
 
   return (
     <div className="p-8 space-y-6 max-w-7xl mx-auto">
@@ -46,10 +52,16 @@ export function DashboardPage() {
           <h1 className="text-2xl font-bold text-slate-900">Dashboard</h1>
           <p className="text-sm text-slate-500 mt-1">
             {start} → {end}
+            {bounds && (
+              <span className="text-slate-400">
+                {" "}
+                · imported data through {bounds.end}
+              </span>
+            )}
           </p>
         </div>
         <Select value={period} onValueChange={setPeriod}>
-          <SelectTrigger className="w-36">
+          <SelectTrigger className="w-40">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -57,9 +69,21 @@ export function DashboardPage() {
             <SelectItem value="30d">Last 30 days</SelectItem>
             <SelectItem value="90d">Last 90 days</SelectItem>
             <SelectItem value="ytd">Year to date</SelectItem>
+            <SelectItem value="all">All imported data</SelectItem>
           </SelectContent>
         </Select>
       </div>
+
+      {dataIsStale && (
+        <div className="flex items-start gap-2 text-sm text-amber-800 bg-amber-50 border border-amber-200 p-3 rounded-lg">
+          <Info className="h-4 w-4 mt-0.5 shrink-0" />
+          <p>
+            Your latest imported data ends on {bounds!.end}. Period filters are
+            based on that date, not today — upload a newer file on the Data page
+            to refresh KPIs.
+          </p>
+        </div>
+      )}
 
       {error && (
         <div className="text-red-600 bg-red-50 p-4 rounded-lg text-sm">
@@ -73,25 +97,25 @@ export function DashboardPage() {
           title="Total Revenue"
           value={data ? formatINR(data.summary.total_revenue) : "—"}
           icon={IndianRupee}
-          loading={isLoading}
+          loading={loading}
         />
         <KPICard
           title="Total Orders"
           value={data ? data.summary.total_orders.toLocaleString() : "—"}
           icon={ShoppingCart}
-          loading={isLoading}
+          loading={loading}
         />
         <KPICard
           title="Unique Parties"
           value={data ? data.summary.unique_parties.toLocaleString() : "—"}
           icon={Users}
-          loading={isLoading}
+          loading={loading}
         />
         <KPICard
           title="Avg Order Value"
           value={data ? formatINR(data.summary.avg_order_value) : "—"}
           icon={TrendingUp}
-          loading={isLoading}
+          loading={loading}
         />
       </div>
 
@@ -102,7 +126,7 @@ export function DashboardPage() {
             <CardTitle className="text-base">Revenue Trend</CardTitle>
           </CardHeader>
           <CardContent>
-            {isLoading ? (
+            {loading ? (
               <div className="h-64 bg-slate-50 rounded animate-pulse" />
             ) : (
               <RevenueTrendChart data={data?.revenue_trend || []} />
@@ -115,7 +139,7 @@ export function DashboardPage() {
             <CardTitle className="text-base">Revenue by Zone</CardTitle>
           </CardHeader>
           <CardContent>
-            {isLoading ? (
+            {loading ? (
               <div className="h-48 bg-slate-50 rounded animate-pulse" />
             ) : (
               <ZoneChart data={data?.zone_breakdown || []} />
@@ -130,7 +154,7 @@ export function DashboardPage() {
           <CardTitle className="text-base">Top Products</CardTitle>
         </CardHeader>
         <CardContent>
-          {isLoading ? (
+          {loading ? (
             <div className="space-y-2">
               {[...Array(5)].map((_, i) => (
                 <div key={i} className="h-8 bg-slate-50 rounded animate-pulse" />

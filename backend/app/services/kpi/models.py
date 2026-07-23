@@ -39,3 +39,8 @@ class KPIResponse(BaseModel):
     revenue_trend: list[RevenueByDate]
     date_range_start: str
     date_range_end: str
+
+
+class DataBoundsResponse(BaseModel):
+    start: str | None = None
+    end: str | None = None

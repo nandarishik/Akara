@@ -4,8 +4,9 @@ from fastapi import APIRouter, Query
 
 from app.core.auth import CurrentUser
 from app.core.tenant import TenantCtx, get_supabase_service_client
-from app.services.kpi.models import KPIResponse
+from app.services.kpi.models import DataBoundsResponse, KPIResponse
 from app.services.kpi.service import KPIService
+from app.services.schema.discovery import SchemaDiscovery
 
 router = APIRouter(prefix="/kpi", tags=["kpi"])
 
@@ -29,3 +30,13 @@ def get_kpis(
         start_date=start_date,
         end_date=end_date,
     )
+
+
+@router.get("/data-bounds", response_model=DataBoundsResponse)
+def get_data_bounds(user: CurrentUser, tenant: TenantCtx) -> DataBoundsResponse:
+    """Return min/max invoice_date for the tenant's imported sales data."""
+    schema = SchemaDiscovery(supabase=get_supabase_service_client())
+    bounds = schema.get_data_date_range(tenant.tenant_id)
+    if bounds:
+        return DataBoundsResponse(start=bounds[0], end=bounds[1])
+    return DataBoundsResponse()

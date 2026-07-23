@@ -26,6 +26,11 @@ def test_kpi_without_token_returns_401() -> None:
     assert client.get("/kpi/").status_code == 401
 
 
+def test_kpi_data_bounds_without_token_returns_401() -> None:
+    client = TestClient(app)
+    assert client.get("/kpi/data-bounds").status_code == 401
+
+
 def test_copilot_without_token_returns_401() -> None:
     client = TestClient(app)
     assert client.post("/copilot/chat", json={"question": "hi"}).status_code == 401

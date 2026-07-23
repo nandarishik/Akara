@@ -1,4 +1,5 @@
 import { useState, useRef } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { Upload, CheckCircle, AlertCircle, FileText } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useImportHistory, useUndoImport } from "@/hooks/useImportHistory";
@@ -94,6 +95,7 @@ function UploadPanel({
   const [result, setResult] = useState<ImportResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const queryClient = useQueryClient();
 
   const borderColorClass = {
     slate: "border-slate-200",
@@ -118,6 +120,9 @@ function UploadPanel({
       setResult(r);
       setFile(null);
       if (inputRef.current) inputRef.current.value = "";
+      queryClient.invalidateQueries({ queryKey: ["kpi"] });
+      queryClient.invalidateQueries({ queryKey: ["kpi-data-bounds"] });
+      queryClient.invalidateQueries({ queryKey: ["import-history"] });
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Upload failed");
     } finally {
