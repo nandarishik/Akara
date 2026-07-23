@@ -30,10 +30,7 @@ export function ProtectedRoute() {
   }
 
   // Authenticated but no tenant yet → must complete onboarding
-  // user can be null if fetchProfile is still resolving, so we wait
-  // (loading covers that case above; if user is still null after loading=false,
-  //  that means the profile has no tenant_id → send to onboarding)
-  if (user !== null && user.tenantId === null) {
+  if (!user?.tenantId) {
     return <Navigate to="/onboarding" replace />
   }
 

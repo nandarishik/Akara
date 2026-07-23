@@ -106,7 +106,7 @@ export function SignUpPage() {
       } else if (msg.toLowerCase().includes("disposable")) {
         setEmailError("Please use a work email address (disposable emails not accepted)")
       } else {
-        toast.error("Something went wrong. Please try again.")
+        toast.error(msg || "Something went wrong. Please try again.")
       }
       setLoading(false)
     }

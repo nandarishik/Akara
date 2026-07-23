@@ -1,7 +1,7 @@
 export interface User {
   id: string;
   email: string;
-  tenantId: string;
+  tenantId: string | null;
   role: "admin" | "user";
   displayName?: string;
 }

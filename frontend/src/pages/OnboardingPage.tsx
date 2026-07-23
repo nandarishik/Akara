@@ -34,7 +34,7 @@ function ProgressDots({ step }: { step: 1 | 2 | 3 }) {
 // ─────────────────────────────────────────────────────────────────────────────
 
 export function OnboardingPage() {
-  const { session } = useAuth()
+  const { session, refreshProfile } = useAuth()
   const navigate = useNavigate()
 
   const [step, setStep] = useState<1 | 2 | 3>(1)
@@ -89,6 +89,7 @@ export function OnboardingPage() {
         const body = await res.json().catch(() => ({}))
         throw new Error(body?.detail?.message ?? `Setup failed: ${res.status}`)
       }
+      await refreshProfile()
       setStep(2)
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Something went wrong. Please try again.")
@@ -158,6 +159,7 @@ export function OnboardingPage() {
         method: "POST",
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       })
+      await refreshProfile()
     } catch {
       // Non-fatal — navigate anyway
     } finally {

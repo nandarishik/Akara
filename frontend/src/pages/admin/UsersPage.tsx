@@ -64,7 +64,7 @@ export function UsersPage() {
 
   const { data: users, isLoading } = useQuery({
     queryKey: ["admin", "users", user?.tenantId],
-    queryFn: () => fetchUsers(session!.access_token, user!.tenantId),
+    queryFn: () => fetchUsers(session!.access_token, user!.tenantId!),
     enabled: !!session && !!user?.tenantId,
   });
 

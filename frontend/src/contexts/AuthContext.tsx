@@ -23,6 +23,7 @@ interface AuthContextValue {
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (email: string, password: string, meta: SignUpMeta) => Promise<void>;
   signOut: () => Promise<void>;
+  refreshProfile: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -63,7 +64,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser({
         id: data.user_id,
         email: data.email,
-        tenantId: data.tenant_id,
+        tenantId: data.tenant_id ?? null,
         role: data.role,
       });
     } catch (err) {
@@ -127,8 +128,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setSession(null);
   }
 
+  async function refreshProfile() {
+    if (!session?.user || !session.access_token) return;
+    await fetchProfile(session.user, session.access_token);
+  }
+
   return (
-    <AuthContext.Provider value={{ session, user, loading, signIn, signUp, signOut }}>
+    <AuthContext.Provider value={{ session, user, loading, signIn, signUp, signOut, refreshProfile }}>
       {children}
     </AuthContext.Provider>
   );
