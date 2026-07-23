@@ -84,35 +84,35 @@ class DataImportService:
     def __init__(self, supabase: Client) -> None:
         self._supabase = supabase
 
-    def import_file(
+    def parse_dataframe(
         self,
         file_content: bytes,
         filename: str,
-        tenant_id: UUID,
         source_type: SourceType = "primary",
         sheet_name: str | int | None = None,
+    ):
+        """Parse upload bytes into a DataFrame. Raises ValueError on bad format."""
+        if source_type == "primary":
+            return SalesDataParser(sheet_name=sheet_name).parse(file_content, filename)
+        if source_type == "secondary":
+            return SecondarySalesParser(sheet_name=sheet_name).parse(file_content, filename)
+        return SchemeDataParser().parse(file_content, filename)
+
+    def import_dataframe(
+        self,
+        df,
+        tenant_id: UUID,
+        source_type: SourceType,
+        filename: str,
+        sheet_name: str | int | None = None,
+        import_job_id: str | None = None,
     ) -> ImportResult:
+        """Insert a pre-parsed DataFrame. Used after quota checks on actual row count."""
         errors: list[str] = []
         warnings: list[str] = []
         rows_inserted = 0
         rows_skipped = 0
         import_id = uuid_lib.uuid4()
-
-        try:
-            if source_type == "primary":
-                df = SalesDataParser(sheet_name=sheet_name).parse(file_content, filename)
-            elif source_type == "secondary":
-                df = SecondarySalesParser(sheet_name=sheet_name).parse(file_content, filename)
-            else:
-                df = SchemeDataParser().parse(file_content, filename)
-        except ValueError as exc:
-            return ImportResult(
-                rows_inserted=0,
-                rows_skipped=0,
-                errors=[str(exc)],
-                warnings=[],
-                import_id=str(import_id),
-            )
 
         records = df.to_dict(orient="records")
         for i in range(0, len(records), _BATCH_SIZE):
@@ -139,6 +139,8 @@ class DataImportService:
                     else:
                         record = _enrich_primary(row, tenant_id)
                     record["import_id"] = str(import_id)
+                    if import_job_id:
+                        record["import_job_id"] = import_job_id
                     enriched.append(record)
                 except (TypeError, ValueError) as exc:
                     rows_skipped += 1
@@ -160,6 +162,7 @@ class DataImportService:
                 "title":       filename,
                 "metadata": {
                     "import_id":     str(import_id),
+                    "import_job_id": import_job_id,
                     "source_type":   source_type,
                     "rows_inserted": rows_inserted,
                     "rows_skipped":  rows_skipped,
@@ -174,4 +177,33 @@ class DataImportService:
             errors=errors,
             warnings=warnings,
             import_id=str(import_id),
+        )
+
+    def import_file(
+        self,
+        file_content: bytes,
+        filename: str,
+        tenant_id: UUID,
+        source_type: SourceType = "primary",
+        sheet_name: str | int | None = None,
+        import_job_id: str | None = None,
+    ) -> ImportResult:
+        try:
+            df = self.parse_dataframe(file_content, filename, source_type, sheet_name)
+        except ValueError as exc:
+            return ImportResult(
+                rows_inserted=0,
+                rows_skipped=0,
+                errors=[str(exc)],
+                warnings=[],
+                import_id=str(uuid_lib.uuid4()),
+            )
+
+        return self.import_dataframe(
+            df,
+            tenant_id=tenant_id,
+            source_type=source_type,
+            filename=filename,
+            sheet_name=sheet_name,
+            import_job_id=import_job_id,
         )

@@ -98,7 +98,14 @@ def get_tenant_context(
             detail="User profile not found",
         )
 
-    tenant_id = UUID(profile_result.data["tenant_id"])
+    raw_tenant_id = profile_result.data.get("tenant_id")
+    if not raw_tenant_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Complete onboarding setup before accessing the app",
+        )
+
+    tenant_id = UUID(raw_tenant_id)
 
     # ── 2. Tenant lookup — config + billing fields ───────────────────────────
     tenant_config: dict = {}

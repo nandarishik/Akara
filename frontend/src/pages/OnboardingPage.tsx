@@ -13,6 +13,17 @@ import { useAuth } from "@/contexts/AuthContext"
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL ?? ""
 
+function formatUploadError(body: unknown, status: number): string {
+  if (body && typeof body === "object" && "detail" in body) {
+    const detail = (body as { detail: unknown }).detail
+    if (typeof detail === "string") return detail
+    if (detail && typeof detail === "object" && "message" in detail) {
+      return String((detail as { message: string }).message)
+    }
+  }
+  return `Upload failed (${status})`
+}
+
 // ── Progress dots ─────────────────────────────────────────────────────────────
 
 function ProgressDots({ step }: { step: 1 | 2 | 3 }) {
@@ -34,7 +45,7 @@ function ProgressDots({ step }: { step: 1 | 2 | 3 }) {
 // ─────────────────────────────────────────────────────────────────────────────
 
 export function OnboardingPage() {
-  const { session, refreshProfile } = useAuth()
+  const { session, refreshProfile, user } = useAuth()
   const navigate = useNavigate()
 
   const [step, setStep] = useState<1 | 2 | 3>(1)
@@ -54,6 +65,7 @@ export function OnboardingPage() {
   const [file, setFile] = useState<File | null>(null)
   const [uploadProgress, setUploadProgress] = useState(0)
   const [uploadStatus, setUploadStatus] = useState<"idle" | "uploading" | "done" | "error">("idle")
+  const [uploadError, setUploadError] = useState("")
   const [uploadResult, setUploadResult] = useState<{ rows: number; dateRange: string; zones: number } | null>(null)
 
   // Slot I dismissed
@@ -110,6 +122,12 @@ export function OnboardingPage() {
 
   async function handleUpload() {
     if (!file) return
+    setUploadError("")
+    if (!user?.tenantId) {
+      setUploadError("Complete step 1 (business setup) before importing data.")
+      setUploadStatus("error")
+      return
+    }
     setUploadStatus("uploading")
     setUploadProgress(10)
 
@@ -120,29 +138,44 @@ export function OnboardingPage() {
       }, 400)
 
       const token = session?.access_token
+      if (!token) throw new Error("Session expired. Please sign in again.")
+
       const formData = new FormData()
       formData.append("file", file)
 
-      const res = await fetch(`${API_BASE}/data/import`, {
+      const res = await fetch(`${API_BASE}/data/import?source_type=primary`, {
         method: "POST",
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
+        headers: { Authorization: `Bearer ${token}` },
         body: formData,
       })
 
       clearInterval(progressInterval)
       setUploadProgress(100)
 
-      if (!res.ok) throw new Error(`Upload failed: ${res.status}`)
-      const data = await res.json()
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok) {
+        throw new Error(formatUploadError(data, res.status))
+      }
+
+      const rowsInserted = data.rows_inserted ?? 0
+      const errors: string[] = data.errors ?? []
+      if (rowsInserted === 0 && errors.length > 0) {
+        throw new Error(errors[0])
+      }
+      if (rowsInserted === 0) {
+        throw new Error("No rows were imported. Check that your file has sales data columns.")
+      }
+
       setUploadResult({
-        rows: data.rows_inserted ?? 0,
+        rows: rowsInserted,
         dateRange: data.date_range ?? "—",
         zones: data.zones ?? 0,
       })
       setUploadStatus("done")
-    } catch {
+    } catch (err: unknown) {
       setUploadStatus("error")
       setUploadProgress(0)
+      setUploadError(err instanceof Error ? err.message : "Upload failed. Please try again.")
     }
   }
 
@@ -388,8 +421,10 @@ export function OnboardingPage() {
 
               {uploadStatus === "error" && (
                 <div className="mt-4 text-center">
-                  <p className="text-red-600 text-sm mb-3">Upload failed. Please try again.</p>
-                  <button onClick={() => { setUploadStatus("idle"); setFile(null) }} className="text-violet-600 text-sm underline">
+                  <p className="text-red-600 text-sm mb-3" role="alert">
+                    {uploadError || "Upload failed. Please try again."}
+                  </p>
+                  <button onClick={() => { setUploadStatus("idle"); setUploadError(""); setFile(null) }} className="text-violet-600 text-sm underline">
                     Try again
                   </button>
                 </div>

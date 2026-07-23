@@ -137,14 +137,25 @@ async def import_data(
     if source_type in _RESTRICTED_SOURCE_TYPES:
         await require_feature("secondary_sales")(tenant)
 
-    # Parse first to know row count for quota check
     service = DataImportService(supabase=get_supabase_service_client())
-    # We do a dry row-count estimate via file size / avg row size
-    # (full parse happens inside service.import_file; we use a conservative estimate here)
-    estimated_rows = max(1, len(content) // 200)  # ~200 bytes/row conservative
 
-    # Quota check (daily cap + monthly cap + row storage cap)
-    await require_import_quota(estimated_rows)(tenant)
+    # Parse first so quota checks use actual row count (not file-size estimate)
+    try:
+        df = service.parse_dataframe(content, filename, source_type, sheet_name)
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=str(exc),
+        ) from exc
+
+    row_count = len(df)
+    if row_count == 0:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="No data rows found in file. Check the format and try again.",
+        )
+
+    await require_import_quota(row_count)(tenant)
 
     supa = get_supabase_service_client()
 
@@ -163,12 +174,13 @@ async def import_data(
     except Exception as exc:
         logger.warning("Failed to create import_job record: %s", exc)
 
-    result = service.import_file(
-        file_content=content,
-        filename=filename,
+    result = service.import_dataframe(
+        df,
         tenant_id=tenant.tenant_id,
         source_type=source_type,
+        filename=filename,
         sheet_name=sheet_name,
+        import_job_id=import_job_id,
     )
 
     rows_inserted = result.rows_inserted or 0
