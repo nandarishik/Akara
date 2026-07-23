@@ -22,6 +22,8 @@ from app.api.routes import copilot as copilot_router
 from app.api.routes import data as data_router
 from app.api.routes import health
 from app.api.routes import kpi as kpi_router
+from app.api.routes import marketing as marketing_router
+from app.api.routes import onboarding as onboarding_router
 from app.api.routes import reports as reports_router
 from app.api.routes import simulator as simulator_router
 from app.api.routes.admin import logs as admin_logs_router
@@ -41,22 +43,23 @@ logger = logging.getLogger("akara.startup")
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
+    """Startup validation -- fail fast on critical misconfiguration."""
     errors = settings.validate_for_environment()
     if errors:
         if settings.is_production or settings.is_staging:
             logger.critical(
-                "STARTUP FAILED — missing required configuration:\n%s",
-                "\n".join(f"  • {e}" for e in errors),
+                "STARTUP FAILED -- missing required configuration:\n%s",
+                "\n".join(f"  * {e}" for e in errors),
             )
             sys.exit(1)
         else:
             logger.warning(
                 "Configuration warnings (non-fatal in development):\n%s",
-                "\n".join(f"  • {e}" for e in errors),
+                "\n".join(f"  * {e}" for e in errors),
             )
     else:
         logger.info(
-            "Startup OK — environment=%s model=%s",
+            "Startup OK -- environment=%s model=%s",
             settings.environment,
             settings.openrouter_model,
         )
@@ -66,6 +69,9 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     logger.info("Shutdown complete.")
 
 
+# ---------------------------------------------------------------------------
+# Sentry (optional)
+# ---------------------------------------------------------------------------
 if _SENTRY_AVAILABLE and settings.sentry_dsn:
     _sentry_sdk.init(
         dsn=settings.sentry_dsn,
@@ -74,6 +80,9 @@ if _SENTRY_AVAILABLE and settings.sentry_dsn:
         profiles_sample_rate=0.05,
     )
 
+# ---------------------------------------------------------------------------
+# Application
+# ---------------------------------------------------------------------------
 app = FastAPI(
     title="AKARA API",
     version="2.0.0",
@@ -82,6 +91,9 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+# ---------------------------------------------------------------------------
+# Middleware
+# ---------------------------------------------------------------------------
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.allowed_origins,
@@ -92,11 +104,19 @@ app.add_middleware(
 )
 app.add_middleware(RequestIDMiddleware)
 
+# ---------------------------------------------------------------------------
+# Exception handlers
+# ---------------------------------------------------------------------------
 app.add_exception_handler(AkaraHTTPException, akara_exception_handler)  # type: ignore[arg-type]
 
+# ---------------------------------------------------------------------------
+# Routers
+# ---------------------------------------------------------------------------
 app.include_router(health.router)
 app.include_router(auth_router.router)
 app.include_router(billing_router.router)
+app.include_router(onboarding_router.router)
+app.include_router(marketing_router.router)
 app.include_router(copilot_router.router)
 app.include_router(conversations_router.router)
 app.include_router(kpi_router.router)

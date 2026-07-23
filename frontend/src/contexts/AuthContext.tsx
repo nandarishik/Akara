@@ -9,26 +9,41 @@ import type { Session, User as SupabaseUser } from "@supabase/supabase-js";
 import { supabase } from "@/lib/supabase";
 import type { User } from "@/types";
 
+interface SignUpMeta {
+  display_name: string;
+  company_name: string;
+  whatsapp?: string;
+  turnstile_token?: string;
+}
+
 interface AuthContextValue {
   session: Session | null;
   user: User | null;
   loading: boolean;
   signIn: (email: string, password: string) => Promise<void>;
+  signUp: (email: string, password: string, meta: SignUpMeta) => Promise<void>;
   signOut: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
-function userFromSession(supabaseUser: SupabaseUser): User {
+/**
+ * Build a User from Supabase session metadata.
+ * Used as a fallback when /auth/me fails (e.g. Railway misconfiguration).
+ */
+function userFromSession(supabaseUser: SupabaseUser): User | null {
   const meta = supabaseUser.user_metadata ?? {};
-  const role =
-    meta.role === "admin" || meta.role === "user" ? meta.role : "user";
+  const tenantId = meta.tenant_id as string | undefined;
+  const role = (meta.role as string | undefined) ?? "user";
+
+  if (!tenantId) return null;
+
   return {
     id: supabaseUser.id,
     email: supabaseUser.email ?? "",
-    tenantId: String(meta.tenant_id ?? ""),
-    role,
-    displayName: meta.display_name ?? undefined,
+    tenantId,
+    role: role === "admin" ? "admin" : "user",
+    displayName: meta.display_name as string | undefined,
   };
 }
 
@@ -37,16 +52,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
-  async function fetchProfile(
-    _supabaseUser: SupabaseUser,
-    accessToken: string
-  ) {
+  async function fetchProfile(supabaseUser: SupabaseUser, accessToken: string) {
     try {
       const res = await fetch(
         `${import.meta.env.VITE_API_BASE_URL}/auth/me`,
         { headers: { Authorization: `Bearer ${accessToken}` } }
       );
-      if (!res.ok) throw new Error("Profile fetch failed");
+      if (!res.ok) throw new Error(`Profile fetch failed: ${res.status}`);
       const data = await res.json();
       setUser({
         id: data.user_id,
@@ -54,9 +66,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         tenantId: data.tenant_id,
         role: data.role,
       });
-    } catch {
-      // Fallback when /auth/me fails — use metadata from Supabase Auth signup.
-      setUser(userFromSession(_supabaseUser));
+    } catch (err) {
+      console.warn("fetchProfile failed, using session metadata fallback:", err);
+      const fallback = userFromSession(supabaseUser);
+      setUser(fallback);
     }
   }
 
@@ -72,9 +85,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     });
 
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
       if (session?.user && session.access_token) {
         fetchProfile(session.user, session.access_token);
@@ -87,10 +98,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   async function signIn(email: string, password: string) {
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) throw error;
     if (data.session) {
       setSession(data.session);
@@ -98,13 +106,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }
 
+  async function signUp(email: string, password: string, meta: SignUpMeta) {
+    const { error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: {
+          display_name: meta.display_name,
+          company_name: meta.company_name,
+          whatsapp: meta.whatsapp,
+        },
+      },
+    });
+    if (error) throw error;
+  }
+
   async function signOut() {
     await supabase.auth.signOut();
     setUser(null);
+    setSession(null);
   }
 
   return (
-    <AuthContext.Provider value={{ session, user, loading, signIn, signOut }}>
+    <AuthContext.Provider value={{ session, user, loading, signIn, signUp, signOut }}>
       {children}
     </AuthContext.Provider>
   );

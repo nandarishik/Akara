@@ -1,0 +1,13 @@
+User-agent: *
+Allow: /
+Disallow: /dashboard
+Disallow: /copilot
+Disallow: /data
+Disallow: /reports
+Disallow: /simulator
+Disallow: /settings
+Disallow: /onboarding
+Disallow: /superadmin
+Disallow: /admin
+
+Sitemap: https://akara.ai/sitemap.xml
