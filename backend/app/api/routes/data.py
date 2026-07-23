@@ -1,14 +1,30 @@
-from typing import Annotated, Any
-from uuid import UUID
+import logging
+from typing import Annotated
 
-from fastapi import APIRouter, File, HTTPException, Query, UploadFile, status
+from fastapi import (
+    APIRouter,
+    Body,
+    Depends,
+    File,
+    HTTPException,
+    Query,
+    UploadFile,
+    status,
+)
 from pydantic import BaseModel
 
 from app.core.auth import CurrentUser
+from app.core.plan_guard import (
+    require_feature,
+    require_import_quota,
+    require_undo_quota,
+)
 from app.core.tenant import TenantCtx, get_supabase_service_client
 from app.services.data_import.detector import score_sheets
 from app.services.data_import.models import ImportResult
 from app.services.data_import.service import DataImportService, SourceType
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/data", tags=["data"])
 
@@ -20,6 +36,9 @@ _ALLOWED_CONTENT_TYPES = {
     "application/vnd.ms-excel",
     "application/octet-stream",  # some browsers send this for .xlsx
 }
+
+# Source types that require the secondary_sales feature (Pro+)
+_RESTRICTED_SOURCE_TYPES = {"secondary", "scheme"}
 
 
 class SheetInfo(BaseModel):
@@ -34,23 +53,6 @@ class SheetInfo(BaseModel):
 class SheetListResponse(BaseModel):
     sheets: list[SheetInfo]
     recommended: str | None
-
-
-class ImportHistoryItem(BaseModel):
-    id: str
-    title: str
-    created_at: str
-    metadata: dict
-
-
-class SyncPayload(BaseModel):
-    """
-    JSON body for the overnight agent push endpoint.
-    The akara_agent.py script POSTs here instead of uploading a file.
-    Rows must already be in the canonical column format.
-    """
-    rows: list[dict[str, Any]]
-    source_type: SourceType = "primary"
 
 
 @router.post("/sheets", response_model=SheetListResponse)
@@ -94,6 +96,19 @@ async def import_data(
     source_type: Annotated[SourceType, Query()] = "primary",
     sheet_name: Annotated[str | None, Query(description="Excel sheet name. Omit for auto-detect.")] = None,
 ) -> ImportResult:
+    """
+    Import a CSV or Excel file into the appropriate table.
+
+    - **source_type=primary**   → `sales_data`  (POS / ERP dispatch invoices)
+    - **source_type=secondary** → `secondary_sales_data` (DMS offtake)
+    - **source_type=scheme**    → `scheme_master` (distributor scheme claims)
+    - **sheet_name**            → For multi-sheet Excel (e.g. Petpooja 49-sheet
+                                   export): pass the sheet name returned by
+                                   `POST /data/sheets`. Omit to auto-detect.
+
+    **Supported formats:** CSV, XLSX, XLS from Petpooja, TallyPrime, Marg ERP,
+    Vyapar, Busy, GoFrugal, myBillBook, and any generic spreadsheet.
+    """
     if not tenant.is_admin:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
@@ -102,9 +117,9 @@ async def import_data(
 
     content_type = file.content_type or ""
     filename = file.filename or "upload.csv"
-
-    # Accept by content-type OR by file extension (browsers vary on .xlsx)
     ext = filename.rsplit(".", 1)[-1].lower()
+
+    # Accept by content-type OR by file extension (browsers vary)
     if content_type not in _ALLOWED_CONTENT_TYPES and ext not in ("csv", "xlsx", "xls"):
         raise HTTPException(
             status_code=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE,
@@ -118,8 +133,37 @@ async def import_data(
             detail="File exceeds 50 MB limit",
         )
 
+    # Feature gate: secondary/scheme sources require Pro+
+    if source_type in _RESTRICTED_SOURCE_TYPES:
+        await require_feature("secondary_sales")(tenant)
+
+    # Parse first to know row count for quota check
     service = DataImportService(supabase=get_supabase_service_client())
-    return service.import_file(
+    # We do a dry row-count estimate via file size / avg row size
+    # (full parse happens inside service.import_file; we use a conservative estimate here)
+    estimated_rows = max(1, len(content) // 200)  # ~200 bytes/row conservative
+
+    # Quota check (daily cap + monthly cap + row storage cap)
+    await require_import_quota(estimated_rows)(tenant)
+
+    supa = get_supabase_service_client()
+
+    # Create import job record before importing
+    import_job_id: str | None = None
+    try:
+        job_result = supa.table("import_jobs").insert({
+            "tenant_id":   str(tenant.tenant_id),
+            "user_id":     str(user.user_id),
+            "source_type": str(source_type),
+            "filename":    filename,
+            "status":      "completed",
+        }).execute()
+        if job_result.data:
+            import_job_id = job_result.data[0]["id"]
+    except Exception as exc:
+        logger.warning("Failed to create import_job record: %s", exc)
+
+    result = service.import_file(
         file_content=content,
         filename=filename,
         tenant_id=tenant.tenant_id,
@@ -127,79 +171,168 @@ async def import_data(
         sheet_name=sheet_name,
     )
 
+    rows_inserted = result.rows_inserted or 0
 
-@router.get("/imports/history", response_model=list[ImportHistoryItem])
-def list_import_history(user: CurrentUser, tenant: TenantCtx) -> list[ImportHistoryItem]:
-    sb = get_supabase_service_client()
-    result = (
-        sb.table("generated_reports")
-        .select("id, title, metadata, created_at")
-        .eq("tenant_id", str(tenant.tenant_id))
-        .eq("report_type", "csv_import")
-        .order("created_at", desc=True)
-        .limit(50)
-        .execute()
-    )
-    return [ImportHistoryItem(**row) for row in (result.data or [])]
+    # Update import_job with actual row count
+    if import_job_id:
+        try:
+            supa.table("import_jobs").update({
+                "rows_inserted": rows_inserted,
+                "rows_skipped":  result.rows_skipped or 0,
+            }).eq("id", import_job_id).execute()
+        except Exception as exc:
+            logger.warning("Failed to update import_job rows: %s", exc)
+
+    # Increment usage counters after successful import
+    try:
+        supa.rpc("increment_usage", {
+            "p_tenant_id": str(tenant.tenant_id),
+            "p_field":     "rows_imported",
+            "p_amount":    rows_inserted,
+        }).execute()
+        supa.rpc("increment_usage", {
+            "p_tenant_id": str(tenant.tenant_id),
+            "p_field":     "uploads_count",
+        }).execute()
+        supa.rpc("increment_usage", {
+            "p_tenant_id": str(tenant.tenant_id),
+            "p_field":     "uploads_today",
+        }).execute()
+    except Exception as exc:
+        logger.warning("Failed to increment import usage: %s", exc)
+
+    return result
 
 
-@router.delete("/imports/{import_id}", status_code=status.HTTP_204_NO_CONTENT)
-def undo_import(
-    import_id: UUID,
+@router.delete("/imports/{import_job_id}", status_code=status.HTTP_200_OK)
+async def undo_import(
+    import_job_id: str,
     user: CurrentUser,
     tenant: TenantCtx,
-) -> None:
-    """Delete all rows from a specific upload batch. Scoped to caller's tenant."""
-    if not tenant.is_admin:
-        raise HTTPException(status_code=403, detail="Admins only")
+    _undo_quota=Depends(require_undo_quota()),  # 2/day hard cap, all plans
+) -> dict:
+    """Delete all rows from a specific import job (undo).
 
-    sb = get_supabase_service_client()
-    tid = str(tenant.tenant_id)
-    iid = str(import_id)
-
-    sb.table("sales_data").delete().eq("tenant_id", tid).eq("import_id", iid).execute()
-    sb.table("secondary_sales_data").delete().eq("tenant_id", tid).eq("import_id", iid).execute()
-    sb.table("scheme_master").delete().eq("tenant_id", tid).eq("import_id", iid).execute()
-
-    sb.table("generated_reports")\
-        .delete()\
-        .eq("tenant_id", tid)\
-        .eq("report_type", "csv_import")\
-        .filter("metadata->>'import_id'", "eq", iid)\
-        .execute()
-
-
-@router.post("/sync", response_model=ImportResult, status_code=status.HTTP_201_CREATED)
-async def sync_data(
-    body: SyncPayload,
-    user: CurrentUser,
-    tenant: TenantCtx,
-) -> ImportResult:
-    """
-    Accepts a JSON payload of rows from the overnight agent script.
-    Used by akara_agent.py running on the customer's Tally/DMS machine.
-    Same pipeline as /data/import — tenant-isolated, admin-only.
+    Limited to 2 undos per day per tenant (all plans) to prevent abuse.
+    UI shows this as "Undo import" with a trash icon in the Data page
+    import history table.
     """
     if not tenant.is_admin:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Only admins can push data",
+            detail="Only admins can undo imports",
+        )
+
+    supa = get_supabase_service_client()
+
+    # Verify job belongs to this tenant and is not already deleted
+    try:
+        job_result = (
+            supa.table("import_jobs")
+            .select("id, rows_inserted, status")
+            .eq("id", import_job_id)
+            .eq("tenant_id", str(tenant.tenant_id))
+            .single()
+            .execute()
+        )
+    except Exception as exc:
+        raise HTTPException(status_code=404, detail="Import job not found") from exc
+
+    if not job_result.data:
+        raise HTTPException(status_code=404, detail="Import job not found")
+
+    job = job_result.data
+    if job.get("status") == "deleted":
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="This import has already been undone",
+        )
+
+    rows_to_delete = job.get("rows_inserted", 0)
+
+    # Delete rows tagged with this import_job_id
+    try:
+        supa.table("sales_data").delete() \
+            .eq("tenant_id", str(tenant.tenant_id)) \
+            .eq("import_job_id", import_job_id) \
+            .execute()
+    except Exception as exc:
+        logger.error("Failed to delete sales_data rows for job %s: %s", import_job_id, exc)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to delete imported rows. Please try again.",
+        ) from exc
+
+    # Mark job as deleted
+    try:
+        supa.table("import_jobs").update({"status": "deleted"}) \
+            .eq("id", import_job_id) \
+            .execute()
+    except Exception as exc:
+        logger.warning("Failed to mark import_job as deleted: %s", exc)
+
+    # Increment undo counter
+    try:
+        supa.rpc("increment_usage", {
+            "p_tenant_id": str(tenant.tenant_id),
+            "p_field":     "undos_today",
+        }).execute()
+    except Exception as exc:
+        logger.warning("Failed to increment undo usage: %s", exc)
+
+    return {"deleted": True, "rows_removed": rows_to_delete}
+
+
+class SyncPayload(BaseModel):
+    source_type: SourceType = "primary"
+    rows: list[dict]
+
+
+@router.post("/sync", response_model=ImportResult, status_code=status.HTTP_201_CREATED)
+def sync_data(
+    user: CurrentUser,
+    tenant: TenantCtx,
+    body: Annotated[SyncPayload, Body()],
+) -> ImportResult:
+    """
+    Accept a JSON payload from the overnight akara_agent.py script.
+    The agent runs nightly on the customer's Tally machine and POSTs rows here.
+    No file upload needed — rows are already transformed to the AKARA schema.
+    """
+    if not tenant.is_admin:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only admins can push sync data",
         )
     if not body.rows:
-        raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail="rows must be a non-empty list",
-        )
-
-    import pandas as pd
-
-    df = pd.DataFrame(body.rows)
-    csv_bytes = df.to_csv(index=False).encode()
+        return ImportResult(rows_inserted=0, rows_skipped=0, errors=[], warnings=["No rows in payload"])
 
     service = DataImportService(supabase=get_supabase_service_client())
-    return service.import_file(
-        file_content=csv_bytes,
-        filename="agent_push.csv",
+    result = service.import_rows(
+        rows=body.rows,
         tenant_id=tenant.tenant_id,
         source_type=body.source_type,
     )
+
+    # Increment usage for API sync imports
+    rows_inserted = result.rows_inserted or 0
+    if rows_inserted > 0:
+        try:
+            supa = get_supabase_service_client()
+            supa.rpc("increment_usage", {
+                "p_tenant_id": str(tenant.tenant_id),
+                "p_field":     "rows_imported",
+                "p_amount":    rows_inserted,
+            }).execute()
+            supa.rpc("increment_usage", {
+                "p_tenant_id": str(tenant.tenant_id),
+                "p_field":     "uploads_count",
+            }).execute()
+            supa.rpc("increment_usage", {
+                "p_tenant_id": str(tenant.tenant_id),
+                "p_field":     "uploads_today",
+            }).execute()
+        except Exception as exc:
+            logger.warning("Failed to increment sync import usage: %s", exc)
+
+    return result

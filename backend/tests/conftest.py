@@ -38,3 +38,55 @@ def tenant_ids() -> dict[str, uuid.UUID]:
         "trial": TENANT_TRIAL,
         "empty": TENANT_EMPTY,
     }
+
+
+USER_FREE = uuid.UUID("11111111-0001-0000-0000-000000000001")
+USER_PRO = uuid.UUID("22222222-0001-0000-0000-000000000002")
+
+# ── Authenticated test clients per plan ──────────────────────────────────────
+# These provide a TestClient with the Authorization header pre-set to a
+# deterministic fake JWT. The auth middleware is mocked at the unit level
+# so only the token presence matters, not its signature.
+
+def _make_authed_client(plan: str) -> TestClient:
+    """Build a TestClient with get_current_user overridden (survives requests)."""
+    from app.core.auth import AuthenticatedUser, get_current_user
+    from app.main import app
+
+    uid_map = {
+        "free": USER_FREE,
+        "pro": USER_PRO,
+        "business": USER_SUPERADMIN,
+    }
+    uid = uid_map.get(plan, USER_FREE)
+    fake_user = AuthenticatedUser(user_id=uid, email=f"{plan}@akara.test", role="admin")
+    app.dependency_overrides[get_current_user] = lambda: fake_user
+    return TestClient(app, headers={"Authorization": "Bearer fake-test-token"})
+
+
+def _clear_auth_override() -> None:
+    from app.core.auth import get_current_user
+    from app.main import app
+
+    app.dependency_overrides.pop(get_current_user, None)
+
+
+@pytest.fixture
+def authed_client_free() -> TestClient:
+    client = _make_authed_client("free")
+    yield client
+    _clear_auth_override()
+
+
+@pytest.fixture
+def authed_client_pro() -> TestClient:
+    client = _make_authed_client("pro")
+    yield client
+    _clear_auth_override()
+
+
+@pytest.fixture
+def authed_client_business() -> TestClient:
+    client = _make_authed_client("business")
+    yield client
+    _clear_auth_override()

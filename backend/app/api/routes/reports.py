@@ -10,10 +10,11 @@ import logging
 from datetime import datetime
 from uuid import UUID
 
-from fastapi import APIRouter, HTTPException, Response, status
+from fastapi import APIRouter, Depends, HTTPException, Response, status
 from pydantic import BaseModel
 
 from app.core.auth import CurrentUser
+from app.core.plan_guard import require_feature
 from app.core.tenant import TenantCtx, get_supabase_service_client
 
 logger = logging.getLogger(__name__)
@@ -46,6 +47,7 @@ class SchemeLeakageRow(BaseModel):
 def get_scheme_leakage(
     user: CurrentUser,
     tenant: TenantCtx,
+    _: None = Depends(require_feature("scheme_leakage")),  # Business plan only
 ) -> list[SchemeLeakageRow]:
     """Compare scheme_master claimed amounts vs. actual secondary offtake.
 

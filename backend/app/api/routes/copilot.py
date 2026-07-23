@@ -1,20 +1,23 @@
 import logging
+import time
+from datetime import date
 from uuid import UUID
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
 from app.core.auth import CurrentUser
 from app.core.config import settings
+from app.core.plan_guard import require_copilot_quota
 from app.core.tenant import TenantCtx, get_supabase_service_client
 from app.services.copilot.agent import CopilotAgent
-from app.services.copilot.date_range import resolve_date_range_for_question
 from app.services.copilot.planner import Planner
 from app.services.copilot.synthesizer import Synthesizer
 from app.services.copilot.tools.context_tool import ContextTool
 from app.services.copilot.tools.sql_tool import SQLTool
 from app.services.llm.manager import LLMManager
+from app.services.llm_cost_logger import log_llm_cost
 from app.services.prompts.generator import PromptGenerator
 from app.services.schema.discovery import SchemaDiscovery
 from app.sql.executor import SQLExecutor
@@ -58,11 +61,13 @@ async def chat(
     request: ChatRequest,
     user: CurrentUser,
     tenant: TenantCtx,
+    _quota=Depends(require_copilot_quota()),  # HTTP 402 when monthly limit reached
 ) -> StreamingResponse | ChatResponse:
     supabase = get_supabase_service_client()
     schema = SchemaDiscovery(supabase=supabase)
-    prompt_gen = PromptGenerator(schema)
-    schema_context = schema.get_schema_context(tenant.tenant_id)
+    prompt_gen = PromptGenerator(schema_discovery=schema)
+
+    schema_context = prompt_gen.build_schema_context(tenant.tenant_id)
     available_columns = schema.get_columns()
 
     # Industry-specific addendums — empty string for unknown industries.
@@ -75,8 +80,7 @@ async def chat(
     )
 
     agent = _build_agent(tenant.tenant_id)
-    available_range = schema.get_data_date_range(tenant.tenant_id)
-    date_range = resolve_date_range_for_question(request.question, available_range)
+    date_range = ("2024-01-01", date.today().isoformat())
 
     if request.stream:
 
@@ -92,12 +96,24 @@ async def chat(
                 ):
                     yield f"data: {chunk}\n\n"
             except Exception as exc:
-                logger.exception("Copilot stream failed")
+                logger.error("Copilot stream error: %s", exc, exc_info=True)
                 yield f"data: Sorry, I couldn't process that request. ({exc})\n\n"
             yield "data: [DONE]\n\n"
 
+        # For streaming we can't easily capture token counts, so we increment
+        # usage and skip detailed cost logging (best effort for streaming mode).
+        try:
+            supabase.rpc(
+                "increment_usage",
+                {"p_tenant_id": str(tenant.tenant_id), "p_field": "copilot_calls"},
+            ).execute()
+        except Exception as exc:
+            logger.warning("Failed to increment copilot usage (stream): %s", exc)
+
         return StreamingResponse(event_stream(), media_type="text/event-stream")
 
+    # ── Non-streaming: capture tokens + cost ─────────────────────────────────
+    start_ms = int(time.time() * 1000)
     result = await agent.answer(
         question=request.question,
         schema_context=schema_context,
@@ -106,6 +122,32 @@ async def chat(
         planner_addendum=planner_addendum,
         synthesizer_addendum=synthesizer_addendum,
     )
+    latency_ms = int(time.time() * 1000) - start_ms
+
+    # Increment usage counter (after successful answer, not before)
+    try:
+        supabase.rpc(
+            "increment_usage",
+            {"p_tenant_id": str(tenant.tenant_id), "p_field": "copilot_calls"},
+        ).execute()
+    except Exception as exc:
+        logger.warning("Failed to increment copilot usage: %s", exc)
+
+    # Log token cost (best-effort; does not fail the request)
+    try:
+        input_tokens: int = getattr(getattr(result, "usage", None), "prompt_tokens", 0) or 0
+        output_tokens: int = getattr(getattr(result, "usage", None), "completion_tokens", 0) or 0
+        log_llm_cost(
+            tenant_id=tenant.tenant_id,
+            user_id=user.user_id,
+            feature="copilot",
+            model=settings.openrouter_model,
+            input_tokens=input_tokens,
+            output_tokens=output_tokens,
+            latency_ms=latency_ms,
+        )
+    except Exception as exc:
+        logger.warning("Failed to log LLM cost: %s", exc)
 
     # Auto-create conversation if none exists
     conversation_id = request.conversation_id

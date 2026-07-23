@@ -8,6 +8,7 @@ const NAV_ITEMS = [
   { href: "/superadmin/tenants", label: "Tenants", icon: "🏢" },
   { href: "/superadmin/users", label: "Users", icon: "👥" },
   { href: "/superadmin/billing", label: "Billing", icon: "💳" },
+  { href: "/superadmin/costs", label: "Costs", icon: "💰" },
   { href: "/superadmin/data", label: "Data", icon: "🗄️" },
   { href: "/superadmin/ai", label: "AI / LLM", icon: "🤖" },
   { href: "/superadmin/analytics", label: "Analytics", icon: "📊" },

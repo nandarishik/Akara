@@ -49,15 +49,15 @@ Columns: `source_ref` | `implementation_day` | `owner_lane` | `status` | `verifi
 
 | source_ref | implementation_day | owner_lane | status | verification_method | evidence_link |
 |------------|-------------------|------------|--------|---------------------|---------------|
-| 14.1 — Migration billing schema | Day 2 | Database/security | pending | migration apply + RLS tests | `011_billing.sql` (scaffold Day 1) |
-| 14.2 — plan_limits.py | Day 2 | Backend/API | pending | unit tests | — |
-| 14.3 — plan_guard.py | Day 2 | Backend/API | pending | integration tests | — |
-| 14.4 — Wire PlanGuard into routes | Day 2 | Backend/API | pending | route tests | — |
-| 14.5 — TenantContext plan + overrides | Day 2 | Backend/API | pending | auth tests | — |
-| 14.6 — GET /billing/usage | Day 2 | Backend/API | pending | API test | — |
-| 14.7 — Data retention enforcement | Day 2 | Backend/API | pending | cron + tests | — |
-| 14.8 — Token cost tracking (llm_cost_log) | Day 2 | Backend/API | pending | cost log insert test | `011_billing.sql` table |
-| Day 14 Quality Gate | Day 2 | QA/reliability | pending | pytest + staging | — |
+| 14.1 — Migration billing schema | Day 2 | Database/security | done | import_jobs, RPCs, view — Day 2 | `supabase/migrations/011_billing.sql` |
+| 14.2 — plan_limits.py | Day 2 | Backend/API | done | `tests/test_plan_limits.py` | `backend/app/core/plan_limits.py` |
+| 14.3 — plan_guard.py | Day 2 | Backend/API | done | `tests/test_plan_guard.py` | `backend/app/core/plan_guard.py` |
+| 14.4 — TenantContext plan + overrides | Day 2 | Backend/API | done | tenant.py extended | `backend/app/core/tenant.py` |
+| 14.5 — Wire PlanGuard into routes | Day 2 | Backend/API | done | copilot, data, reports, simulator | route guards wired |
+| 14.6 — GET /billing/usage | Day 2 | Backend/API | done | billing.py + main.py | `backend/app/api/routes/billing.py` |
+| 14.7 — Data retention enforcement | Day 2 | Backend/API | done | retention_cleanup.py | `backend/app/tasks/retention_cleanup.py` |
+| 14.8 — Token cost tracking (llm_cost_log) | Day 2 | Backend/API | done | llm_cost_logger.py | `backend/app/services/llm_cost_logger.py` |
+| Day 14 Quality Gate | Day 2 | QA/reliability | in_progress | 75 plan tests pass; billing E2E tests missing source | `tests/test_plan_*.py` |
 
 ---
 

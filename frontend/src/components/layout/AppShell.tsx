@@ -18,6 +18,12 @@ import {
   Users,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import {
+  PastDueBanner,
+  TrialWarning,
+  UsageBanner,
+} from "@/components/billing";
+import { useBilling } from "@/hooks/useBilling";
 
 const NAV_ITEMS = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -44,6 +50,7 @@ export function AppShell() {
 
   const admin = isAdmin(user, session);
   const isCopilot = location.pathname.startsWith("/copilot");
+  const { data: usage } = useBilling();
 
   return (
     <div className="flex h-screen bg-slate-50">
@@ -169,6 +176,17 @@ export function AppShell() {
           )}
         >
           <ErrorBoundary>
+            {usage && usage.plan_status === "past_due" && (
+              <PastDueBanner usage={usage} />
+            )}
+            {usage && usage.plan_status === "trialing" && (
+              <TrialWarning usage={usage} />
+            )}
+            {usage && (
+              <div className="px-4 pt-4 lg:px-6">
+                <UsageBanner usage={usage} />
+              </div>
+            )}
             <Outlet />
           </ErrorBoundary>
         </main>

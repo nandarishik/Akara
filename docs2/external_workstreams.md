@@ -246,4 +246,19 @@ will be blocked.
 
 ---
 
-*Last updated: Day 1*
+## EXT-15: Healthchecks.io entries for cron jobs
+
+- **Latest by:** End of Day 2 (needed before retention cron is scheduled in Railway)
+- **Status:** `pending`
+- **Steps:**
+  1. Go to healthchecks.io (or self-hosted instance)
+  2. Create check: **AKARA Retention Cleanup** — schedule `0 20 * * *` (UTC = 2 AM IST), grace 1 hour
+  3. Copy ping URL → set as `HEALTHCHECKS_RETENTION_URL` env var in Railway
+  4. In `retention_cleanup.py`, add ping-start/ping-success calls around `run()` using the URL
+  5. Create check: **AKARA Cost Aggregation** — to be wired in Day 8 (set pending for now)
+  6. Add both URLs to Railway environment variables and `.env.example`
+- **Evidence:** Healthchecks.io dashboard shows last ping within expected window after first cron run
+
+---
+
+*Last updated: Day 2*

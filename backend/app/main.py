@@ -16,6 +16,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.routes import auth as auth_router
+from app.api.routes import billing as billing_router
 from app.api.routes import conversations as conversations_router
 from app.api.routes import copilot as copilot_router
 from app.api.routes import data as data_router
@@ -40,12 +41,6 @@ logger = logging.getLogger("akara.startup")
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
-    """Startup validation — fail fast on critical misconfiguration.
-
-    In production/staging: any validation error exits with code 1 so the
-    deployment fails visibly rather than silently serving broken responses.
-    In development: errors are logged as warnings so the dev loop stays fast.
-    """
     errors = settings.validate_for_environment()
     if errors:
         if settings.is_production or settings.is_staging:
@@ -71,9 +66,6 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     logger.info("Shutdown complete.")
 
 
-# ---------------------------------------------------------------------------
-# Sentry (optional — not installed in all environments)
-# ---------------------------------------------------------------------------
 if _SENTRY_AVAILABLE and settings.sentry_dsn:
     _sentry_sdk.init(
         dsn=settings.sentry_dsn,
@@ -82,9 +74,6 @@ if _SENTRY_AVAILABLE and settings.sentry_dsn:
         profiles_sample_rate=0.05,
     )
 
-# ---------------------------------------------------------------------------
-# Application
-# ---------------------------------------------------------------------------
 app = FastAPI(
     title="AKARA API",
     version="2.0.0",
@@ -93,9 +82,6 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-# ---------------------------------------------------------------------------
-# Middleware (outermost first)
-# ---------------------------------------------------------------------------
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.allowed_origins,
@@ -106,16 +92,11 @@ app.add_middleware(
 )
 app.add_middleware(RequestIDMiddleware)
 
-# ---------------------------------------------------------------------------
-# Exception handlers
-# ---------------------------------------------------------------------------
 app.add_exception_handler(AkaraHTTPException, akara_exception_handler)  # type: ignore[arg-type]
 
-# ---------------------------------------------------------------------------
-# Routers
-# ---------------------------------------------------------------------------
 app.include_router(health.router)
 app.include_router(auth_router.router)
+app.include_router(billing_router.router)
 app.include_router(copilot_router.router)
 app.include_router(conversations_router.router)
 app.include_router(kpi_router.router)

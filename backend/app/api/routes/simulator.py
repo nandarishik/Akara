@@ -10,10 +10,11 @@ Discount elasticity uses the industry-standard FMCG estimate of -0.3.
 
 import logging
 
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, Field
 
 from app.core.auth import CurrentUser
+from app.core.plan_guard import require_feature
 from app.core.tenant import TenantCtx, get_supabase_service_client
 from app.services.simulator.projector import RevenueProjector
 
@@ -74,6 +75,7 @@ def run_simulation(
     body: SimulatorRequest,
     user: CurrentUser,
     tenant: TenantCtx,
+    _: None = Depends(require_feature("simulator")),  # Pro+ only
 ) -> SimulatorResponse:
     """Project revenue for the given growth and discount change scenario.
 

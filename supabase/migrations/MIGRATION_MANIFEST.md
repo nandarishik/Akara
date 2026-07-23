@@ -22,7 +22,7 @@
 
 | # | File | Day | Purpose |
 |---|------|-----|---------|
-| 011 | `011_billing.sql` | **1** | Billing scaffold: plan columns, usage_tracking, llm_cost_log, idempotency_keys |
+| 011 | `011_billing.sql` | **2** | Tenant billing fields; `import_jobs`; `import_job_id` on `sales_data`; `usage_tracking`; `llm_cost_log` (with `latency_ms`); `idempotency_keys`; `increment_usage` RPC; `get_current_usage` RPC; `tenant_lifetime_debriefs` view | **complete — ready to apply** |
 | 012 | `012_plan_enforcement.sql` | 2 | Plan guard RPCs, increment_usage |
 | 013+ | TBD | 3–22 | Signup, Stripe, superadmin, security, launch |
 
