@@ -12,6 +12,7 @@ from fastapi import APIRouter
 from pydantic import BaseModel
 
 from app.core.auth import CurrentUser
+from app.core.plan_guard import _get_current_usage
 from app.core.plan_limits import PLAN_LIMITS
 from app.core.tenant import TenantCtx, get_supabase_service_client
 
@@ -72,10 +73,7 @@ def get_usage(user: CurrentUser, tenant: TenantCtx) -> UsageResponse:
             effective_features[feature] = default
 
     # Current month usage via RPC (handles daily reset semantics internally)
-    usage_result = supa.rpc(
-        "get_current_usage", {"p_tenant_id": str(tenant.tenant_id)}
-    ).execute()
-    usage: dict = usage_result.data or {}
+    usage: dict = _get_current_usage(tenant.tenant_id)
 
     # Total row count (live count from sales_data)
     rows_result = (

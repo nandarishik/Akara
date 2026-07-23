@@ -86,10 +86,14 @@ def test_billing_usage_401_unauthenticated(client: TestClient):
 # ---------------------------------------------------------------------------
 
 
+@patch("app.api.routes.billing._get_current_usage")
 @patch("app.api.routes.billing.get_supabase_service_client")
 @patch("app.core.tenant.get_supabase_service_client")
-def test_billing_usage_free_plan(mock_tenant_supa, mock_billing_supa, authed_client_free):
+def test_billing_usage_free_plan(
+    mock_tenant_supa, mock_billing_supa, mock_get_usage, authed_client_free
+):
     """Free plan: copilot_calls_limit=10, rows_limit=10000, uploads_limit=5."""
+    mock_get_usage.return_value = make_mock_usage(copilot_calls=3)
     supa = mock_supa_for_usage(copilot_calls=3, rows=500, users=1)
     mock_billing_supa.return_value = supa
     mock_tenant_supa.return_value = _make_tenant_supa("free")
@@ -113,10 +117,14 @@ def test_billing_usage_free_plan(mock_tenant_supa, mock_billing_supa, authed_cli
     assert data["features"]["simulator"] is False
 
 
+@patch("app.api.routes.billing._get_current_usage")
 @patch("app.api.routes.billing.get_supabase_service_client")
 @patch("app.core.tenant.get_supabase_service_client")
-def test_billing_usage_pro_plan(mock_tenant_supa, mock_billing_supa, authed_client_pro):
+def test_billing_usage_pro_plan(
+    mock_tenant_supa, mock_billing_supa, mock_get_usage, authed_client_pro
+):
     """Pro plan: copilot_calls_limit=400, uploads_limit=-1."""
+    mock_get_usage.return_value = make_mock_usage(copilot_calls=50)
     supa = mock_supa_for_usage(copilot_calls=50, rows=10_000, users=2)
     mock_billing_supa.return_value = supa
     mock_tenant_supa.return_value = _make_tenant_supa("pro")
@@ -134,10 +142,14 @@ def test_billing_usage_pro_plan(mock_tenant_supa, mock_billing_supa, authed_clie
     assert data["features"]["scheme_leakage"] is False  # Business only
 
 
+@patch("app.api.routes.billing._get_current_usage")
 @patch("app.api.routes.billing.get_supabase_service_client")
 @patch("app.core.tenant.get_supabase_service_client")
-def test_billing_usage_business_plan(mock_tenant_supa, mock_billing_supa, authed_client_business):
+def test_billing_usage_business_plan(
+    mock_tenant_supa, mock_billing_supa, mock_get_usage, authed_client_business
+):
     """Business plan: all features enabled."""
+    mock_get_usage.return_value = make_mock_usage(copilot_calls=200)
     supa = mock_supa_for_usage(copilot_calls=200, rows=100_000, users=5)
     mock_billing_supa.return_value = supa
     mock_tenant_supa.return_value = _make_tenant_supa("business")
@@ -162,9 +174,12 @@ def test_billing_usage_business_plan(mock_tenant_supa, mock_billing_supa, authed
 # ---------------------------------------------------------------------------
 
 
+@patch("app.api.routes.billing._get_current_usage", return_value=make_mock_usage())
 @patch("app.api.routes.billing.get_supabase_service_client")
 @patch("app.core.tenant.get_supabase_service_client")
-def test_billing_usage_has_all_required_fields(mock_tenant_supa, mock_billing_supa, authed_client_free):
+def test_billing_usage_has_all_required_fields(
+    mock_tenant_supa, mock_billing_supa, mock_get_usage, authed_client_free
+):
     supa = mock_supa_for_usage()
     mock_billing_supa.return_value = supa
     mock_tenant_supa.return_value = _make_tenant_supa("free")

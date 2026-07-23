@@ -171,23 +171,39 @@ export function AppShell() {
         {/* Page content — wrapped in ErrorBoundary */}
         <main
           className={cn(
-            "flex-1 min-h-0",
+            "flex flex-1 flex-col min-h-0",
             isCopilot ? "overflow-hidden" : "overflow-auto"
           )}
         >
           <ErrorBoundary>
-            {usage && usage.plan_status === "past_due" && (
-              <PastDueBanner usage={usage} />
-            )}
-            {usage && usage.plan_status === "trialing" && (
-              <TrialWarning usage={usage} />
-            )}
-            {usage && (
-              <div className="px-4 pt-4 lg:px-6">
-                <UsageBanner usage={usage} />
+            <div
+              className={cn(
+                "flex flex-col min-h-0",
+                isCopilot ? "flex-1 overflow-hidden" : "min-h-full"
+              )}
+            >
+              {usage && usage.plan_status === "past_due" && (
+                <PastDueBanner usage={usage} />
+              )}
+              {usage && usage.plan_status === "trialing" && (
+                <TrialWarning usage={usage} />
+              )}
+              {/* Full quota card breaks Copilot's fixed-height chat layout — show on other pages only */}
+              {usage && !isCopilot && (
+                <div className="shrink-0 px-4 pt-4 lg:px-6">
+                  <UsageBanner usage={usage} />
+                </div>
+              )}
+              <div
+                className={cn(
+                  isCopilot
+                    ? "flex min-h-0 flex-1 flex-col overflow-hidden"
+                    : "flex-1"
+                )}
+              >
+                <Outlet />
               </div>
-            )}
-            <Outlet />
+            </div>
           </ErrorBoundary>
         </main>
       </div>

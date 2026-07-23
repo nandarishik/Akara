@@ -63,7 +63,7 @@ export function CopilotPage() {
   }
 
   return (
-    <div className="flex flex-col h-full min-h-0">
+    <div className="flex h-full min-h-0 flex-1 flex-col">
       {/* Full-width header — aligns with app shell, no staggered top bars */}
       <div className="shrink-0 flex items-center justify-between gap-4 px-6 py-4 border-b border-slate-200 bg-white min-h-[4.5rem]">
         <div>

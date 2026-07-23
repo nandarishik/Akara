@@ -27,6 +27,13 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/copilot", tags=["copilot"])
 
 
+def _sse_event(data: str) -> str:
+    """Format one SSE data event; safe for multiline text."""
+    if not data:
+        return ""
+    return "".join(f"data: {line}\n" for line in data.split("\n")) + "\n"
+
+
 class ChatRequest(BaseModel):
     question: str
     stream: bool = True
@@ -94,11 +101,15 @@ async def chat(
                     planner_addendum=planner_addendum,
                     synthesizer_addendum=synthesizer_addendum,
                 ):
-                    yield f"data: {chunk}\n\n"
+                    event = _sse_event(chunk)
+                    if event:
+                        yield event
             except Exception as exc:
                 logger.error("Copilot stream error: %s", exc, exc_info=True)
-                yield f"data: Sorry, I couldn't process that request. ({exc})\n\n"
-            yield "data: [DONE]\n\n"
+                yield _sse_event(
+                    f"Sorry, I couldn't process that request. ({exc})"
+                )
+            yield _sse_event("[DONE]")
 
         # For streaming we can't easily capture token counts, so we increment
         # usage and skip detailed cost logging (best effort for streaming mode).
@@ -110,7 +121,15 @@ async def chat(
         except Exception as exc:
             logger.warning("Failed to increment copilot usage (stream): %s", exc)
 
-        return StreamingResponse(event_stream(), media_type="text/event-stream")
+        return StreamingResponse(
+            event_stream(),
+            media_type="text/event-stream",
+            headers={
+                "Cache-Control": "no-cache",
+                "Connection": "keep-alive",
+                "X-Accel-Buffering": "no",
+            },
+        )
 
     # ── Non-streaming: capture tokens + cost ─────────────────────────────────
     start_ms = int(time.time() * 1000)

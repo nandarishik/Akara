@@ -14,6 +14,7 @@ frontend can show the right upgrade CTA without parsing error text.
 
 from __future__ import annotations
 
+import logging
 from uuid import UUID
 
 from fastapi import HTTPException, status
@@ -23,6 +24,8 @@ from app.core.plan_limits import (
     is_feature_enabled,
     required_plan_for_feature,
 )
+
+logger = logging.getLogger(__name__)
 
 # ---------------------------------------------------------------------------
 # Typed error responses
@@ -66,18 +69,14 @@ class FeatureBlocked(HTTPException):
 
 def _get_current_usage(tenant_id: UUID) -> dict:
     """Fetch current-month usage counters via get_current_usage RPC.
-    Returns zeroed dict when tenant has no usage row yet.
+    Returns zeroed dict when tenant has no usage row yet, or when billing
+    migration 011 has not been fully applied yet.
     """
     from app.core.tenant import (
         get_supabase_service_client,  # local import avoids circular
     )
 
-    result = (
-        get_supabase_service_client()
-        .rpc("get_current_usage", {"p_tenant_id": str(tenant_id)})
-        .execute()
-    )
-    return result.data or {
+    zeroed = {
         "copilot_calls": 0,
         "rows_imported": 0,
         "uploads_count": 0,
@@ -85,6 +84,21 @@ def _get_current_usage(tenant_id: UUID) -> dict:
         "uploads_today": 0,
         "undos_today": 0,
     }
+
+    try:
+        result = (
+            get_supabase_service_client()
+            .rpc("get_current_usage", {"p_tenant_id": str(tenant_id)})
+            .execute()
+        )
+        return result.data or zeroed
+    except Exception as exc:
+        logger.warning(
+            "get_current_usage RPC unavailable for tenant %s: %s",
+            tenant_id,
+            exc,
+        )
+        return zeroed
 
 
 def _get_total_rows(tenant_id: UUID) -> int:

@@ -11,6 +11,32 @@ export interface ChatMessage {
 
 const BASE = import.meta.env.VITE_API_BASE_URL as string;
 
+/** Parse one SSE event block (lines between blank-line separators). */
+function parseSseEvent(block: string): string | null {
+  const dataLines: string[] = [];
+  for (const line of block.split(/\r?\n/)) {
+    if (line.startsWith("data:")) {
+      dataLines.push(line.slice(5).replace(/^ /, ""));
+    }
+  }
+  return dataLines.length > 0 ? dataLines.join("\n") : null;
+}
+
+async function readErrorDetail(res: Response): Promise<string> {
+  try {
+    const body = await res.json();
+    if (typeof body?.detail === "string") return body.detail;
+    if (body?.detail?.message) return String(body.detail.message);
+    return JSON.stringify(body.detail ?? body);
+  } catch {
+    try {
+      return (await res.text()) || `HTTP ${res.status}`;
+    } catch {
+      return `HTTP ${res.status}`;
+    }
+  }
+}
+
 export function useCopilot() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isStreaming, setIsStreaming] = useState(false);
@@ -81,9 +107,16 @@ export function useCopilot() {
         }),
       });
 
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      if (!res.ok) {
+        const detail = await readErrorDetail(res);
+        throw new Error(detail || `HTTP ${res.status}`);
+      }
 
-      const reader = res.body!.getReader();
+      if (!res.body) {
+        throw new Error("No response body from server");
+      }
+
+      const reader = res.body.getReader();
       const decoder = new TextDecoder();
       let buffer = "";
 
@@ -91,21 +124,35 @@ export function useCopilot() {
         const { done, value } = await reader.read();
         if (done) break;
         buffer += decoder.decode(value, { stream: true });
-        const lines = buffer.split(/\r?\n/);
-        buffer = lines.pop() || "";
 
-        for (const line of lines) {
-          if (line.startsWith("data: ")) {
-            const chunk = line.slice(6);
-            if (chunk === "[DONE]") continue;
-            setMessages((prev) =>
-              prev.map((m) =>
-                m.id === assistantMsgId
-                  ? { ...m, content: m.content + chunk }
-                  : m
-              )
-            );
-          }
+        // SSE events are separated by a blank line
+        const events = buffer.split(/\r?\n\r?\n/);
+        buffer = events.pop() || "";
+
+        for (const event of events) {
+          const chunk = parseSseEvent(event);
+          if (!chunk || chunk === "[DONE]") continue;
+          setMessages((prev) =>
+            prev.map((m) =>
+              m.id === assistantMsgId
+                ? { ...m, content: m.content + chunk }
+                : m
+            )
+          );
+        }
+      }
+
+      // Flush any trailing partial event
+      if (buffer.trim()) {
+        const chunk = parseSseEvent(buffer);
+        if (chunk && chunk !== "[DONE]") {
+          setMessages((prev) =>
+            prev.map((m) =>
+              m.id === assistantMsgId
+                ? { ...m, content: m.content + chunk }
+                : m
+            )
+          );
         }
       }
 
@@ -115,7 +162,8 @@ export function useCopilot() {
           if (!m.content.trim()) {
             return {
               ...m,
-              content: "Sorry, something went wrong. Please try again.",
+              content:
+                "Sorry, something went wrong. The server returned an empty response. Check that the backend is running and OPENROUTER_API_KEY is set.",
               streaming: false,
               error: true,
             };
@@ -124,12 +172,19 @@ export function useCopilot() {
         })
       );
     } catch (err) {
+      const message =
+        err instanceof Error ? err.message : "Unknown error";
+      const friendly =
+        message === "Failed to fetch"
+          ? `Cannot reach the API at ${BASE}. If you're running locally, start the backend or set VITE_API_BASE_URL to your Railway URL.`
+          : message;
+      console.error("Copilot chat failed:", err);
       setMessages((prev) =>
         prev.map((m) =>
           m.id === assistantMsgId
             ? {
                 ...m,
-                content: "Sorry, something went wrong. Please try again.",
+                content: friendly,
                 streaming: false,
                 error: true,
               }
