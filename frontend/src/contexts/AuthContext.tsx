@@ -32,12 +32,10 @@ const AuthContext = createContext<AuthContextValue | null>(null);
  * Build a User from Supabase session metadata.
  * Used as a fallback when /auth/me fails (e.g. Railway misconfiguration).
  */
-function userFromSession(supabaseUser: SupabaseUser): User | null {
+function userFromSession(supabaseUser: SupabaseUser): User {
   const meta = supabaseUser.user_metadata ?? {};
-  const tenantId = meta.tenant_id as string | undefined;
-  const role = (meta.role as string | undefined) ?? "user";
-
-  if (!tenantId) return null;
+  const tenantId = (meta.tenant_id as string | undefined) ?? null;
+  const role = (meta.role as string | undefined) ?? (tenantId ? "user" : "admin");
 
   return {
     id: supabaseUser.id,
@@ -69,8 +67,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       });
     } catch (err) {
       console.warn("fetchProfile failed, using session metadata fallback:", err);
-      const fallback = userFromSession(supabaseUser);
-      setUser(fallback);
+      setUser(userFromSession(supabaseUser));
     }
   }
 

@@ -5,11 +5,12 @@
  *  2. tenant_id is null  → /onboarding
  */
 
-import { Navigate, Outlet } from "react-router-dom"
+import { Navigate, Outlet, useLocation } from "react-router-dom"
 import { useAuth } from "@/contexts/AuthContext"
 
 export function ProtectedRoute() {
   const { session, user, loading } = useAuth()
+  const location = useLocation()
 
   if (loading) {
     return (
@@ -30,7 +31,8 @@ export function ProtectedRoute() {
   }
 
   // Authenticated but no tenant yet → must complete onboarding
-  if (!user?.tenantId) {
+  // Allow /onboarding itself to render (avoid redirect loop → blank page)
+  if (!user?.tenantId && location.pathname !== "/onboarding") {
     return <Navigate to="/onboarding" replace />
   }
 
