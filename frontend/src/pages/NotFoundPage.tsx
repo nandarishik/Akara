@@ -8,12 +8,17 @@ export function NotFoundPage() {
         404
       </div>
       <h1 className="text-display text-2xl mb-2">Page not found</h1>
-      <p className="text-body mb-8 max-w-sm">
+      <p className="text-body mb-4 max-w-sm">
         The page you're looking for doesn't exist or has been moved.
       </p>
-      <Link to="/dashboard">
-        <AkaraButton>Back to Dashboard</AkaraButton>
-      </Link>
+      <div className="flex flex-wrap gap-3 justify-center mb-8">
+        <Link to="/dashboard">
+          <AkaraButton>Back to Dashboard</AkaraButton>
+        </Link>
+        <Link to="/data" className="text-accent text-sm underline self-center">
+          Import data
+        </Link>
+      </div>
     </div>
   );
 }

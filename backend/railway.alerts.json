@@ -1,0 +1,11 @@
+{
+  "$schema": "https://railway.com/railway.schema.json",
+  "build": {
+    "builder": "NIXPACKS"
+  },
+  "deploy": {
+    "cronSchedule": "0 6 * * *",
+    "startCommand": "/opt/venv/bin/python -m app.tasks.alert_evaluator",
+    "restartPolicyType": "NEVER"
+  }
+}

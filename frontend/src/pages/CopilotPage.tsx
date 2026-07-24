@@ -81,9 +81,9 @@ export function CopilotPage() {
 
   useEffect(() => {
     if (error) {
-      if (error.includes("503") || error.includes("timeout")) {
+      if (error.includes("503") || error.includes("timeout") || error.includes("ai_unavailable")) {
         setConnectionStatus("disconnected");
-      } else if (error.includes("429")) {
+      } else if (error.includes("429") || error.includes("RATE_LIMITED")) {
         setConnectionStatus("reconnecting");
       }
     } else {
@@ -179,6 +179,12 @@ export function CopilotPage() {
             New chat
           </AkaraButton>
         </div>
+
+        {connectionStatus === "disconnected" && (
+          <div className="mt-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
+            AI is temporarily unavailable. Your dashboard and data still work — try again in a few minutes.
+          </div>
+        )}
 
         {usage && usage.copilot_calls_limit !== -1 && (
           <div className="mt-3 flex items-center gap-3 text-xs">

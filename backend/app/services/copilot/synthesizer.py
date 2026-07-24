@@ -1,6 +1,7 @@
 import logging
 from collections.abc import AsyncGenerator
 
+from app.services.copilot.pii_redactor import redact
 from app.services.llm.manager import LLMManager
 
 logger = logging.getLogger(__name__)
@@ -62,8 +63,8 @@ class Synthesizer:
         intent: str,
         date_range: tuple[str, str] | None = None,
     ) -> str:
-        results_str = str(sql_results[:100])  # cap at 100 rows for prompt
-        context_str = str(context_data) if context_data else "No additional context."
+        results_str = redact(str(sql_results[:100]))  # cap at 100 rows for prompt
+        context_str = redact(str(context_data) if context_data else "No additional context.")
         range_str = (
             f"{date_range[0]} to {date_range[1]}"
             if date_range
@@ -115,7 +116,7 @@ class Synthesizer:
         system_addendum: str = "",
     ) -> str:
         system = _CONVERSATIONAL_SYSTEM + system_addendum
-        return await self._llm.complete(prompt=question, system=system)
+        return await self._llm.complete(prompt=redact(question), system=system)
 
     async def conversational_stream(
         self,
@@ -123,5 +124,5 @@ class Synthesizer:
         system_addendum: str = "",
     ) -> AsyncGenerator[str, None]:
         system = _CONVERSATIONAL_SYSTEM + system_addendum
-        async for chunk in self._llm.stream(prompt=question, system=system):
+        async for chunk in self._llm.stream(prompt=redact(question), system=system):
             yield chunk

@@ -10,6 +10,7 @@ from fastapi import (
     HTTPException,
     Path,
     Query,
+    Request,
     UploadFile,
     status,
 )
@@ -22,6 +23,7 @@ from app.core.plan_guard import (
     require_import_quota,
     require_undo_quota,
 )
+from app.core.rate_limit import limiter
 from app.core.tenant import TenantCtx, get_supabase_service_client
 from app.services.data_import.detector import score_sheets
 from app.services.data_import.models import ImportResult
@@ -92,7 +94,9 @@ async def list_excel_sheets(
 
 
 @router.post("/import", response_model=ImportResult, status_code=status.HTTP_201_CREATED)
+@limiter.limit("10/minute")
 async def import_data(
+    request: Request,
     user: CurrentUser,
     tenant: TenantCtx,
     file: UploadFile = File(...),
@@ -374,7 +378,9 @@ class ImportJobsResponse(BaseModel):
 
 
 @router.post("/import/async", response_model=AsyncImportResponse, status_code=202)
+@limiter.limit("10/minute")
 async def import_data_async(
+    request: Request,
     user: CurrentUser,
     tenant: TenantCtx,
     file: UploadFile = File(...),

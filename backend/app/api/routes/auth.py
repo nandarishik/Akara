@@ -1,9 +1,10 @@
 from uuid import UUID
 
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, HTTPException, Request, status
 from pydantic import BaseModel
 
 from app.core.auth import CurrentUser
+from app.core.rate_limit import limiter
 from app.core.tenant import get_supabase_service_client
 
 router = APIRouter(prefix="/auth", tags=["auth"])
@@ -17,7 +18,8 @@ class MeResponse(BaseModel):
 
 
 @router.get("/me", response_model=MeResponse)
-async def me(user: CurrentUser) -> MeResponse:
+@limiter.limit("60/minute")
+async def me(request: Request, user: CurrentUser) -> MeResponse:
     """Returns the authenticated user's identity and tenant context.
 
     ``tenant_id`` is ``null`` for self-signup users who have not yet completed

@@ -34,6 +34,7 @@ const DEMO_USAGE: UsageResponse = {
     team_invites: false,
     api_keys: false,
     ask_copilot_debrief: false,
+    alerts: false,
   },
   retention_days: 30,
   rows_used: 0,

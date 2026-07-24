@@ -72,3 +72,17 @@ python -m app.tasks.dunning
 
 ### E2E checklist
 [`docs/day5_e2e_checklist.md`](docs/day5_e2e_checklist.md)
+
+## Day 6 — Security, DPDP, Alerts
+
+Apply migration **017** (`017_alerts.sql`) on Supabase.
+
+### Railway cron / worker services
+| Service | Config | Schedule / command |
+|---------|--------|-------------------|
+| Dunning | `railway.dunning.json` | Daily `python -m app.tasks.dunning` |
+| Alerts | `railway.alerts.json` | Daily `python -m app.tasks.alert_evaluator` |
+| Import worker | `railway.import_worker.json` | Every minute `python -m app.tasks.import_worker` |
+
+### E2E checklist
+[`docs/day6_e2e_checklist.md`](docs/day6_e2e_checklist.md)

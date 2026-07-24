@@ -5,13 +5,18 @@ from datetime import date, datetime, UTC
 from uuid import UUID
 
 import openai
-from fastapi import APIRouter, Depends, HTTPException
-from fastapi.responses import StreamingResponse
+from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi.responses import JSONResponse, StreamingResponse
 from pydantic import BaseModel
 
 from app.core.auth import CurrentUser
 from app.core.config import settings
-from app.core.plan_guard import require_copilot_quota
+from app.core.plan_guard import (
+    apply_copilot_quota_headers,
+    get_copilot_quota_metadata,
+    require_copilot_quota,
+)
+from app.core.rate_limit import limiter
 from app.core.tenant import TenantCtx, get_supabase_service_client
 from app.services.copilot.agent import CopilotAgent
 from app.services.copilot.planner import Planner
@@ -171,13 +176,16 @@ def _build_agent(tenant_id: UUID) -> CopilotAgent:
 
 
 @router.post("/chat", response_model=None)
+@limiter.limit("30/minute")
 async def chat(
-    request: ChatRequest,
+    request: Request,
+    body: ChatRequest,
     user: CurrentUser,
     tenant: TenantCtx,
     _quota=Depends(require_copilot_quota()),  # HTTP 402 when monthly limit reached
-) -> StreamingResponse | ChatResponse:
+) -> StreamingResponse | JSONResponse:
     supabase = get_supabase_service_client()
+    quota_meta = get_copilot_quota_metadata(tenant)
     schema = SchemaDiscovery(supabase=supabase)
     prompt_gen = PromptGenerator(schema_discovery=schema)
 
@@ -196,16 +204,16 @@ async def chat(
     agent = _build_agent(tenant.tenant_id)
     date_range = ("2024-01-01", date.today().isoformat())
 
-    if request.stream:
+    if body.stream:
 
         async def event_stream():
             usage_incremented = False
-            conversation_id = request.conversation_id
+            conversation_id = body.conversation_id
             response_parts: list[str] = []
 
             if conversation_id is None:
                 conversation_id = _create_conversation(
-                    supabase, tenant.tenant_id, user.user_id, request.question
+                    supabase, tenant.tenant_id, user.user_id, body.question
                 )
                 if conversation_id:
                     yield (
@@ -216,7 +224,7 @@ async def chat(
 
             try:
                 async for chunk in agent.answer_stream(
-                    question=request.question,
+                    question=body.question,
                     schema_context=schema_context,
                     available_columns=available_columns,
                     date_range=date_range,
@@ -240,7 +248,7 @@ async def chat(
                     tenant_id=tenant.tenant_id,
                     user_id=user.user_id,
                     conversation_id=conversation_id,
-                    question=request.question,
+                    question=body.question,
                     response="".join(response_parts),
                 )
 
@@ -263,14 +271,16 @@ async def chat(
 
             yield "data: [DONE]\n\n"
 
-        return StreamingResponse(event_stream(), media_type="text/event-stream")
+        stream_resp = StreamingResponse(event_stream(), media_type="text/event-stream")
+        apply_copilot_quota_headers(stream_resp, quota_meta)
+        return stream_resp
 
     # ── Non-streaming: capture tokens + cost ─────────────────────────────────
     start_ms = int(time.time() * 1000)
 
     try:
         result = await agent.answer(
-            question=request.question,
+            question=body.question,
             schema_context=schema_context,
             available_columns=available_columns,
             date_range=date_range,
@@ -337,10 +347,10 @@ async def chat(
         logger.warning("Failed to log LLM cost: %s", exc)
 
     # Auto-create conversation if none exists
-    conversation_id = request.conversation_id
+    conversation_id = body.conversation_id
     if conversation_id is None:
         conversation_id = _create_conversation(
-            supabase, tenant.tenant_id, user.user_id, request.question
+            supabase, tenant.tenant_id, user.user_id, body.question
         )
 
     _save_chat_turn(
@@ -348,14 +358,14 @@ async def chat(
         tenant_id=tenant.tenant_id,
         user_id=user.user_id,
         conversation_id=conversation_id,
-        question=request.question,
+        question=body.question,
         response=result.response,
     )
 
     # Day 4: Add data provenance for transparency
     provenance = _extract_provenance(result, supabase, tenant.tenant_id)
 
-    return ChatResponse(
+    payload = ChatResponse(
         question=result.question,
         intent=result.intent,
         response=result.response,
@@ -367,6 +377,9 @@ async def chat(
         date_range=provenance["date_range"],
         data_freshness=provenance["data_freshness"],
     )
+    json_resp = JSONResponse(content=payload.model_dump(mode="json"))
+    apply_copilot_quota_headers(json_resp, quota_meta)
+    return json_resp
 
 
 # ============================================================================

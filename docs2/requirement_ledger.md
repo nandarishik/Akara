@@ -128,10 +128,10 @@ Columns: `source_ref` | `implementation_day` | `owner_lane` | `status` | `verifi
 |------------|-------------------|------------|--------|---------------------|---------------|
 | 18.1–18.4 — Stripe integration | Day 5 | Backend/API | done | webhook test | `tests/test_razorpay_webhook.py` |
 | Day 18 Quality Gate | Day 5 | QA/reliability | done | checkout E2E | `docs/day5_e2e_checklist.md`, pytest suite |
-| 19.1 — Rate limiting (slowapi) | Day 6 | Backend/API | pending | load test | — |
-| 19.2 — HTTP security headers | Day 6 | Backend/API | pending | header scan | — |
-| 19.3 — PII redaction before LLM | Day 6 | Backend/API | pending | redaction unit test | — |
-| Day 19 Quality Gate | Day 6 | QA/reliability | pending | security audit | — |
+| 19.1 — Rate limiting (slowapi) | Day 6 | Backend/API | done | load test | `tests/test_rate_limits.py` |
+| 19.2 — HTTP security headers | Day 6 | Backend/API | done | header scan | `app/core/security_headers.py` |
+| 19.3 — PII redaction before LLM | Day 6 | Backend/API | done | redaction unit test | `tests/test_pii_redactor.py` |
+| Day 19 Quality Gate | Day 6 | QA/reliability | done | security audit | `docs/day6_e2e_checklist.md` |
 | 20.1–20.5 — WhatsApp + team invites | Day 7 | Backend/API | pending | Zaptilo sandbox | — |
 | 20.6 — Weekly Debrief engine | Day 7 | Backend/API | pending | cron + email test | — |
 | Day 20 Quality Gate | Day 7 | QA/reliability | pending | debrief E2E | — |
@@ -149,11 +149,11 @@ Columns: `source_ref` | `implementation_day` | `owner_lane` | `status` | `verifi
 | source_ref | implementation_day | owner_lane | status | verification_method | evidence_link |
 |------------|-------------------|------------|--------|---------------------|---------------|
 | GAP 1 — GST invoicing | Day 5 | Backend/API | done | invoice PDF test | `tests/test_gst_invoice.py` |
-| GAP 2 — Async large file imports | Day 6 | Backend/API | pending | job queue test | — |
+| GAP 2 — Async large file imports | Day 6 | Backend/API | done | job queue test | `import_worker.py`, `tests/test_import_worker.py` |
 | GAP 3 — Empty state components | Day 4 | Customer frontend | pending | empty state E2E | — |
 | GAP 4 — Activation email sequence | Day 7 | Backend/API | pending | email trigger test | — |
 | GAP 5 — Bot prevention (Turnstile) | Day 3 | Backend/API | pending | signup CAPTCHA test | — |
-| GAP 6 — LLM downtime degradation | Day 6 | Backend/API | pending | fault injection | — |
+| GAP 6 — LLM downtime degradation | Day 6 | Backend/API | done | fault injection | `test_copilot.py`, CopilotPage banner |
 | GAP 7 — Supabase connection pooling | Day 1 | Database/security | in_progress | pooler + `/ready` | `config.py`, EXT-1 |
 | GAP 8 — Cron job health monitoring | Day 7 | Backend/API | pending | healthchecks ping | — |
 | GAP 9 — Copilot feedback loop | Day 11 | Customer frontend | pending | thumbs up/down test | — |
@@ -176,8 +176,8 @@ Columns: `source_ref` | `implementation_day` | `owner_lane` | `status` | `verifi
 | 404 page | Day 3 | Customer frontend | pending | E2E 404 | smoke.spec.ts partial |
 | OpenAI model pinned | Day 1 | Backend/API | done | test_config | `config.py` |
 | Favicon + OG tags | Day 3 | Customer frontend | pending | meta tag audit | — |
-| Content-Security-Policy header | Day 6 | Backend/API | pending | header scan | — |
-| Import job failure notification | Day 6 | Backend/API | pending | email on fail | — |
+| Content-Security-Policy header | Day 6 | Backend/API | done | header scan | `security_headers.py` |
+| Import job failure notification | Day 6 | Backend/API | done | email on fail | `notifications.py`, import_worker |
 
 ---
 
@@ -201,10 +201,10 @@ Columns: `source_ref` | `implementation_day` | `owner_lane` | `status` | `verifi
 | P14 — Settings | Day 4 | Customer frontend | pending | billing nav | — |
 | P15 — Billing Page | Day 4 | Customer frontend | done | E2E | `BillingPage.tsx`, `?upgraded=1` banner |
 | P16 — Upgrade Page | Day 4 | Customer frontend | done | E2E | `UpgradePage.tsx`, Razorpay Checkout.js |
-| P17 — 404 Not Found | Day 3 | Customer frontend | pending | smoke.spec.ts | — |
+| P17 — 404 Not Found | Day 3 | Customer frontend | done | smoke.spec.ts | `NotFoundPage.tsx` |
 | P18 — 500 Server Error | Day 13 | Customer frontend | pending | error boundary test | — |
 | P19 — Password Reset Landing | Day 3 | Customer frontend | pending | E2E | — |
-| P20 — Privacy + Terms | Day 3 | Product/ops | pending | legal review | — |
+| P20 — Privacy + Terms | Day 3 | Product/ops | done | legal review | `PrivacyPage.tsx`, `TermsPage.tsx` |
 
 ---
 

@@ -122,6 +122,7 @@ class ImportWorker:
             logger.error(
                 "Job %s moved to dead letter after %s retries", job_id, retry_count
             )
+            self._notify_import_failure(job_id, error_message)
             return
 
         self.supabase.table("import_jobs").update(
@@ -137,6 +138,28 @@ class ImportWorker:
         logger.info(
             "Job %s scheduled for retry #%s in %ss", job_id, retry_count + 1, delay
         )
+
+    def _notify_import_failure(self, job_id: UUID, error_message: str) -> None:
+        try:
+            job = (
+                self.supabase.table("import_jobs")
+                .select("user_id, filename, tenant_id")
+                .eq("id", str(job_id))
+                .maybe_single()
+                .execute()
+            )
+            if not job.data:
+                return
+            user_id = job.data.get("user_id")
+            filename = job.data.get("filename") or "upload"
+            user = self.supabase.auth.admin.get_user_by_id(user_id)
+            email = user.user.email if user and user.user else None
+            if email:
+                from app.services.notifications import send_import_failed_email
+
+                send_import_failed_email(email, filename, error_message)
+        except Exception as exc:
+            logger.warning("Import failure notification skipped for %s: %s", job_id, exc)
 
     def download_file(self, storage_path: str) -> bytes:
         if not storage_path:

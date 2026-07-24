@@ -338,7 +338,12 @@ export function SignUpPage() {
               className="mt-0.5 w-4 h-4 accent-accent flex-shrink-0"
             />
             <span className="text-sm text-text-secondary">
-              I consent to my sales data being processed by AI to generate analytics
+              I consent to my sales data (revenue figures, party names, product names) being
+              processed by AI systems to generate analytics. Personal contact information is
+              automatically removed before processing. My data is not shared with other organisations.{" "}
+              <Link to="/privacy#ai-processing" className="text-accent underline" target="_blank">
+                Learn more
+              </Link>
               <span className="block text-xs text-text-muted mt-0.5">(Required under DPDP Act 2023)</span>
             </span>
           </label>

@@ -15,6 +15,7 @@ except ImportError:
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from app.api.routes import alerts as alerts_router
 from app.api.routes import auth as auth_router
 from app.api.routes import billing as billing_router
 from app.api.routes import conversations as conversations_router
@@ -29,11 +30,15 @@ from app.api.routes import simulator as simulator_router
 from app.api.routes.admin import billing as admin_billing_router
 from app.api.routes.admin import logs as admin_logs_router
 from app.api.routes.admin import reports as admin_reports_router
+from app.api.routes.admin import security as admin_security_router
 from app.api.routes.admin import tenants as admin_tenants_router
 from app.api.routes.admin import users as admin_users_router
 from app.core.config import settings
 from app.core.errors import AkaraHTTPException, akara_exception_handler
 from app.core.middleware import RequestIDMiddleware
+from app.core.rate_limit import limiter, rate_limit_exceeded_handler
+from app.core.security_headers import SecurityHeadersMiddleware
+from slowapi.errors import RateLimitExceeded
 
 logging.basicConfig(
     level=settings.log_level,
@@ -101,9 +106,19 @@ app.add_middleware(
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
-    expose_headers=["X-Request-ID"],
+    expose_headers=[
+        "X-Request-ID",
+        "X-Quota-Used",
+        "X-Quota-Limit",
+        "X-Quota-Warn",
+        "X-Quota-Urgent",
+    ],
 )
+app.add_middleware(SecurityHeadersMiddleware)
 app.add_middleware(RequestIDMiddleware)
+
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, rate_limit_exceeded_handler)  # type: ignore[arg-type]
 
 # ---------------------------------------------------------------------------
 # Exception handlers
@@ -118,6 +133,7 @@ app.include_router(auth_router.router)
 app.include_router(billing_router.router)
 app.include_router(onboarding_router.router)
 app.include_router(marketing_router.router)
+app.include_router(alerts_router.router)
 app.include_router(copilot_router.router)
 app.include_router(conversations_router.router)
 app.include_router(kpi_router.router)
@@ -127,5 +143,6 @@ app.include_router(simulator_router.router)
 app.include_router(admin_tenants_router.router)
 app.include_router(admin_billing_router.router)
 app.include_router(admin_users_router.router)
+app.include_router(admin_security_router.router)
 app.include_router(admin_logs_router.router)
 app.include_router(admin_reports_router.router)

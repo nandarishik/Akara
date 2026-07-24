@@ -18,6 +18,7 @@ from pydantic import BaseModel
 
 from app.core.auth import CurrentUser
 from app.core.config import settings
+from app.core.rate_limit import limiter
 from app.core.tenant import get_supabase_service_client
 
 if TYPE_CHECKING:
@@ -180,6 +181,7 @@ class OnboardingResponse(BaseModel):
     status_code=status.HTTP_201_CREATED,
     summary="Idempotent tenant provisioning",
 )
+@limiter.limit("5/minute")
 async def setup_tenant(
     body: OnboardingRequest,
     request: Request,

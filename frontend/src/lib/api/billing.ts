@@ -31,6 +31,7 @@ export interface UsageResponse {
     team_invites: boolean;
     api_keys: boolean;
     ask_copilot_debrief: boolean;
+    alerts: boolean;
   };
   retention_days: number;
 }

@@ -1,4 +1,5 @@
 import { supabase } from "@/lib/supabase";
+import { toast } from "@/components/ui/toast";
 
 const BASE = import.meta.env.VITE_API_BASE_URL as string;
 
@@ -24,6 +25,9 @@ export async function apiFetch<T>(
   });
   if (!res.ok) {
     const errorText = await res.text();
+    if (res.status === 429) {
+      toast.error("Too many requests — please wait a minute and try again.");
+    }
     throw new Error(`API ${res.status}: ${errorText}`);
   }
   return res.json() as Promise<T>;

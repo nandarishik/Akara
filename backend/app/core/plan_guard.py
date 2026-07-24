@@ -205,6 +205,38 @@ def require_copilot_quota():
     return _check
 
 
+def get_copilot_quota_metadata(tenant: TenantContext) -> dict[str, int | float | bool]:
+    """Soft quota metadata for response headers (80/90% warnings, hard stop at 100%)."""
+    plan = _effective_plan(tenant)
+    limit = get_limit(plan, "copilot_calls_per_month")
+    if limit == -1:
+        return {
+            "quota_used": 0,
+            "quota_limit": -1,
+            "quota_pct": 0.0,
+            "warn": False,
+            "urgent": False,
+        }
+    usage = _get_current_usage(tenant.tenant_id)
+    current = int(usage.get("copilot_calls", 0))
+    pct = (current / limit) * 100 if limit else 0.0
+    return {
+        "quota_used": current,
+        "quota_limit": limit,
+        "quota_pct": round(pct, 1),
+        "warn": pct >= 80,
+        "urgent": pct >= 90,
+    }
+
+
+def apply_copilot_quota_headers(response, metadata: dict[str, int | float | bool]) -> None:
+    """Attach quota warning headers to a copilot HTTP response."""
+    response.headers["X-Quota-Used"] = str(metadata["quota_used"])
+    response.headers["X-Quota-Limit"] = str(metadata["quota_limit"])
+    response.headers["X-Quota-Warn"] = "true" if metadata.get("warn") else "false"
+    response.headers["X-Quota-Urgent"] = "true" if metadata.get("urgent") else "false"
+
+
 # ---------------------------------------------------------------------------
 # Guard: import quota
 # ---------------------------------------------------------------------------

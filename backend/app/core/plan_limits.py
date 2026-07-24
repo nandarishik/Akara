@@ -25,6 +25,7 @@ PLAN_LIMITS: dict[str, dict[str, Any]] = {
         "uploads_per_day": 3,       # hard daily cap — all plans (prevents server abuse)
         "undos_per_day": 2,         # max import deletes per day — all plans
         "users": 1,
+        "alerts_max": 0,
         "weekly_debriefs_lifetime": 1,  # checked against SUM across all months
         "daily_briefs": False,
         "retention_days": 30,
@@ -41,6 +42,7 @@ PLAN_LIMITS: dict[str, dict[str, Any]] = {
             "team_invites": False,
             "api_keys": False,
             "ask_copilot_debrief": False,
+            "alerts": False,
         },
     },
     "pro": {
@@ -50,6 +52,7 @@ PLAN_LIMITS: dict[str, dict[str, Any]] = {
         "uploads_per_day": 3,       # same daily cap as free — prevents batch abuse
         "undos_per_day": 2,
         "users": 3,
+        "alerts_max": 5,
         "weekly_debriefs_lifetime": -1,
         "daily_briefs": True,
         "retention_days": 365,
@@ -66,6 +69,7 @@ PLAN_LIMITS: dict[str, dict[str, Any]] = {
             "team_invites": True,
             "api_keys": False,
             "ask_copilot_debrief": True,
+            "alerts": True,
         },
     },
     "business": {
@@ -75,6 +79,7 @@ PLAN_LIMITS: dict[str, dict[str, Any]] = {
         "uploads_per_day": 3,       # same daily cap — contact support for bulk ingestion
         "undos_per_day": 2,
         "users": 10,
+        "alerts_max": -1,
         "weekly_debriefs_lifetime": -1,
         "daily_briefs": True,
         "retention_days": 1095,
@@ -91,6 +96,7 @@ PLAN_LIMITS: dict[str, dict[str, Any]] = {
             "team_invites": True,
             "api_keys": True,
             "ask_copilot_debrief": True,
+            "alerts": True,
         },
     },
 }
@@ -108,6 +114,7 @@ _FEATURE_REQUIRED_PLAN: dict[str, str] = {
     "team_invites": "Pro",
     "custom_language": "Pro",
     "ask_copilot_debrief": "Pro",
+    "alerts": "Pro",
 }
 
 

@@ -19,6 +19,7 @@ import {
   Building2,
   Users,
   AlertTriangle,
+  Bell,
   Settings,
   CreditCard,
   Lock,
@@ -30,6 +31,7 @@ const NAV_ITEMS = [
   { to: "/copilot", label: "Copilot", icon: MessageSquare, shortLabel: "AI", feature: null },
   { to: "/data", label: "Data", icon: Upload, shortLabel: "Data", feature: null },
   { to: "/reports", label: "Reports", icon: BarChart2, shortLabel: "Reports", feature: null },
+  { to: "/alerts", label: "Alerts", icon: Bell, shortLabel: "Alerts", feature: "alerts" },
   { to: "/simulator", label: "Simulator", icon: TrendingUp, shortLabel: "Sim", feature: "simulator" },
 ];
 
