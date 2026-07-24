@@ -18,10 +18,12 @@ interface Props {
 }
 
 export function ZoneChart({ data }: Props) {
+  // Coerce Decimal strings from FastAPI to numbers
+  const normalized = data.map((z) => ({ ...z, revenue_pct: toNum(z.revenue_pct), revenue: toNum(z.revenue) }));
   return (
     <ResponsiveContainer width="100%" height={220}>
       <BarChart
-        data={data.slice(0, 5)}
+        data={normalized.slice(0, 5)}
         layout="vertical"
         margin={{ top: 5, right: 30, left: 60, bottom: 5 }}
       >
@@ -34,10 +36,10 @@ export function ZoneChart({ data }: Props) {
           width={60}
         />
         <Tooltip
-          formatter={(v) => [`${toNum(v as number | string).toFixed(1)}%`, "Revenue share"]}
+          formatter={(v: any) => [`${toNum(Number(v) || 0).toFixed(1)}%`, "Revenue share"]}
         />
         <Bar dataKey="revenue_pct" radius={[0, 4, 4, 0]}>
-          {data.slice(0, 5).map((_, index) => (
+          {normalized.slice(0, 5).map((_, index) => (
             <Cell key={index} fill={COLORS[index % COLORS.length]} />
           ))}
         </Bar>

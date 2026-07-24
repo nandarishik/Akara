@@ -251,7 +251,11 @@ Implement Day 15 and UI Bible P1–P7/P19:
 
 ---
 
-# Day 4 — Customer application: AppShell, Dashboard, Copilot, Data, Reports, and Simulator
+# Day 4 — Customer application + 🔵 AKARA Blue UI Rehaul: AppShell, Dashboard, Copilot, Data, Reports, and Simulator
+
+> **UI REHAUL DAY.** Every frontend component built today uses the navy-to-electric-blue design system.
+> Reference: `akara/implentation/uirehaulday4.md` for exact specifications.
+> The visual target is the FireAI compliance section: deep navy canvas, blue glass cards, electric blue accents.
 
 ## Backend/API lane
 
@@ -268,16 +272,29 @@ Implement Day 15 and UI Bible P1–P7/P19:
 - Build idempotent import worker with claim lock, heartbeat, progress, timeout, retry, dead-letter, cleanup, and no duplicate rows.
 - Verify data undo, job, conversation, feedback, and report isolation.
 
-## Customer frontend lane
+## Customer frontend lane — 🔵 UI REHAUL
 
-Implement UI Bible P8–P13 and AppShell:
+### Foundation (do first — everything else builds on this)
 
-- desktop sidebar, role/plan navigation, mobile drawer, and five-tab bottom bar;
-- Dashboard loading, empty, populated, stale-data, quota, KPI, charts, tables, date picker, WhatsApp action, Slots D/E;
-- Copilot empty prompts, Hindi/English, streaming, complete response, provenance, feedback, error, quota, sidebar, rename/delete, mobile layout, Slots F/L;
-- Data daily counters, read-only role banner, three upload panels and every state, gates, history, undo confirmation, async polling/reload recovery, Slot G;
-- Reports route performance and scheme leakage loading/empty/gated/data/export states plus Slot J;
-- Simulator gate, sliders, animated projections, comparison, save, and reset.
+- Set up Tailwind blue scale tokens (950→50): NO grays, NO pure blacks, ALL navy-blue tinted;
+- Install `framer-motion`, `@fontsource/plus-jakarta-sans`, `@fontsource/inter`, `@fontsource/jetbrains-mono`;
+- Create CSS custom properties: `--gradient-brand`, `--surface-*`, `--glass-*`, `--accent-*`, `--text-*`;
+- Create `GradientMesh.tsx`: animated background (`#020B18` base + drifting royal-blue/cyan orbs + noise);
+- Create `LiquidGlassCard.tsx`: navy glass container (`rgba(15,52,96,0.4)` + blue border + backdrop-blur + hover glow);
+- Create `GlowKPICard.tsx` + `AnimatedNumber.tsx`: navy glass with blue left-bar, count-up animation, DeltaBadge;
+- Create `GradientButton.tsx` + `SecondaryButton`: blue gradient CTA (`#1565C0` → `#42A5F5`);
+- Create `ShimmerSkeleton.tsx`: blue shimmer on navy glass (KPI/Chart/Table variants);
+- Create `EmptyState.tsx`: blue gradient glow behind icon, gradient heading, GradientButton;
+- Create `springs.ts`: Framer Motion spring configs (snappy/gentle/bouncy/smooth), stagger delays.
+
+### Pages (use the foundation components)
+
+- AppShell: navy glass sidebar (`bg-[#051B37]/90`), mobile drawer, 5-tab bottom bar with blue glow active state, role/plan navigation;
+- Dashboard "Mission Control": GlowKPICards with AnimatedNumber, blue gradient AreaCharts in LiquidGlassCards, loading/empty/stale states, outstanding table, Slots D/E;
+- Copilot "AI Studio": navy glass AI bubbles with electric blue left-border, user messages in blue gradient, streaming with blinking cursor, feedback buttons, provenance in monospace, error states, conversation sidebar, Slots F/L;
+- Data "Import Command Center": blue gradient border upload zones with 6 states (idle/drag/uploading/processing/success/error), async job polling, import history in navy glass table, daily counters, Slot G;
+- Reports "Intelligence Station": route performance with blue gradient charts, scheme leakage stunning navy glass gate (blur + lock + blue glow + gradient text + GradientButton), Slot J;
+- Simulator "What-If Machine": navy glass gate for free plan, Pro/Business 3-panel with blue gradient sliders and animated projections.
 
 ## Superadmin frontend lane
 
@@ -290,6 +307,8 @@ Implement UI Bible P8–P13 and AppShell:
 - Test copilot provider faults and quota non-increment.
 - Test provenance correspondence to executed queries and safe SQL display.
 - Test every P8–P13 loading/empty/error/data/gated/mobile state.
+- **🔵 Visual check:** verify ALL surfaces are navy-blue-tinted (no gray backgrounds, no pure black, no violet accents).
+- Verify WCAG AA contrast for all blue text on navy surfaces.
 
 ## Product/content/operations lane
 
@@ -298,8 +317,11 @@ Implement UI Bible P8–P13 and AppShell:
 
 ## Day 4 completion gate
 
+- **🔵 Every customer-facing surface uses the navy-blue design system. Zero gray leaks.**
 - Core product works end-to-end with large data, empty data, provider failure, and every plan.
-- Source coverage: P8–P13, AppShell, GAP 2, GAP 3, GAP 6, GAP 9, GAP 10, Slots D–G/J/L/M, Bucket 3 import-failure item.
+- GradientMesh background renders without jank, LiquidGlassCards have correct backdrop-blur.
+- Plan gates use navy glass blur + lock with blue glow + gradient text pattern.
+- Source coverage: P8–P13, AppShell, GAP 2, GAP 3, GAP 6, GAP 9, GAP 10, Slots D–G/J/L/M, Bucket 3 import-failure item, UI Rehaul spec (`uirehaulday4.md`).
 
 ---
 
@@ -1003,4 +1025,3 @@ The following are recorded but are not Day 14 launch requirements:
 - SOC 2, ISO 27001, enterprise SSO, private customer-VPC LLM, white-labeling, referral program, PWA, NPS, and other Phase 4/scale-triggered work.
 
 They must remain in the product backlog with their source-defined trigger and must not be advertised as live.
-

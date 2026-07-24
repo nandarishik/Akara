@@ -38,16 +38,36 @@ def list_conversations(
     user: CurrentUser,
     tenant: TenantCtx,
 ) -> list[ConversationOut]:
-    """List all conversations for the current user, sorted by most recent."""
+    """List all non-deleted conversations for the current user, sorted by most recent."""
     supabase = get_supabase_service_client()
 
-    # Get conversations with message counts
-    result = supabase.rpc(
-        "get_conversations_with_counts",
-        {"p_user_id": str(user.user_id)}
-    ).execute()
+    # Day 4: Exclude soft-deleted conversations
+    # Note: We assume the get_conversations_with_counts RPC function
+    # should be updated to exclude deleted_at IS NOT NULL
+    # For now, we'll use a direct query if the RPC doesn't handle soft deletes
+    try:
+        result = supabase.rpc(
+            "get_conversations_with_counts",
+            {"p_user_id": str(user.user_id)}
+        ).execute()
 
-    return [ConversationOut(**row) for row in (result.data or [])]
+        # Filter out deleted conversations client-side if RPC doesn't handle it
+        conversations = result.data or []
+        # Filter out any that have deleted_at (if the field is returned)
+        conversations = [conv for conv in conversations if not conv.get('deleted_at')]
+
+        return [ConversationOut(**row) for row in conversations]
+    except Exception:
+        # Fallback to direct query if RPC fails
+        result = (
+            supabase.table("conversations")
+            .select("id, title, created_at, updated_at")
+            .eq("user_id", str(user.user_id))
+            .is_("deleted_at", "null")
+            .order("updated_at", desc=True)
+            .execute()
+        )
+        return [ConversationOut(**row, message_count=0) for row in (result.data or [])]
 
 
 @router.post("/", response_model=ConversationOut, status_code=status.HTTP_201_CREATED)
@@ -148,14 +168,17 @@ def delete_conversation(
     user: CurrentUser,
     tenant: TenantCtx,
 ) -> None:
-    """Delete a conversation and all its messages."""
+    """Soft delete a conversation (set deleted_at timestamp)."""
     supabase = get_supabase_service_client()
+
+    # Day 4: Soft delete instead of hard delete
     result = (
         supabase.table("conversations")
-        .delete()
+        .update({"deleted_at": "NOW()"})
         .eq("id", str(conversation_id))
         .eq("user_id", str(user.user_id))
+        .is_("deleted_at", "null")  # Only delete if not already deleted
         .execute()
     )
     if not result.data:
-        raise HTTPException(status_code=404, detail="Conversation not found")
+        raise HTTPException(status_code=404, detail="Conversation not found or already deleted")

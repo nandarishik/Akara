@@ -5,6 +5,15 @@ export interface KPISummary {
   avg_order_value: number;
   total_quantity: number;
   total_discount: number;
+  // Change tracking properties
+  revenue_change?: number;
+  revenue_change_pct?: number;
+  orders_change?: number;
+  orders_change_pct?: number;
+  parties_change?: number;
+  parties_change_pct?: number;
+  aov_change?: number;
+  aov_change_pct?: number;
 }
 
 export interface TopProduct {
@@ -51,4 +60,5 @@ export interface KPIResponse {
   outstanding_parties: OutstandingParty[];
   date_range_start: string;
   date_range_end: string;
+  last_import?: string;
 }

@@ -1,300 +1,303 @@
 @import "tailwindcss";
 @plugin "@tailwindcss/typography";
 
-/* ─── AKARA Design Tokens — UI Bible §1.2 / §1.3 ─────────────────────────── */
+/* ═══════════════════════════════════════════════════════════════════════════
+   🔵 AKARA BLUE DESIGN TOKENS — UI Rehaul Day 4
+   Navy-to-Electric-Blue system inspired by FireAI
+   Tailwind v4 @theme block — NO grays, NO pure blacks, ALL blue-tinted.
+═══════════════════════════════════════════════════════════════════════════ */
 
 @theme {
-  /* Brand */
-  --color-brand: #5b21b6;
-  --color-brand-light: #7c3aed;
-  --color-brand-dim: #ede9fe;
+  /* ── The AKARA Blue Spectrum (10 shades from abyss to sky) ──── */
+  --color-navy-950: #020B18;   /* The abyss — deepest background */
+  --color-navy-900: #051B37;   /* Canvas — page background */
+  --color-navy-850: #0A1F3D;   /* Card backgrounds */
+  --color-navy-800: #0C2D57;   /* Elevated surfaces */
+  --color-navy-700: #0F3460;   /* Sidebar, panels */
+  --color-navy-600: #1565C0;   /* Borders, dividers */
+  --color-navy-500: #1976D2;   /* Interactive elements */
+  --color-navy-400: #2196F3;   /* Active states */
+  --color-navy-300: #42A5F5;   /* Electric blue — CTAs, accents */
+  --color-navy-200: #64B5F6;   /* Highlights */
+  --color-navy-100: #90CAF9;   /* Body text on dark */
+  --color-navy-50:  #E3F2FD;   /* Badges on light */
 
-  /* Accent — CTA + data */
-  --color-accent: #f97316;
-  --color-accent-amber: #f59e0b;
-  --color-accent-amber-dim: #fef3c7;
+  /* ── Legacy brand mapping (for backward compatibility) ────────── */
+  --color-brand:          #42A5F5;   /* Electric blue (was violet) */
+  --color-brand-light:    #64B5F6;   /* Light blue (was violet-light) */
+  --color-brand-dim:      #0A1F3D;   /* Navy card bg (was violet-dim) */
+  --color-brand-dark:     #0F3460;   /* Deep navy (was violet-dark) */
 
-  /* Surfaces (light mode) */
-  --color-surface-bg: #f8f7ff;
-  --color-surface-card: #ffffff;
-  --color-surface-raised: #f1f5f9;
-  --color-surface-border: #e2e8f0;
+  /* ── Navy Glass System ─────────────────────────────────────────── */
+  --color-glass-bg:       rgba(15, 52, 96, 0.4);     /* Universal card background */
+  --color-glass-border:   rgba(33, 150, 243, 0.12);  /* Card borders */
+  --color-glass-hover:    rgba(33, 150, 243, 0.18);  /* Hover states */
+  --color-glass-active:   rgba(33, 150, 243, 0.25);  /* Active/pressed */
 
-  /* Text */
-  --color-text-primary: #0f172a;
-  --color-text-secondary: #475569;
-  --color-text-muted: #94a3b8;
-  --color-text-inverse: #ffffff;
+  /* ── Text on Navy ──────────────────────────────────────────────── */
+  --color-text-primary:   #FFFFFF;    /* White — headings, values */
+  --color-text-secondary: #90CAF9;    /* Light blue — body text */
+  --color-text-muted:     #5C8FBF;    /* Muted blue — labels, captions */
+  --color-text-faint:     #2A5A8A;    /* Very muted — disabled, placeholders */
+  --color-text-link:      #64B5F6;    /* Link blue — interactive text */
+  --color-text-inverse:   #020B18;    /* Navy text on light backgrounds */
 
-  /* Semantic */
-  --color-success: #10b981;
-  --color-success-dim: #d1fae5;
-  --color-warning: #f59e0b;
-  --color-warning-dim: #fef3c7;
-  --color-danger: #ef4444;
-  --color-danger-dim: #fee2e2;
-  --color-info: #3b82f6;
-  --color-info-dim: #dbeafe;
+  /* ── Accents on Navy ───────────────────────────────────────────── */
+  --color-accent-primary: #42A5F5;    /* Electric blue — the highlight */
+  --color-accent-cyan:    #00BCD4;    /* Cyan — for data, charts, AI */
+  --color-accent-success: #00E676;    /* Neon green — money, growth */
+  --color-accent-warning: #FFB300;    /* Warm amber — attention */
+  --color-accent-danger:  #FF5252;    /* Vibrant red — critical */
+  --color-accent-info:    #80D8FF;    /* Light cyan — informational */
 
-  /* Chart palette */
-  --color-chart-1: #5b21b6;
-  --color-chart-2: #f59e0b;
-  --color-chart-3: #10b981;
-  --color-chart-4: #f97316;
-  --color-chart-5: #3b82f6;
+  /* ── Semantic colors (bright against navy) ────────────────────── */
+  --color-success:        #00E676;    /* Neon green on navy */
+  --color-success-dim:    rgba(0, 230, 118, 0.12);
+  --color-warning:        #FFB300;    /* Warm amber */
+  --color-warning-dim:    rgba(255, 179, 0, 0.12);
+  --color-danger:         #FF5252;    /* Vibrant red */
+  --color-danger-dim:     rgba(255, 82, 82, 0.12);
+  --color-info:           #80D8FF;    /* Light cyan */
+  --color-info-dim:       rgba(128, 216, 255, 0.12);
 
-  /* Superadmin dark theme — day1 critical + sprint §6.1 */
-  --color-sa-bg: #0f172a;
-  --color-sa-surface: #111118;
-  --color-sa-raised: #1e1e2e;
-  --color-sa-border: #1e1e2e;
-  --color-sa-text: #e2e8f0;
-  --color-sa-muted: #64748b;
-  --color-sa-accent: #818cf8;
-  --color-sa-success: #22d3ee;
-  --color-sa-warning: #f59e0b;
-  --color-sa-danger: #f43f5e;
+  /* ── Chart palette (vibrant on navy) ───────────────────────────── */
+  --color-chart-1:        #42A5F5;    /* Electric blue */
+  --color-chart-2:        #00BCD4;    /* Cyan */
+  --color-chart-3:        #00E676;    /* Neon green */
+  --color-chart-4:        #FFB300;    /* Amber */
+  --color-chart-5:        #FF80AB;    /* Pink */
+  --color-chart-6:        #B388FF;    /* Lavender */
 
-  /* shadcn compatibility aliases */
-  --color-background: var(--color-surface-bg);
-  --color-foreground: var(--color-text-primary);
-  --color-primary: var(--color-brand);
-  --color-primary-foreground: #ffffff;
-  --color-secondary: var(--color-surface-raised);
-  --color-secondary-foreground: var(--color-text-primary);
-  --color-muted: var(--color-surface-raised);
-  --color-muted-foreground: var(--color-text-muted);
-  --color-destructive: var(--color-danger);
-  --color-destructive-foreground: #ffffff;
-  --color-border: var(--color-surface-border);
-  --color-input: #cbd5e1;
-  --color-ring: var(--color-brand);
-  --color-card: var(--color-surface-card);
-  --color-card-foreground: var(--color-text-primary);
-  --color-accent-foreground: var(--color-text-primary);
-  --color-popover: var(--color-surface-card);
-  --color-popover-foreground: var(--color-text-primary);
+  /* ── Superadmin (deepest navy + cyan accents) ──────────────────── */
+  --color-sa-bg:          #010813;    /* Near-black with blue undertone */
+  --color-sa-surface:     #020E1F;    /* Deep abyss navy */
+  --color-sa-raised:      #061A33;    /* Cards on the abyss */
+  --color-sa-border:      rgba(0, 188, 212, 0.1);  /* Cyan-tinted borders */
+  --color-sa-text:        #FFFFFF;    /* White text */
+  --color-sa-muted:       #90CAF9;    /* Light blue for labels */
+  --color-sa-accent:      #00BCD4;    /* Cyan for superadmin CTA */
 
-  /* Typography */
-  --font-sans: "Plus Jakarta Sans", "Inter", ui-sans-serif, system-ui, sans-serif;
+  /* ── Fonts ─────────────────────────────────────────────────────── */
+  --font-sans: "Plus Jakarta Sans", "Inter", ui-sans-serif, system-ui;
   --font-mono: "JetBrains Mono", ui-monospace, monospace;
 
-  /* Shadows */
-  --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
-  --shadow-card-hover: 0 4px 12px rgba(91, 33, 182, 0.12),
-    0 2px 4px rgba(0, 0, 0, 0.04);
-  --shadow-cta: 0 4px 14px rgba(249, 115, 22, 0.4);
-  --shadow-brand: 0 4px 14px rgba(91, 33, 182, 0.25);
+  /* ── Navy Glass Shadows ────────────────────────────────────────── */
+  --shadow-card:       0 8px 32px rgba(2,11,24,0.6);                            /* Navy glass shadow */
+  --shadow-card-hover: 0 12px 40px rgba(2,11,24,0.8), 0 0 20px rgba(33,150,243,0.08); /* Blue glow */
+  --shadow-cta:        0 4px 20px rgba(33,150,243,0.3);                         /* Blue CTA glow */
+  --shadow-glow:       0 0 16px rgba(66,165,245,0.35);                          /* Electric blue glow */
+  --shadow-brand:      0 4px 20px rgba(66,165,245,0.3);                         /* Brand shadow (blue) */
 
-  /* Animations */
-  --animate-fade-up: fadeUp 0.4s ease both;
-  --animate-fade-in: fadeIn 0.2s ease both;
-  --animate-pulse-soft: pulseSoft 2s ease infinite;
+  /* ── Blue Gradient Animations ──────────────────────────────────── */
+  --animate-fade-up:        fadeUp 0.4s ease both;
+  --animate-fade-in:        fadeIn 0.2s ease both;
+  --animate-pulse-soft:     pulseSoft 2s ease infinite;
   --animate-slide-in-right: slideInRight 0.3s ease both;
-  --animate-number-pop: numberPop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both;
-
-  /* Radius */
-  --radius-lg: 0.5rem;
-  --radius-xl: 0.75rem;
-  --radius-2xl: 1rem;
+  --animate-number-pop:     numberPop 0.5s cubic-bezier(0.34,1.56,0.64,1) both;
+  --animate-shimmer:        shimmer 2s linear infinite;
+  --animate-gradient:       gradient 3s linear infinite;
+  --animate-glow:           glow 2s ease-in-out infinite alternate;
+  --animate-skeleton:       blueShimmer 1.5s ease-in-out infinite;
 }
 
-/* ─── Keyframes ──────────────────────────────────────────────────────────── */
+/* ═══════════════════════════════════════════════════════════════════════════
+   CSS Custom Properties — Brand Gradients
+═══════════════════════════════════════════════════════════════════════════ */
+
+:root {
+  /* Brand Gradients — The signature AKARA flows */
+  --gradient-brand: linear-gradient(135deg, #0A1628 0%, #0F3460 30%, #1A56DB 60%, #2E86DE 100%);
+  --gradient-button: linear-gradient(135deg, #1565C0 0%, #1E88E5 50%, #42A5F5 100%);
+  --gradient-hero: linear-gradient(180deg, #020B18 0%, #0F3460 50%, #1976D2 100%);
+  --gradient-card: linear-gradient(135deg, rgba(15,52,96,0.6) 0%, rgba(26,86,219,0.15) 100%);
+  
+  /* Surface definitions for easy reference */
+  --surface-void: #020B18;
+  --surface-base: #051B37;
+  --glass-bg: rgba(15, 52, 96, 0.4);
+  --glass-border: rgba(33, 150, 243, 0.12);
+  --accent-primary: #42A5F5;
+  --text-secondary: #90CAF9;
+  --text-muted: #5C8FBF;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Keyframes
+═══════════════════════════════════════════════════════════════════════════ */
 
 @keyframes fadeUp {
-  from {
-    opacity: 0;
-    transform: translateY(12px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0);    }
 }
 
 @keyframes fadeIn {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
+  from { opacity: 0; }
+  to   { opacity: 1; }
 }
 
 @keyframes pulseSoft {
-  0%,
-  100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.5;
-  }
+  0%, 100% { opacity: 1;   }
+  50%       { opacity: 0.4; }
 }
 
 @keyframes slideInRight {
-  from {
-    opacity: 0;
-    transform: translateX(16px);
-  }
-  to {
-    opacity: 1;
-    transform: translateX(0);
-  }
+  from { opacity: 0; transform: translateX(16px); }
+  to   { opacity: 1; transform: translateX(0);    }
 }
 
 @keyframes numberPop {
-  0% {
-    transform: scale(0.8);
-    opacity: 0;
-  }
-  60% {
-    transform: scale(1.05);
-  }
-  100% {
-    transform: scale(1);
-    opacity: 1;
-  }
+  0%   { transform: scale(0.8); opacity: 0; }
+  60%  { transform: scale(1.05);            }
+  100% { transform: scale(1);   opacity: 1; }
 }
 
 @keyframes shimmer {
-  0% {
-    background-position: -200% 0;
-  }
-  100% {
-    background-position: 200% 0;
-  }
+  0%   { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
 }
 
-@keyframes blink {
-  0%,
-  100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0;
-  }
+@keyframes gradient {
+  0%, 100% { border-color: rgba(21,101,192,0.4); }
+  50%      { border-color: rgba(66,165,245,0.6); }
 }
 
-/* ─── Base layer ─────────────────────────────────────────────────────────── */
-
-@layer base {
-  *,
-  *::before,
-  *::after {
-    border-color: var(--color-surface-border);
-  }
-
-  html {
-    font-family: var(--font-sans);
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
-  }
-
-  body {
-    @apply bg-surface-bg text-text-primary antialiased;
-    font-size: 1rem;
-    line-height: 1.6;
-  }
-
-  h1 {
-    font-size: 3rem;
-    font-weight: 800;
-    letter-spacing: -0.02em;
-  }
-
-  h2 {
-    font-size: 2rem;
-    font-weight: 700;
-    letter-spacing: -0.01em;
-  }
-
-  h3 {
-    font-size: 1.5rem;
-    font-weight: 600;
-  }
-
-  h4 {
-    font-size: 1.125rem;
-    font-weight: 600;
-  }
-
-  small {
-    font-size: 0.875rem;
-    line-height: 1.5;
-  }
+@keyframes glow {
+  0%   { box-shadow: 0 0 5px rgba(66,165,245,0.2); }
+  100% { box-shadow: 0 0 20px rgba(66,165,245,0.6); }
 }
 
-/* ─── Utility classes — UI Bible §1.4 micro-animations ─────────────────────── */
+@keyframes blueShimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position:  200% 0; }
+}
 
+@keyframes drift1 {
+  0%   { transform: translate(0, 0); }
+  25%  { transform: translate(40px, -30px); }
+  75%  { transform: translate(-30px, 40px); }
+  100% { transform: translate(0, 0); }
+}
+
+@keyframes drift2 {
+  0%   { transform: translate(0, 0); }
+  25%  { transform: translate(-40px, 40px); }
+  75%  { transform: translate(30px, -30px); }
+  100% { transform: translate(0, 0); }
+}
+
+@keyframes pulse {
+  0%, 100% { transform: translate(-50%, 0) scale(1); opacity: 0.05; }
+  50%      { transform: translate(-50%, 0) scale(1.1); opacity: 0.1; }
+}
+
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes scaleIn {
+  from { opacity: 0; transform: scale(0.9); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+@keyframes slideInRight {
+  from { opacity: 0; transform: translateX(50px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes countUp {
+  from { opacity: 0; transform: scale(0.8); }
+  60%  { transform: scale(1.05); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+@keyframes pulseOnce {
+  0%   { transform: scale(1); }
+  50%  { transform: scale(1.05); }
+  100% { transform: scale(1); }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Base styles
+═══════════════════════════════════════════════════════════════════════════ */
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background-color: var(--color-navy-900);  /* Navy canvas, NOT white */
+  color: var(--color-text-primary);         /* White text */
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ── KPI number typography ─────────────────────────────────────────────── */
 .kpi-value {
+  font-family: var(--font-mono);
   font-size: 2.25rem;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
-  font-family: var(--font-mono);
-  color: var(--color-accent-amber);
+  line-height: 1;
 }
 
 .kpi-change {
   font-size: 0.875rem;
   font-weight: 600;
+  font-variant-numeric: tabular-nums;
 }
 
+/* ── Button press micro-interaction ───────────────────────────────────── */
 .btn-press {
   transition: transform 100ms;
 }
-
-.btn-press:active:not(:disabled) {
+.btn-press:active {
   transform: scale(0.97);
 }
 
+/* ── Card hover lift ──────────────────────────────────────────────────── */
 .card-hover {
-  transition:
-    box-shadow 200ms,
-    transform 200ms;
+  transition: box-shadow 200ms, transform 200ms;
 }
-
 .card-hover:hover {
-  box-shadow: 0 8px 24px rgba(91, 33, 182, 0.12);
+  box-shadow: var(--shadow-card-hover);
   transform: translateY(-2px);
 }
 
-.skeleton {
-  @apply rounded-lg bg-slate-200;
-  background-image: linear-gradient(
-    90deg,
-    rgb(226 232 240) 0%,
-    rgb(241 245 249) 50%,
-    rgb(226 232 240) 100%
-  );
-  background-size: 200% 100%;
-  animation: shimmer 1.5s ease-in-out infinite;
-}
-
+/* ── Streaming cursor (copilot) ───────────────────────────────────────── */
 .streaming-cursor::after {
   content: "▋";
   animation: blink 1s step-end infinite;
-  color: var(--color-brand);
+  color: var(--color-navy-300);  /* Electric blue cursor */
+}
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0; }
 }
 
+/* ── Blue Skeleton shimmer ────────────────────────────────────────────── */
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    rgba(10,31,61,0.5) 25%,
+    rgba(33,150,243,0.08) 50%,
+    rgba(10,31,61,0.5) 75%
+  );
+  background-size: 200% 100%;
+  animation: blueShimmer 1.5s ease-in-out infinite;
+  border-radius: 0.375rem;
+  border: 1px solid rgba(33,150,243,0.08);
+}
+
+/* ── Superadmin deepest navy surface ──────────────────────────────────── */
 .superadmin-surface {
-  background-color: var(--color-sa-bg);
-  color: var(--color-sa-text);
+  background-color: var(--color-sa-bg);    /* Near-black navy */
+  color: var(--color-sa-text);             /* White text */
+  border-color: var(--color-sa-border);    /* Cyan-tinted borders */
 }
 
-.nav-item {
-  font-size: 0.875rem;
-  font-weight: 500;
-  letter-spacing: 0.01em;
-}
-
-.caption {
-  font-size: 0.75rem;
-  font-weight: 500;
-  letter-spacing: 0.025em;
-}
-
-/* ─── Reduced motion ─────────────────────────────────────────────────────── */
-
+/* ── Reduced motion — disable all animations ─────────────────────────── */
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
@@ -304,16 +307,8 @@
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
   }
-
-  .btn-press:active:not(:disabled) {
-    transform: none;
-  }
-
-  .card-hover:hover {
-    transform: none;
-  }
-
   .skeleton {
     animation: none;
+    background: rgba(10,31,61,0.5);  /* Static navy shimmer for reduced motion */
   }
 }

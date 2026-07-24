@@ -1,17 +1,26 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { TrendingUp, TrendingDown, AlertCircle, Info } from "lucide-react";
+import { 
+  TrendingUp, 
+  TrendingDown, 
+  AlertCircle, 
+  Info, 
+  Lock,
+  Zap,
+  BarChart3,
+  Target,
+  Calculator,
+  Crown,
+  Sparkles,
+  Play
+} from "lucide-react";
 import { apiFetch } from "@/lib/api";
-import { Button } from "@/components/ui/button";
+import LiquidGlassCard from "@/components/ui/LiquidGlassCard";
+import GradientButton, { SecondaryButton } from "@/components/ui/GradientButton";
+import AnimatedNumber from "@/components/ui/AnimatedNumber";
+import { KPISkeleton } from "@/components/ui/ShimmerSkeleton";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 
 // ────────────────────────────────────────────────────────────────
 // Types
@@ -51,7 +60,7 @@ function formatINR(v: number) {
   return `${prefix}₹${abs.toFixed(0)}`;
 }
 
-function SliderRow({
+function BlueGradientSlider({
   label,
   value,
   min,
@@ -59,6 +68,7 @@ function SliderRow({
   step,
   onChange,
   formatLabel,
+  animationDelay = 0,
 }: {
   label: string;
   value: number;
@@ -67,36 +77,73 @@ function SliderRow({
   step: number;
   onChange: (v: number) => void;
   formatLabel: (v: number) => string;
+  animationDelay?: number;
 }) {
+  const [isAnimating, setIsAnimating] = useState(false);
+
+  useEffect(() => {
+    if (value !== 0) {
+      setIsAnimating(true);
+      const timer = setTimeout(() => setIsAnimating(false), 500);
+      return () => clearTimeout(timer);
+    }
+  }, [value]);
+
   return (
-    <div className="space-y-3">
-      <div className="flex justify-between items-center">
-        <Label className="text-sm font-medium text-slate-700">{label}</Label>
+    <LiquidGlassCard 
+      hover={false} 
+      className={`p-4 animate-fadeInUp`}
+      style={{ animationDelay: `${animationDelay}ms` }}
+    >
+      <div className="flex justify-between items-center mb-3">
+        <Label className="text-[#E3F2FD] font-medium">{label}</Label>
         <span
-          className={`text-sm font-semibold tabular-nums ${
+          className={`text-sm font-bold tabular-nums transition-all duration-300 ${
             value > 0
-              ? "text-green-600"
+              ? "text-emerald-400"
               : value < 0
-              ? "text-red-600"
-              : "text-slate-500"
-          }`}
+              ? "text-red-400"
+              : "text-[#90CAF9]"
+          } ${isAnimating ? "scale-110" : ""}`}
         >
           {formatLabel(value)}
         </span>
       </div>
-      <Slider
-        value={[value]}
-        min={min}
-        max={max}
-        step={step}
-        onValueChange={([v]) => onChange(v)}
-      />
-      <div className="flex justify-between text-xs text-slate-400">
+      
+      {/* Custom blue gradient slider */}
+      <div className="relative">
+        <Slider
+          value={[value]}
+          min={min}
+          max={max}
+          step={step}
+          onValueChange={([v]) => onChange(v)}
+          className="w-full"
+        />
+        {/* Blue glow effect when active */}
+        {value !== 0 && (
+          <div 
+            className="absolute inset-0 pointer-events-none rounded-full opacity-30 animate-pulse"
+            style={{
+              background: 'linear-gradient(135deg, #1565C0 0%, #42A5F5 100%)',
+              filter: 'blur(8px)',
+            }}
+          />
+        )}
+      </div>
+      
+      <div className="flex justify-between text-xs text-[#5C8FBF] mt-2">
         <span>{formatLabel(min)}</span>
         <span>{formatLabel(max)}</span>
       </div>
-    </div>
+    </LiquidGlassCard>
   );
+}
+
+// Mock user plan - in real app this would come from auth context
+function getUserPlan(): 'free' | 'pro' | 'business' {
+  // For demo, randomly assign or use a mock
+  return 'free'; // Change to 'pro' or 'business' to test different views
 }
 
 // ────────────────────────────────────────────────────────────────
@@ -106,6 +153,12 @@ function SliderRow({
 export function SimulatorPage() {
   const [growthRate, setGrowthRate] = useState(0);
   const [discountChange, setDiscountChange] = useState(0);
+  const [marketExpansion, setMarketExpansion] = useState(0);
+  const [customerRetention, setCustomerRetention] = useState(0);
+  const [isRunningSimulation, setIsRunningSimulation] = useState(false);
+
+  const userPlan = getUserPlan(); // In real app: get from auth context
+  const isPremium = userPlan === 'pro' || userPlan === 'business';
 
   // ── Fetch real baseline on mount ──
   const {
@@ -130,6 +183,8 @@ export function SimulatorPage() {
         body: JSON.stringify({
           growth_rate_pct: growthRate,
           discount_change_pct: discountChange,
+          market_expansion_pct: marketExpansion,
+          customer_retention_pct: customerRetention,
         }),
       }),
   });
@@ -137,104 +192,235 @@ export function SimulatorPage() {
   const hasEnoughData = baseline && baseline.data_days >= 7;
   const isPositive = result && result.revenue_delta >= 0;
 
-  return (
-    <div className="p-8 max-w-4xl mx-auto space-y-6">
-      {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold text-slate-900">Revenue Simulator</h1>
-        <p className="text-sm text-slate-500 mt-1">
-          Model what-if scenarios using your actual sales data
-        </p>
-      </div>
+  // Animation for simulation
+  const handleRunSimulation = () => {
+    setIsRunningSimulation(true);
+    setTimeout(() => {
+      runSimulation();
+      setIsRunningSimulation(false);
+    }, 2000);
+  };
 
-      {/* Insufficient data warning */}
-      {!baselineLoading && baseline && !hasEnoughData && (
-        <div className="flex items-start gap-3 p-4 bg-amber-50 border border-amber-200 rounded-lg">
-          <AlertCircle className="h-4 w-4 text-amber-600 mt-0.5 shrink-0" />
-          <div>
-            <p className="text-sm font-medium text-amber-800">
-              Not enough data for a reliable projection
+  // Navy Glass Gate for Free Users
+  if (!isPremium) {
+    return (
+      <div className="p-8 max-w-4xl mx-auto">
+        <LiquidGlassCard className="p-8 text-center border-[#42A5F5]/20 relative overflow-hidden">
+          {/* Animated background pattern */}
+          <div className="absolute inset-0 opacity-5">
+            <div className="absolute inset-0" style={{
+              background: 'radial-gradient(circle at 20% 50%, #1565C0 0%, transparent 50%), radial-gradient(circle at 80% 50%, #42A5F5 0%, transparent 50%)',
+            }} />
+          </div>
+          
+          <div className="relative z-10 max-w-md mx-auto">
+            <div 
+              className="w-20 h-20 mx-auto mb-6 rounded-2xl flex items-center justify-center animate-pulse"
+              style={{
+                background: 'linear-gradient(135deg, #1565C0 0%, #42A5F5 100%)',
+                boxShadow: '0 20px 60px rgba(66, 165, 245, 0.4)'
+              }}
+            >
+              <Lock className="h-10 w-10 text-white" />
+            </div>
+            
+            <h1 
+              className="text-2xl font-bold mb-4 bg-clip-text text-transparent"
+              style={{
+                backgroundImage: 'linear-gradient(135deg, #FFFFFF 0%, #90CAF9 100%)'
+              }}
+            >
+              Revenue Simulator
+            </h1>
+            
+            <p className="text-[#90CAF9] mb-6 leading-relaxed">
+              Advanced what-if modeling and revenue projections are available with 
+              Pro and Business plans. Unlock powerful forecasting capabilities.
             </p>
-            <p className="text-xs text-amber-700 mt-0.5">
-              We found {baseline.data_days} day
-              {baseline.data_days !== 1 ? "s" : ""} of sales data. Import at
-              least 7 days of sales from the Data page to get meaningful
-              projections.
+
+            <div className="space-y-3 mb-8">
+              <div className="flex items-center gap-3 text-left">
+                <div className="w-2 h-2 rounded-full bg-[#42A5F5]" />
+                <span className="text-[#E3F2FD] text-sm">Multi-variable scenario modeling</span>
+              </div>
+              <div className="flex items-center gap-3 text-left">
+                <div className="w-2 h-2 rounded-full bg-[#42A5F5]" />
+                <span className="text-[#E3F2FD] text-sm">Monte Carlo projections</span>
+              </div>
+              <div className="flex items-center gap-3 text-left">
+                <div className="w-2 h-2 rounded-full bg-[#42A5F5]" />
+                <span className="text-[#E3F2FD] text-sm">Confidence intervals & risk analysis</span>
+              </div>
+              <div className="flex items-center gap-3 text-left">
+                <div className="w-2 h-2 rounded-full bg-[#42A5F5]" />
+                <span className="text-[#E3F2FD] text-sm">Market expansion scenarios</span>
+              </div>
+            </div>
+
+            <GradientButton className="mb-4">
+              <Crown className="h-4 w-4 mr-2" />
+              Upgrade to Pro
+            </GradientButton>
+            
+            <p className="text-[#5C8FBF] text-xs">
+              Or contact sales for Business plan features
             </p>
           </div>
+        </LiquidGlassCard>
+      </div>
+    );
+  }
+
+  // Premium 3-Panel Experience
+  return (
+    <div className="p-8 max-w-7xl mx-auto space-y-8">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <div className="flex items-center gap-3">
+            <div 
+              className="w-10 h-10 rounded-lg flex items-center justify-center"
+              style={{
+                background: 'linear-gradient(135deg, #1565C0 0%, #42A5F5 100%)',
+                boxShadow: '0 8px 32px rgba(66, 165, 245, 0.3)'
+              }}
+            >
+              <Calculator className="h-5 w-5 text-white" />
+            </div>
+            <div>
+              <h1 
+                className="text-3xl font-bold bg-clip-text text-transparent"
+                style={{
+                  backgroundImage: 'linear-gradient(135deg, #FFFFFF 0%, #90CAF9 100%)'
+                }}
+              >
+                Revenue Simulator
+              </h1>
+              <p className="text-[#90CAF9]">
+                Advanced scenario modeling with real-time projections
+              </p>
+            </div>
+          </div>
         </div>
+        
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 text-sm">
+            <Crown className="h-4 w-4 text-amber-400" />
+            <span className="text-amber-400 font-medium">
+              {userPlan.charAt(0).toUpperCase() + userPlan.slice(1)} Plan
+            </span>
+          </div>
+          <SecondaryButton size="sm">
+            <BarChart3 className="h-4 w-4 mr-2" />
+            Export
+          </SecondaryButton>
+        </div>
+      </div>
+
+      {/* Warnings & Errors */}
+      {!baselineLoading && baseline && !hasEnoughData && (
+        <LiquidGlassCard className="p-4 border-amber-500/20 bg-amber-500/5">
+          <div className="flex items-start gap-3">
+            <AlertCircle className="h-5 w-5 text-amber-400 mt-0.5 shrink-0" />
+            <div>
+              <p className="text-amber-400 font-medium">Insufficient data for reliable projections</p>
+              <p className="text-amber-300 text-sm mt-1">
+                Found {baseline.data_days} day{baseline.data_days !== 1 ? "s" : ""} of sales data. 
+                Import at least 7 days for accurate modeling.
+              </p>
+            </div>
+          </div>
+        </LiquidGlassCard>
       )}
 
-      {/* Baseline error */}
       {baselineError && (
-        <div className="flex items-start gap-3 p-4 bg-red-50 border border-red-200 rounded-lg">
-          <AlertCircle className="h-4 w-4 text-red-500 mt-0.5 shrink-0" />
-          <p className="text-sm text-red-700">
-            Failed to load your baseline data. Please refresh and try again.
-          </p>
-        </div>
+        <LiquidGlassCard className="p-4 border-red-500/20 bg-red-500/5">
+          <div className="flex items-start gap-3">
+            <AlertCircle className="h-5 w-5 text-red-400 mt-0.5 shrink-0" />
+            <div>
+              <p className="text-red-400 font-medium">Failed to load baseline data</p>
+              <p className="text-red-300 text-sm mt-1">Please refresh and try again.</p>
+            </div>
+          </div>
+        </LiquidGlassCard>
       )}
 
-      {/* Baseline summary strip */}
-      {baseline && (
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+      {/* Baseline Metrics */}
+      {baseline ? (
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           {[
             {
               label: "30-Day Revenue",
-              value: formatINR(baseline.total_revenue_30d),
-              sub: "actual",
+              value: baseline.total_revenue_30d,
+              formatted: formatINR(baseline.total_revenue_30d),
+              sub: "actual baseline",
+              icon: <TrendingUp className="h-4 w-4" />,
             },
             {
-              label: "30-Day Orders",
-              value: baseline.total_orders_30d.toLocaleString("en-IN"),
-              sub: "actual",
+              label: "Total Orders",
+              value: baseline.total_orders_30d,
+              formatted: baseline.total_orders_30d.toLocaleString("en-IN"),
+              sub: "last 30 days",
+              icon: <Target className="h-4 w-4" />,
             },
             {
-              label: "Daily Avg",
-              value: formatINR(baseline.daily_avg_revenue),
+              label: "Daily Average",
+              value: baseline.daily_avg_revenue,
+              formatted: formatINR(baseline.daily_avg_revenue),
               sub: "revenue/day",
+              icon: <BarChart3 className="h-4 w-4" />,
             },
             {
-              label: "Daily Std Dev",
-              value: formatINR(baseline.daily_stddev_revenue),
-              sub: "variance",
+              label: "Volatility",
+              value: baseline.daily_stddev_revenue,
+              formatted: formatINR(baseline.daily_stddev_revenue),
+              sub: "std deviation",
+              icon: <Sparkles className="h-4 w-4" />,
             },
-          ].map(({ label, value, sub }) => (
-            <div
+          ].map(({ label, value, sub, icon }, i) => (
+            <LiquidGlassCard 
               key={label}
-              className="bg-white border border-slate-200 rounded-lg p-3 text-center"
+              hover={false}
+              className={`p-4 text-center animate-fadeInUp`}
+              style={{ animationDelay: `${i * 100}ms` }}
             >
-              <p className="text-base font-bold text-slate-900">{value}</p>
-              <p className="text-xs text-slate-500 mt-0.5">{label}</p>
-              <p className="text-xs text-slate-400">{sub}</p>
-            </div>
+              <div className="flex items-center justify-center gap-2 mb-2">
+                <div className="text-[#42A5F5]">{icon}</div>
+                <span className="text-[#90CAF9] text-xs font-medium">{label}</span>
+              </div>
+              <div className="text-xl font-bold text-[#E3F2FD] mb-1">
+                <AnimatedNumber value={value} />
+              </div>
+              <p className="text-xs text-[#5C8FBF]">{sub}</p>
+            </LiquidGlassCard>
           ))}
         </div>
-      )}
-
-      {baselineLoading && (
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+      ) : baselineLoading ? (
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           {[1, 2, 3, 4].map((i) => (
-            <div
-              key={i}
-              className="h-20 bg-slate-100 rounded-lg animate-pulse"
-            />
+            <KPISkeleton key={i} />
           ))}
         </div>
-      )}
+      ) : null}
 
-      {/* Two-column layout */}
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        {/* Scenario Parameters */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Scenario Parameters</CardTitle>
-            <CardDescription>
-              Adjust sliders to model a what-if scenario
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-8">
-            <SliderRow
+      {/* 3-Panel Layout: Inputs | Simulation | Results */}
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+        {/* Panel 1: Scenario Parameters */}
+        <LiquidGlassCard className="p-6">
+          <div className="flex items-center gap-3 mb-6">
+            <Zap className="h-5 w-5 text-[#42A5F5]" />
+            <h2 
+              className="text-lg font-semibold bg-clip-text text-transparent"
+              style={{
+                backgroundImage: 'linear-gradient(135deg, #FFFFFF 0%, #90CAF9 100%)'
+              }}
+            >
+              Scenario Builder
+            </h2>
+          </div>
+
+          <div className="space-y-4">
+            <BlueGradientSlider
               label="Volume Growth Rate"
               value={growthRate}
               min={-20}
@@ -242,139 +428,276 @@ export function SimulatorPage() {
               step={1}
               onChange={setGrowthRate}
               formatLabel={(v) => `${v > 0 ? "+" : ""}${v}%`}
+              animationDelay={0}
             />
 
-            <SliderRow
-              label="Discount Change"
+            <BlueGradientSlider
+              label="Discount Adjustment"
               value={discountChange}
               min={-20}
               max={20}
               step={0.5}
               onChange={setDiscountChange}
               formatLabel={(v) => `${v > 0 ? "+" : ""}${v}%`}
+              animationDelay={100}
             />
 
-            {/* Elasticity notice */}
-            {discountChange !== 0 && (
-              <div className="flex items-start gap-2 p-3 bg-slate-50 border border-slate-200 rounded-lg">
-                <Info className="h-3.5 w-3.5 text-slate-400 mt-0.5 shrink-0" />
-                <p className="text-xs text-slate-500">
-                  Discount elasticity modelled at −0.3 (FMCG industry average).
-                  A {Math.abs(discountChange)}%{" "}
-                  {discountChange > 0 ? "increase" : "reduction"} in discount
-                  adjusts revenue by approximately{" "}
-                  {(discountChange * -0.3).toFixed(1)}%.
-                </p>
-              </div>
+            {userPlan === 'business' && (
+              <>
+                <BlueGradientSlider
+                  label="Market Expansion"
+                  value={marketExpansion}
+                  min={0}
+                  max={30}
+                  step={1}
+                  onChange={setMarketExpansion}
+                  formatLabel={(v) => `+${v}%`}
+                  animationDelay={200}
+                />
+
+                <BlueGradientSlider
+                  label="Customer Retention"
+                  value={customerRetention}
+                  min={-10}
+                  max={25}
+                  step={0.5}
+                  onChange={setCustomerRetention}
+                  formatLabel={(v) => `${v > 0 ? "+" : ""}${v}%`}
+                  animationDelay={300}
+                />
+              </>
             )}
 
-            <Button
-              onClick={() => runSimulation()}
-              disabled={isPending || !hasEnoughData}
+            {/* Elasticity Info */}
+            {discountChange !== 0 && (
+              <LiquidGlassCard hover={false} className="p-3 border-[#42A5F5]/20 bg-[rgba(66,165,245,0.05)]">
+                <div className="flex items-start gap-2">
+                  <Info className="h-4 w-4 text-[#42A5F5] mt-0.5 shrink-0" />
+                  <p className="text-xs text-[#90CAF9]">
+                    Price elasticity: -0.3 (FMCG avg). 
+                    {Math.abs(discountChange)}% discount {discountChange > 0 ? "increase" : "reduction"} 
+                    = ~{(discountChange * -0.3).toFixed(1)}% revenue impact.
+                  </p>
+                </div>
+              </LiquidGlassCard>
+            )}
+
+            <GradientButton
+              onClick={handleRunSimulation}
+              disabled={isPending || !hasEnoughData || isRunningSimulation}
               className="w-full"
             >
-              {isPending ? "Calculating..." : "Run Projection"}
-            </Button>
+              {isRunningSimulation || isPending ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
+                  Calculating...
+                </>
+              ) : (
+                <>
+                  <Play className="h-4 w-4 mr-2" />
+                  Run Simulation
+                </>
+              )}
+            </GradientButton>
 
             {runError && (
-              <p className="text-xs text-red-600 text-center">
-                Projection failed. Please try again.
-              </p>
+              <LiquidGlassCard className="p-3 border-red-500/20 bg-red-500/5">
+                <p className="text-xs text-red-400 text-center">
+                  Projection failed. Please try again.
+                </p>
+              </LiquidGlassCard>
             )}
-          </CardContent>
-        </Card>
+          </div>
+        </LiquidGlassCard>
 
-        {/* Projected Outcome */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Projected Outcome</CardTitle>
-            <CardDescription>
-              Based on your last{" "}
-              {baseline ? `${baseline.data_days} days` : "30 days"} of sales
-              data
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {!result && (
-              <div className="h-48 flex flex-col items-center justify-center text-slate-400 text-sm gap-2">
-                <TrendingUp className="h-8 w-8 text-slate-200" />
-                <span>Run a simulation to see results</span>
+        {/* Panel 2: Live Simulation Visual */}
+        <LiquidGlassCard className="p-6">
+          <div className="flex items-center gap-3 mb-6">
+            <BarChart3 className="h-5 w-5 text-[#42A5F5]" />
+            <h2 
+              className="text-lg font-semibold bg-clip-text text-transparent"
+              style={{
+                backgroundImage: 'linear-gradient(135deg, #FFFFFF 0%, #90CAF9 100%)'
+              }}
+            >
+              Live Projection
+            </h2>
+          </div>
+
+          <div className="h-64 flex flex-col items-center justify-center">
+            {!result && !isRunningSimulation ? (
+              <div className="text-center">
+                <div 
+                  className="w-16 h-16 mx-auto mb-4 rounded-2xl flex items-center justify-center opacity-50"
+                  style={{
+                    background: 'linear-gradient(135deg, #1565C0 0%, #42A5F5 100%)',
+                  }}
+                >
+                  <TrendingUp className="h-8 w-8 text-white" />
+                </div>
+                <p className="text-[#90CAF9] text-sm">Adjust parameters and run simulation</p>
               </div>
-            )}
-
-            {result && (
-              <div className="space-y-6">
-                {/* Headline number */}
-                <div className="text-center">
-                  <p className="text-xs text-slate-500 mb-1 uppercase tracking-wide">
+            ) : isRunningSimulation ? (
+              <div className="text-center animate-pulse">
+                <div 
+                  className="w-20 h-20 mx-auto mb-4 rounded-2xl flex items-center justify-center"
+                  style={{
+                    background: 'linear-gradient(135deg, #1565C0 0%, #42A5F5 100%)',
+                    boxShadow: '0 0 30px rgba(66, 165, 245, 0.6)'
+                  }}
+                >
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white" />
+                </div>
+                <p className="text-[#42A5F5] font-medium animate-pulse">Running Monte Carlo simulation...</p>
+                <p className="text-[#90CAF9] text-sm mt-1">Processing {baseline?.data_days || 30} days of data</p>
+              </div>
+            ) : (
+              <div className="text-center w-full">
+                {/* Animated projection results */}
+                <div className="mb-4">
+                  <p className="text-[#90CAF9] text-xs uppercase tracking-wide mb-2">
                     Projected 30-Day Revenue
                   </p>
-                  <div className="text-4xl font-bold text-slate-900">
-                    {formatINR(result.projected_revenue)}
-                  </div>
-                  <div
-                    className={`flex items-center justify-center gap-1 mt-1 text-sm font-medium ${
-                      isPositive ? "text-green-600" : "text-red-600"
-                    }`}
+                  <div 
+                    className="text-3xl font-bold bg-clip-text text-transparent mb-2"
+                    style={{
+                      backgroundImage: 'linear-gradient(135deg, #42A5F5 0%, #80D8FF 100%)'
+                    }}
                   >
-                    {isPositive ? (
-                      <TrendingUp className="h-4 w-4" />
-                    ) : (
-                      <TrendingDown className="h-4 w-4" />
-                    )}
-                    {isPositive ? "+" : ""}
-                    {result.revenue_delta_pct.toFixed(1)}% vs baseline
+                    <AnimatedNumber
+                      value={result?.projected_revenue || 0}
+                      format={{ style: "currency", currency: "INR", maximumFractionDigits: 0 }}
+                    />
+                  </div>
+                  <div className={`flex items-center justify-center gap-1 text-sm font-medium ${
+                    isPositive ? "text-emerald-400" : "text-red-400"
+                  }`}>
+                    {isPositive ? <TrendingUp className="h-4 w-4" /> : <TrendingDown className="h-4 w-4" />}
+                    <span>{isPositive ? "+" : ""}{result?.revenue_delta_pct.toFixed(1)}% vs baseline</span>
                   </div>
                 </div>
 
-                {/* Stats grid */}
-                <div className="space-y-3 pt-2">
-                  <div className="flex justify-between items-center text-sm py-2 border-b border-slate-100">
-                    <span className="text-slate-500">Baseline (last 30d)</span>
-                    <span className="font-medium tabular-nums">
-                      {formatINR(result.baseline_revenue)}
-                    </span>
+                {/* Visual bar representation */}
+                <div className="space-y-2">
+                  <div className="flex justify-between text-xs text-[#90CAF9]">
+                    <span>Baseline</span>
+                    <span>Projection</span>
                   </div>
-                  <div className="flex justify-between items-center text-sm py-2 border-b border-slate-100">
-                    <span className="text-slate-500">Revenue Delta</span>
-                    <span
-                      className={`font-medium tabular-nums ${
-                        isPositive ? "text-green-600" : "text-red-600"
-                      }`}
-                    >
-                      {isPositive ? "+" : ""}
-                      {formatINR(result.revenue_delta)}
-                    </span>
-                  </div>
-                  <div className="flex justify-between items-center text-sm py-2 border-b border-slate-100">
-                    <span className="text-slate-500">Projected Orders</span>
-                    <span className="font-medium tabular-nums">
-                      {result.projected_orders.toLocaleString("en-IN")}
-                    </span>
-                  </div>
-                  <div className="flex justify-between items-center text-sm py-2">
-                    <span className="text-slate-500">
-                      95% Confidence Range
-                      <span className="ml-1 text-xs text-slate-400">
-                        (based on your variance)
-                      </span>
-                    </span>
-                    <span className="font-medium tabular-nums text-xs text-slate-700">
-                      {formatINR(result.confidence_interval_lower)} –{" "}
-                      {formatINR(result.confidence_interval_upper)}
-                    </span>
+                  <div className="relative">
+                    <div className="w-full bg-[rgba(15,52,96,0.6)] rounded-full h-3">
+                      <div 
+                        className="h-3 rounded-full transition-all duration-2000 ease-out"
+                        style={{
+                          width: '60%',
+                          background: 'linear-gradient(135deg, #1565C0 0%, #42A5F5 100%)',
+                        }}
+                      />
+                    </div>
+                    <div className="w-full bg-[rgba(15,52,96,0.6)] rounded-full h-3 mt-1">
+                      <div 
+                        className="h-3 rounded-full transition-all duration-2000 ease-out"
+                        style={{
+                          width: `${Math.min(100, 60 + (result?.revenue_delta_pct || 0))}%`,
+                          background: isPositive 
+                            ? 'linear-gradient(135deg, #10B981 0%, #34D399 100%)'
+                            : 'linear-gradient(135deg, #EF4444 0%, #F87171 100%)',
+                          boxShadow: `0 0 10px ${isPositive ? 'rgba(16, 185, 129, 0.4)' : 'rgba(239, 68, 68, 0.4)'}`
+                        }}
+                      />
+                    </div>
                   </div>
                 </div>
-
-                {/* Disclaimer */}
-                <p className="text-xs text-slate-400 pt-1">
-                  Projection based on your last {result.data_days} days of
-                  actual sales data. Not financial advice.
-                </p>
               </div>
             )}
-          </CardContent>
-        </Card>
+          </div>
+        </LiquidGlassCard>
+
+        {/* Panel 3: Detailed Results */}
+        <LiquidGlassCard className="p-6">
+          <div className="flex items-center gap-3 mb-6">
+            <Target className="h-5 w-5 text-[#42A5F5]" />
+            <h2 
+              className="text-lg font-semibold bg-clip-text text-transparent"
+              style={{
+                backgroundImage: 'linear-gradient(135deg, #FFFFFF 0%, #90CAF9 100%)'
+              }}
+            >
+              Impact Analysis
+            </h2>
+          </div>
+
+          {!result ? (
+            <div className="space-y-3 opacity-50">
+              {[...Array(6)].map((_, i) => (
+                <div key={i} className="h-8 bg-[rgba(15,52,96,0.3)] rounded animate-pulse" />
+              ))}
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {/* Key Metrics */}
+              <div className="space-y-3">
+                {[
+                  { label: "Baseline Revenue", value: formatINR(result.baseline_revenue), type: "neutral" },
+                  { label: "Revenue Delta", value: `${isPositive ? "+" : ""}${formatINR(result.revenue_delta)}`, type: isPositive ? "positive" : "negative" },
+                  { label: "Projected Orders", value: result.projected_orders.toLocaleString("en-IN"), type: "neutral" },
+                ].map(({ label, value, type }, i) => (
+                  <div 
+                    key={label}
+                    className={`flex justify-between items-center py-2 border-b border-[rgba(33,150,243,0.08)] animate-fadeInUp`}
+                    style={{ animationDelay: `${i * 100}ms` }}
+                  >
+                    <span className="text-[#90CAF9] text-sm">{label}</span>
+                    <span className={`font-semibold text-sm ${
+                      type === "positive" ? "text-emerald-400" : 
+                      type === "negative" ? "text-red-400" : "text-[#E3F2FD]"
+                    }`}>
+                      {value}
+                    </span>
+                  </div>
+                ))}
+              </div>
+
+              {/* Confidence Interval */}
+              <LiquidGlassCard hover={false} className="p-3 border-[#42A5F5]/20 bg-[rgba(66,165,245,0.05)]">
+                <div className="text-center">
+                  <p className="text-[#90CAF9] text-xs mb-1">95% Confidence Range</p>
+                  <div className="text-[#E3F2FD] font-medium text-sm">
+                    {formatINR(result.confidence_interval_lower)} – {formatINR(result.confidence_interval_upper)}
+                  </div>
+                </div>
+              </LiquidGlassCard>
+
+              {/* Risk Assessment */}
+              <div>
+                <p className="text-[#90CAF9] text-xs mb-2 uppercase tracking-wide">Risk Assessment</p>
+                <div className="space-y-2">
+                  <div className="flex justify-between text-xs">
+                    <span className="text-[#5C8FBF]">Low Risk</span>
+                    <span className="text-[#5C8FBF]">High Risk</span>
+                  </div>
+                  <div className="w-full bg-[rgba(15,52,96,0.6)] rounded-full h-2">
+                    <div 
+                      className="h-2 rounded-full transition-all duration-1000"
+                      style={{
+                        width: `${Math.min(100, Math.abs(result.revenue_delta_pct) * 2)}%`,
+                        background: Math.abs(result.revenue_delta_pct) > 15 
+                          ? 'linear-gradient(135deg, #EF4444 0%, #F87171 100%)'
+                          : Math.abs(result.revenue_delta_pct) > 8
+                          ? 'linear-gradient(135deg, #F59E0B 0%, #FBBF24 100%)'
+                          : 'linear-gradient(135deg, #10B981 0%, #34D399 100%)'
+                      }}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Disclaimer */}
+              <p className="text-xs text-[#5C8FBF] text-center pt-2 border-t border-[rgba(33,150,243,0.08)]">
+                Based on {result.data_days} days of actual sales data. Not financial advice.
+              </p>
+            </div>
+          )}
+        </LiquidGlassCard>
       </div>
     </div>
   );

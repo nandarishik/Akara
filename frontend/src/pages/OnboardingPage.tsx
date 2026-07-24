@@ -13,17 +13,6 @@ import { useAuth } from "@/contexts/AuthContext"
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL ?? ""
 
-function formatUploadError(body: unknown, status: number): string {
-  if (body && typeof body === "object" && "detail" in body) {
-    const detail = (body as { detail: unknown }).detail
-    if (typeof detail === "string") return detail
-    if (detail && typeof detail === "object" && "message" in detail) {
-      return String((detail as { message: string }).message)
-    }
-  }
-  return `Upload failed (${status})`
-}
-
 // ── Progress dots ─────────────────────────────────────────────────────────────
 
 function ProgressDots({ step }: { step: 1 | 2 | 3 }) {
@@ -33,7 +22,7 @@ function ProgressDots({ step }: { step: 1 | 2 | 3 }) {
         <div
           key={i}
           className={`w-3 h-3 rounded-full transition-colors ${
-            i <= step ? "bg-violet-600" : "bg-slate-200"
+            i <= step ? "bg-blue-600" : "bg-slate-200"
           }`}
           aria-hidden="true"
         />
@@ -45,7 +34,7 @@ function ProgressDots({ step }: { step: 1 | 2 | 3 }) {
 // ─────────────────────────────────────────────────────────────────────────────
 
 export function OnboardingPage() {
-  const { session, refreshProfile, user } = useAuth()
+  const { session } = useAuth()
   const navigate = useNavigate()
 
   const [step, setStep] = useState<1 | 2 | 3>(1)
@@ -65,7 +54,6 @@ export function OnboardingPage() {
   const [file, setFile] = useState<File | null>(null)
   const [uploadProgress, setUploadProgress] = useState(0)
   const [uploadStatus, setUploadStatus] = useState<"idle" | "uploading" | "done" | "error">("idle")
-  const [uploadError, setUploadError] = useState("")
   const [uploadResult, setUploadResult] = useState<{ rows: number; dateRange: string; zones: number } | null>(null)
 
   // Slot I dismissed
@@ -101,7 +89,6 @@ export function OnboardingPage() {
         const body = await res.json().catch(() => ({}))
         throw new Error(body?.detail?.message ?? `Setup failed: ${res.status}`)
       }
-      await refreshProfile()
       setStep(2)
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Something went wrong. Please try again.")
@@ -122,12 +109,6 @@ export function OnboardingPage() {
 
   async function handleUpload() {
     if (!file) return
-    setUploadError("")
-    if (!user?.tenantId) {
-      setUploadError("Complete step 1 (business setup) before importing data.")
-      setUploadStatus("error")
-      return
-    }
     setUploadStatus("uploading")
     setUploadProgress(10)
 
@@ -138,44 +119,29 @@ export function OnboardingPage() {
       }, 400)
 
       const token = session?.access_token
-      if (!token) throw new Error("Session expired. Please sign in again.")
-
       const formData = new FormData()
       formData.append("file", file)
 
-      const res = await fetch(`${API_BASE}/data/import?source_type=primary`, {
+      const res = await fetch(`${API_BASE}/data/import`, {
         method: "POST",
-        headers: { Authorization: `Bearer ${token}` },
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
         body: formData,
       })
 
       clearInterval(progressInterval)
       setUploadProgress(100)
 
-      const data = await res.json().catch(() => ({}))
-      if (!res.ok) {
-        throw new Error(formatUploadError(data, res.status))
-      }
-
-      const rowsInserted = data.rows_inserted ?? 0
-      const errors: string[] = data.errors ?? []
-      if (rowsInserted === 0 && errors.length > 0) {
-        throw new Error(errors[0])
-      }
-      if (rowsInserted === 0) {
-        throw new Error("No rows were imported. Check that your file has sales data columns.")
-      }
-
+      if (!res.ok) throw new Error(`Upload failed: ${res.status}`)
+      const data = await res.json()
       setUploadResult({
-        rows: rowsInserted,
+        rows: data.rows_inserted ?? 0,
         dateRange: data.date_range ?? "—",
         zones: data.zones ?? 0,
       })
       setUploadStatus("done")
-    } catch (err: unknown) {
+    } catch {
       setUploadStatus("error")
       setUploadProgress(0)
-      setUploadError(err instanceof Error ? err.message : "Upload failed. Please try again.")
     }
   }
 
@@ -192,7 +158,6 @@ export function OnboardingPage() {
         method: "POST",
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       })
-      await refreshProfile()
     } catch {
       // Non-fatal — navigate anyway
     } finally {
@@ -203,12 +168,12 @@ export function OnboardingPage() {
 
   // ─────────────────────────────────────────────────────────────────────────────
   return (
-    <div className="min-h-screen bg-violet-50 flex items-center justify-center px-4 py-12">
+    <div className="min-h-screen bg-[#FAFCFF] flex items-center justify-center px-4 py-12">
       <div className="w-full max-w-lg">
         {/* Back button */}
         {step > 1 && step < 3 && (
           <button
-            className="mb-6 text-slate-500 hover:text-violet-700 text-sm font-medium"
+            className="mb-6 text-slate-500 hover:text-[#0F3460] text-sm font-medium"
             onClick={() => setStep((s) => (s - 1) as 1 | 2 | 3)}
           >
             ← Back
@@ -222,6 +187,7 @@ export function OnboardingPage() {
           {/* ── STEP 1 ─────────────────────────────────────────────────────── */}
           {step === 1 && (
             <>
+              {/* Illustration */}
               <div className="text-center mb-6">
                 <span className="text-5xl" aria-hidden="true">🏭</span>
               </div>
@@ -229,6 +195,7 @@ export function OnboardingPage() {
               <p className="text-slate-500 text-center mb-8 text-sm">So AKARA speaks your language from day one.</p>
 
               <div className="space-y-4">
+                {/* Company name */}
                 <div>
                   <label htmlFor="ob-company" className="block text-sm font-medium text-slate-700 mb-1">
                     Company name <span className="text-red-500">*</span>
@@ -239,10 +206,11 @@ export function OnboardingPage() {
                     required
                     value={companyName}
                     onChange={(e) => setCompanyName(e.target.value)}
-                    className="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-violet-400"
+                    className="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
                   />
                 </div>
 
+                {/* Industry */}
                 <div>
                   <label htmlFor="ob-industry" className="block text-sm font-medium text-slate-700 mb-1">
                     Industry <span className="text-red-500">*</span>
@@ -251,7 +219,7 @@ export function OnboardingPage() {
                     id="ob-industry"
                     value={industry}
                     onChange={(e) => setIndustry(e.target.value)}
-                    className="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-violet-400 bg-white"
+                    className="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white"
                   >
                     <option value="">Select industry</option>
                     <option value="fmcg_distribution">FMCG Distribution</option>
@@ -263,13 +231,14 @@ export function OnboardingPage() {
                   </select>
                 </div>
 
+                {/* Currency */}
                 <div>
                   <label htmlFor="ob-currency" className="block text-sm font-medium text-slate-700 mb-1">Currency</label>
                   <select
                     id="ob-currency"
                     value={currency}
                     onChange={(e) => setCurrency(e.target.value)}
-                    className="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-violet-400 bg-white"
+                    className="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white"
                   >
                     <option value="INR">₹ INR — Indian Rupee</option>
                     <option value="USD">$ USD — US Dollar</option>
@@ -278,13 +247,14 @@ export function OnboardingPage() {
                   </select>
                 </div>
 
+                {/* Language */}
                 <div>
                   <label htmlFor="ob-language" className="block text-sm font-medium text-slate-700 mb-1">Language</label>
                   <select
                     id="ob-language"
                     value={language}
                     onChange={(e) => setLanguage(e.target.value)}
-                    className="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-violet-400 bg-white"
+                    className="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white"
                   >
                     <option value="en">English</option>
                     <option value="hi">Hindi</option>
@@ -292,6 +262,7 @@ export function OnboardingPage() {
                   </select>
                 </div>
 
+                {/* Monthly revenue (optional) */}
                 <div>
                   <label htmlFor="ob-revenue" className="block text-sm font-medium text-slate-700 mb-1">
                     Monthly revenue <span className="text-slate-400 font-normal">(optional)</span>
@@ -300,7 +271,7 @@ export function OnboardingPage() {
                     id="ob-revenue"
                     value={monthlyRevenue}
                     onChange={(e) => setMonthlyRevenue(e.target.value)}
-                    className="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-violet-400 bg-white"
+                    className="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white"
                   >
                     <option value="">Prefer not to say</option>
                     <option value="lt_1cr">Less than ₹1 Cr</option>
@@ -317,7 +288,7 @@ export function OnboardingPage() {
               <button
                 onClick={handleStep1}
                 disabled={loading}
-                className="w-full mt-6 bg-orange-500 hover:bg-orange-600 disabled:opacity-50 text-white py-3 rounded-lg font-semibold transition-colors"
+                className="w-full mt-6 bg-[#1565C0] hover:bg-[#1976D2] disabled:opacity-50 text-white py-3 rounded-lg font-semibold transition-colors"
               >
                 {loading ? (
                   <span className="flex items-center justify-center gap-2">
@@ -340,6 +311,7 @@ export function OnboardingPage() {
                 Export from Tally: Gateway → Export Data → Sales Register. Or drag your Excel file.
               </p>
 
+              {/* Upload zone */}
               {uploadStatus === "idle" && !file && (
                 <div
                   onClick={() => fileInputRef.current?.click()}
@@ -349,7 +321,7 @@ export function OnboardingPage() {
                     const f = e.dataTransfer.files?.[0]
                     if (f) { setFile(f); setUploadStatus("idle") }
                   }}
-                  className="mt-6 border-2 border-dashed border-violet-300 rounded-xl p-10 text-center cursor-pointer hover:bg-violet-50 transition-colors"
+                  className="mt-6 border-2 border-dashed border-blue-300 rounded-xl p-10 text-center cursor-pointer hover:bg-[#FAFCFF] transition-colors"
                   role="button"
                   aria-label="Click or drag to upload file"
                   tabIndex={0}
@@ -371,6 +343,7 @@ export function OnboardingPage() {
                 aria-label="Upload sales file"
               />
 
+              {/* File selected, not yet uploaded */}
               {file && uploadStatus === "idle" && (
                 <div className="mt-6">
                   <div className="bg-slate-50 rounded-lg p-4 flex items-center justify-between mb-4">
@@ -382,25 +355,27 @@ export function OnboardingPage() {
                   </div>
                   <button
                     onClick={handleUpload}
-                    className="w-full bg-orange-500 hover:bg-orange-600 text-white py-3 rounded-lg font-semibold transition-colors"
+                    className="w-full bg-[#1565C0] hover:bg-[#1976D2] text-white py-3 rounded-lg font-semibold transition-colors"
                   >
                     Start import →
                   </button>
                 </div>
               )}
 
+              {/* Uploading */}
               {uploadStatus === "uploading" && (
                 <div className="mt-6">
                   <p className="text-sm text-slate-500 mb-2 text-center">Analysing your data... (may take 30 seconds for large files)</p>
                   <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
                     <div
-                      className="h-full bg-violet-600 rounded-full transition-all duration-300"
+                      className="h-full bg-blue-600 rounded-full transition-all duration-300"
                       style={{ width: `${uploadProgress}%` }}
                     />
                   </div>
                 </div>
               )}
 
+              {/* Success */}
               {uploadStatus === "done" && uploadResult && (
                 <div className="mt-6 text-center">
                   <div className="text-4xl mb-3">✅</div>
@@ -412,28 +387,28 @@ export function OnboardingPage() {
                   )}
                   <button
                     onClick={() => setStep(3)}
-                    className="mt-6 w-full bg-orange-500 hover:bg-orange-600 text-white py-3 rounded-lg font-semibold transition-colors"
+                    className="mt-6 w-full bg-[#1565C0] hover:bg-[#1976D2] text-white py-3 rounded-lg font-semibold transition-colors"
                   >
                     See your dashboard →
                   </button>
                 </div>
               )}
 
+              {/* Error */}
               {uploadStatus === "error" && (
                 <div className="mt-4 text-center">
-                  <p className="text-red-600 text-sm mb-3" role="alert">
-                    {uploadError || "Upload failed. Please try again."}
-                  </p>
-                  <button onClick={() => { setUploadStatus("idle"); setUploadError(""); setFile(null) }} className="text-violet-600 text-sm underline">
+                  <p className="text-red-600 text-sm mb-3">Upload failed. Please try again.</p>
+                  <button onClick={() => { setUploadStatus("idle"); setFile(null) }} className="text-blue-600 text-sm underline">
                     Try again
                   </button>
                 </div>
               )}
 
+              {/* Skip */}
               <div className="mt-6 text-center">
                 <button
                   onClick={handleSkip}
-                  className="text-sm text-slate-400 hover:text-violet-700 transition-colors"
+                  className="text-sm text-slate-400 hover:text-[#0F3460] transition-colors"
                 >
                   Skip for now — explore with sample data
                 </button>
@@ -444,6 +419,7 @@ export function OnboardingPage() {
           {/* ── STEP 3 ─────────────────────────────────────────────────────── */}
           {step === 3 && (
             <>
+              {/* Confetti animation */}
               <div className="text-center mb-6 relative overflow-hidden">
                 <div className="text-6xl mb-2 animate-bounce">🎉</div>
                 <style>{`
@@ -462,13 +438,14 @@ export function OnboardingPage() {
               <h1 className="text-2xl font-extrabold text-slate-900 text-center mb-2">You're all set!</h1>
               <p className="text-slate-500 text-center mb-8 text-sm">Your dashboard is live. Here's what you can do:</p>
 
+              {/* Feature cards */}
               <div className="grid grid-cols-3 gap-3 mb-8">
                 {[
                   { icon: "📊", title: "Ask anything", desc: "Type any question about your sales" },
                   { icon: "📱", title: "WhatsApp brief", desc: "Add your number in Settings" },
                   { icon: "🔔", title: "Set alerts", desc: "Get notified when KPIs drop (Pro)" },
                 ].map((card) => (
-                  <div key={card.title} className="bg-violet-50 rounded-xl p-4 text-center">
+                  <div key={card.title} className="bg-[#FAFCFF] rounded-xl p-4 text-center">
                     <p className="text-2xl mb-2">{card.icon}</p>
                     <p className="text-xs font-bold text-slate-800">{card.title}</p>
                     <p className="text-xs text-slate-400 mt-1">{card.desc}</p>
@@ -476,15 +453,16 @@ export function OnboardingPage() {
                 ))}
               </div>
 
+              {/* Slot I — Invite your team */}
               {!slotIDismissed && (
-                <div className="bg-gradient-to-r from-violet-50 to-violet-100 border border-violet-200 rounded-xl p-4 mb-6 flex items-start justify-between gap-3">
+                <div className="bg-gradient-to-r from-blue-50 to-blue-100 border border-blue-200 rounded-xl p-4 mb-6 flex items-start justify-between gap-3">
                   <div>
-                    <p className="font-semibold text-violet-800 text-sm">👥 Invite your team</p>
-                    <p className="text-xs text-violet-600 mt-0.5">Add team members and collaborate. Available on Pro & Business plans.</p>
+                    <p className="font-semibold text-blue-800 text-sm">👥 Invite your team</p>
+                    <p className="text-xs text-blue-600 mt-0.5">Add team members and collaborate. Available on Pro & Business plans.</p>
                   </div>
                   <button
                     onClick={() => { localStorage.setItem("akara_slot_I_dismissed", "true"); setSlotIDismissed(true) }}
-                    className="text-violet-400 hover:text-violet-600 flex-shrink-0"
+                    className="text-blue-400 hover:text-blue-600 flex-shrink-0"
                     aria-label="Dismiss"
                   >
                     ✕
@@ -495,7 +473,7 @@ export function OnboardingPage() {
               <button
                 onClick={handleComplete}
                 disabled={loading}
-                className="w-full bg-orange-500 hover:bg-orange-600 disabled:opacity-50 text-white py-3 rounded-lg font-semibold transition-colors text-lg"
+                className="w-full bg-[#1565C0] hover:bg-[#1976D2] disabled:opacity-50 text-white py-3 rounded-lg font-semibold transition-colors text-lg"
               >
                 {loading ? (
                   <span className="flex items-center justify-center gap-2">

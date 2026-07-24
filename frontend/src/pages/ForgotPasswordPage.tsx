@@ -37,11 +37,11 @@ export function ForgotPasswordPage() {
   }
 
   return (
-    <div className="min-h-screen bg-violet-50 flex items-center justify-center px-4">
+    <div className="min-h-screen bg-[#FAFCFF] flex items-center justify-center px-4">
       <div className="w-full max-w-sm">
         {/* Logo */}
         <div className="text-center mb-8">
-          <Link to="/" className="text-3xl font-extrabold text-violet-700 font-display">AKARA</Link>
+          <Link to="/" className="text-3xl font-extrabold text-[#0F3460] font-display">AKARA</Link>
         </div>
 
         <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-8">
@@ -51,10 +51,14 @@ export function ForgotPasswordPage() {
               <CheckCircle className="w-14 h-14 text-emerald-500 mx-auto mb-4" aria-hidden="true" />
               <h1 className="text-xl font-extrabold text-slate-900 mb-2">Reset link sent</h1>
               <p className="text-slate-500 text-sm mb-1">
-                Check your email at <span className="font-medium text-slate-800">{email}</span>.
+                Check your email at{" "}
+                <span className="font-medium text-slate-800">{email}</span>.
               </p>
               <p className="text-slate-400 text-sm mb-6">Link valid for 1 hour.</p>
-              <Link to="/login" className="block w-full text-center border-2 border-violet-600 text-violet-700 hover:bg-violet-50 py-2.5 rounded-lg font-semibold transition-colors">
+              <Link
+                to="/login"
+                className="block w-full text-center border-2 border-[#1565C0] text-[#0F3460] hover:bg-blue-50 py-2.5 rounded-lg font-semibold transition-colors"
+              >
                 Back to sign in
               </Link>
             </div>
@@ -66,7 +70,9 @@ export function ForgotPasswordPage() {
 
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div>
-                  <label htmlFor="email" className="block text-sm font-medium text-slate-700 mb-1">Work email</label>
+                  <label htmlFor="email" className="block text-sm font-medium text-slate-700 mb-1">
+                    Work email
+                  </label>
                   <input
                     id="email"
                     type="email"
@@ -76,12 +82,20 @@ export function ForgotPasswordPage() {
                     value={email}
                     onChange={(e) => { setEmail(e.target.value); setError("") }}
                     aria-describedby={error ? "forgot-error" : undefined}
-                    className={`w-full border rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-violet-400 ${error ? "border-red-400 bg-red-50" : "border-slate-300"}`}
+                    className={`w-full border rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 ${
+                      error ? "border-red-400 bg-red-50" : "border-slate-300"
+                    }`}
                   />
-                  {error && <p id="forgot-error" className="text-xs text-red-600 mt-1" role="alert">{error}</p>}
+                  {error && (
+                    <p id="forgot-error" className="text-xs text-red-600 mt-1" role="alert">{error}</p>
+                  )}
                 </div>
 
-                <button type="submit" disabled={status === "loading"} className="w-full bg-orange-500 hover:bg-orange-600 disabled:opacity-50 text-white py-3 rounded-lg font-semibold transition-colors">
+                <button
+                  type="submit"
+                  disabled={status === "loading"}
+                  className="w-full bg-[#1565C0] hover:bg-[#1976D2] disabled:opacity-50 text-white py-3 rounded-lg font-semibold transition-colors"
+                >
                   {status === "loading" ? (
                     <span className="flex items-center justify-center gap-2">
                       <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
@@ -92,7 +106,7 @@ export function ForgotPasswordPage() {
               </form>
 
               <p className="text-center text-sm text-slate-500 mt-4">
-                <Link to="/login" className="text-violet-600 hover:underline">Back to sign in</Link>
+                <Link to="/login" className="text-blue-600 hover:underline">Back to sign in</Link>
               </p>
             </>
           )}

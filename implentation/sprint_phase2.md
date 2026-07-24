@@ -5861,84 +5861,119 @@ This positions AKARA and Ocheto as complements, not competitors — and gives yo
 
 # AKARA — Complete UI/UX Bible
 
+> ## 🔵 UPDATED: AKARA BLUE UI REHAUL
+>
+> **This section has been updated with the new navy-to-electric-blue design system.**
+> - Replaces the original violet/orange palette
+> - Every surface is now navy-blue tinted (NO pure grays, NO pure blacks)
+> - Reference: FireAI compliance section aesthetic — deep navy canvas + blue glass cards
+> - For implementation details: see `akara/implentation/uirehaulday4.md`
+
 > **Purpose of this section:** By the end of Sprint Phase 2, following only this document, you will have a fully pitchable, visually distinctive, mobile-ready product. Every page, every button, every state (loading, empty, error, success), every micro-interaction, every demo slot, every upsell moment, and every admin capability is specified here. No guesswork. No "figure it out later."
 
 ---
 
 ## 1. Brand Identity & Design System
 
-### 1.1 — Why this palette
+### 1.1 — 🔵 THE AKARA BLUE MANIFESTO
+
+> **DESIGN REVOLUTION:** AKARA now uses the navy-to-electric-blue system inspired by FireAI's deep ocean aesthetic.
 
 AKARA sits at the intersection of two worlds: the serious world of Indian business finance (distributors, Tally, crores) and the modern world of AI software. The palette must:
-- Signal **premium + intelligence** (not another cheap SaaS dashboard)
-- Feel **warm and Indian** without being kitschy
-- Make **numbers pop** — this is a data product; KPIs are the hero
-- Look **genuinely different** from competitors (FireAI uses generic blue; Tableau uses the same blue; most BI tools are boring-blue)
+- Signal **premium + intelligence** (deep navy communicates depth, trust, sophistication)
+- Feel **powerful and modern** — navy glass + electric blue accents = premium intelligence product
+- Make **data glow** — blue gradients make KPIs pop against navy backgrounds
+- Look **genuinely distinctive** from competitors (no generic grays, no pure blacks, no violet — AKARA owns the blue spectrum)
 
-### 1.2 — Color System
+**Visual Reference:** The FireAI compliance section screenshot — deep navy canvas with blue glass cards. That's AKARA's new identity.
+
+### 1.2 — 🔵 The AKARA Blue Color System
+
+> **RULE: NO pure blacks. NO pure grays. NO violet/purple. THE ENTIRE APP LIVES IN BLUE.**
 
 ```css
 /* ─────────────────────────────────────────────────────
-   AKARA Design Tokens — tailwind.config.ts
+   AKARA Blue Design Tokens — tailwind.config.ts
    ───────────────────────────────────────────────────── */
 
 :root {
-  /* Brand */
-  --brand-violet:      #5B21B6;   /* primary brand — headers, logo, active nav */
-  --brand-violet-light:#7C3AED;   /* hover states, secondary elements */
-  --brand-violet-dim:  #EDE9FE;   /* tinted backgrounds, selected states */
+  /* The Blue Spectrum — 10 shades from abyss to sky */
+  --navy-950: #020B18;   /* The abyss — deepest background */
+  --navy-900: #051B37;   /* Canvas — page background */
+  --navy-850: #0A1F3D;   /* Card backgrounds */
+  --navy-800: #0C2D57;   /* Elevated surfaces */
+  --navy-700: #0F3460;   /* Sidebar, panels */
+  --navy-600: #1565C0;   /* Borders, dividers */
+  --navy-500: #1976D2;   /* Interactive elements */
+  --navy-400: #2196F3;   /* Active states */
+  --navy-300: #42A5F5;   /* Electric blue — CTAs, accents */
+  --navy-200: #64B5F6;   /* Highlights */
+  --navy-100: #90CAF9;   /* Body text on dark */
+  --navy-50:  #E3F2FD;   /* Badges on light */
 
-  /* Accent — CTA + Data */
-  --accent-orange:     #F97316;   /* primary CTA button, chart highlights */
-  --accent-amber:      #F59E0B;   /* KPI values, revenue numbers, chart bars */
-  --accent-amber-dim:  #FEF3C7;   /* amber card backgrounds */
+  /* Brand Gradients — The signature AKARA flows */
+  --gradient-brand: linear-gradient(135deg, #0A1628 0%, #0F3460 30%, #1A56DB 60%, #2E86DE 100%);
+  --gradient-button: linear-gradient(135deg, #1565C0 0%, #1E88E5 50%, #42A5F5 100%);
+  --gradient-hero: linear-gradient(180deg, #020B18 0%, #0F3460 50%, #1976D2 100%);
+  --gradient-card: linear-gradient(135deg, rgba(15,52,96,0.6) 0%, rgba(26,86,219,0.15) 100%);
 
-  /* Surface (light mode — default) */
-  --surface-bg:        #F8F7FF;   /* page background — slightly violet-tinted white */
-  --surface-card:      #FFFFFF;   /* card backgrounds */
-  --surface-raised:    #F1F5F9;   /* slightly elevated components */
-  --surface-border:    #E2E8F0;   /* borders, dividers */
+  /* Navy Glass System */
+  --glass-bg: rgba(15, 52, 96, 0.4);     /* Universal card background */
+  --glass-border: rgba(33, 150, 243, 0.12);  /* Card borders */
+  --glass-hover: rgba(33, 150, 243, 0.18);   /* Hover states */
+  --glass-active: rgba(33, 150, 243, 0.25);  /* Active/pressed */
 
-  /* Text */
-  --text-primary:      #0F172A;   /* main headings, body — near black */
-  --text-secondary:    #475569;   /* labels, metadata */
-  --text-muted:        #94A3B8;   /* placeholders, timestamps */
-  --text-inverse:      #FFFFFF;   /* text on dark backgrounds */
+  /* Text on Navy */
+  --text-primary: #FFFFFF;           /* White — headings, values */
+  --text-secondary: #90CAF9;         /* Light blue — body text */
+  --text-muted: #5C8FBF;             /* Muted blue — labels, captions */
+  --text-faint: #2A5A8A;             /* Very muted — disabled, placeholders */
+  --text-link: #64B5F6;              /* Link blue — interactive text */
 
-  /* Semantic */
-  --success:           #10B981;   /* import success, active plan, positive trend */
-  --success-dim:       #D1FAE5;
-  --warning:           #F59E0B;   /* near-quota, stale data */
-  --warning-dim:       #FEF3C7;
-  --danger:            #EF4444;   /* errors, quota exceeded, past due */
-  --danger-dim:        #FEE2E2;
-  --info:              #3B82F6;   /* informational banners */
-  --info-dim:          #DBEAFE;
+  /* Accents on Navy */
+  --accent-primary: #42A5F5;         /* Electric blue — the highlight */
+  --accent-cyan: #00BCD4;            /* Cyan — for data, charts, AI */
+  --accent-success: #00E676;         /* Neon green — money, growth */
+  --accent-warning: #FFB300;         /* Warm amber — attention */
+  --accent-danger: #FF5252;          /* Vibrant red — critical */
+  --accent-info: #80D8FF;            /* Light cyan — informational */
 
-  /* Chart palette (sequential, 5 colors) */
-  --chart-1:           #5B21B6;   /* violet */
-  --chart-2:           #F59E0B;   /* amber */
-  --chart-3:           #10B981;   /* emerald */
-  --chart-4:           #F97316;   /* orange */
-  --chart-5:           #3B82F6;   /* blue */
+  /* Chart palette (vibrant on navy) */
+  --chart-1: #42A5F5;  /* Electric blue */
+  --chart-2: #00BCD4;  /* Cyan */
+  --chart-3: #00E676;  /* Neon green */
+  --chart-4: #FFB300;  /* Amber */
+  --chart-5: #FF80AB;  /* Pink */
+  --chart-6: #B388FF;  /* Lavender */
 }
 ```
 
 **Tailwind config additions:**
 ```typescript
-// tailwind.config.ts
+// tailwind.config.ts — The Blue System
 theme: {
   extend: {
     colors: {
-      brand: {
-        DEFAULT:  "#5B21B6",
-        light:    "#7C3AED",
-        dim:      "#EDE9FE",
+      // Replace ALL grays with navy blue scale
+      navy: {
+        950: '#020B18',  // Deepest — page background
+        900: '#051B37',  // Canvas
+        850: '#0A1F3D',  // Card backgrounds
+        800: '#0C2D57',  // Elevated surfaces
+        700: '#0F3460',  // Sidebar, panels
+        600: '#1565C0',  // Borders, dividers
+        500: '#1976D2',  // Interactive elements
+        400: '#2196F3',  // Active states
+        300: '#42A5F5',  // Electric blue — CTAs, accents
+        200: '#64B5F6',  // Highlights
+        100: '#90CAF9',  // Body text on dark
+        50:  '#E3F2FD',  // Badges on light
       },
-      accent: {
-        DEFAULT:  "#F97316",
-        amber:    "#F59E0B",
-        "amber-dim": "#FEF3C7",
+      // Legacy support (redirects to navy)
+      brand: {
+        DEFAULT:  "#42A5F5",  // Electric blue (was violet)
+        light:    "#64B5F6",  // Light blue (was violet-light)
+        dim:      "#0A1F3D",  // Navy card bg (was violet-dim)
       },
     },
     fontFamily: {
@@ -5946,9 +5981,10 @@ theme: {
       mono:  ["'JetBrains Mono'", "ui-monospace"],
     },
     boxShadow: {
-      "card":    "0 1px 3px rgba(0,0,0,.06), 0 1px 2px rgba(0,0,0,.04)",
-      "card-hover": "0 4px 12px rgba(91,33,182,.12), 0 2px 4px rgba(0,0,0,.04)",
-      "cta":     "0 4px 14px rgba(249,115,22,.4)",
+      "card":    "0 8px 32px rgba(2,11,24,0.6)",  // Navy glass shadow
+      "card-hover": "0 12px 40px rgba(2,11,24,0.8), 0 0 20px rgba(33,150,243,0.08)",  // Blue glow
+      "cta":     "0 4px 20px rgba(33,150,243,0.3)",  // Blue CTA glow
+      "glow":    "0 0 16px rgba(66,165,245,0.35)",  // Electric blue glow
     },
     animation: {
       "fade-up":    "fadeUp 0.4s ease both",
@@ -5956,6 +5992,22 @@ theme: {
       "pulse-soft": "pulseSoft 2s ease infinite",
       "slide-in-right": "slideInRight 0.3s ease both",
       "number-pop": "numberPop 0.5s cubic-bezier(0.34,1.56,0.64,1) both",
+      "shimmer":    "shimmer 2s linear infinite",  // Blue shimmer effect
+      "gradient":   "gradient 3s linear infinite", // Gradient border cycling
+      "glow":       "glow 2s ease-in-out infinite alternate", // Blue glow pulse
+    },
+    keyframes: {
+      shimmer: {
+        '100%': { transform: 'translateX(100%)' }
+      },
+      gradient: {
+        '0%, 100%': { 'border-color': 'rgba(21,101,192,0.4)' },
+        '50%': { 'border-color': 'rgba(66,165,245,0.6)' }
+      },
+      glow: {
+        '0%': { 'box-shadow': '0 0 5px rgba(66,165,245,0.2)' },
+        '100%': { 'box-shadow': '0 0 20px rgba(66,165,245,0.6)' }
+      }
     },
   }
 }
@@ -5987,35 +6039,34 @@ caption: font-size: 0.75rem (12px), font-weight: 500, letter-spacing: 0.025em
 
 #### Buttons
 ```
-PRIMARY (CTA):
-  bg: #F97316 (orange)
+PRIMARY (Gradient CTA) — The AKARA signature button:
+  bg: linear-gradient(135deg, #1565C0 0%, #1E88E5 50%, #42A5F5 100%)
   text: white
   padding: px-6 py-3
-  radius: rounded-lg
-  font: 15px semibold
-  shadow: shadow-cta (orange glow)
-  hover: bg-orange-600, shadow-lg, scale-[1.02]
+  radius: rounded-xl
+  font: font-semibold
+  shadow: 0 4px 20px rgba(33,150,243,0.3)
+  hover: shadow-[0_6px_28px_rgba(66,165,245,0.5)], scale-[1.02]
   active: scale-[0.98]
   disabled: opacity-50, cursor-not-allowed
   transition: all 150ms
+  
+  // Shine effect on hover:
+  overflow: hidden
+  relative with shine sweep: bg-gradient-to-r from-transparent via-white/20 to-transparent
 
-SECONDARY:
-  bg: #5B21B6 (violet)
-  text: white
+SECONDARY (Outlined Blue):
+  bg: transparent
+  text: #64B5F6 (light blue)
+  border: 1px solid rgba(33,150,243,0.3)
   same sizing as primary
-  hover: bg-violet-600
-  shadow: none
-
-OUTLINE:
-  border: 2px solid #5B21B6
-  text: #5B21B6
+  hover: bg-[rgba(33,150,243,0.08)], border-[rgba(33,150,243,0.5)]
+  hover: shadow-[0_0_16px_rgba(33,150,243,0.15)]
+  
+GHOST (Subtle Navy):
   bg: transparent
-  hover: bg-brand-dim
-
-GHOST:
-  bg: transparent
-  text: text-secondary
-  hover: bg-surface-raised
+  text: #90CAF9 (light blue text)
+  hover: bg-[rgba(33,150,243,0.06)]
 
 DESTRUCTIVE:
   bg: #EF4444
@@ -6029,25 +6080,29 @@ ICON BUTTON:
 
 #### Cards
 ```
-BASE CARD:
-  bg: white
-  border: 1px solid surface-border
-  radius: rounded-xl
-  shadow: shadow-card
+LIQUID GLASS CARD (Universal Container):
+  bg: rgba(15, 52, 96, 0.4) — navy glass with 40% opacity
+  border: 1px solid rgba(33, 150, 243, 0.12) — blue-tinted border
+  radius: rounded-2xl
+  shadow: 0 8px 32px rgba(2,11,24,0.6) — deep navy shadow
+  backdrop-blur: backdrop-blur-2xl — glassmorphism effect
   padding: p-6
-  transition: box-shadow 200ms
-  hover: shadow-card-hover (slight violet glow lift)
+  transition: all 200ms
+  hover: bg-[rgba(15,52,96,0.55)], border-[rgba(33,150,243,0.2)]
+  hover: shadow-[0_12px_40px_rgba(2,11,24,0.8),0_0_20px_rgba(33,150,243,0.08)]
 
-KPI CARD (dashboard):
-  Same as base
-  Left border: 4px solid (color varies by metric)
-  Contains: label (text-muted, 12px caps), value (kpi-value), change badge
+GLOW KPI CARD (Dashboard Metrics):
+  Base: LiquidGlassCard
+  Left bar: 2px solid bg-gradient-to-b from-[#42A5F5] via-[#1976D2] to-[#0F3460]
+  Contains: label (text-[#90CAF9]/70, 12px caps), AnimatedNumber (count-up), DeltaBadge
+  Entrance: Staggered with springs.gentle from Framer Motion
+  Hover: Blue gradient inner glow (from-[#42A5F5]/5 via-transparent to-[#00BCD4]/5)
 
-PLAN CARD (pricing/upgrade):
-  Border: 2px solid surface-border
-  Most popular: border-brand + "Most popular" badge at top
-  Radius: rounded-2xl
-  Hover: scale-[1.01]
+PLAN GATE CARD (Upgrade Overlay):
+  Base: Full-screen overlay with bg-[rgba(5,27,55,0.85)] backdrop-blur-lg
+  Center: Lock icon with drop-shadow-[0_0_20px_rgba(66,165,245,0.5)]
+  Heading: bg-gradient-to-r from-[#42A5F5] to-[#80D8FF] bg-clip-text text-transparent
+  CTA: GradientButton with blue gradient
 
 FEATURE LOCK CARD:
   Overlay: bg-white/80 backdrop-blur-sm
@@ -6060,7 +6115,7 @@ FEATURE LOCK CARD:
 ```
 PLAN BADGE:
   Free:     bg-slate-100   text-slate-600   "Free"
-  Pro:      bg-violet-100  text-violet-700  "Pro ✦"     ← ✦ is the AKARA star
+  Pro:      bg-[rgba(66,165,245,0.12)]  text-[#42A5F5]  "Pro ✦"     ← ✦ is the AKARA star
   Business: bg-amber-100   text-amber-700   "Business ✦✦"
 
 STATUS BADGE:
@@ -6127,7 +6182,7 @@ ERROR TEXT: font-size 12px, text-danger, mt-1
 .streaming-cursor::after {
   content: "▋";
   animation: blink 1s step-end infinite;
-  color: #5B21B6;
+  color: #42A5F5;  /* Electric blue */
 }
 @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
 ```
@@ -6146,7 +6201,7 @@ toast.success("Import complete — 4,010 rows added")
 // ERROR toast: red, 6s, with "Try again" link if applicable
 toast.error("Import failed: no valid date column found. See details →")
 
-// INFO toast: violet, 4s
+// INFO toast: electric blue, 4s
 toast.info("Weekly brief sent to your WhatsApp 📱")
 
 // WARNING (quota): amber, 8s, sticky (user must dismiss)
@@ -6223,7 +6278,7 @@ These are internal promotional slots — they upsell features and build FOMO.
 SLOT A — After social proof bar (Section 3.5):
   "🚀 Launching WhatsApp weekly briefs — get your data in your inbox every Monday"
   [Be the first to use it →] → /signup
-  Design: thin full-width banner, brand-violet bg, white text
+  Design: thin full-width banner, electric blue bg (#42A5F5), white text
   Dismissible: localStorage key "banner_wa_dismissed"
   Show only once per visitor (or until dismissed)
 
@@ -6538,27 +6593,29 @@ Also: POST /auth/onboarding-complete (marks has_completed_onboarding=true on pro
 **Complete state machine:**
 
 ```
-─── LOADING STATE ───────────────────────────────────────────────
+─── LOADING STATE (Navy Glass Canvas) ──────────────────────────
 
-4 KPI card skeletons (pulse grey boxes)
-2 chart skeletons
-1 table skeleton (5 rows)
+Background: GradientMesh component (animated navy orbs)
+4 GlowKPICard skeletons with blue shimmer (KPISkeleton component)
+2 LiquidGlassCard chart skeletons with blue shimmer 
+1 navy glass table skeleton (5 rows) with blue shimmer
 Duration: ~500ms (PostgREST is fast)
-Fade in from skeleton to real data (300ms opacity transition)
+Staggered entrance: cards appear with springs.gentle, 60ms stagger
 
-─── EMPTY STATE (no data yet) ───────────────────────────────────
+─── EMPTY STATE (EmptyState Component) ─────────────────────────
 
+Background: GradientMesh component
 Center of page (instead of KPI grid):
-  SVG illustration: simple bar chart with question mark overlay (brand violet)
-  Heading: "Your dashboard is empty"
-  Body: "Import your first sales file to see live KPIs, zone breakdowns, and revenue trends."
+  Icon: BarChart3 with blue gradient glow behind it (w-16 h-16 text-[#64B5F6])
+  Heading: "Your dashboard is empty" — bg-gradient-to-r from-[#42A5F5] to-[#80D8FF] bg-clip-text text-transparent
+  Body: "Import your first sales file to see live KPIs, zone breakdowns, and revenue trends." — text-[#5C8FBF]
   
-  Two options:
-  [Import your first file →]  — orange button → /data
-  [Explore with sample data]  — ghost button → loads demo data silently
+  Two actions:
+  [Import your first file →]  — GradientButton (blue gradient) → /data
+  [Explore with sample data]  — SecondaryButton (outlined blue) → loads demo data silently
 
 Warm tip below:
-  "💡 Tip: Export from Tally: Gateway → Export Data → Sales Vouchers"
+  "💡 Tip: Export from Tally: Gateway → Export Data → Sales Vouchers" — text-[#90CAF9]
   "Then drag the Excel file into Data → Primary Sales"
 
 ─── DATA STATE (normal) ─────────────────────────────────────────
@@ -7734,4 +7791,3 @@ THE ADMIN QUESTION:
 
 If every answer is YES → AKARA Sprint Phase 2 is complete.
 ```
-

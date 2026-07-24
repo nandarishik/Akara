@@ -1,0 +1,554 @@
+/**
+ * Tests for DataPage component including upload zones, async job polling, and import history.
+ */
+import { render, screen, waitFor, fireEvent, act } from '@testing-library/react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
+import userEvent from '@testing-library/user-event';
+import { DataPage } from '../DataPage';
+import { useAuth } from '@/contexts/AuthContext';
+import { isAdmin } from '@/lib/auth-utils';
+
+// Mock the dependencies
+vi.mock('@/contexts/AuthContext');
+vi.mock('@/lib/auth-utils');
+vi.mock('@/components/ui/toast');
+
+// Mock fetch for API calls
+global.fetch = vi.fn();
+
+const mockUseAuth = useAuth as ReturnType<typeof vi.fn>;
+const mockIsAdmin = isAdmin as ReturnType<typeof vi.fn>;
+const mockFetch = fetch as ReturnType<typeof vi.fn>;
+
+const createWrapper = () => {
+  const queryClient = new QueryClient({
+    defaultOptions: {
+      queries: {
+        retry: false,
+      },
+    },
+  });
+  return ({ children }: { children: React.ReactNode }) => (
+    <QueryClientProvider client={queryClient}>
+      {children}
+    </QueryClientProvider>
+  );
+};
+
+const mockImportJobs = [
+  {
+    id: 'job-1',
+    filename: 'sales_data.xlsx',
+    source_type: 'primary',
+    file_size: 1024000,
+    estimated_rows: 1000,
+    status: 'completed',
+    progress_pct: 100,
+    rows_inserted: 995,
+    rows_skipped: 5,
+    created_at: '2024-01-01T10:00:00Z',
+    completed_at: '2024-01-01T10:05:00Z',
+  },
+  {
+    id: 'job-2',
+    filename: 'dms_data.csv',
+    source_type: 'secondary',
+    file_size: 512000,
+    estimated_rows: 500,
+    status: 'processing',
+    progress_pct: 75,
+    created_at: '2024-01-02T09:00:00Z',
+  },
+  {
+    id: 'job-3',
+    filename: 'scheme_claims.xlsx',
+    source_type: 'scheme',
+    file_size: 256000,
+    estimated_rows: 250,
+    status: 'failed',
+    progress_pct: 0,
+    error_message: 'Invalid file format',
+    created_at: '2024-01-03T08:00:00Z',
+  },
+];
+
+const mockDailyUsage = [
+  { date: '2024-01-01', imports: 2, rows_imported: 1500, storage_mb: 50 },
+  { date: '2024-01-02', imports: 1, rows_imported: 500, storage_mb: 25 },
+  { date: '2024-01-03', imports: 3, rows_imported: 2500, storage_mb: 75 },
+];
+
+describe('DataPage', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    
+    // Mock successful responses by default
+    mockFetch
+      .mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve({ jobs: mockImportJobs }),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve(mockDailyUsage),
+      });
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it('renders for admin users with full functionality', async () => {
+    mockUseAuth.mockReturnValue({
+      user: { id: 'admin-1', email: 'admin@example.com' },
+      session: { access_token: 'admin-token' },
+    });
+    mockIsAdmin.mockReturnValue(true);
+
+    render(<DataPage />, { wrapper: createWrapper() });
+
+    expect(screen.getByText('Data Command Center')).toBeInTheDocument();
+    expect(screen.getByText('Primary Sales (ERP / Tally)')).toBeInTheDocument();
+    expect(screen.getByText('Secondary Sales (DMS Offtake)')).toBeInTheDocument();
+    expect(screen.getByText('Scheme Master (Distributor Claims)')).toBeInTheDocument();
+
+    // Should not show admin warning
+    expect(screen.queryByText('Admin access required')).not.toBeInTheDocument();
+  });
+
+  it('shows admin access warning for non-admin users', () => {
+    mockUseAuth.mockReturnValue({
+      user: { id: 'user-1', email: 'user@example.com' },
+      session: { access_token: 'user-token' },
+    });
+    mockIsAdmin.mockReturnValue(false);
+
+    render(<DataPage />, { wrapper: createWrapper() });
+
+    expect(screen.getByText('Admin access required')).toBeInTheDocument();
+    expect(screen.getByText('Contact your administrator to import data files.')).toBeInTheDocument();
+  });
+
+  it('displays daily counters with animated numbers', async () => {
+    mockUseAuth.mockReturnValue({
+      user: { id: 'admin-1', email: 'admin@example.com' },
+      session: { access_token: 'admin-token' },
+    });
+    mockIsAdmin.mockReturnValue(true);
+
+    render(<DataPage />, { wrapper: createWrapper() });
+
+    await waitFor(() => {
+      expect(screen.getByText('Today')).toBeInTheDocument();
+      expect(screen.getByText('Rows')).toBeInTheDocument();
+      expect(screen.getByText('Storage')).toBeInTheDocument();
+    });
+
+    // Should show animated numbers for usage stats
+    expect(screen.getAllByTestId('animated-number')).toHaveLength(3);
+  });
+
+  it('renders upload zones with blue gradient borders', () => {
+    mockUseAuth.mockReturnValue({
+      user: { id: 'admin-1', email: 'admin@example.com' },
+      session: { access_token: 'admin-token' },
+    });
+    mockIsAdmin.mockReturnValue(true);
+
+    const { container } = render(<DataPage />, { wrapper: createWrapper() });
+
+    // Check for blue gradient styling in upload zones
+    const uploadZones = container.querySelectorAll('[style*="borderColor"]');
+    expect(uploadZones.length).toBeGreaterThan(0);
+  });
+
+  it('handles file selection and shows file info', async () => {
+    mockUseAuth.mockReturnValue({
+      user: { id: 'admin-1', email: 'admin@example.com' },
+      session: { access_token: 'admin-token' },
+    });
+    mockIsAdmin.mockReturnValue(true);
+
+    const user = userEvent.setup();
+    render(<DataPage />, { wrapper: createWrapper() });
+
+    // Create a test file
+    const file = new File(['test content'], 'test.csv', { type: 'text/csv' });
+    
+    // Find first file input
+    const fileInputs = screen.getAllByRole('button', { name: /click to select file/i });
+    const uploadZone = fileInputs[0].closest('div');
+    
+    if (uploadZone) {
+      await user.click(uploadZone);
+      
+      const fileInput = uploadZone.querySelector('input[type="file"]') as HTMLInputElement;
+      if (fileInput) {
+        await user.upload(fileInput, file);
+        
+        // Should show file name and size
+        await waitFor(() => {
+          expect(screen.getByText('test.csv')).toBeInTheDocument();
+        });
+      }
+    }
+  });
+
+  it('auto-enables async processing for large files', async () => {
+    mockUseAuth.mockReturnValue({
+      user: { id: 'admin-1', email: 'admin@example.com' },
+      session: { access_token: 'admin-token' },
+    });
+    mockIsAdmin.mockReturnValue(true);
+
+    const user = userEvent.setup();
+    render(<DataPage />, { wrapper: createWrapper() });
+
+    // Create a large file (>5MB)
+    const largeFile = new File(['x'.repeat(6 * 1024 * 1024)], 'large.csv', { type: 'text/csv' });
+    
+    const fileInputs = screen.getAllByRole('button', { name: /click to select file/i });
+    const uploadZone = fileInputs[0].closest('div');
+    
+    if (uploadZone) {
+      await user.click(uploadZone);
+      
+      const fileInput = uploadZone.querySelector('input[type="file"]') as HTMLInputElement;
+      if (fileInput) {
+        await user.upload(fileInput, largeFile);
+        
+        // Should show large file indicator and async processing
+        await waitFor(() => {
+          expect(screen.getByText(/Large file - will use async processing/)).toBeInTheDocument();
+        });
+      }
+    }
+  });
+
+  it('displays async toggle for eligible files', async () => {
+    mockUseAuth.mockReturnValue({
+      user: { id: 'admin-1', email: 'admin@example.com' },
+      session: { access_token: 'admin-token' },
+    });
+    mockIsAdmin.mockReturnValue(true);
+
+    const user = userEvent.setup();
+    render(<DataPage />, { wrapper: createWrapper() });
+
+    // Create a medium file (<5MB)
+    const mediumFile = new File(['x'.repeat(1024 * 1024)], 'medium.csv', { type: 'text/csv' });
+    
+    const fileInputs = screen.getAllByRole('button', { name: /click to select file/i });
+    const uploadZone = fileInputs[0].closest('div');
+    
+    if (uploadZone) {
+      await user.click(uploadZone);
+      
+      const fileInput = uploadZone.querySelector('input[type="file"]') as HTMLInputElement;
+      if (fileInput) {
+        await user.upload(fileInput, mediumFile);
+        
+        // Should show async toggle for medium files
+        await waitFor(() => {
+          expect(screen.getByText('Background Processing')).toBeInTheDocument();
+        });
+      }
+    }
+  });
+
+  it('handles file upload submission', async () => {
+    mockUseAuth.mockReturnValue({
+      user: { id: 'admin-1', email: 'admin@example.com' },
+      session: { access_token: 'admin-token' },
+    });
+    mockIsAdmin.mockReturnValue(true);
+
+    // Mock successful upload response
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      status: 202,
+      json: () => Promise.resolve({
+        job_id: 'new-job-123',
+        estimated_rows: 100,
+        status: 'queued'
+      }),
+    });
+
+    const user = userEvent.setup();
+    render(<DataPage />, { wrapper: createWrapper() });
+
+    const file = new File(['test,data\n1,2'], 'test.csv', { type: 'text/csv' });
+    
+    const fileInputs = screen.getAllByRole('button', { name: /click to select file/i });
+    const uploadZone = fileInputs[0].closest('div');
+    
+    if (uploadZone) {
+      await user.click(uploadZone);
+      
+      const fileInput = uploadZone.querySelector('input[type="file"]') as HTMLInputElement;
+      if (fileInput) {
+        await user.upload(fileInput, file);
+        
+        // Click import button
+        const importButton = screen.getAllByText('Import Data')[0];
+        await user.click(importButton);
+
+        // Should show success message
+        await waitFor(() => {
+          expect(mockFetch).toHaveBeenCalledWith(
+            expect.stringContaining('/api/data/import'),
+            expect.objectContaining({
+              method: 'POST',
+            })
+          );
+        });
+      }
+    }
+  });
+
+  it('displays import history table with job statuses', async () => {
+    mockUseAuth.mockReturnValue({
+      user: { id: 'admin-1', email: 'admin@example.com' },
+      session: { access_token: 'admin-token' },
+    });
+    mockIsAdmin.mockReturnValue(true);
+
+    render(<DataPage />, { wrapper: createWrapper() });
+
+    await waitFor(() => {
+      expect(screen.getByText('Import History')).toBeInTheDocument();
+      expect(screen.getByText('sales_data.xlsx')).toBeInTheDocument();
+      expect(screen.getByText('dms_data.csv')).toBeInTheDocument();
+      expect(screen.getByText('scheme_claims.xlsx')).toBeInTheDocument();
+    });
+
+    // Check status indicators
+    expect(screen.getByText('Completed')).toBeInTheDocument();
+    expect(screen.getByText('Processing')).toBeInTheDocument();
+    expect(screen.getByText('Failed')).toBeInTheDocument();
+  });
+
+  it('shows progress bars for different job statuses', async () => {
+    mockUseAuth.mockReturnValue({
+      user: { id: 'admin-1', email: 'admin@example.com' },
+      session: { access_token: 'admin-token' },
+    });
+    mockIsAdmin.mockReturnValue(true);
+
+    const { container } = render(<DataPage />, { wrapper: createWrapper() });
+
+    await waitFor(() => {
+      // Should have progress bars with different colors based on status
+      const progressBars = container.querySelectorAll('[style*="linear-gradient"]');
+      expect(progressBars.length).toBeGreaterThan(0);
+    });
+  });
+
+  it('handles job polling for active jobs', async () => {
+    mockUseAuth.mockReturnValue({
+      user: { id: 'admin-1', email: 'admin@example.com' },
+      session: { access_token: 'admin-token' },
+    });
+    mockIsAdmin.mockReturnValue(true);
+
+    vi.useFakeTimers();
+    
+    render(<DataPage />, { wrapper: createWrapper() });
+
+    // Initial load
+    await waitFor(() => {
+      expect(screen.getByText('Import History')).toBeInTheDocument();
+    });
+
+    // Should poll for updates when there are processing jobs
+    act(() => {
+      vi.advanceTimersByTime(5000); // 5 seconds
+    });
+
+    // Should have made additional fetch calls for polling
+    expect(mockFetch).toHaveBeenCalledTimes(4); // Initial 2 + 2 polling calls
+
+    vi.useRealTimers();
+  });
+
+  it('displays empty state when no import jobs exist', async () => {
+    mockUseAuth.mockReturnValue({
+      user: { id: 'admin-1', email: 'admin@example.com' },
+      session: { access_token: 'admin-token' },
+    });
+    mockIsAdmin.mockReturnValue(true);
+
+    // Mock empty jobs response
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      json: () => Promise.resolve({ jobs: [] }),
+    });
+
+    render(<DataPage />, { wrapper: createWrapper() });
+
+    await waitFor(() => {
+      expect(screen.getByTestId('no-data-empty-state')).toBeInTheDocument();
+      expect(screen.getByText('No imports yet')).toBeInTheDocument();
+    });
+  });
+
+  it('handles refresh button click', async () => {
+    mockUseAuth.mockReturnValue({
+      user: { id: 'admin-1', email: 'admin@example.com' },
+      session: { access_token: 'admin-token' },
+    });
+    mockIsAdmin.mockReturnValue(true);
+
+    const user = userEvent.setup();
+    render(<DataPage />, { wrapper: createWrapper() });
+
+    await waitFor(() => {
+      expect(screen.getByText('Import History')).toBeInTheDocument();
+    });
+
+    const refreshButton = screen.getByText('Refresh');
+    await user.click(refreshButton);
+
+    // Should make additional API calls
+    expect(mockFetch).toHaveBeenCalledTimes(4); // Initial 2 + 2 refresh calls
+  });
+
+  it('shows file type validation errors', async () => {
+    mockUseAuth.mockReturnValue({
+      user: { id: 'admin-1', email: 'admin@example.com' },
+      session: { access_token: 'admin-token' },
+    });
+    mockIsAdmin.mockReturnValue(true);
+
+    // Mock validation error response
+    mockFetch.mockRejectedValueOnce(new Error('Unsupported file type'));
+
+    const user = userEvent.setup();
+    render(<DataPage />, { wrapper: createWrapper() });
+
+    const invalidFile = new File(['content'], 'test.txt', { type: 'text/plain' });
+    
+    const fileInputs = screen.getAllByRole('button', { name: /click to select file/i });
+    const uploadZone = fileInputs[0].closest('div');
+    
+    if (uploadZone) {
+      await user.click(uploadZone);
+      
+      const fileInput = uploadZone.querySelector('input[type="file"]') as HTMLInputElement;
+      if (fileInput) {
+        await user.upload(fileInput, invalidFile);
+        
+        const importButton = screen.getAllByText('Import Data')[0];
+        await user.click(importButton);
+
+        await waitFor(() => {
+          expect(screen.getByText('Import failed')).toBeInTheDocument();
+        });
+      }
+    }
+  });
+
+  it('displays different source type colors', () => {
+    mockUseAuth.mockReturnValue({
+      user: { id: 'admin-1', email: 'admin@example.com' },
+      session: { access_token: 'admin-token' },
+    });
+    mockIsAdmin.mockReturnValue(true);
+
+    const { container } = render(<DataPage />, { wrapper: createWrapper() });
+
+    // Should have different colored upload zones for each source type
+    const primaryZone = container.querySelector('[style*="#1565C0"]');
+    const secondaryZone = container.querySelector('[style*="#0288D1"]');
+    const schemeZone = container.querySelector('[style*="#7B1FA2"]');
+
+    expect(primaryZone || secondaryZone || schemeZone).toBeTruthy();
+  });
+
+  it('renders ad slot G for data enhancement', async () => {
+    mockUseAuth.mockReturnValue({
+      user: { id: 'admin-1', email: 'admin@example.com' },
+      session: { access_token: 'admin-token' },
+    });
+    mockIsAdmin.mockReturnValue(true);
+
+    render(<DataPage />, { wrapper: createWrapper() });
+
+    await waitFor(() => {
+      expect(screen.getByText('Data Enhancement Services')).toBeInTheDocument();
+      expect(screen.getByText('Let our experts clean and enrich your data for better insights')).toBeInTheDocument();
+    });
+  });
+
+  it('shows loading skeletons while fetching data', () => {
+    mockUseAuth.mockReturnValue({
+      user: { id: 'admin-1', email: 'admin@example.com' },
+      session: { access_token: 'admin-token' },
+    });
+    mockIsAdmin.mockReturnValue(true);
+
+    render(<DataPage />, { wrapper: createWrapper() });
+
+    // Should show loading skeletons initially
+    expect(screen.getByTestId('table-skeleton')).toBeInTheDocument();
+  });
+
+  it('handles quota exceeded error', async () => {
+    mockUseAuth.mockReturnValue({
+      user: { id: 'admin-1', email: 'admin@example.com' },
+      session: { access_token: 'admin-token' },
+    });
+    mockIsAdmin.mockReturnValue(true);
+
+    // Mock quota exceeded response
+    mockFetch.mockRejectedValueOnce({
+      status: 402,
+      message: 'Quota exceeded'
+    });
+
+    const user = userEvent.setup();
+    render(<DataPage />, { wrapper: createWrapper() });
+
+    const file = new File(['test data'], 'test.csv', { type: 'text/csv' });
+    
+    const fileInputs = screen.getAllByRole('button', { name: /click to select file/i });
+    const uploadZone = fileInputs[0].closest('div');
+    
+    if (uploadZone) {
+      await user.click(uploadZone);
+      
+      const fileInput = uploadZone.querySelector('input[type="file"]') as HTMLInputElement;
+      if (fileInput) {
+        await user.upload(fileInput, file);
+        
+        const importButton = screen.getAllByText('Import Data')[0];
+        await user.click(importButton);
+
+        await waitFor(() => {
+          expect(screen.getByText('Import failed')).toBeInTheDocument();
+        });
+      }
+    }
+  });
+
+  it('displays expected columns information', async () => {
+    mockUseAuth.mockReturnValue({
+      user: { id: 'admin-1', email: 'admin@example.com' },
+      session: { access_token: 'admin-token' },
+    });
+    mockIsAdmin.mockReturnValue(true);
+
+    const user = userEvent.setup();
+    render(<DataPage />, { wrapper: createWrapper() });
+
+    // Find and click on expected columns toggle
+    const expectedColumnsToggle = screen.getAllByText(/Expected columns/)[0];
+    await user.click(expectedColumnsToggle);
+
+    // Should show column names
+    expect(screen.getByText('invoice_date')).toBeInTheDocument();
+    expect(screen.getByText('invoice_number')).toBeInTheDocument();
+    expect(screen.getByText('party_name')).toBeInTheDocument();
+  });
+});

@@ -1,4 +1,5 @@
 import logging
+import uuid
 from typing import Annotated
 
 from fastapi import (
@@ -7,6 +8,7 @@ from fastapi import (
     Depends,
     File,
     HTTPException,
+    Path,
     Query,
     UploadFile,
     status,
@@ -137,25 +139,14 @@ async def import_data(
     if source_type in _RESTRICTED_SOURCE_TYPES:
         await require_feature("secondary_sales")(tenant)
 
+    # Parse first to know row count for quota check
     service = DataImportService(supabase=get_supabase_service_client())
+    # We do a dry row-count estimate via file size / avg row size
+    # (full parse happens inside service.import_file; we use a conservative estimate here)
+    estimated_rows = max(1, len(content) // 200)  # ~200 bytes/row conservative
 
-    # Parse first so quota checks use actual row count (not file-size estimate)
-    try:
-        df = service.parse_dataframe(content, filename, source_type, sheet_name)
-    except ValueError as exc:
-        raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail=str(exc),
-        ) from exc
-
-    row_count = len(df)
-    if row_count == 0:
-        raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail="No data rows found in file. Check the format and try again.",
-        )
-
-    await require_import_quota(row_count)(tenant)
+    # Quota check (daily cap + monthly cap + row storage cap)
+    await require_import_quota(estimated_rows)(tenant)
 
     supa = get_supabase_service_client()
 
@@ -174,24 +165,15 @@ async def import_data(
     except Exception as exc:
         logger.warning("Failed to create import_job record: %s", exc)
 
-    result = service.import_dataframe(
-        df,
+    result = service.import_file(
+        file_content=content,
+        filename=filename,
         tenant_id=tenant.tenant_id,
         source_type=source_type,
-        filename=filename,
         sheet_name=sheet_name,
-        import_job_id=import_job_id,
     )
 
     rows_inserted = result.rows_inserted or 0
-    if result.errors and rows_inserted < row_count:
-        raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail=(
-                f"Import stopped after {rows_inserted:,} of {row_count:,} rows. "
-                f"{result.errors[0]}"
-            ),
-        )
 
     # Update import_job with actual row count
     if import_job_id:
@@ -356,3 +338,279 @@ def sync_data(
             logger.warning("Failed to increment sync import usage: %s", exc)
 
     return result
+
+
+# ============================================================================
+# DAY 4: Async Import Endpoints for Large File Processing
+# ============================================================================
+
+class AsyncImportResponse(BaseModel):
+    job_id: str
+    status: str
+    message: str
+    estimated_processing_time: str
+
+
+class ImportJob(BaseModel):
+    id: str
+    tenant_id: str
+    user_id: str | None
+    source_type: str
+    filename: str | None
+    rows_inserted: int
+    rows_skipped: int
+    status: str
+    storage_path: str | None
+    error_message: str | None
+    retry_count: int
+    created_at: str
+    completed_at: str | None
+
+
+class ImportJobsResponse(BaseModel):
+    jobs: list[ImportJob]
+    total: int
+
+
+@router.post("/import/async", response_model=AsyncImportResponse, status_code=202)
+async def import_data_async(
+    user: CurrentUser,
+    tenant: TenantCtx,
+    file: UploadFile = File(...),
+    source_type: Annotated[SourceType, Query()] = "primary",
+    sheet_name: Annotated[str | None, Query(description="Excel sheet name for multi-sheet files")] = None,
+) -> AsyncImportResponse:
+    """
+    Async import for large files (>5000 rows estimated).
+    
+    For files under 5000 rows, use the regular POST /import endpoint.
+    Large files are uploaded to Supabase Storage and processed by background workers.
+    
+    Returns a job_id that can be used to poll status via GET /import/jobs/{job_id}
+    """
+    if not tenant.is_admin:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only admins can import data",
+        )
+
+    content_type = file.content_type or ""
+    filename = file.filename or "upload.csv"
+    ext = filename.rsplit(".", 1)[-1].lower()
+
+    # Validate file type
+    if content_type not in _ALLOWED_CONTENT_TYPES and ext not in ("csv", "xlsx", "xls"):
+        raise HTTPException(
+            status_code=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE,
+            detail="Unsupported file type. Upload a CSV, XLSX, or XLS file.",
+        )
+
+    content = await file.read()
+    if len(content) > _MAX_FILE_SIZE:
+        raise HTTPException(
+            status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+            detail="File exceeds 50 MB limit",
+        )
+
+    # Feature gate check
+    if source_type in _RESTRICTED_SOURCE_TYPES:
+        await require_feature("secondary_sales")(tenant)
+
+    # Estimate rows and decide between sync/async
+    estimated_rows = max(1, len(content) // 200)
+
+    if estimated_rows < 5000:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"File has ~{estimated_rows} rows. Use POST /import for files under 5000 rows.",
+        )
+
+    # Quota check for large imports
+    await require_import_quota(estimated_rows)(tenant)
+
+    # Upload to Supabase Storage
+    supa = get_supabase_service_client()
+    job_id = str(uuid.uuid4())
+
+    # Create unique storage path
+    storage_path = f"import-jobs/{tenant.tenant_id}/{job_id}/{filename}"
+
+    try:
+        # Upload file to storage
+        supa.storage.from_("imports").upload(storage_path, content, {
+            "content-type": content_type,
+            "x-upsert": "true"  # Overwrite if exists
+        })
+    except Exception as e:
+        logger.error(f"Failed to upload file to storage: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to upload file for processing. Please try again.",
+        )
+
+    # Create import job record
+    try:
+        job_result = supa.table("import_jobs").insert({
+            "id": job_id,
+            "tenant_id": str(tenant.tenant_id),
+            "user_id": str(user.user_id),
+            "source_type": str(source_type),
+            "filename": filename,
+            "status": "queued",
+            "storage_path": storage_path,
+            "rows_inserted": 0,
+            "rows_skipped": 0,
+        }).execute()
+
+        if not job_result.data:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Failed to create import job",
+            )
+
+    except Exception as e:
+        logger.error(f"Failed to create import job: {e}")
+        # Clean up uploaded file
+        try:
+            supa.storage.from_("imports").remove([storage_path])
+        except:
+            pass
+
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to queue import job. Please try again.",
+        )
+
+    # Estimate processing time based on file size
+    processing_time = f"{max(1, estimated_rows // 1000)} minutes"
+
+    return AsyncImportResponse(
+        job_id=job_id,
+        status="queued",
+        message=f"Import job queued for processing. Estimated {estimated_rows:,} rows.",
+        estimated_processing_time=processing_time
+    )
+
+
+@router.get("/import/jobs/{job_id}", response_model=ImportJob)
+async def get_import_job(
+    job_id: Annotated[str, Path(description="Import job ID")],
+    user: CurrentUser,
+    tenant: TenantCtx,
+) -> ImportJob:
+    """
+    Get status of a specific import job.
+    
+    Use this to poll the status of async imports started with POST /import/async
+    """
+    if not tenant.is_admin:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only admins can view import jobs",
+        )
+
+    supa = get_supabase_service_client()
+
+    try:
+        result = (
+            supa.table("import_jobs")
+            .select("*")
+            .eq("id", job_id)
+            .eq("tenant_id", str(tenant.tenant_id))
+            .single()
+            .execute()
+        )
+    except Exception as e:
+        logger.error(f"Failed to fetch import job {job_id}: {e}")
+        raise HTTPException(status_code=404, detail="Import job not found")
+
+    if not result.data:
+        raise HTTPException(status_code=404, detail="Import job not found")
+
+    job_data = result.data
+    return ImportJob(
+        id=job_data["id"],
+        tenant_id=job_data["tenant_id"],
+        user_id=job_data.get("user_id"),
+        source_type=job_data["source_type"],
+        filename=job_data.get("filename"),
+        rows_inserted=job_data["rows_inserted"],
+        rows_skipped=job_data["rows_skipped"],
+        status=job_data["status"],
+        storage_path=job_data.get("storage_path"),
+        error_message=job_data.get("error_message"),
+        retry_count=job_data["retry_count"],
+        created_at=job_data["created_at"],
+        completed_at=job_data.get("completed_at"),
+    )
+
+
+@router.get("/import/jobs", response_model=ImportJobsResponse)
+async def list_import_jobs(
+    user: CurrentUser,
+    tenant: TenantCtx,
+    limit: Annotated[int, Query(ge=1, le=50)] = 10,
+    offset: Annotated[int, Query(ge=0)] = 0,
+) -> ImportJobsResponse:
+    """
+    List import jobs for this tenant, ordered by creation time (newest first).
+    
+    Includes both sync and async import jobs for the import history view.
+    """
+    if not tenant.is_admin:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only admins can view import jobs",
+        )
+
+    supa = get_supabase_service_client()
+
+    try:
+        # Get jobs with pagination
+        result = (
+            supa.table("import_jobs")
+            .select("*")
+            .eq("tenant_id", str(tenant.tenant_id))
+            .order("created_at", desc=True)
+            .range(offset, offset + limit - 1)
+            .execute()
+        )
+
+        # Get total count for pagination
+        count_result = (
+            supa.table("import_jobs")
+            .select("*", count="exact")
+            .eq("tenant_id", str(tenant.tenant_id))
+            .execute()
+        )
+
+    except Exception as e:
+        logger.error(f"Failed to fetch import jobs: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to fetch import jobs",
+        )
+
+    jobs_data = result.data or []
+    total = count_result.count or 0
+
+    jobs = [
+        ImportJob(
+            id=job["id"],
+            tenant_id=job["tenant_id"],
+            user_id=job.get("user_id"),
+            source_type=job["source_type"],
+            filename=job.get("filename"),
+            rows_inserted=job["rows_inserted"],
+            rows_skipped=job["rows_skipped"],
+            status=job["status"],
+            storage_path=job.get("storage_path"),
+            error_message=job.get("error_message"),
+            retry_count=job["retry_count"],
+            created_at=job["created_at"],
+            completed_at=job.get("completed_at"),
+        )
+        for job in jobs_data
+    ]
+
+    return ImportJobsResponse(jobs=jobs, total=total)

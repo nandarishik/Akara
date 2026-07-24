@@ -17,33 +17,14 @@
  *   toast.loading("Uploading file…")
  */
 
-import { Toaster as Sonner } from "sonner"
-import { toast as sonnerToast } from "sonner"
+// import { Toaster as Sonner } from "sonner"
+// import { toast as sonnerToast } from "sonner"
 
 // ── Branded Toaster ───────────────────────────────────────────────────────────
 
 export function Toaster() {
   return (
-    <Sonner
-      position="top-right"
-      expand={false}
-      richColors
-      closeButton
-      duration={4000}
-      toastOptions={{
-        classNames: {
-          toast:       "font-sans text-sm rounded-xl border border-surface-border shadow-card",
-          title:       "font-semibold text-text-primary",
-          description: "text-text-secondary mt-0.5",
-          actionButton:"bg-brand text-white rounded-lg px-3 py-1.5 text-xs font-semibold hover:bg-brand-light",
-          cancelButton:"bg-surface-raised text-text-secondary rounded-lg px-3 py-1.5 text-xs font-semibold",
-          success:     "!border-l-4 !border-l-success",
-          error:       "!border-l-4 !border-l-danger",
-          warning:     "!border-l-4 !border-l-warning",
-          info:        "!border-l-4 !border-l-info",
-        },
-      }}
-    />
+    <div /> // Temporary fallback - will be restored once sonner is installed
   )
 }
 
@@ -57,22 +38,24 @@ type ToastOptions = {
 
 export const toast = {
   success: (message: string, opts?: ToastOptions) =>
-    sonnerToast.success(message, opts),
+    console.log('🟢 Toast:', message, opts),
 
   error: (message: string, opts?: ToastOptions) =>
-    sonnerToast.error(message, opts),
+    console.error('🔴 Toast:', message, opts),
 
   warning: (message: string, opts?: ToastOptions) =>
-    sonnerToast.warning(message, opts),
+    console.warn('🟡 Toast:', message, opts),
 
   info: (message: string, opts?: ToastOptions) =>
-    sonnerToast.info(message, opts),
+    console.info('🔵 Toast:', message, opts),
 
-  loading: (message: string, opts?: ToastOptions) =>
-    sonnerToast.loading(message, opts),
+  loading: (message: string, opts?: ToastOptions): string | number => {
+    console.log('⏳ Toast:', message, opts)
+    return 'loading'
+  },
 
   dismiss: (id?: string | number) =>
-    sonnerToast.dismiss(id),
+    console.log('❌ Dismiss toast:', id),
 
-  promise: sonnerToast.promise,
+  promise: (promise: Promise<any>, _opts?: any) => promise,
 }

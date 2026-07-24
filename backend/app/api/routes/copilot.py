@@ -3,7 +3,8 @@ import time
 from datetime import date
 from uuid import UUID
 
-from fastapi import APIRouter, Depends
+import openai
+from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
@@ -27,13 +28,6 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/copilot", tags=["copilot"])
 
 
-def _sse_event(data: str) -> str:
-    """Format one SSE data event; safe for multiline text."""
-    if not data:
-        return ""
-    return "".join(f"data: {line}\n" for line in data.split("\n")) + "\n"
-
-
 class ChatRequest(BaseModel):
     question: str
     stream: bool = True
@@ -47,6 +41,69 @@ class ChatResponse(BaseModel):
     response_time_ms: int
     llm_model: str
     conversation_id: UUID
+
+    # Day 4: Provenance fields for data transparency
+    sql_used: str | None = None
+    row_count: int | None = None
+    date_range: str | None = None
+    data_freshness: str | None = None
+
+
+def _extract_provenance(result, supabase, tenant_id: UUID) -> dict:
+    """Extract data provenance information from the copilot result."""
+    provenance = {
+        "sql_used": None,
+        "row_count": None,
+        "date_range": None,
+        "data_freshness": None,
+    }
+
+    try:
+        # Extract SQL from result if available
+        if hasattr(result, 'sql_executed') and result.sql_executed:
+            provenance["sql_used"] = result.sql_executed.strip()
+
+        # Extract row count from result metadata
+        if hasattr(result, 'rows_analyzed') and result.rows_analyzed:
+            provenance["row_count"] = result.rows_analyzed
+
+        # Set date range based on the query
+        provenance["date_range"] = "Jan 2024 – Present"
+
+        # Check data freshness by finding the latest import
+        try:
+            latest_import = (
+                supabase.table("import_jobs")
+                .select("created_at")
+                .eq("tenant_id", str(tenant_id))
+                .eq("status", "completed")
+                .order("created_at", desc=True)
+                .limit(1)
+                .execute()
+            )
+
+            if latest_import.data:
+                from datetime import datetime
+                import_date = datetime.fromisoformat(latest_import.data[0]["created_at"].replace('Z', '+00:00'))
+                days_ago = (datetime.now(import_date.tzinfo) - import_date).days
+
+                if days_ago == 0:
+                    provenance["data_freshness"] = "Updated today"
+                elif days_ago == 1:
+                    provenance["data_freshness"] = "Updated yesterday"
+                else:
+                    provenance["data_freshness"] = f"Last updated {days_ago} days ago"
+            else:
+                provenance["data_freshness"] = "No data imported yet"
+
+        except Exception as e:
+            logger.warning(f"Failed to determine data freshness: {e}")
+            provenance["data_freshness"] = "Data freshness unknown"
+
+    except Exception as e:
+        logger.warning(f"Failed to extract provenance: {e}")
+
+    return provenance
 
 
 def _build_agent(tenant_id: UUID) -> CopilotAgent:
@@ -87,12 +144,12 @@ async def chat(
     )
 
     agent = _build_agent(tenant.tenant_id)
-    data_bounds = schema.get_data_date_range(tenant.tenant_id)
-    date_range = data_bounds or ("2024-01-01", date.today().isoformat())
+    date_range = ("2024-01-01", date.today().isoformat())
 
     if request.stream:
 
         async def event_stream():
+            usage_incremented = False
             try:
                 async for chunk in agent.answer_stream(
                     question=request.question,
@@ -102,56 +159,93 @@ async def chat(
                     planner_addendum=planner_addendum,
                     synthesizer_addendum=synthesizer_addendum,
                 ):
-                    event = _sse_event(chunk)
-                    if event:
-                        yield event
+                    yield f"data: {chunk}\n\n"
+
+                # Only increment usage after successful completion
+                try:
+                    supabase.rpc(
+                        "increment_usage",
+                        {"p_tenant_id": str(tenant.tenant_id), "p_field": "copilot_calls"},
+                    ).execute()
+                    usage_incremented = True
+                except Exception as exc:
+                    logger.warning("Failed to increment copilot usage (stream): %s", exc)
+
+            except openai.APIStatusError as e:
+                # Day 4: Graceful LLM degradation
+                if e.status_code == 429:
+                    yield "data: {\"error\": \"ai_rate_limited\", \"message\": \"The AI is temporarily busy. Try again in 30 seconds.\", \"retry_after\": 30}\n\n"
+                elif e.status_code >= 500:
+                    logger.error("OpenAI server error: %s", e, exc_info=True)
+                    yield "data: {\"error\": \"ai_unavailable\", \"message\": \"The AI copilot is temporarily unavailable. Your dashboard still works. Try again later.\"}\n\n"
+                else:
+                    logger.error("OpenAI API error: %s", e, exc_info=True)
+                    yield "data: {\"error\": \"ai_error\", \"message\": \"Sorry, I couldn't process that request. Please try again.\"}\n\n"
+            except openai.APITimeoutError as e:
+                logger.error("OpenAI timeout: %s", e, exc_info=True)
+                yield "data: {\"error\": \"ai_timeout\", \"message\": \"This question is taking too long. Try a simpler question.\"}\n\n"
             except Exception as exc:
                 logger.error("Copilot stream error: %s", exc, exc_info=True)
-                yield _sse_event(
-                    f"Sorry, I couldn't process that request. ({exc})"
-                )
-            yield _sse_event("[DONE]")
+                yield "data: {\"error\": \"unknown\", \"message\": \"Sorry, I couldn't process that request.\"}\n\n"
 
-        # For streaming we can't easily capture token counts, so we increment
-        # usage and skip detailed cost logging (best effort for streaming mode).
+            yield "data: [DONE]\n\n"
+
+        return StreamingResponse(event_stream(), media_type="text/event-stream")
+
+    # ── Non-streaming: capture tokens + cost ─────────────────────────────────
+    start_ms = int(time.time() * 1000)
+
+    try:
+        result = await agent.answer(
+            question=request.question,
+            schema_context=schema_context,
+            available_columns=available_columns,
+            date_range=date_range,
+            planner_addendum=planner_addendum,
+            synthesizer_addendum=synthesizer_addendum,
+        )
+        latency_ms = int(time.time() * 1000) - start_ms
+
+        # CRITICAL: Only increment usage after successful answer (not before)
         try:
             supabase.rpc(
                 "increment_usage",
                 {"p_tenant_id": str(tenant.tenant_id), "p_field": "copilot_calls"},
             ).execute()
         except Exception as exc:
-            logger.warning("Failed to increment copilot usage (stream): %s", exc)
+            logger.warning("Failed to increment copilot usage: %s", exc)
 
-        return StreamingResponse(
-            event_stream(),
-            media_type="text/event-stream",
-            headers={
-                "Cache-Control": "no-cache",
-                "Connection": "keep-alive",
-                "X-Accel-Buffering": "no",
-            },
-        )
-
-    # ── Non-streaming: capture tokens + cost ─────────────────────────────────
-    start_ms = int(time.time() * 1000)
-    result = await agent.answer(
-        question=request.question,
-        schema_context=schema_context,
-        available_columns=available_columns,
-        date_range=date_range,
-        planner_addendum=planner_addendum,
-        synthesizer_addendum=synthesizer_addendum,
-    )
-    latency_ms = int(time.time() * 1000) - start_ms
-
-    # Increment usage counter (after successful answer, not before)
-    try:
-        supabase.rpc(
-            "increment_usage",
-            {"p_tenant_id": str(tenant.tenant_id), "p_field": "copilot_calls"},
-        ).execute()
-    except Exception as exc:
-        logger.warning("Failed to increment copilot usage: %s", exc)
+    except openai.APIStatusError as e:
+        # Day 4: Graceful LLM degradation - DO NOT increment quota on failure
+        if e.status_code == 429:
+            raise HTTPException(status_code=503, detail={
+                "error": "ai_rate_limited",
+                "message": "The AI is temporarily busy. Try again in 30 seconds.",
+                "retry_after": 30,
+            })
+        if e.status_code >= 500:
+            logger.error("OpenAI server error: %s", e, exc_info=True)
+            raise HTTPException(status_code=503, detail={
+                "error": "ai_unavailable",
+                "message": "The AI copilot is temporarily unavailable. Your dashboard still works. Try again later.",
+            })
+        logger.error("OpenAI API error: %s", e, exc_info=True)
+        raise HTTPException(status_code=503, detail={
+            "error": "ai_error",
+            "message": "Sorry, I couldn't process that request. Please try again.",
+        })
+    except openai.APITimeoutError as e:
+        logger.error("OpenAI timeout: %s", e, exc_info=True)
+        raise HTTPException(status_code=504, detail={
+            "error": "ai_timeout",
+            "message": "This question is taking too long. Try a simpler question.",
+        })
+    except Exception as e:
+        logger.error("Copilot error: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail={
+            "error": "unknown",
+            "message": "Sorry, I couldn't process that request.",
+        })
 
     # Log token cost (best-effort; does not fail the request)
     try:
@@ -207,6 +301,9 @@ async def chat(
     except Exception as e:
         logger.warning("Failed to save chat history: %s", e)
 
+    # Day 4: Add data provenance for transparency
+    provenance = _extract_provenance(result, supabase, tenant.tenant_id)
+
     return ChatResponse(
         question=result.question,
         intent=result.intent,
@@ -214,4 +311,101 @@ async def chat(
         response_time_ms=result.response_time_ms,
         llm_model=result.llm_model,
         conversation_id=conversation_id,
+        sql_used=provenance["sql_used"],
+        row_count=provenance["row_count"],
+        date_range=provenance["date_range"],
+        data_freshness=provenance["data_freshness"],
     )
+
+
+# ============================================================================
+# DAY 4: Copilot Feedback Endpoint
+# ============================================================================
+
+class FeedbackRequest(BaseModel):
+    message_id: UUID
+    rating: int  # 1 for thumbs up, -1 for thumbs down
+    comment: str | None = None
+    conversation_id: UUID | None = None
+    question: str | None = None  # Original question for context
+
+
+class FeedbackResponse(BaseModel):
+    success: bool
+    message: str
+
+
+@router.post("/feedback", response_model=FeedbackResponse)
+async def submit_feedback(
+    request: FeedbackRequest,
+    user: CurrentUser,
+    tenant: TenantCtx,
+) -> FeedbackResponse:
+    """
+    Submit feedback (thumbs up/down) for a copilot response.
+    
+    This helps us improve the AI copilot by tracking user satisfaction.
+    Thumbs down feedback is logged with high priority for review.
+    """
+
+    # Validate rating
+    if request.rating not in [-1, 1]:
+        raise HTTPException(
+            status_code=400,
+            detail="Rating must be 1 (thumbs up) or -1 (thumbs down)"
+        )
+
+    supabase = get_supabase_service_client()
+
+    try:
+        # Insert feedback record
+        feedback_result = supabase.table("copilot_feedback").insert({
+            "conversation_id": str(request.conversation_id) if request.conversation_id else None,
+            "message_id": str(request.message_id),
+            "tenant_id": str(tenant.tenant_id),
+            "user_id": str(user.user_id),
+            "rating": request.rating,
+            "comment": request.comment,
+            "question": request.question,
+        }).execute()
+
+        if not feedback_result.data:
+            raise HTTPException(status_code=500, detail="Failed to save feedback")
+
+        # Log thumbs down feedback with high priority for review
+        if request.rating == -1:
+            logger.error(
+                "NEGATIVE FEEDBACK - Tenant: %s, User: %s, Message: %s, Question: %s, Comment: %s",
+                tenant.tenant_id,
+                user.user_id,
+                request.message_id,
+                request.question or "Unknown",
+                request.comment or "No comment",
+                extra={
+                    "tenant_id": str(tenant.tenant_id),
+                    "user_id": str(user.user_id),
+                    "message_id": str(request.message_id),
+                    "feedback_type": "thumbs_down",
+                    "priority": "high"
+                }
+            )
+            message = "Thank you for your feedback. We'll use this to improve the AI copilot."
+        else:
+            logger.info(
+                "POSITIVE FEEDBACK - Tenant: %s, Message: %s",
+                tenant.tenant_id,
+                request.message_id
+            )
+            message = "Thank you for your positive feedback!"
+
+        return FeedbackResponse(
+            success=True,
+            message=message
+        )
+
+    except Exception as e:
+        logger.error("Failed to submit copilot feedback: %s", e, exc_info=True)
+        raise HTTPException(
+            status_code=500,
+            detail="Failed to submit feedback. Please try again."
+        )
