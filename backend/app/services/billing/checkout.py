@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import logging
+import time
+from typing import TypedDict
 from uuid import UUID
 
 import razorpay
@@ -26,6 +28,17 @@ PLAN_ID_MAP: dict[str, dict[str, str]] = {
 
 # Billing cycles per subscription (Razorpay total_count)
 TOTAL_COUNT: dict[str, int] = {"month": 120, "year": 10}
+
+# Authorisation link validity (Razorpay expire_by)
+CHECKOUT_EXPIRE_SECONDS = 30 * 24 * 60 * 60
+
+PENDING_SUB_STATUSES = frozenset({"created", "authenticated"})
+
+
+class CheckoutResult(TypedDict):
+    checkout_url: str
+    subscription_id: str
+    razorpay_key_id: str
 
 
 def _client() -> razorpay.Client:
@@ -81,12 +94,31 @@ def _get_or_create_razorpay_customer(tenant_id: UUID, email: str, name: str | No
     return customer_id
 
 
+def _cancel_stale_subscription(client: razorpay.Client, sub_id: str) -> None:
+    try:
+        sub = client.subscription.fetch(sub_id)
+        if sub.get("status") in PENDING_SUB_STATUSES:
+            client.subscription.cancel(sub_id)
+    except Exception as exc:
+        logger.warning("Could not cancel stale subscription %s: %s", sub_id, exc)
+
+
+def _checkout_url_from_subscription(subscription: dict) -> str | None:
+    short_url = subscription.get("short_url")
+    if short_url:
+        return short_url
+    sub_id = subscription.get("id")
+    if sub_id:
+        return f"https://api.razorpay.com/v1/l/subscriptions/{sub_id}"
+    return None
+
+
 def create_checkout_session(
     tenant_id: UUID,
     user_email: str,
     plan: str,
     interval: str = "month",
-) -> str:
+) -> CheckoutResult:
     supa = get_supabase_service_client()
     tenant_row = (
         supa.table("tenants")
@@ -116,12 +148,17 @@ def create_checkout_session(
     )
     client = _client()
 
+    if sub_id and current_plan == "free":
+        _cancel_stale_subscription(client, sub_id)
+
+    now = int(time.time())
     subscription = client.subscription.create({
         "plan_id": plan_id,
         "customer_id": customer_id,
         "total_count": TOTAL_COUNT.get(interval, 120),
         "quantity": 1,
         "customer_notify": 1,
+        "expire_by": now + CHECKOUT_EXPIRE_SECONDS,
         "notes": {
             "tenant_id": str(tenant_id),
             "plan": plan,
@@ -129,18 +166,23 @@ def create_checkout_session(
         },
     })
 
-    checkout_url = subscription.get("short_url")
-    if not checkout_url:
+    sub_id = subscription.get("id")
+    checkout_url = _checkout_url_from_subscription(subscription)
+    if not checkout_url or not sub_id:
         raise HTTPException(
             status.HTTP_502_BAD_GATEWAY,
             detail="Razorpay did not return a checkout URL",
         )
 
     supa.table("tenants").update({
-        "razorpay_subscription_id": subscription.get("id"),
+        "razorpay_subscription_id": sub_id,
     }).eq("id", str(tenant_id)).execute()
 
-    return checkout_url
+    return CheckoutResult(
+        checkout_url=checkout_url,
+        subscription_id=sub_id,
+        razorpay_key_id=settings.razorpay_key_id,
+    )
 
 
 def fetch_subscription_status(tenant_id: UUID) -> dict:

@@ -7,6 +7,7 @@ import GradientMesh from "@/components/ui/GradientMesh";
 import GradientButton from "@/components/ui/GradientButton";
 import { PlanCard } from "@/components/ui/card";
 import { createCheckoutSession, BillingApiError } from "@/lib/api/billing";
+import { openRazorpaySubscriptionCheckout } from "@/lib/razorpayCheckout";
 import { useBilling } from "@/hooks/useBilling";
 import { useAuth } from "@/contexts/AuthContext";
 import { cn } from "@/lib/utils";
@@ -32,7 +33,7 @@ export function UpgradePage() {
   const [error, setError] = useState("");
   const [alreadySubscribed, setAlreadySubscribed] = useState(false);
   const { data: usage } = useBilling();
-  const { session } = useAuth();
+  const { session, user } = useAuth();
   const [params] = useSearchParams();
   const cancelled = params.get("cancelled") === "1";
 
@@ -46,8 +47,27 @@ export function UpgradePage() {
     setLoadingPlan(plan);
     try {
       const key = crypto.randomUUID();
-      const { checkout_url } = await createCheckoutSession(plan, interval, key);
-      window.location.href = checkout_url;
+      const checkout = await createCheckoutSession(plan, interval, key);
+      try {
+        await openRazorpaySubscriptionCheckout({
+          keyId: checkout.razorpay_key_id,
+          subscriptionId: checkout.subscription_id,
+          email: session.user.email,
+          name: user?.displayName ?? undefined,
+          onSuccess: () => {
+            window.location.href = "/billing?upgraded=1";
+          },
+        });
+      } catch (checkoutErr) {
+        if (
+          checkoutErr instanceof Error &&
+          checkoutErr.message === "Checkout closed"
+        ) {
+          setLoadingPlan(null);
+          return;
+        }
+        window.location.href = checkout.checkout_url;
+      }
     } catch (e) {
       if (e instanceof BillingApiError && e.status === 409) {
         setAlreadySubscribed(true);

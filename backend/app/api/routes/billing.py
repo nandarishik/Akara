@@ -63,6 +63,8 @@ class CheckoutRequest(BaseModel):
 
 class CheckoutResponse(BaseModel):
     checkout_url: str
+    subscription_id: str
+    razorpay_key_id: str
 
 
 class SubscriptionResponse(BaseModel):
@@ -172,7 +174,7 @@ def create_checkout(
         raise HTTPException(status.HTTP_400_BAD_REQUEST, detail="User email required for checkout")
 
     try:
-        url = create_checkout_session(
+        result = create_checkout_session(
             tenant_id=tenant.tenant_id,
             user_email=user.email,
             plan=body.plan,
@@ -182,7 +184,7 @@ def create_checkout(
         store_response(idempotency_key, tenant.tenant_id, CHECKOUT_ENDPOINT, exc.status_code, {"detail": exc.detail})
         raise
 
-    response = CheckoutResponse(checkout_url=url)
+    response = CheckoutResponse(**result)
     store_response(idempotency_key, tenant.tenant_id, CHECKOUT_ENDPOINT, 200, response.model_dump())
     return response
 

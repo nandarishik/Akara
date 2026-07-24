@@ -81,11 +81,17 @@ export class BillingApiError extends Error {
   }
 }
 
+export interface CheckoutSessionResponse {
+  checkout_url: string;
+  subscription_id: string;
+  razorpay_key_id: string;
+}
+
 export async function createCheckoutSession(
   plan: "pro" | "business",
   interval: "month" | "year",
   idempotencyKey: string
-): Promise<{ checkout_url: string }> {
+): Promise<CheckoutSessionResponse> {
   const token = await (async () => {
     const { supabase } = await import("@/lib/supabase");
     const { data } = await supabase.auth.getSession();
@@ -117,7 +123,7 @@ export async function createCheckoutSession(
     throw new BillingApiError(detail, res.status);
   }
 
-  return res.json() as Promise<{ checkout_url: string }>;
+  return res.json() as Promise<CheckoutSessionResponse>;
 }
 
 export async function downloadInvoice(invoiceId: string): Promise<void> {

@@ -19,7 +19,11 @@ def test_create_checkout_session(
     authed_client_free,
 ):
     mock_tenant_supa.return_value = _make_tenant_supa("free")
-    mock_checkout.return_value = "https://rzp.io/i/test"
+    mock_checkout.return_value = {
+        "checkout_url": "https://rzp.io/i/test",
+        "subscription_id": "sub_test",
+        "razorpay_key_id": "rzp_test_key",
+    }
 
     response = authed_client_free.post(
         "/billing/create-checkout-session",
