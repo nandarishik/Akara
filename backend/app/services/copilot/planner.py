@@ -9,6 +9,7 @@ from app.services.copilot.fallback_queries import (
     top_products_sql,
     total_revenue_sql,
 )
+from app.services.copilot.pii_redactor import redact
 from app.services.llm.manager import LLMManager
 from app.services.schema.columns import (
     DEFAULT_RESULT_LIMIT,
@@ -128,10 +129,10 @@ class Planner:
             return self._greeting_plan()
 
         prompt = (
-            f"Schema context:\n{schema_context}\n\n"
+            f"Schema context:\n{redact(schema_context)}\n\n"
             f"Query date range (use :start_date and :end_date): "
             f"{date_range[0]} to {date_range[1]}\n\n"
-            f"User question: {question}\n\n"
+            f"User question: {redact(question)}\n\n"
             f"Output the JSON plan:"
         )
         system = _PLAN_SYSTEM + system_addendum

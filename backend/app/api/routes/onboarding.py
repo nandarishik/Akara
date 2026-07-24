@@ -20,6 +20,7 @@ from app.core.auth import CurrentUser
 from app.core.config import settings
 from app.core.rate_limit import limiter
 from app.core.tenant import get_supabase_service_client
+from app.services.user_events import record_user_event
 
 if TYPE_CHECKING:
     pass
@@ -311,6 +312,8 @@ async def setup_tenant(
     # 7 — Seed sample data
     _seed_sample_data(client, new_tenant_id)
 
+    record_user_event(user.user_id, "signed_up")
+
     return OnboardingResponse(
         tenant_id=new_tenant_id,
         tenant_slug=slug,
@@ -335,4 +338,5 @@ async def onboarding_complete(user: CurrentUser) -> dict:
     client.table("profiles").update(
         {"has_completed_onboarding": True}
     ).eq("id", str(user.user_id)).execute()
+    record_user_event(user.user_id, "onboarded")
     return {"ok": True}

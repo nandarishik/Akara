@@ -39,7 +39,9 @@ const CopilotPage    = React.lazy(() => import("@/pages/CopilotPage").then(m => 
 const DataPage       = React.lazy(() => import("@/pages/DataPage").then(m => ({ default: m.DataPage })))
 const ReportsPage    = React.lazy(() => import("@/pages/ReportsPage").then(m => ({ default: m.ReportsPage })))
 const SimulatorPage  = React.lazy(() => import("@/pages/SimulatorPage").then(m => ({ default: m.SimulatorPage })))
+const DebriefPage    = React.lazy(() => import("@/pages/DebriefPage").then(m => ({ default: m.DebriefPage })))
 const SettingsPage   = React.lazy(() => import("@/pages/SettingsPage").then(m => ({ default: m.SettingsPage })))
+const SettingsTeamPage = React.lazy(() => import("@/pages/SettingsPage").then(m => ({ default: m.SettingsTeamPage })))
 const UpgradePage    = React.lazy(() => import("@/pages/UpgradePage").then(m => ({ default: m.UpgradePage })))
 const BillingPage    = React.lazy(() => import("@/pages/BillingPage").then(m => ({ default: m.BillingPage })))
 const AlertsPage     = React.lazy(() => import("@/pages/AlertsPage").then(m => ({ default: m.AlertsPage })))
@@ -122,8 +124,10 @@ export default function App() {
                     <Route path="/copilot"    element={<CopilotPage />} />
                     <Route path="/data"       element={<DataPage />} />
                     <Route path="/reports"    element={<ReportsPage />} />
+                    <Route path="/debrief"    element={<DebriefPage />} />
                     <Route path="/simulator"  element={<SimulatorPage />} />
                     <Route path="/settings"   element={<SettingsPage />} />
+                    <Route path="/settings/team" element={<SettingsTeamPage />} />
                     <Route path="/billing"    element={<BillingPage />} />
                     <Route path="/alerts"    element={<AlertsPage />} />
                     {/* Legacy admin — deprecated in Day 8 */}

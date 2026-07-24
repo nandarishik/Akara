@@ -86,3 +86,42 @@ Apply migration **017** (`017_alerts.sql`) on Supabase.
 
 ### E2E checklist
 [`docs/day6_e2e_checklist.md`](docs/day6_e2e_checklist.md)
+
+## Day 7 — Comms, Teams, Debrief, Account Rights
+
+Apply migration **018** (`018_day7_comms_teams_debrief.sql`) on Supabase.
+
+### Railway cron / worker services
+
+**Free-tier limit (4 services):** If you already run API + dunning + alerts + import worker, **defer** the two Day 7 crons until you upgrade Railway (planned Day 14 / first customer). Code and JSON configs are ready; nothing breaks without them.
+
+| Service | Config | Schedule / command | When to add |
+|---------|--------|-------------------|---------------|
+| Weekly debrief | `railway.weekly_debrief.json` | `30 1 * * 1` → `python -m app.tasks.weekly_debrief` | Day 14+ or after Railway upgrade |
+| Activation emails | `railway.activation_emails.json` | `0 8 * * *` → `python -m app.tasks.activation_emails` | Day 14+ or after Railway upgrade |
+
+**Until crons are live**, use manual triggers:
+
+```bash
+# Weekly debrief — one tenant (superadmin JWT or X-Service-Key)
+curl -X POST "$BACKEND_URL/admin/reports/weekly-debrief" \
+  -H "X-Service-Key: $BACKEND_SERVICE_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"tenant_id": "<uuid>"}'
+
+# Activation emails — full batch (run locally or one-off Railway job)
+cd backend && python -m app.tasks.activation_emails
+
+# Weekly debrief — all active tenants (Monday job substitute)
+cd backend && python -m app.tasks.weekly_debrief
+
+# Account deletion queue — process pending DPDP deletions
+cd backend && python -m app.tasks.account_deletion_worker
+```
+
+When you add each cron service: **Root Directory = `backend`**, **Restart = Never**, copy env from API (Supabase, SendGrid, OpenRouter, `BACKEND_SERVICE_KEY`), optional `HEALTHCHECKS_PING_URL` (pings `/weekly_debrief` and `/activation_emails`).
+
+WhatsApp stays gated until Meta templates approved: `WHATSAPP_SENDS_ENABLED=false` (default).
+
+### E2E checklist
+[`docs/day7_e2e_checklist.md`](docs/day7_e2e_checklist.md)

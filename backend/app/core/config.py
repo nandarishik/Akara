@@ -62,6 +62,7 @@ class Settings(BaseSettings):
     # -----------------------------------------------------------------------
     zaptilo_api_key: str = ""
     zaptilo_sender_number: str = ""
+    whatsapp_sends_enabled: bool = False
 
     # -----------------------------------------------------------------------
     # Cloudflare Turnstile (CAPTCHA — required before Day 3 signup goes live)

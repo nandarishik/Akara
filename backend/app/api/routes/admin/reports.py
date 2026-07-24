@@ -12,11 +12,13 @@ import logging
 from uuid import UUID
 
 from fastapi import APIRouter, Header, HTTPException, Request, status
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from app.core.config import settings
+from app.core.rate_limit import BROADCAST_LIMIT, limiter
 from app.core.tenant import get_supabase_service_client
 from app.services.email.morning_brief import BriefResult, MorningBriefService
+from app.services.debrief.service import WeeklyDebriefService
 
 logger = logging.getLogger(__name__)
 
@@ -81,9 +83,10 @@ def _authorize(x_service_key: str | None, request: Request) -> None:
 
 
 @router.post("/morning-brief", response_model=BriefResult)
+@limiter.limit(BROADCAST_LIMIT)
 def trigger_morning_brief(
-    body: BriefRequest,
     request: Request,
+    body: BriefRequest,
     x_service_key: str | None = Header(default=None),
 ) -> BriefResult:
     """Trigger a morning brief email for a specific tenant/recipient.
@@ -133,3 +136,101 @@ def trigger_morning_brief(
         )
 
     return result
+
+
+class WeeklyDebriefRequest(BaseModel):
+    tenant_id: UUID
+    force_regenerate: bool = False
+    reason: str = ""
+
+
+class TenantWeeklyDebriefRequest(BaseModel):
+    reason: str = Field(min_length=1, max_length=500)
+    force_regenerate: bool = False
+
+
+class WeeklyDebriefResponse(BaseModel):
+    status: str
+    report_id: str | None = None
+    week_start: str = ""
+    week_end: str = ""
+    email_delivery: str = "skipped"
+    whatsapp_delivery: str = "skipped"
+    message: str = ""
+
+
+@router.post("/weekly-debrief", response_model=WeeklyDebriefResponse)
+@limiter.limit(BROADCAST_LIMIT)
+async def trigger_weekly_debrief(
+    request: Request,
+    body: WeeklyDebriefRequest,
+    x_service_key: str | None = Header(default=None),
+) -> WeeklyDebriefResponse:
+    """Manually trigger weekly debrief for one tenant."""
+    _authorize(x_service_key, request)
+
+    supabase = get_supabase_service_client()
+    service = WeeklyDebriefService(supabase=supabase)
+    result = await service.generate_for_tenant(
+        body.tenant_id,
+        force_regenerate=body.force_regenerate,
+        manual=True,
+    )
+
+    if result.status not in ("ok", "skipped", "skipped_insufficient_data"):
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=result.message,
+        )
+
+    return WeeklyDebriefResponse(
+        status=result.status,
+        report_id=result.report_id,
+        week_start=result.week_start,
+        week_end=result.week_end,
+        email_delivery=result.email_delivery,
+        whatsapp_delivery=result.whatsapp_delivery,
+        message=result.message,
+    )
+
+
+@router.post("/weekly-debrief/{tenant_id}", response_model=WeeklyDebriefResponse)
+@limiter.limit(BROADCAST_LIMIT)
+async def trigger_weekly_debrief_for_tenant(
+    request: Request,
+    tenant_id: UUID,
+    body: TenantWeeklyDebriefRequest,
+    x_service_key: str | None = Header(default=None),
+) -> WeeklyDebriefResponse:
+    """Superadmin trigger for a specific tenant with audit reason."""
+    _authorize(x_service_key, request)
+    logger.info(
+        "Manual weekly debrief tenant=%s reason=%s force=%s",
+        tenant_id,
+        body.reason[:120],
+        body.force_regenerate,
+    )
+
+    supabase = get_supabase_service_client()
+    service = WeeklyDebriefService(supabase=supabase)
+    result = await service.generate_for_tenant(
+        tenant_id,
+        force_regenerate=body.force_regenerate,
+        manual=True,
+    )
+
+    if result.status not in ("ok", "skipped", "skipped_insufficient_data"):
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=result.message,
+        )
+
+    return WeeklyDebriefResponse(
+        status=result.status,
+        report_id=result.report_id,
+        week_start=result.week_start,
+        week_end=result.week_end,
+        email_delivery=result.email_delivery,
+        whatsapp_delivery=result.whatsapp_delivery,
+        message=result.message,
+    )

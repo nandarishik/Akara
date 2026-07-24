@@ -132,9 +132,9 @@ Columns: `source_ref` | `implementation_day` | `owner_lane` | `status` | `verifi
 | 19.2 — HTTP security headers | Day 6 | Backend/API | done | header scan | `app/core/security_headers.py` |
 | 19.3 — PII redaction before LLM | Day 6 | Backend/API | done | redaction unit test | `tests/test_pii_redactor.py` |
 | Day 19 Quality Gate | Day 6 | QA/reliability | done | security audit | `docs/day6_e2e_checklist.md` |
-| 20.1–20.5 — WhatsApp + team invites | Day 7 | Backend/API | pending | Zaptilo sandbox | — |
-| 20.6 — Weekly Debrief engine | Day 7 | Backend/API | pending | cron + email test | — |
-| Day 20 Quality Gate | Day 7 | QA/reliability | pending | debrief E2E | — |
+| 20.1–20.5 — WhatsApp + team invites | Day 7 | Backend/API | done | team invite + gated WhatsApp | `team.py`, `notifications/whatsapp.py`, migration 018 |
+| 20.6 — Weekly Debrief engine | Day 7 | Backend/API | done | cron + email test | `services/debrief/`, `docs/day7_e2e_checklist.md` |
+| Day 20 Quality Gate | Day 7 | QA/reliability | done | debrief E2E | `docs/day7_e2e_checklist.md`, pytest Day 7 suite |
 | 21.1 — Revenue dashboard | Day 11 | Superadmin frontend | pending | MRR chart test | — |
 | 21.2 — Impersonate | Day 11 | Superadmin frontend | pending | audit log test | — |
 | Day 21 Quality Gate | Day 11 | QA/reliability | pending | impersonate E2E | — |
@@ -151,11 +151,11 @@ Columns: `source_ref` | `implementation_day` | `owner_lane` | `status` | `verifi
 | GAP 1 — GST invoicing | Day 5 | Backend/API | done | invoice PDF test | `tests/test_gst_invoice.py` |
 | GAP 2 — Async large file imports | Day 6 | Backend/API | done | job queue test | `import_worker.py`, `tests/test_import_worker.py` |
 | GAP 3 — Empty state components | Day 4 | Customer frontend | pending | empty state E2E | — |
-| GAP 4 — Activation email sequence | Day 7 | Backend/API | pending | email trigger test | — |
+| GAP 4 — Activation email sequence | Day 7 | Backend/API | done | activation_emails cron | `tasks/activation_emails.py` |
 | GAP 5 — Bot prevention (Turnstile) | Day 3 | Backend/API | pending | signup CAPTCHA test | — |
 | GAP 6 — LLM downtime degradation | Day 6 | Backend/API | done | fault injection | `test_copilot.py`, CopilotPage banner |
 | GAP 7 — Supabase connection pooling | Day 1 | Database/security | in_progress | pooler + `/ready` | `config.py`, EXT-1 |
-| GAP 8 — Cron job health monitoring | Day 7 | Backend/API | pending | healthchecks ping | — |
+| GAP 8 — Cron job health monitoring | Day 7 | Backend/API | done | healthchecks ping | `cron_ping.py`, Railway cron JSON refs |
 | GAP 9 — Copilot feedback loop | Day 11 | Customer frontend | pending | thumbs up/down test | — |
 | GAP 10 — Data provenance on answers | Day 11 | Customer frontend | pending | citation UI test | — |
 | GAP 11 — Superadmin re-authentication | Day 8 | Backend/API | pending | sudo cookie test | — |
@@ -214,15 +214,16 @@ Columns: `source_ref` | `implementation_day` | `owner_lane` | `status` | `verifi
 |------------|-------------------|------------|--------|---------------------|---------------|
 | E1 — Welcome / Verification | Day 3 | Product/ops | pending | SendGrid preview | — |
 | E2 — Password reset | Day 3 | Backend/API | pending | email trigger | — |
-| E3 — Weekly debrief | Day 7 | Backend/API | pending | cron email | — |
-| E4 — Daily morning brief | Day 7 | Backend/API | pending | cron email | — |
+| E3 — Weekly debrief | Day 7 | Backend/API | done | cron email | `weekly_debrief.html` |
+| E4 — Daily morning brief | Day 7 | Backend/API | done | cron email | pre-Day 7 baseline |
 | E5 — Payment failed | Day 5 | Backend/API | done | webhook trigger | `tests/test_razorpay_webhook.py` |
 | E6 — Payment successful / Invoice | Day 5 | Backend/API | done | Razorpay test | `tests/test_gst_invoice.py`, `email.py` |
 | E7 — Plan downgrade | Day 5 | Backend/API | done | dunning test | `tests/test_dunning.py` |
-| E8 — Activation Day 1 | Day 7 | Backend/API | pending | cron trigger | — |
-| E9 — Activation Day 3 | Day 7 | Backend/API | pending | cron trigger | — |
-| E10 — Quota warning 80% | Day 4 | Backend/API | pending | usage threshold | — |
-| E11 — Team invite | Day 7 | Backend/API | pending | invite flow | — |
+| E8 — Activation Day 1 | Day 7 | Backend/API | done | cron trigger | `activation_day1.html` |
+| E9 — Activation Day 3 | Day 7 | Backend/API | done | cron trigger | `activation_day3.html` |
+| E10 — Activation Day 7 phone nudge | Day 7 | Backend/API | done | activation_emails | `activation_day7.html` |
+| E10 — Quota warning 80% (Day 14) | Day 7 | Backend/API | done | activation_emails | `activation_day14.html` |
+| E11 — Team invite | Day 7 | Backend/API | done | invite flow | `team_invite.html`, `team.py` |
 
 ---
 
@@ -280,11 +281,16 @@ Columns: `source_ref` | `implementation_day` | `owner_lane` | `status` | `verifi
 
 | source_ref | implementation_day | owner_lane | status | verification_method | evidence_link |
 |------------|-------------------|------------|--------|---------------------|---------------|
-| Weekly Debrief — engine + cron | Day 7 | Backend/API | pending | cron + DB row | — |
-| Weekly Debrief — email delivery | Day 7 | Backend/API | pending | SendGrid test | — |
-| Weekly Debrief — WhatsApp delivery | Day 7 | Backend/API | pending | Zaptilo test | — |
-| Weekly Debrief — in-app archive | Day 7 | Customer frontend | pending | /debrief route | — |
-| Weekly Debrief — Settings toggles | Day 7 | Customer frontend | pending | settings E2E | — |
+| Weekly Debrief — engine + cron | Day 7 | Backend/API | done | cron + DB row | `tasks/weekly_debrief.py` |
+| Weekly Debrief — email delivery | Day 7 | Backend/API | done | SendGrid test | E3 template |
+| Weekly Debrief — WhatsApp delivery | Day 7 | Backend/API | done | delivery_logs skipped | gated until BSP |
+| Weekly Debrief — in-app archive | Day 7 | Customer frontend | done | /debrief route | `DebriefPage.tsx` (PDF blob, Copilot state, Momentum) |
+| Weekly Debrief — Settings toggles | Day 7 | Customer frontend | done | settings E2E | tabbed `SettingsPage.tsx` P14 |
+| Copilot debrief context (`report_id`) | Day 7 | Backend/API | done | pytest | `copilot_context.py`, `copilot.py` |
+| Debrief PDF export | Day 7 | Backend/API | done | pytest | `services/debrief/pdf.py` |
+| Account deletion queue (DPDP) | Day 7 | Backend/API | done | pytest | `account_deletion_worker.py`, migration 018 queue |
+| Settings P14 tabbed layout | Day 7 | Customer frontend | done | frontend build | Profile/Notifications/Billing/Security/Team/API/Danger |
+| Superadmin delivery diagnostics | Day 7 | Customer frontend | done | Security Ops | `SecurityOpsPage.tsx`, `/admin/security/communications` |
 
 ---
 

@@ -28,6 +28,7 @@ from app.core.tenant import TenantCtx, get_supabase_service_client
 from app.services.data_import.detector import score_sheets
 from app.services.data_import.models import ImportResult
 from app.services.data_import.service import DataImportService, SourceType
+from app.services.user_events import record_user_event
 
 logger = logging.getLogger(__name__)
 
@@ -207,6 +208,9 @@ async def import_data(
         }).execute()
     except Exception as exc:
         logger.warning("Failed to increment import usage: %s", exc)
+
+    if rows_inserted > 0:
+        record_user_event(user.user_id, "first_import")
 
     return result
 

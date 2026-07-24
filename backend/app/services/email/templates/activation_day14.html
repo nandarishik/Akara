@@ -1,0 +1,7 @@
+{% extends "_frame.html" %}
+{% block title %}You're close to your Copilot limit{% endblock %}
+{% block content %}
+<h2 style="margin-top:0;">You've used {{ usage_pct }}% of your free Copilot quota</h2>
+<p>Upgrade to Pro for unlimited questions, daily morning briefs, and weekly debriefs every Monday.</p>
+<p><a href="{{ dashboard_url }}/billing" style="color:#2150f3;font-weight:bold;">Upgrade to Pro →</a></p>
+{% endblock %}

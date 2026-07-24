@@ -12,7 +12,7 @@ Key rules:
 
 from __future__ import annotations
 
-from datetime import UTC, date, datetime
+from datetime import UTC, date, datetime, timedelta
 from zoneinfo import ZoneInfo
 
 IST = ZoneInfo("Asia/Kolkata")
@@ -83,6 +83,15 @@ def month_key_ist(dt: datetime | None = None) -> date:
 def format_ist(dt: datetime) -> str:
     """Human-readable IST timestamp for logs and UI."""
     return to_ist(dt).strftime("%Y-%m-%d %H:%M:%S IST")
+
+
+def last_completed_week_ist(reference: date | None = None) -> tuple[date, date]:
+    """Return (Monday, Sunday) for the most recently completed Mon–Sun week in IST."""
+    today = reference or today_ist()
+    this_monday = today - timedelta(days=today.weekday())
+    last_sunday = this_monday - timedelta(days=1)
+    last_monday = last_sunday - timedelta(days=6)
+    return last_monday, last_sunday
 
 
 def weekly_debrief_utc_schedule() -> str:

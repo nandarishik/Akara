@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width"></head>
+<body style="font-family: Arial, sans-serif; background:#f5f7fa; margin:0; padding:24px;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="max-width:600px;margin:0 auto;background:#fff;border-radius:8px;">
+    <tr><td style="padding:24px;background:#1976D2;color:#fff;border-radius:8px 8px 0 0;">
+      <h1 style="margin:0;font-size:20px;">AKARA Weekly Debrief</h1>
+      <p style="margin:8px 0 0;opacity:0.9;">{{ metadata.week_start }} – {{ metadata.week_end }}</p>
+    </td></tr>
+    <tr><td style="padding:24px;">
+      <p style="font-size:16px;font-weight:bold;color:#1a1a2e;">{{ headline }}</p>
+      <table width="100%" cellpadding="8" cellspacing="0">
+        <tr>
+          <td width="50%" valign="top" style="background:#ecfdf5;padding:12px;border-radius:6px;">
+            <strong style="color:#059669;">Went Right</strong>
+            {% for item in metadata.went_right %}
+            <p style="margin:8px 0 0;font-size:13px;"><strong>{{ item.title }}</strong><br>{{ item.detail }}</p>
+            {% endfor %}
+          </td>
+          <td width="50%" valign="top" style="background:#fef2f2;padding:12px;border-radius:6px;">
+            <strong style="color:#dc2626;">Went Wrong</strong>
+            {% for item in metadata.went_wrong %}
+            <p style="margin:8px 0 0;font-size:13px;"><strong>{{ item.title }}</strong><br>{{ item.detail }}</p>
+            {% endfor %}
+          </td>
+        </tr>
+      </table>
+      <p style="margin-top:20px;font-size:14px;"><strong>Actions this week</strong></p>
+      <ol style="padding-left:20px;font-size:13px;">
+        {% for action in metadata.actions %}
+        <li style="margin-bottom:8px;"><strong>{{ action.title }}</strong> — {{ action.detail }}</li>
+        {% endfor %}
+      </ol>
+      <p style="text-align:center;margin-top:24px;">
+        <a href="{{ debrief_url }}" style="background:#1976D2;color:#fff;padding:12px 24px;text-decoration:none;border-radius:6px;font-weight:bold;">See full debrief in AKARA</a>
+      </p>
+    </td></tr>
+  </table>
+</body>
+</html>

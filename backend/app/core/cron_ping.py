@@ -11,12 +11,14 @@ from app.core.config import settings
 logger = logging.getLogger(__name__)
 
 
-def ping_cron_health(job: str) -> None:
+def ping_cron_health(job: str, status: str = "ok") -> None:
     """Ping HEALTHCHECKS_PING_URL/{job} if configured. Failures are logged only."""
     base = (settings.healthchecks_ping_url or "").rstrip("/")
     if not base:
         return
     url = f"{base}/{job}" if not base.endswith(job) else base
+    if status == "partial":
+        url = f"{url}/fail"
     try:
         httpx.get(url, timeout=10.0).raise_for_status()
     except Exception as exc:

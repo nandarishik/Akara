@@ -15,6 +15,7 @@ from app.core.plan_guard import (
     apply_copilot_quota_headers,
     get_copilot_quota_metadata,
     require_copilot_quota,
+    require_feature,
 )
 from app.core.rate_limit import limiter
 from app.core.tenant import TenantCtx, get_supabase_service_client
@@ -27,6 +28,8 @@ from app.services.llm.manager import LLMManager
 from app.services.llm_cost_logger import log_llm_cost
 from app.services.prompts.generator import PromptGenerator
 from app.services.schema.discovery import SchemaDiscovery
+from app.services.debrief.copilot_context import load_debrief_context_addendum
+from app.services.user_events import record_user_event
 from app.sql.executor import SQLExecutor
 
 logger = logging.getLogger(__name__)
@@ -38,6 +41,7 @@ class ChatRequest(BaseModel):
     question: str
     stream: bool = True
     conversation_id: UUID | None = None
+    report_id: UUID | None = None
 
 
 class ChatResponse(BaseModel):
@@ -201,6 +205,12 @@ async def chat(
         + prompt_gen.build_language_addendum(tenant.tenant_config)
     )
 
+    if body.report_id:
+        await require_feature("ask_copilot_debrief")(tenant)
+        debrief_addendum = load_debrief_context_addendum(tenant.tenant_id, body.report_id)
+        planner_addendum = planner_addendum + debrief_addendum
+        synthesizer_addendum = synthesizer_addendum + debrief_addendum
+
     agent = _build_agent(tenant.tenant_id)
     date_range = ("2024-01-01", date.today().isoformat())
 
@@ -297,6 +307,8 @@ async def chat(
             ).execute()
         except Exception as exc:
             logger.warning("Failed to increment copilot usage: %s", exc)
+
+        record_user_event(user.user_id, "first_copilot")
 
     except openai.APIStatusError as e:
         # Day 4: Graceful LLM degradation - DO NOT increment quota on failure

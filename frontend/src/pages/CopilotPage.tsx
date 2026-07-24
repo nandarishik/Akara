@@ -12,7 +12,7 @@ import {
   Wifi,
   WifiOff,
 } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { useCopilot } from "@/hooks/useCopilot";
 import { useConversations } from "@/hooks/useConversations";
 import { useBilling } from "@/hooks/useBilling";
@@ -36,6 +36,9 @@ const SUGGESTED_PROMPTS = [
 ];
 
 export function CopilotPage() {
+  const location = useLocation();
+  const debriefReportId = (location.state as { debriefReportId?: string } | null)
+    ?.debriefReportId;
   const {
     messages,
     isStreaming,
@@ -47,7 +50,9 @@ export function CopilotPage() {
   } = useCopilot();
   const { conversations, loading: conversationsLoading, refetch } = useConversations();
   const { data: usage } = useBilling();
-  const [input, setInput] = useState("");
+  const [input, setInput] = useState(
+    debriefReportId ? "What should I prioritize from this week's debrief?" : ""
+  );
   const [feedbackStates, setFeedbackStates] = useState<
     Record<string, "positive" | "negative" | null>
   >({});
@@ -134,7 +139,7 @@ export function CopilotPage() {
     const q = (text ?? input).trim();
     if (!q || isStreaming) return;
     setInput("");
-    await sendMessage(q);
+    await sendMessage(q, debriefReportId ?? null);
     setTimeout(() => refetch(), 600);
   }
 
@@ -170,7 +175,11 @@ export function CopilotPage() {
                 ) : (
                   <WifiOff className="h-3 w-3 text-red-500" />
                 )}
-                <span>Ask anything about your sales data</span>
+                <span>
+                  {debriefReportId
+                    ? "Discussing your weekly debrief"
+                    : "Ask anything about your sales data"}
+                </span>
               </div>
             </div>
           </div>

@@ -12,9 +12,38 @@ from app.core.config import settings
 logger = logging.getLogger(__name__)
 
 
-def _send(to_email: str, subject: str, html: str, pdf_bytes: bytes | None = None, pdf_name: str = "invoice.pdf") -> bool:
+def _is_suppressed(to_email: str) -> bool:
+    normalized = to_email.strip().lower()
+    try:
+        from app.core.tenant import get_supabase_service_client
+
+        res = (
+            get_supabase_service_client()
+            .table("email_suppressions")
+            .select("email_normalized")
+            .eq("email_normalized", normalized)
+            .maybe_single()
+            .execute()
+        )
+        return bool(res.data)
+    except Exception as exc:
+        logger.debug("Suppression check skipped for %s: %s", normalized, exc)
+        return False
+
+
+def _send(
+    to_email: str,
+    subject: str,
+    html: str,
+    pdf_bytes: bytes | None = None,
+    pdf_name: str = "invoice.pdf",
+    text_content: str | None = None,
+) -> bool:
     if not settings.sendgrid_api_key:
         logger.warning("SendGrid not configured — skipping email: %s", subject)
+        return False
+    if _is_suppressed(to_email):
+        logger.info("Skipping email to suppressed address: %s", to_email)
         return False
 
     message = Mail(
@@ -23,6 +52,9 @@ def _send(to_email: str, subject: str, html: str, pdf_bytes: bytes | None = None
         subject=subject,
         html_content=html,
     )
+    if text_content:
+        from sendgrid.helpers.mail import Content
+        message.add_content(Content("text/plain", text_content))
     if pdf_bytes:
         attachment = Attachment()
         attachment.file_content = __import__("base64").b64encode(pdf_bytes).decode()

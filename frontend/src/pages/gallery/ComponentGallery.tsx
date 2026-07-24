@@ -43,6 +43,8 @@ const DEMO_USAGE: UsageResponse = {
   uploads_limit: 100,
   users_used: 1,
   users_limit: 5,
+  debrief_count_used: 0,
+  debrief_lifetime_limit: 1,
 };
 
 export default function ComponentGallery() {

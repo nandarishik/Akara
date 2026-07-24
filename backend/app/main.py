@@ -15,18 +15,21 @@ except ImportError:
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from app.api.routes import account as account_router
 from app.api.routes import alerts as alerts_router
 from app.api.routes import auth as auth_router
 from app.api.routes import billing as billing_router
 from app.api.routes import conversations as conversations_router
 from app.api.routes import copilot as copilot_router
 from app.api.routes import data as data_router
+from app.api.routes import debrief as debrief_router
 from app.api.routes import health
 from app.api.routes import kpi as kpi_router
 from app.api.routes import marketing as marketing_router
 from app.api.routes import onboarding as onboarding_router
 from app.api.routes import reports as reports_router
 from app.api.routes import simulator as simulator_router
+from app.api.routes import team as team_router
 from app.api.routes.admin import billing as admin_billing_router
 from app.api.routes.admin import logs as admin_logs_router
 from app.api.routes.admin import reports as admin_reports_router
@@ -139,6 +142,9 @@ app.include_router(conversations_router.router)
 app.include_router(kpi_router.router)
 app.include_router(data_router.router)
 app.include_router(reports_router.router)
+app.include_router(debrief_router.router)
+app.include_router(team_router.router)
+app.include_router(account_router.router)
 app.include_router(simulator_router.router)
 app.include_router(admin_tenants_router.router)
 app.include_router(admin_billing_router.router)

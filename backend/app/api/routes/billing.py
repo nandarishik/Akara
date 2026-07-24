@@ -52,6 +52,8 @@ class UsageResponse(BaseModel):
     undos_per_day: int
     users_used: int
     users_limit: int
+    debrief_count_used: int = 0
+    debrief_lifetime_limit: int = 1
     features: dict
     retention_days: int
 
@@ -151,6 +153,8 @@ def get_usage(user: CurrentUser, tenant: TenantCtx) -> UsageResponse:
         undos_per_day=limits["undos_per_day"],
         users_used=users_result.count or 0,
         users_limit=limits["users"],
+        debrief_count_used=usage.get("debrief_count", 0),
+        debrief_lifetime_limit=limits.get("weekly_debriefs_lifetime", 1),
         features=effective_features,
         retention_days=limits["retention_days"],
     )

@@ -52,3 +52,6 @@ known-first-party = ["app"]
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 testpaths = ["tests"]
+markers = [
+    "integration: live tests against deployed API (requires TEST_TENANT_* tokens)",
+]

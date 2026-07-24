@@ -19,6 +19,8 @@ export interface UsageResponse {
   undos_per_day: number;
   users_used: number;
   users_limit: number;
+  debrief_count_used: number;
+  debrief_lifetime_limit: number;
   features: {
     morning_brief: boolean;
     scheme_leakage: boolean;

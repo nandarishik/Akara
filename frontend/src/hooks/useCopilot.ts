@@ -1,4 +1,5 @@
 import { useState, useCallback } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 
 export interface ChatMessage {
@@ -41,6 +42,7 @@ function parseStreamChunk(chunk: string): {
 }
 
 export function useCopilot() {
+  const queryClient = useQueryClient();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isStreaming, setIsStreaming] = useState(false);
   const [conversationId, setConversationId] = useState<string | null>(null);
@@ -78,7 +80,7 @@ export function useCopilot() {
     setError(null);
   }, []);
 
-  const sendMessage = useCallback(async (question: string) => {
+  const sendMessage = useCallback(async (question: string, reportId?: string | null) => {
     const { data } = await supabase.auth.getSession();
     const token = data.session?.access_token;
     if (!token) return;
@@ -101,6 +103,7 @@ export function useCopilot() {
     setError(null);
 
     let activeConversationId = conversationId;
+    let chatSucceeded = false;
 
     try {
       const res = await fetch(`${BASE}/copilot/chat`, {
@@ -113,6 +116,7 @@ export function useCopilot() {
           question,
           stream: true,
           conversation_id: conversationId,
+          report_id: reportId ?? undefined,
         }),
       });
 
@@ -125,6 +129,9 @@ export function useCopilot() {
             : detail?.message ?? `HTTP ${res.status}`;
         throw new Error(msg);
       }
+
+      chatSucceeded = true;
+      void queryClient.invalidateQueries({ queryKey: ["billing", "usage"] });
 
       const reader = res.body!.getReader();
       const decoder = new TextDecoder();
@@ -209,8 +216,11 @@ export function useCopilot() {
       );
     } finally {
       setIsStreaming(false);
+      if (chatSucceeded) {
+        void queryClient.invalidateQueries({ queryKey: ["billing", "usage"] });
+      }
     }
-  }, [conversationId]);
+  }, [conversationId, queryClient]);
 
   return {
     messages,

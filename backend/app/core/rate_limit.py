@@ -10,6 +10,12 @@ from slowapi.util import get_remote_address
 
 from app.core.errors import ErrorEnvelope
 
+# Shared limit strings for sensitive endpoints
+ADMIN_WRITE_LIMIT = "10/minute"
+ADMIN_READ_LIMIT = "30/minute"
+EXPORT_LIMIT = "10/minute"
+BROADCAST_LIMIT = "5/minute"
+
 limiter = Limiter(key_func=get_remote_address)
 
 

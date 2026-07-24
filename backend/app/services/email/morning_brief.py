@@ -202,6 +202,13 @@ class MorningBriefService:
                         tenant_id,
                         status_code,
                     )
+                    self._maybe_send_whatsapp(
+                        tenant_id=tenant_id,
+                        recipient_email=recipient_email,
+                        tenant_name=tenant_name,
+                        summary=summary,
+                        raw_insights=raw_insights,
+                    )
                     return BriefResult(
                         success=True,
                         message=f"Sent (HTTP {status_code})",
@@ -250,3 +257,62 @@ class MorningBriefService:
             insights_count=len(raw_insights),
             recipient_email=recipient_email,
         )
+
+    def _maybe_send_whatsapp(
+        self,
+        *,
+        tenant_id: UUID,
+        recipient_email: str,
+        tenant_name: str,
+        summary: BriefSummary,
+        raw_insights: list,
+    ) -> None:
+        if not settings.whatsapp_sends_enabled:
+            return
+
+        profiles = (
+            self._sb.table("profiles")
+            .select("id, phone_number, preferences")
+            .eq("tenant_id", str(tenant_id))
+            .execute()
+        )
+        target = None
+        for row in profiles.data or []:
+            try:
+                auth_user = self._sb.auth.admin.get_user_by_id(row["id"])
+                email = auth_user.user.email if auth_user and auth_user.user else None
+            except Exception:
+                email = None
+            if email and email.lower() == recipient_email.lower():
+                target = row
+                break
+        if not target:
+            return
+
+        prefs = target.get("preferences") or {}
+        if not prefs.get("whatsapp_morning_brief_enabled", True):
+            return
+        phone = target.get("phone_number")
+        if not phone:
+            return
+
+        top_insight = raw_insights[0].title if raw_insights else "Review dashboard for actions"
+        import asyncio
+
+        from app.services.notifications.whatsapp import send_morning_brief_whatsapp
+
+        try:
+            asyncio.run(
+                send_morning_brief_whatsapp(
+                    phone=str(phone),
+                    company_name=tenant_name,
+                    revenue=summary.total_revenue_fmt,
+                    orders=str(summary.total_orders),
+                    top_insight=top_insight,
+                    dashboard_url=_DASHBOARD_URL,
+                    tenant_id=tenant_id,
+                    user_id=target.get("id"),
+                )
+            )
+        except Exception as exc:
+            logger.warning("Morning brief WhatsApp failed for %s: %s", recipient_email, exc)
