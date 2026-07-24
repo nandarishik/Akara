@@ -29,7 +29,11 @@ export function EmailVerificationPending() {
     if (!email || cooldown > 0) return
     setResendStatus("sending")
     try {
-      const { error } = await supabase.auth.resend({ type: "signup", email })
+      const { error } = await supabase.auth.resend({
+        type: "signup",
+        email,
+        options: { emailRedirectTo: `${window.location.origin}/login` },
+      })
       if (error) throw error
       setResendStatus("sent")
       setCooldown(RESEND_COOLDOWN_SECONDS)

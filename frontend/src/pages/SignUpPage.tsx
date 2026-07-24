@@ -4,24 +4,67 @@
  * All fields, 4-segment strength bar, 2 consent checkboxes, Turnstile, social proof.
  */
 
-import { useState } from "react"
-import type { FormEvent } from "react"
+import { useEffect, useState } from "react"
+import type { ComponentType, FormEvent } from "react"
 import { Link, useNavigate } from "react-router-dom"
 import { Eye, EyeOff } from "lucide-react"
 import { useAuth } from "@/contexts/AuthContext"
-import { toast } from "@/components/ui/toast"
 import { AuthLayout } from "@/components/layout/AuthLayout"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { AkaraButton } from "@/components/ui/GradientButton"
+import { formatAuthError } from "@/lib/formatAuthError"
 import { cn } from "@/lib/utils"
 
-// ── Turnstile — conditionally rendered when env key is present ───────────────
-let TurnstileWidget: React.ComponentType<{
+const TURNSTILE_SITE_KEY =
+  import.meta.env.VITE_CF_TURNSTILE_SITE_KEY ||
+  import.meta.env.VITE_TURNSTILE_SITE_KEY ||
+  ""
+
+type TurnstileProps = {
   siteKey: string
   onSuccess: (token: string) => void
   onError: () => void
-}> | null = null
+}
+
+function mapSignUpError(message: string): {
+  field: "email" | "password" | "form"
+  message: string
+} {
+  const lower = message.toLowerCase()
+
+  if (
+    lower.includes("already registered") ||
+    lower.includes("user already exists") ||
+    lower.includes("already been registered")
+  ) {
+    return {
+      field: "email",
+      message: "This email is already registered. Sign in instead.",
+    }
+  }
+  if (lower.includes("disposable")) {
+    return {
+      field: "email",
+      message: "Please use a work email address (disposable emails not accepted)",
+    }
+  }
+  if (lower.includes("invalid email") || lower.includes("valid email")) {
+    return { field: "email", message: message }
+  }
+  if (lower.includes("password")) {
+    return { field: "password", message: message }
+  }
+  if (lower.includes("database error")) {
+    return {
+      field: "form",
+      message:
+        "We couldn't create your account right now. Please try again in a moment.",
+    }
+  }
+
+  return { field: "form", message: message }
+}
 
 // ── Password strength ────────────────────────────────────────────────────────
 
@@ -95,39 +138,61 @@ export function SignUpPage() {
 
   const [emailError, setEmailError] = useState("")
   const [passwordError, setPasswordError] = useState("")
+  const [formError, setFormError] = useState("")
   const [loading, setLoading] = useState(false)
+  const [TurnstileWidget, setTurnstileWidget] = useState<ComponentType<TurnstileProps> | null>(null)
+
+  useEffect(() => {
+    if (!TURNSTILE_SITE_KEY) return
+
+    import("@marsidev/react-turnstile")
+      .then((mod) => setTurnstileWidget(() => mod.Turnstile))
+      .catch(() => {
+        setFormError("Security check failed to load. Refresh the page and try again.")
+      })
+  }, [])
 
   const strength = getStrength(password)
-  const canSubmit = agreedTos && agreedAi && !loading
+  const turnstileRequired = Boolean(TURNSTILE_SITE_KEY)
+  const canSubmit =
+    agreedTos &&
+    agreedAi &&
+    fullName.trim().length > 0 &&
+    companyName.trim().length > 0 &&
+    (!turnstileRequired || Boolean(turnstileToken))
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault()
     setEmailError("")
     setPasswordError("")
+    setFormError("")
 
     if (password.length < 8) {
       setPasswordError("Password must be at least 8 characters")
       return
     }
 
+    if (turnstileRequired && !turnstileToken) {
+      setFormError("Please complete the security check below.")
+      return
+    }
+
     setLoading(true)
     try {
-      await signUp(email, password, {
-        display_name: fullName,
-        company_name: companyName,
-        whatsapp: whatsapp || undefined,
+      const normalizedEmail = email.trim().toLowerCase()
+      await signUp(normalizedEmail, password, {
+        display_name: fullName.trim(),
+        company_name: companyName.trim(),
+        whatsapp: whatsapp.trim() || undefined,
         turnstile_token: turnstileToken ?? undefined,
       })
-      navigate("/verify-email", { state: { email } })
+      navigate("/verify-email", { state: { email: normalizedEmail } })
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : "Something went wrong"
-      if (msg.toLowerCase().includes("already registered") || msg.toLowerCase().includes("user already exists")) {
-        setEmailError("This email is already registered. Sign in instead →")
-      } else if (msg.toLowerCase().includes("disposable")) {
-        setEmailError("Please use a work email address (disposable emails not accepted)")
-      } else {
-        toast.error("Something went wrong. Please try again.")
-      }
+      const mapped = mapSignUpError(formatAuthError(err))
+      if (mapped.field === "email") setEmailError(mapped.message)
+      else if (mapped.field === "password") setPasswordError(mapped.message)
+      else setFormError(mapped.message)
+    } finally {
       setLoading(false)
     }
   }
@@ -279,20 +344,29 @@ export function SignUpPage() {
           </label>
         </div>
 
-        <AkaraButton type="submit" disabled={!canSubmit} loading={loading} className="w-full mt-2">
+        {formError && (
+          <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2" role="alert">
+            {formError}
+          </p>
+        )}
+
+        {TURNSTILE_SITE_KEY && TurnstileWidget && (
+          <div className="flex justify-center pt-1">
+            <TurnstileWidget
+              siteKey={TURNSTILE_SITE_KEY}
+              onSuccess={(token) => {
+                setTurnstileToken(token)
+                setFormError("")
+              }}
+              onError={() => setTurnstileToken(null)}
+            />
+          </div>
+        )}
+
+        <AkaraButton type="submit" disabled={!canSubmit || loading} loading={loading} className="w-full mt-2">
           Create free account →
         </AkaraButton>
       </form>
-
-      {import.meta.env.VITE_CF_TURNSTILE_SITE_KEY && TurnstileWidget && (
-        <div className="mt-4 flex justify-center">
-          <TurnstileWidget
-            siteKey={import.meta.env.VITE_CF_TURNSTILE_SITE_KEY}
-            onSuccess={(token) => setTurnstileToken(token)}
-            onError={() => setTurnstileToken(null)}
-          />
-        </div>
-      )}
 
       <p className="text-center text-sm text-text-muted mt-4">
         Already have an account?{" "}

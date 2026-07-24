@@ -7,6 +7,7 @@ import {
 } from "react";
 import type { Session, User as SupabaseUser } from "@supabase/supabase-js";
 import { supabase } from "@/lib/supabase";
+import { formatAuthError } from "@/lib/formatAuthError";
 import type { User } from "@/types";
 
 interface SignUpMeta {
@@ -105,18 +106,39 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   async function signUp(email: string, password: string, meta: SignUpMeta) {
-    const { error } = await supabase.auth.signUp({
-      email,
+    const normalizedEmail = email.trim().toLowerCase();
+    const emailRedirectTo = `${window.location.origin}/login`;
+
+    const { data, error } = await supabase.auth.signUp({
+      email: normalizedEmail,
       password,
       options: {
+        emailRedirectTo,
         data: {
-          display_name: meta.display_name,
-          company_name: meta.company_name,
-          whatsapp: meta.whatsapp,
+          display_name: meta.display_name.trim(),
+          company_name: meta.company_name.trim(),
+          whatsapp: meta.whatsapp?.trim() || undefined,
         },
       },
     });
-    if (error) throw error;
+
+    if (error) {
+      throw new Error(formatAuthError(error));
+    }
+
+    if (!data.user) {
+      throw new Error("Sign up failed. Please try again.");
+    }
+
+    // Supabase anti-enumeration: duplicate emails return success with empty identities.
+    if (Array.isArray(data.user.identities) && data.user.identities.length === 0) {
+      throw new Error("This email is already registered. Sign in instead.");
+    }
+
+    // Avoid leaving an unverified session that can confuse protected-route redirects.
+    if (data.session && !data.user.email_confirmed_at) {
+      await supabase.auth.signOut();
+    }
   }
 
   async function signOut() {
