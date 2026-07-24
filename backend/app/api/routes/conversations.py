@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import UTC, datetime
 from uuid import UUID
 
 from fastapi import APIRouter, HTTPException, status
@@ -150,7 +150,10 @@ def update_conversation(
     supabase = get_supabase_service_client()
     result = (
         supabase.table("conversations")
-        .update({"title": body.title, "updated_at": "NOW()"})
+        .update({
+            "title": body.title,
+            "updated_at": datetime.now(UTC).isoformat(),
+        })
         .eq("id", str(conversation_id))
         .eq("user_id", str(user.user_id))
         .execute()
@@ -174,10 +177,10 @@ def delete_conversation(
     # Day 4: Soft delete instead of hard delete
     result = (
         supabase.table("conversations")
-        .update({"deleted_at": "NOW()"})
+        .update({"deleted_at": datetime.now(UTC).isoformat()})
         .eq("id", str(conversation_id))
         .eq("user_id", str(user.user_id))
-        .is_("deleted_at", "null")  # Only delete if not already deleted
+        .is_("deleted_at", "null")
         .execute()
     )
     if not result.data:

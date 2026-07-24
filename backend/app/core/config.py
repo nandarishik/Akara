@@ -20,6 +20,10 @@ class Settings(BaseSettings):
     # Transaction-mode pooler URL (required in staging/production for Phase 2).
     # Leave empty in development to fall back to the direct URL.
     supabase_pooler_url: str = ""
+    # Direct Postgres URI for async workers (asyncpg). Prefer pooler in production.
+    supabase_db_url: str = ""
+    # Supabase Storage bucket for async import uploads (default matches common project setup).
+    supabase_imports_bucket: str = "storage"
 
     # -----------------------------------------------------------------------
     # JWT — must match Supabase project JWT secret
@@ -134,6 +138,15 @@ class Settings(BaseSettings):
         if (self.is_production or self.is_staging) and self.supabase_pooler_url:
             return self.supabase_pooler_url
         return self.supabase_url
+
+    @property
+    def postgres_url(self) -> str:
+        """Postgres connection string for asyncpg (import worker, SKIP LOCKED)."""
+        if self.supabase_db_url:
+            return self.supabase_db_url
+        if self.supabase_pooler_url:
+            return self.supabase_pooler_url
+        return ""
 
     # -----------------------------------------------------------------------
     # Startup validation — called from main.py lifespan

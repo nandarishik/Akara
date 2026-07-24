@@ -16,6 +16,7 @@ from fastapi import (
 from pydantic import BaseModel
 
 from app.core.auth import CurrentUser
+from app.core.config import settings
 from app.core.plan_guard import (
     require_feature,
     require_import_quota,
@@ -437,7 +438,7 @@ async def import_data_async(
 
     try:
         # Upload file to storage
-        supa.storage.from_("imports").upload(storage_path, content, {
+        supa.storage.from_(settings.supabase_imports_bucket).upload(storage_path, content, {
             "content-type": content_type,
             "x-upsert": "true"  # Overwrite if exists
         })
@@ -472,7 +473,7 @@ async def import_data_async(
         logger.error(f"Failed to create import job: {e}")
         # Clean up uploaded file
         try:
-            supa.storage.from_("imports").remove([storage_path])
+            supa.storage.from_(settings.supabase_imports_bucket).remove([storage_path])
         except:
             pass
 

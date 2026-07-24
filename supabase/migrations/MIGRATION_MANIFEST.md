@@ -25,7 +25,8 @@
 | 011 | `011_billing.sql` | **2** | Tenant billing fields; `import_jobs`; `import_job_id` on `sales_data`; `usage_tracking`; `llm_cost_log` (with `latency_ms`); `idempotency_keys`; `increment_usage` RPC; `get_current_usage` RPC; `tenant_lifetime_debriefs` view | **complete — ready to apply** |
 | 012 | `012_onboarding.sql` | **3** | `profiles.has_completed_onboarding`; `marketing_emails`; `consent_log` | **complete — ready to apply** |
 | 013 | `013_self_signup_profiles.sql` | **3** | Nullable `profiles.tenant_id`; fix `handle_new_user` for self-signup | **complete — ready to apply** |
-| 014+ | TBD | 4–22 | Stripe, superadmin, security, launch |
+| 014 | `014_day4_copilot_feedback_conversations_import_jobs.sql` | **4** | `copilot_feedback`; `conversations.deleted_at`; async `import_jobs` worker columns | **complete — ready to apply** |
+| 015+ | TBD | 5–22 | Stripe, superadmin, security, launch |
 
 ## Conventions
 

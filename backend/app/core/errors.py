@@ -62,6 +62,10 @@ class ErrorEnvelope(BaseModel):
     detail: Any = None
 
 
+class DataImportError(Exception):
+    """Raised when file download, parse, or import fails in the data pipeline."""
+
+
 class AkaraHTTPException(Exception):
     """Raise this instead of FastAPI's HTTPException throughout the AKARA backend.
     The custom exception handler will format it into an ErrorEnvelope.

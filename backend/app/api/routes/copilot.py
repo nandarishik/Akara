@@ -323,11 +323,11 @@ async def chat(
 # ============================================================================
 
 class FeedbackRequest(BaseModel):
-    message_id: UUID
+    message_id: str
     rating: int  # 1 for thumbs up, -1 for thumbs down
     comment: str | None = None
     conversation_id: UUID | None = None
-    question: str | None = None  # Original question for context
+    question: str | None = None
 
 
 class FeedbackResponse(BaseModel):
@@ -361,12 +361,12 @@ async def submit_feedback(
         # Insert feedback record
         feedback_result = supabase.table("copilot_feedback").insert({
             "conversation_id": str(request.conversation_id) if request.conversation_id else None,
-            "message_id": str(request.message_id),
+            "message_id": request.message_id,
             "tenant_id": str(tenant.tenant_id),
             "user_id": str(user.user_id),
             "rating": request.rating,
             "comment": request.comment,
-            "question": request.question,
+            "question": request.question or "",
         }).execute()
 
         if not feedback_result.data:
