@@ -26,7 +26,9 @@
 | 012 | `012_onboarding.sql` | **3** | `profiles.has_completed_onboarding`; `marketing_emails`; `consent_log` | **complete — ready to apply** |
 | 013 | `013_self_signup_profiles.sql` | **3** | Nullable `profiles.tenant_id`; fix `handle_new_user` for self-signup | **complete — ready to apply** |
 | 014 | `014_day4_copilot_feedback_conversations_import_jobs.sql` | **4** | `copilot_feedback`; `conversations.deleted_at`; async `import_jobs` worker columns | **complete — ready to apply** |
-| 015+ | TBD | 5–22 | Stripe, superadmin, security, launch |
+| 015 | `015_billing_stripe_gst.sql` | **5** | `billing_details`; `past_due_since`; `invoices`; `invoice_sequence`; webhook inbox; `dunning_events` (Stripe-named columns renamed in 016) | **applied** |
+| 016 | `016_billing_razorpay_provider.sql` | **5** | `razorpay_*` tenant columns; rename to `provider_payment_id`, `payment_webhook_events` | **ready to apply** |
+| 017+ | TBD | 6–22 | Security, superadmin, launch |
 
 ## Conventions
 

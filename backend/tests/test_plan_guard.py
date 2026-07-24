@@ -19,6 +19,7 @@ import pytest
 from app.core.plan_guard import (
     FeatureBlocked,
     UsageExceeded,
+    _check_plan_status,
     require_copilot_quota,
     require_feature,
     require_import_quota,
@@ -284,3 +285,12 @@ def test_feature_blocked_has_upgrade_url():
     exc = FeatureBlocked(message="test", feature="scheme_leakage")
     assert exc.detail["upgrade_url"] == "/upgrade"
     assert exc.detail["error"] == "feature_not_available"
+
+
+@patch("app.core.plan_guard._fetch_billing_state")
+def test_past_due_blocks_copilot(mock_state):
+    mock_state.return_value = {"plan_status": "past_due"}
+    tenant = make_tenant(plan="pro", plan_status="past_due")
+    with pytest.raises(UsageExceeded) as exc_info:
+        _check_plan_status(tenant, block_past_due=True)
+    assert exc_info.value.detail["feature"] == "payment_overdue"

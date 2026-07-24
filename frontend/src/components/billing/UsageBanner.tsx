@@ -29,9 +29,9 @@ interface UsageBannerProps {
 
 const LEVEL_STYLES = {
   ok:       { bar: "bg-emerald-500", text: "text-emerald-700", bg: "" },
-  warning:  { bar: "bg-amber-400",   text: "text-amber-700",   bg: "bg-amber-50 border border-amber-200" },
-  critical: { bar: "bg-orange-500",  text: "text-orange-700",  bg: "bg-orange-50 border border-orange-200" },
-  blocked:  { bar: "bg-red-500",     text: "text-red-700",     bg: "bg-red-50 border border-red-200" },
+  warning:  { bar: "bg-amber-400",   text: "text-amber-800",   bg: "bg-amber-50/90 border-b border-amber-200/80" },
+  critical: { bar: "bg-orange-500",  text: "text-orange-800",  bg: "bg-orange-50/90 border-b border-orange-200/80" },
+  blocked:  { bar: "bg-red-500",     text: "text-red-800",     bg: "bg-red-50/90 border-b border-red-200/80" },
 };
 
 function QuotaBar({
@@ -56,7 +56,7 @@ function QuotaBar({
           {used.toLocaleString("en-IN")} / {displayLimit}
         </span>
       </div>
-      <div className="h-1.5 w-full rounded-full bg-neutral-200 overflow-hidden">
+      <div className="h-1.5 w-full rounded-full bg-slate-200/80 overflow-hidden">
         <div
           className={cn("h-full rounded-full transition-all", styles.bar)}
           style={{ width: `${pct}%` }}

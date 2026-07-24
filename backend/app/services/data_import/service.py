@@ -1,6 +1,8 @@
 import logging
+import math
 import uuid as uuid_lib
-from typing import Literal
+from datetime import date, datetime
+from typing import Any, Literal
 from uuid import UUID
 
 from supabase import Client
@@ -32,6 +34,41 @@ _PRIMARY_KNOWN = {
 }
 
 
+def _safe_float(value: Any) -> float:
+    if value is None:
+        return 0.0
+    try:
+        f = float(value)
+    except (TypeError, ValueError):
+        return 0.0
+    if math.isnan(f) or math.isinf(f):
+        return 0.0
+    return f
+
+
+def _safe_str(value: Any) -> str:
+    if value is None:
+        return ""
+    s = str(value)
+    if s.lower() in ("nan", "nat", "none"):
+        return ""
+    return s
+
+
+def _sanitize_for_json(value: Any) -> Any:
+    if isinstance(value, dict):
+        return {k: _sanitize_for_json(v) for k, v in value.items()}
+    if isinstance(value, list):
+        return [_sanitize_for_json(v) for v in value]
+    if isinstance(value, float) and (math.isnan(value) or math.isinf(value)):
+        return None
+    if isinstance(value, date) and not isinstance(value, datetime):
+        return value.isoformat()
+    if isinstance(value, datetime):
+        return value.isoformat()
+    return value
+
+
 def _build_raw_data(row: dict) -> dict:
     """
     Aggregate all columns NOT in the DB schema into raw_data JSONB.
@@ -59,16 +96,16 @@ def _enrich_primary(row: dict, tenant_id: UUID) -> dict:
         "product_group": str(row.get("product_group", "")),
         "product_category": str(row.get("product_category", "")),
         "hsn_code": str(row.get("hsn_code", "")),
-        "quantity": float(row.get("quantity", 0)),
-        "gross_amount": float(row.get("gross_amount", 0)),
-        "discount_amount": float(row.get("discount_amount", 0)),
-        "net_amount": float(row.get("net_amount", 0)),
-        "tax_amount": float(row.get("tax_amount", 0)),
-        "total_amount": float(row.get("total_amount", 0)),
-        "raw_data": _build_raw_data(row),   # ← changed from {k: str(v) for k, v in row.items()}
+        "quantity": _safe_float(row.get("quantity", 0)),
+        "gross_amount": _safe_float(row.get("gross_amount", 0)),
+        "discount_amount": _safe_float(row.get("discount_amount", 0)),
+        "net_amount": _safe_float(row.get("net_amount", 0)),
+        "tax_amount": _safe_float(row.get("tax_amount", 0)),
+        "total_amount": _safe_float(row.get("total_amount", 0)),
+        "raw_data": _sanitize_for_json(_build_raw_data(row)),
     }
     if row.get("outstanding_amount") is not None:
-        record["outstanding_amount"] = float(row["outstanding_amount"])
+        record["outstanding_amount"] = _safe_float(row["outstanding_amount"])
     return record
 
 

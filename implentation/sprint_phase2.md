@@ -3,7 +3,7 @@
 
 **Prerequisite:** Days 1–13 complete and deployed. All 9 Supabase migrations applied. Railway backend live. Vercel frontend live. Sentry wired. CI passing.
 
-**Goal of Phase 2:** AKARA becomes a full production SaaS. Any business owner can find the landing page, sign up, import their data, use the product within a plan's limits, upgrade via Stripe, and manage their account — entirely without you touching a database. You can operate, monitor, and control every tenant from a superadmin UI.
+**Goal of Phase 2:** AKARA becomes a full production SaaS. Any business owner can find the landing page, sign up, import their data, use the product within a plan's limits, upgrade via Razorpay, and manage their account — entirely without you touching a database. You can operate, monitor, and control every tenant from a superadmin UI.
 
 ---
 
@@ -1708,8 +1708,8 @@ interface PlanGateProps {
 //     - Feature list with checkmarks/crosses (exact tier table)
 //     - CTA button:
 //       Free: "Current plan" (disabled, if already on free)
-//       Pro: "Upgrade to Pro — ₹7,999/mo" → Stripe checkout (Day 18)
-//       Business: "Upgrade to Business — ₹13,999/mo" → Stripe checkout (Day 18)
+//       Pro: "Upgrade to Pro — ₹7,999/mo" → Razorpay checkout
+//       Business: "Upgrade to Business — ₹13,999/mo" → Razorpay checkout
 //
 //   For now (before Stripe): CTA opens a mailto: link or a Calendly link
 //   This is a deliberate interim — you'd rather have a human conversation
@@ -1736,7 +1736,7 @@ interface PlanGateProps {
 //    Plan badge (Free / Pro / Business)
 //    Plan status badge (Active / Trialing / Past Due)
 //    "Upgrade plan" button → /upgrade
-//    "Manage subscription" link → Stripe customer portal (Day 18, disabled until then)
+//    "Manage subscription" → in-app cancel + change plan on /billing (Day 18)
 //
 // 2. Usage this month (monthly limits, 4 progress bars)
 //    Copilot questions: [====    ] 8/10 (80%)
@@ -3347,10 +3347,10 @@ Manual:
 
 ---
 
-## Day 18 — Stripe Integration + Failed Payment Handling
+## Day 18 — Razorpay Integration + Failed Payment Handling
 
 ### Goal
-Customers can upgrade to Pro or Business by entering a card. Stripe manages the subscription. Webhooks update the plan in real time. Failed payments trigger a grace period, not immediate downgrade.
+Customers can upgrade to Pro or Business via Razorpay Subscriptions. Webhooks update the plan in real time. Failed payments trigger a grace period, not immediate downgrade. Subscription cancel is handled in-app (Razorpay has no hosted customer portal).
 
 ---
 
@@ -3358,101 +3358,51 @@ Customers can upgrade to Pro or Business by entering a card. Stripe manages the 
 
 ```bash
 cd akara/backend
-uv add stripe
+uv add razorpay
 ```
 
 Add to `backend/app/core/config.py`:
 ```python
-stripe_secret_key: str = ""
-stripe_webhook_secret: str = ""
-stripe_pro_price_id: str = ""         # Stripe Price ID for Pro ₹7,999/mo
-stripe_business_price_id: str = ""    # Stripe Price ID for Business ₹13,999/mo
-stripe_customer_portal_url: str = ""  # From Stripe Dashboard → Customer Portal
+razorpay_key_id: str = ""
+razorpay_key_secret: str = ""
+razorpay_webhook_secret: str = ""
+razorpay_pro_monthly_plan_id: str = ""
+razorpay_pro_annual_plan_id: str = ""
+razorpay_business_monthly_plan_id: str = ""
+razorpay_business_annual_plan_id: str = ""
 ```
+
+See [`docs/razorpay_setup.md`](../docs/razorpay_setup.md) for Dashboard plan creation.
 
 ---
 
 ### 18.2 — `backend/app/api/routes/billing.py` additions
 
 ```python
-import stripe
+import razorpay
 from app.core.config import settings
 
-stripe.api_key = settings.stripe_secret_key
-
-# New endpoints added to existing billing.py:
-
 POST /billing/create-checkout-session
-     Body: { plan: 'pro' | 'business' }
-     Creates a Stripe Checkout Session
-     success_url: /billing?session_id={CHECKOUT_SESSION_ID}
-     cancel_url: /upgrade
-     Returns: { checkout_url: str }
+     Body: { plan: 'pro' | 'business', interval: 'month' | 'year' }
+     Creates Razorpay Subscription → returns { checkout_url: short_url }
 
-GET  /billing/portal
-     Returns: { portal_url: str }
-     Redirects user to Stripe Customer Portal for managing subscription
+GET  /billing/subscription
+     Returns plan status, Razorpay subscription status, renewal date
+
+POST /billing/cancel-subscription
+     Cancels at cycle end via Razorpay API
 
 POST /billing/webhook
-     Receives Stripe webhook events
-     Verifies signature with stripe_webhook_secret
+     Receives Razorpay webhook events
+     Verifies X-Razorpay-Signature
      Handles:
-       checkout.session.completed  → set plan to pro/business, plan_status=active
-       customer.subscription.updated → update plan_status
-       customer.subscription.deleted → downgrade to free after 30-day grace
-       invoice.payment_failed → set plan_status=past_due, send warning email
-       invoice.payment_action_required → same
+       subscription.activated / subscription.authenticated → plan active
+       subscription.charged / payment.captured → GST invoice + email
+       subscription.halted / payment.failed → plan_status=past_due
+       subscription.cancelled → grace period then free limits
 ```
 
-Webhook implementation detail:
-```python
-@router.post("/webhook")
-async def stripe_webhook(request: Request):
-    payload = await request.body()
-    sig_header = request.headers.get("stripe-signature")
-
-    try:
-        event = stripe.Webhook.construct_event(
-            payload, sig_header, settings.stripe_webhook_secret
-        )
-    except ValueError:
-        raise HTTPException(400, "Invalid payload")
-    except stripe.error.SignatureVerificationError:
-        raise HTTPException(400, "Invalid signature")
-
-    supa = get_supabase_service_client()
-
-    if event["type"] == "checkout.session.completed":
-        session = event["data"]["object"]
-        tenant_id = session["metadata"]["tenant_id"]
-        plan = session["metadata"]["plan"]
-        stripe_customer_id = session["customer"]
-        stripe_subscription_id = session["subscription"]
-
-        supa.table("tenants").update({
-            "plan": plan,
-            "plan_status": "active",
-            "stripe_customer_id": stripe_customer_id,
-            "stripe_subscription_id": stripe_subscription_id,
-        }).eq("id", tenant_id).execute()
-
-    elif event["type"] == "invoice.payment_failed":
-        customer_id = event["data"]["object"]["customer"]
-        supa.table("tenants").update({
-            "plan_status": "past_due"
-        }).eq("stripe_customer_id", customer_id).execute()
-        # TODO Day 20: send dunning email via SendGrid
-
-    elif event["type"] == "customer.subscription.deleted":
-        customer_id = event["data"]["object"]["customer"]
-        # Grace period: keep plan for 30 days, then downgrade
-        supa.table("tenants").update({
-            "plan_status": "cancelled",
-            "trial_ends_at": (datetime.utcnow() + timedelta(days=30)).isoformat()
-        }).eq("stripe_customer_id", customer_id).execute()
-
-    return {"received": True}
-```
+Migration **016** renames `stripe_webhook_events` → `payment_webhook_events` and invoice ids to `provider_payment_id`.
 
 ---
 
@@ -3482,44 +3432,36 @@ async def _check_plan_status(tenant: TenantCtx):
 
 ---
 
-### 18.4 — Frontend Stripe wiring
+### 18.4 — Frontend Razorpay wiring
 
-**`UpgradePage.tsx`** — replace mailto CTA with real Stripe:
+**`UpgradePage.tsx`** — redirect to Razorpay hosted subscription auth:
 
 ```typescript
 async function handleUpgrade(plan: 'pro' | 'business') {
-  const { checkout_url } = await apiFetch<{ checkout_url: string }>(
-    '/billing/create-checkout-session',
-    { method: 'POST', body: JSON.stringify({ plan }) }
-  );
-  window.location.href = checkout_url;  // redirect to Stripe Checkout
+  const { checkout_url } = await createCheckoutSession(plan, interval, idempotencyKey);
+  window.location.href = checkout_url;
 }
 ```
 
-**`BillingPage.tsx`** — "Manage subscription" button:
+**`BillingPage.tsx`** — in-app subscription management (no external portal):
+
 ```typescript
-async function handleManage() {
-  const { portal_url } = await apiFetch<{ portal_url: string }>('/billing/portal');
-  window.location.href = portal_url;
-}
+// Cancel at cycle end
+await cancelSubscription();
+// Change plan → /upgrade
 ```
 
-**`UsageBanner.tsx`** — add `past_due` warning variant:
-```typescript
-// If plan_status === 'past_due':
-// Show red banner: "Payment failed. Update your card to avoid losing access."
-// [Update payment method →] → /billing (which links to Stripe portal)
-```
+**`UsageBanner.tsx`** — `past_due` warning variant unchanged.
 
 ---
 
 ### Day 18 Quality Gate
 
-Manual (Stripe test mode):
-- Upgrade to Pro with test card `4242 4242 4242 4242` → plan changes to pro in DB
+Manual (Razorpay test mode):
+- Upgrade to Pro with test payment → plan changes to pro in DB
 - Upgrade to Business → works
-- Failed payment test card `4000 0000 0000 0341` → `past_due` banner appears
-- Cancel subscription in Stripe portal → plan_status = cancelled, access continues 30 days
+- Failed payment test → `past_due` banner appears
+- Cancel subscription in Billing page → plan_status = cancelled, access continues 30 days
 - Day 30 (simulated): access reverts to free limits
 
 ---

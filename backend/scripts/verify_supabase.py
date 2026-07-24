@@ -17,13 +17,23 @@ HEADERS = {
 ZERO = "00000000-0000-0000-0000-000000000000"
 
 
-def check_table(name: str) -> tuple[bool, int]:
+def check_table(name: str, select_col: str = "id") -> tuple[bool, int]:
     r = httpx.get(
-        f"{URL}/rest/v1/{name}?select=id&limit=1",
+        f"{URL}/rest/v1/{name}?select={select_col}&limit=1",
         headers=HEADERS,
         timeout=20,
     )
     return r.status_code == 200, r.status_code
+
+
+def check_table_any(names: list[str], select_col: str = "id") -> tuple[bool, int, str]:
+    last_code = 404
+    for name in names:
+        ok, code = check_table(name, select_col)
+        if ok:
+            return True, code, name
+        last_code = code
+    return False, last_code, names[0]
 
 
 def check_column(table: str, col: str) -> tuple[bool, int]:
@@ -50,31 +60,50 @@ def main() -> None:
     print("=== SUPABASE VERIFICATION ===")
     print(f"Project: {URL}\n")
 
-    tables = [
-        "tenants",
-        "profiles",
-        "sales_data",
-        "context_cache",
-        "chat_history",
-        "audit_log",
-        "generated_reports",
-        "secondary_sales_data",
-        "scheme_master",
-        "conversations",
+    table_specs: list[tuple[str, str] | tuple[list[str], str]] = [
+        ("tenants", "id"),
+        ("profiles", "id"),
+        ("sales_data", "id"),
+        ("context_cache", "id"),
+        ("chat_history", "id"),
+        ("audit_log", "id"),
+        ("generated_reports", "id"),
+        ("secondary_sales_data", "id"),
+        ("scheme_master", "id"),
+        ("conversations", "id"),
+        ("import_jobs", "id"),
+        ("invoices", "id"),
+        ("invoice_sequence", "year"),
+        (["payment_webhook_events", "stripe_webhook_events"], "event_id"),
+        ("dunning_events", "id"),
     ]
     print("TABLES (expect all OK):")
     all_tables = True
-    for t in tables:
-        ok, code = check_table(t)
+    for spec in table_specs:
+        if isinstance(spec[0], list):
+            names, col = spec
+            ok, code, matched = check_table_any(names, col)
+            label = matched if ok else "payment_webhook_events"
+        else:
+            name, col = spec
+            ok, code = check_table(name, col)
+            matched = name
+            label = name
         if not ok:
             all_tables = False
-        print(f"  [{'OK' if ok else 'FAIL'}] {t} ({code})")
+        print(f"  [{'OK' if ok else 'FAIL'}] {label} ({code})")
 
     print("\nCOLUMNS (expect all OK):")
     columns = [
         ("sales_data", "outstanding_amount"),
         ("chat_history", "conversation_id"),
         ("profiles", "preferences"),
+        ("tenants", "billing_details"),
+        ("tenants", "past_due_since"),
+        ("tenants", "razorpay_customer_id"),
+        ("tenants", "razorpay_subscription_id"),
+        ("invoices", "provider_payment_id"),
+        ("invoices", "pdf_storage_path"),
     ]
     all_cols = True
     for table, col in columns:
@@ -133,7 +162,14 @@ def main() -> None:
     print(f"  [{'OK' if anon_ok else 'FAIL'}] anon tenants blocked ({r.status_code})")
 
     print()
-    if all_tables and all_cols and all_rpcs and anon_ok:
+    migration_016 = (
+        check_column("tenants", "razorpay_customer_id")[0]
+        and check_column("invoices", "provider_payment_id")[0]
+        and check_table("payment_webhook_events", "event_id")[0]
+    )
+    print(f"MIGRATION 016 (Razorpay provider): {'APPLIED' if migration_016 else 'PENDING — run 016_billing_razorpay_provider.sql'}")
+    print()
+    if all_tables and all_cols and all_rpcs and anon_ok and migration_016:
         print("RESULT: SUPABASE MIGRATIONS COMPLETE — ready for Railway/Vercel")
     else:
         print("RESULT: ISSUES REMAIN — see FAIL lines above")

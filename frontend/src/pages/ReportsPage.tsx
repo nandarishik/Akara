@@ -20,6 +20,7 @@ import GradientButton, { SecondaryButton } from "@/components/ui/GradientButton"
 import { TableSkeleton, ChartSkeleton } from "@/components/ui/ShimmerSkeleton";
 import { NoDataEmptyState } from "@/components/ui/EmptyState";
 import AnimatedNumber from "@/components/ui/AnimatedNumber";
+import { PlanGate } from "@/components/billing/PlanGate";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "@/components/ui/toast";
 
@@ -262,7 +263,13 @@ export function ReportsPage() {
         </div>
       </LiquidGlassCard>
 
-      {/* Scheme Leakage Navy-Glass Gate */}
+      <PlanGate
+        feature="scheme_leakage"
+        requiredPlan="business"
+        title="Scheme Leakage Detection"
+        description="See exactly how much scheme money was claimed vs actual offtake."
+        priceHint="From ₹13,999/month"
+      >
       {hasLeakage && (
         <LiquidGlassCard className="p-6 border-red-500/20 bg-red-500/5 relative overflow-hidden">
           {/* Animated background warning pattern */}
@@ -405,6 +412,7 @@ export function ReportsPage() {
           </div>
         </LiquidGlassCard>
       )}
+      </PlanGate>
 
       {/* Generated Reports with Navy Glass */}
       <LiquidGlassCard className="p-6">

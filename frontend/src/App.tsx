@@ -40,6 +40,8 @@ const DataPage       = React.lazy(() => import("@/pages/DataPage").then(m => ({ 
 const ReportsPage    = React.lazy(() => import("@/pages/ReportsPage").then(m => ({ default: m.ReportsPage })))
 const SimulatorPage  = React.lazy(() => import("@/pages/SimulatorPage").then(m => ({ default: m.SimulatorPage })))
 const SettingsPage   = React.lazy(() => import("@/pages/SettingsPage").then(m => ({ default: m.SettingsPage })))
+const UpgradePage    = React.lazy(() => import("@/pages/UpgradePage").then(m => ({ default: m.UpgradePage })))
+const BillingPage    = React.lazy(() => import("@/pages/BillingPage").then(m => ({ default: m.BillingPage })))
 const PrivacyPage    = React.lazy(() => import("@/pages/PrivacyPage").then(m => ({ default: m.PrivacyPage })))
 const TermsPage      = React.lazy(() => import("@/pages/TermsPage").then(m => ({ default: m.TermsPage })))
 
@@ -51,6 +53,7 @@ const UsersPage      = React.lazy(() => import("@/pages/admin/UsersPage").then(m
 const SATenantsPage    = React.lazy(() => import("@/pages/admin/TenantsPage").then(m => ({ default: m.TenantsPage })))
 const SAUsersPage      = React.lazy(() => import("@/pages/admin/UsersPage").then(m => ({ default: m.UsersPage })))
 const CostDiagnostics  = React.lazy(() => import("@/pages/admin/CostDiagnostics"))
+const BillingOpsPage   = React.lazy(() => import("@/pages/superadmin/BillingOpsPage").then(m => ({ default: m.BillingOpsPage })))
 
 // ─── Dev-only component gallery ───────────────────────────────────────────────
 const ComponentGallery = React.lazy(() => import("@/pages/gallery/ComponentGallery"))
@@ -103,6 +106,7 @@ export default function App() {
                 <Route path="/login" element={<LoginPage />} />
                 <Route path="/privacy" element={<PrivacyPage />} />
                 <Route path="/terms" element={<TermsPage />} />
+                <Route path="/upgrade" element={<UpgradePage />} />
 
                 {/* ── Onboarding (session required, no AppShell) ─────── */}
                 <Route element={<ProtectedRoute />}>
@@ -118,6 +122,7 @@ export default function App() {
                     <Route path="/reports"    element={<ReportsPage />} />
                     <Route path="/simulator"  element={<SimulatorPage />} />
                     <Route path="/settings"   element={<SettingsPage />} />
+                    <Route path="/billing"    element={<BillingPage />} />
                     {/* Legacy admin — deprecated in Day 8 */}
                     <Route path="/admin/tenants" element={<TenantsPage />} />
                     <Route path="/admin/users"   element={<UsersPage />} />
@@ -131,6 +136,7 @@ export default function App() {
                     <Route path="tenants"   element={<SATenantsPage />} />
                     <Route path="users"     element={<SAUsersPage />} />
                     <Route path="costs"     element={<CostDiagnostics />} />
+                    <Route path="billing"   element={<BillingOpsPage />} />
                     <Route path="*" element={
                       <div className="text-sa-muted text-sm p-8">
                         This superadmin section is coming in Day 8.

@@ -28,8 +28,39 @@ npm run dev
 ```
 
 ### Database
-Migrations live in `supabase/migrations/`. Apply via:
+Migrations live in `supabase/migrations/`. Apply via Supabase SQL Editor or `supabase db push`.
+
+After billing migrations **015** + **016**, verify:
+
 ```bash
-supabase db push
+cd backend && python scripts/verify_supabase.py
 ```
-or paste each file into Supabase Dashboard → SQL Editor.
+
+## Day 5 — Billing, Razorpay, GST, Dunning
+
+Full Razorpay setup: [`docs/razorpay_setup.md`](docs/razorpay_setup.md)
+
+### Migrations
+- **015** — GST invoices, dunning, billing details (applied)
+- **016** — Razorpay columns + rename `payment_webhook_events`, `provider_payment_id`
+
+### Railway env (API service)
+| Variable | Purpose |
+|----------|---------|
+| `RAZORPAY_KEY_ID` | Razorpay API key |
+| `RAZORPAY_KEY_SECRET` | API secret |
+| `RAZORPAY_WEBHOOK_SECRET` | Webhook HMAC |
+| `RAZORPAY_*_PLAN_ID` (×4) | Subscription plan IDs |
+| `COMPANY_GSTIN`, `SENDGRID_*`, `CUSTOMER_FRONTEND_URL` | Unchanged |
+
+### Background jobs
+```bash
+# Import worker (every 60s)
+python -m app.tasks.import_worker
+
+# Dunning (daily)
+python -m app.tasks.dunning
+```
+
+### E2E checklist
+[`docs/day5_e2e_checklist.md`](docs/day5_e2e_checklist.md)

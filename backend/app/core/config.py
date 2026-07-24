@@ -40,14 +40,15 @@ class Settings(BaseSettings):
     openrouter_model: str = "openai/gpt-4o-mini-2024-07-18"
 
     # -----------------------------------------------------------------------
-    # Stripe (required in staging/production)
+    # Razorpay (required in staging/production)
     # -----------------------------------------------------------------------
-    stripe_secret_key: str = ""
-    stripe_webhook_secret: str = ""
-    stripe_pro_monthly_price_id: str = ""
-    stripe_pro_annual_price_id: str = ""
-    stripe_business_monthly_price_id: str = ""
-    stripe_business_annual_price_id: str = ""
+    razorpay_key_id: str = ""
+    razorpay_key_secret: str = ""
+    razorpay_webhook_secret: str = ""
+    razorpay_pro_monthly_plan_id: str = ""
+    razorpay_pro_annual_plan_id: str = ""
+    razorpay_business_monthly_plan_id: str = ""
+    razorpay_business_annual_plan_id: str = ""
 
     # -----------------------------------------------------------------------
     # Email — SendGrid
@@ -178,10 +179,11 @@ class Settings(BaseSettings):
 
             # Payment stack required before Day 5 cutover
             for field, value in [
-                ("STRIPE_SECRET_KEY", self.stripe_secret_key),
-                ("STRIPE_WEBHOOK_SECRET", self.stripe_webhook_secret),
-                ("STRIPE_PRO_MONTHLY_PRICE_ID", self.stripe_pro_monthly_price_id),
-                ("STRIPE_BUSINESS_MONTHLY_PRICE_ID", self.stripe_business_monthly_price_id),
+                ("RAZORPAY_KEY_ID", self.razorpay_key_id),
+                ("RAZORPAY_KEY_SECRET", self.razorpay_key_secret),
+                ("RAZORPAY_WEBHOOK_SECRET", self.razorpay_webhook_secret),
+                ("RAZORPAY_PRO_MONTHLY_PLAN_ID", self.razorpay_pro_monthly_plan_id),
+                ("RAZORPAY_BUSINESS_MONTHLY_PLAN_ID", self.razorpay_business_monthly_plan_id),
             ]:
                 if not value:
                     errors.append(f"MISSING_STAGING_PROD: {field}")

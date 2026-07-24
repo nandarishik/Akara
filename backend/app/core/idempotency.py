@@ -17,7 +17,7 @@ from __future__ import annotations
 import re
 from typing import Annotated
 
-from fastapi import Header, HTTPException, status
+from fastapi import Depends, Header, HTTPException, status
 
 _UUID_RE = re.compile(
     r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
@@ -60,5 +60,5 @@ def optional_idempotency_key(
 
 
 # Type aliases for use as FastAPI Annotated dependencies
-IdempotencyKey = Annotated[str, require_idempotency_key]
-OptionalIdempotencyKey = Annotated[str | None, optional_idempotency_key]
+IdempotencyKey = Annotated[str, Depends(require_idempotency_key)]
+OptionalIdempotencyKey = Annotated[str | None, Depends(optional_idempotency_key)]

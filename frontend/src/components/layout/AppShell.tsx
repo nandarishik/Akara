@@ -3,6 +3,9 @@ import { Link, useLocation, Outlet } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { isAdmin } from "@/lib/auth-utils";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { useBilling } from "@/hooks/useBilling";
+import { UsageBanner, PastDueBanner, TrialWarning } from "@/components/billing";
+import { getQuotaLevel } from "@/lib/api/billing";
 import {
   LayoutDashboard,
   MessageSquare,
@@ -15,15 +18,18 @@ import {
   Building2,
   Users,
   AlertTriangle,
+  Settings,
+  CreditCard,
+  Lock,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const NAV_ITEMS = [
-  { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard, shortLabel: "Home", planRequired: null },
-  { to: "/copilot", label: "Copilot", icon: MessageSquare, shortLabel: "AI", planRequired: null },
-  { to: "/data", label: "Data", icon: Upload, shortLabel: "Data", planRequired: null },
-  { to: "/reports", label: "Reports", icon: BarChart2, shortLabel: "Reports", planRequired: null },
-  { to: "/simulator", label: "Simulator", icon: TrendingUp, shortLabel: "Sim", planRequired: "pro" },
+  { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard, shortLabel: "Home", feature: null as string | null },
+  { to: "/copilot", label: "Copilot", icon: MessageSquare, shortLabel: "AI", feature: null },
+  { to: "/data", label: "Data", icon: Upload, shortLabel: "Data", feature: null },
+  { to: "/reports", label: "Reports", icon: BarChart2, shortLabel: "Reports", feature: null },
+  { to: "/simulator", label: "Simulator", icon: TrendingUp, shortLabel: "Sim", feature: "simulator" },
 ];
 
 const ADMIN_NAV_ITEMS = [
@@ -31,24 +37,28 @@ const ADMIN_NAV_ITEMS = [
   { to: "/admin/users", label: "Users", icon: Users },
 ];
 
-function useUsageData() {
-  return { plan: "free", quotaWarning: false };
-}
-
 export function AppShell() {
   const { user, session, signOut } = useAuth();
   const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const { plan, quotaWarning } = useUsageData();
+  const { data: usage } = useBilling();
 
-  function closeSidebar() { setSidebarOpen(false); }
+  const plan = usage?.plan ?? "free";
+  const features = usage?.features;
+  const copilotLevel = usage
+    ? getQuotaLevel(usage.copilot_calls_used, usage.copilot_calls_limit)
+    : "ok";
+  const quotaWarning = copilotLevel === "warning" || copilotLevel === "critical";
+
+  function closeSidebar() {
+    setSidebarOpen(false);
+  }
 
   const isAdminUser = isAdmin(user, session);
   const isCopilot = location.pathname.startsWith("/copilot");
 
   return (
     <div className="flex h-screen bg-[#FAFCFF]">
-      {/* Mobile overlay */}
       {sidebarOpen && (
         <div
           className="fixed inset-0 bg-black/30 backdrop-blur-sm z-40 lg:hidden"
@@ -57,7 +67,6 @@ export function AppShell() {
         />
       )}
 
-      {/* Sidebar — dark navy, tasteful */}
       <aside
         className={cn(
           "w-60 flex flex-col z-10",
@@ -68,7 +77,6 @@ export function AppShell() {
           sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
         )}
       >
-        {/* Header */}
         <div className="px-5 py-5 border-b border-white/[0.06] flex items-center justify-between">
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2">
@@ -93,11 +101,10 @@ export function AppShell() {
           </button>
         </div>
 
-        {/* Nav */}
         <nav className="flex-1 px-3 py-3 space-y-0.5 overflow-y-auto">
-          {NAV_ITEMS.map(({ to, label, icon: Icon, planRequired }) => {
+          {NAV_ITEMS.map(({ to, label, icon: Icon, feature }) => {
             const isActive = location.pathname.startsWith(to);
-            const isLocked = planRequired && plan === "free";
+            const isLocked = feature && features && !features[feature as keyof typeof features];
             return (
               <Link
                 key={to}
@@ -108,17 +115,53 @@ export function AppShell() {
                   isActive
                     ? "bg-white/[0.08] text-white"
                     : "text-slate-400 hover:text-white hover:bg-white/[0.04]",
-                  isLocked && "opacity-50"
+                  isLocked && "opacity-70"
                 )}
               >
                 <Icon className="h-4 w-4 shrink-0" />
                 <span className="flex-1">{label}</span>
-                {isLocked && (
-                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-white/[0.06] text-slate-500">Pro</span>
-                )}
+                {isLocked && <Lock className="h-3 w-3 text-slate-500" aria-label="Locked" />}
               </Link>
             );
           })}
+
+          <div className="pt-3 mt-2 border-t border-white/[0.06] space-y-0.5">
+            <Link
+              to="/billing"
+              onClick={closeSidebar}
+              className={cn(
+                "flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium transition-colors",
+                location.pathname.startsWith("/billing")
+                  ? "bg-white/[0.08] text-white"
+                  : "text-slate-400 hover:text-white hover:bg-white/[0.04]"
+              )}
+            >
+              <CreditCard className="h-4 w-4 shrink-0" />
+              Billing
+            </Link>
+            <Link
+              to="/settings"
+              onClick={closeSidebar}
+              className={cn(
+                "flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium transition-colors",
+                location.pathname.startsWith("/settings")
+                  ? "bg-white/[0.08] text-white"
+                  : "text-slate-400 hover:text-white hover:bg-white/[0.04]"
+              )}
+            >
+              <Settings className="h-4 w-4 shrink-0" />
+              Settings
+            </Link>
+            {plan === "free" && (
+              <Link
+                to="/upgrade"
+                onClick={closeSidebar}
+                className="flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium text-[#42A5F5] hover:bg-[#42A5F5]/10"
+              >
+                Upgrade →
+              </Link>
+            )}
+          </div>
 
           {isAdminUser && (
             <>
@@ -148,7 +191,6 @@ export function AppShell() {
           )}
         </nav>
 
-        {/* Sign out */}
         <div className="px-3 py-3 border-t border-white/[0.06]">
           <button
             onClick={signOut}
@@ -160,7 +202,6 @@ export function AppShell() {
         </div>
       </aside>
 
-      {/* Mobile bottom nav */}
       <div className="fixed bottom-0 inset-x-0 z-30 lg:hidden">
         <nav className="mx-3 mb-3 rounded-2xl bg-white/95 backdrop-blur-lg border border-slate-200 shadow-lg">
           <div className="flex items-center justify-around py-2">
@@ -184,9 +225,7 @@ export function AppShell() {
         </nav>
       </div>
 
-      {/* Main content area — LIGHT */}
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
-        {/* Mobile top bar */}
         <header className="lg:hidden flex items-center gap-3 px-4 py-3 bg-white border-b border-slate-100 shrink-0">
           <button
             onClick={() => setSidebarOpen(true)}
@@ -198,7 +237,14 @@ export function AppShell() {
           <span className="text-lg font-bold text-[#0A1628]">AKARA</span>
         </header>
 
-        {/* Page content */}
+        {usage && (
+          <>
+            <PastDueBanner usage={usage} />
+            <TrialWarning usage={usage} />
+            <UsageBanner usage={usage} />
+          </>
+        )}
+
         <main
           className={cn(
             "flex-1 relative",

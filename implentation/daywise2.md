@@ -76,7 +76,7 @@ Before a day is complete:
 ## Backend/API lane
 
 - Inventory all existing Days 1–13 APIs, services, tests, and integration contracts.
-- Add startup configuration validation for Supabase, pooler, OpenAI, Stripe, SendGrid, Zaptilo, Sentry, PostHog, Turnstile, health checks, GST/company information, and frontend URLs.
+- Add startup configuration validation for Supabase, pooler, OpenAI, Razorpay, SendGrid, Zaptilo, Sentry, PostHog, Turnstile, health checks, GST/company information, and frontend URLs.
 - Pin the OpenAI model version.
 - Establish shared structured errors, pagination, idempotency keys, request IDs, and UTC/IST time utilities.
 
@@ -325,21 +325,22 @@ Implement Day 15 and UI Bible P1–P7/P19:
 
 ---
 
-# Day 5 — Usage UI, upgrade, Stripe, GST, invoices, and dunning
+# Day 5 — Usage UI, upgrade, Razorpay, GST, invoices, and dunning
 
 ## Backend/API lane
 
 Implement Days 16 and 18:
 
 - final billing hook contract and all PlanGate variants;
-- Stripe checkout and customer portal;
-- trusted server-side Price IDs;
-- raw-body signed webhooks;
-- checkout completion, subscription update/delete, invoice success/failure;
+- Razorpay Subscriptions checkout (hosted `short_url` redirect);
+- trusted server-side Plan IDs;
+- raw-body signed webhooks (`X-Razorpay-Signature`);
+- subscription activated/charged/halted/cancelled handling;
 - idempotent out-of-order event handling;
 - failed-payment grace and recovery;
 - Day 0/3/7/14 dunning with email/WhatsApp and safe downgrade;
-- manual NEFT contact/reconciliation path.
+- manual NEFT contact/reconciliation path;
+- in-app subscription cancel (no Razorpay customer portal).
 
 ## Database/security lane
 
@@ -353,25 +354,25 @@ Implement source 16.1–16.7 and P15–P16:
 
 - `useBilling`, UsageBanner, PlanGate, and every page gate;
 - Upgrade cards, current plan, monthly/annual toggle, factual comparison, contact/NEFT, trust line, and FAQs;
-- Billing plan/status/renewal, portal/upgrade, past-due banner, usage bars, daily pills, retention, invoice history, GST details, and Slot H;
+- Billing plan/status/renewal, in-app cancel/change plan, past-due banner, usage bars, daily pills, retention, invoice history, GST details, and Slot H;
 - checkout success/cancel/provider-down/already-subscribed states;
 - Settings Billing navigation.
 
 ## Superadmin frontend lane
 
-- Add live Stripe status, webhook status, payment timeline, invoice download/resend, manual payment, trial extension, and dunning visibility.
+- Add live Razorpay webhook status, payment timeline, invoice download/resend, manual payment, trial extension, and dunning visibility.
 - Add repair/reconcile action behind sudo-ready placeholder.
 
 ## QA/reliability lane
 
-- Stripe test-mode E2E for Pro/Business monthly/annual, duplicate clicks, repeated/out-of-order webhooks, failure, recovery, cancellation, and manual entitlement.
+- Razorpay test-mode E2E for Pro/Business monthly/annual, duplicate clicks, repeated/out-of-order webhooks, failure, recovery, cancellation, and manual entitlement.
 - Test same-state CGST+SGST and interstate IGST invoice calculations.
 - Test invoice sequence, PDF, email, GST fields, and dunning test clock.
 - Run Day 16 and Day 18 Quality Gates.
 
 ## Product/content/operations lane
 
-- Configure Stripe products/prices, Stripe Tax, SaaS tax code, tax-inclusive/exclusive policy, portal, and webhook secret.
+- Configure Razorpay subscription Plans (4), webhook secret, and tax-inclusive pricing policy (GST PDF issued by AKARA).
 - Provide legal company/GST details and accountant-reviewed invoice/credit-note policy.
 - Finalize E5–E7 payment templates.
 
@@ -919,11 +920,11 @@ Run these complete journeys:
 
 ### Customer journey
 
-Landing → demo → signup → Turnstile → consent → verification → onboarding → real/sample import → dashboard → Hindi/English copilot → feedback/provenance → reports/simulator → alert → weekly debrief generation → `/debrief` five-section report/archive/PDF → Copilot debrief context → WhatsApp/email delivery → quota warnings → upgrade → Stripe payment → GST invoice → team invite → settings → export/delete.
+Landing → demo → signup → Turnstile → consent → verification → onboarding → real/sample import → dashboard → Hindi/English copilot → feedback/provenance → reports/simulator → alert → weekly debrief generation → `/debrief` five-section report/archive/PDF → Copilot debrief context → WhatsApp/email delivery → quota warnings → upgrade → Razorpay payment → GST invoice → team invite → settings → export/delete.
 
 ### Failure journey
 
-Invalid file → async worker failure/retry → OpenAI 429/5xx/timeout → Stripe payment failure → dunning recovery → missed cron → provider degraded mode → quota hard stop/reset → expired token → stale data → maintenance → React crash → 404.
+Invalid file → async worker failure/retry → OpenAI 429/5xx/timeout → Razorpay payment failure → dunning recovery → missed cron → provider degraded mode → quota hard stop/reset → expired token → stale data → maintenance → React crash → 404.
 
 ### Founder journey
 

@@ -23,6 +23,10 @@ import GradientButton, { SecondaryButton } from "@/components/ui/GradientButton"
 import { TableSkeleton } from "@/components/ui/ShimmerSkeleton";
 import { NoDataEmptyState } from "@/components/ui/EmptyState";
 import AnimatedNumber from "@/components/ui/AnimatedNumber";
+import { PlanGate } from "@/components/billing/PlanGate";
+import { useBilling } from "@/hooks/useBilling";
+import { useQueryClient } from "@tanstack/react-query";
+import { Link } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
 import { toast } from "@/components/ui/toast";
 
@@ -123,6 +127,22 @@ async function fetchImportJobs(): Promise<ImportJob[]> {
   return data_result.jobs || [];
 }
 
+async function undoImport(jobId: string): Promise<void> {
+  const { data } = await supabase.auth.getSession();
+  const token = data.session?.access_token;
+  if (!token) throw new Error("Not authenticated");
+
+  const res = await fetch(`${BASE}/data/imports/${jobId}`, {
+    method: "DELETE",
+    headers: { Authorization: `Bearer ${token}` },
+  });
+
+  if (!res.ok) {
+    const errData = await res.json().catch(() => ({}));
+    throw new Error(errData.detail || `Undo failed: ${res.status}`);
+  }
+}
+
 async function fetchDailyUsage(): Promise<DailyUsage[]> {
   const { data } = await supabase.auth.getSession();
   const token = data.session?.access_token;
@@ -154,6 +174,8 @@ interface UploadPanelProps {
   sourceType: SourceType;
   isAdmin: boolean;
   onJobCreated: () => void;
+  uploadDisabled?: boolean;
+  onUploadComplete?: () => void;
 }
 
 function UploadPanel({
@@ -163,6 +185,8 @@ function UploadPanel({
   sourceType,
   isAdmin,
   onJobCreated,
+  uploadDisabled = false,
+  onUploadComplete,
 }: UploadPanelProps) {
   const [file, setFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
@@ -181,7 +205,7 @@ function UploadPanel({
   const colors = sourceColors[sourceType] || sourceColors.primary;
 
   async function handleUpload() {
-    if (!file || !isAdmin) return;
+    if (!file || !isAdmin || uploadDisabled) return;
     setUploading(true);
     setProgress(0);
     setResult(null);
@@ -201,6 +225,7 @@ function UploadPanel({
       } else {
         toast.success(`${r.rows_inserted} rows imported successfully!`);
       }
+      onUploadComplete?.();
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "Upload failed";
       setError(message);
@@ -322,9 +347,14 @@ function UploadPanel({
 
       {/* Action Button */}
       <div className="mt-6">
+        {uploadDisabled && (
+          <p className="text-xs text-amber-400 mb-2 text-center">
+            Upload limit reached — resets tomorrow at midnight IST
+          </p>
+        )}
         <GradientButton
           onClick={handleUpload}
-          disabled={!file || uploading || !isAdmin}
+          disabled={!file || uploading || !isAdmin || uploadDisabled}
           className="w-full"
         >
           {uploading ? (
@@ -438,6 +468,8 @@ function UploadPanel({
 export function DataPage() {
   const { user, session } = useAuth();
   const isAdminUser = isAdmin(user, session);
+  const { data: billing, refetch: refetchBilling } = useBilling();
+  const queryClient = useQueryClient();
   const [importJobs, setImportJobs] = useState<ImportJob[]>([]);
   const [dailyUsage, setDailyUsage] = useState<DailyUsage[]>([]);
   const [loadingJobs, setLoadingJobs] = useState(false);
@@ -497,7 +529,40 @@ export function DataPage() {
         console.error('Failed to refresh jobs:', err);
       }
     }, 1000);
+    void refetchBilling();
+    queryClient.invalidateQueries({ queryKey: ["billing", "usage"] });
   };
+
+  const handleUploadComplete = () => {
+    void refetchBilling();
+    queryClient.invalidateQueries({ queryKey: ["billing", "usage"] });
+  };
+
+  const uploadsToday = billing?.uploads_today ?? 0;
+  const uploadsPerDay = billing?.uploads_per_day ?? 3;
+  const undosToday = billing?.undos_today ?? 0;
+  const undosPerDay = billing?.undos_per_day ?? 2;
+  const uploadAtLimit = uploadsToday >= uploadsPerDay;
+  const undoAtLimit = undosToday >= undosPerDay;
+
+  const [undoingJobId, setUndoingJobId] = useState<string | null>(null);
+
+  async function handleUndoImport(jobId: string) {
+    if (undoAtLimit) return;
+    setUndoingJobId(jobId);
+    try {
+      await undoImport(jobId);
+      toast.success("Import undone");
+      const jobs = await fetchImportJobs();
+      setImportJobs(jobs);
+      void refetchBilling();
+      queryClient.invalidateQueries({ queryKey: ["billing", "usage"] });
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Undo failed");
+    } finally {
+      setUndoingJobId(null);
+    }
+  }
 
   const totalRowsToday = dailyUsage[dailyUsage.length - 1]?.rows_imported || 0;
   const totalImportsToday = dailyUsage[dailyUsage.length - 1]?.imports || 0;
@@ -571,6 +636,48 @@ export function DataPage() {
         </LiquidGlassCard>
       )}
 
+      {/* Daily rate limits — above upload panels */}
+      {billing && (
+        <LiquidGlassCard className="p-4 border-[#42A5F5]/20">
+          <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm">
+            <span className="text-[#90CAF9]">
+              Uploads today:{" "}
+              <span
+                className={
+                  uploadAtLimit
+                    ? "text-amber-400 font-semibold"
+                    : uploadsToday >= uploadsPerDay - 1
+                      ? "text-amber-300"
+                      : "text-[#E3F2FD] font-medium"
+                }
+              >
+                {uploadsToday} / {uploadsPerDay}
+              </span>
+            </span>
+            <span className="text-[#5C8FBF]">·</span>
+            <span className="text-[#90CAF9]">
+              Data undos today:{" "}
+              <span
+                className={
+                  undoAtLimit
+                    ? "text-amber-400 font-semibold"
+                    : undosToday >= undosPerDay - 1
+                      ? "text-amber-300"
+                      : "text-[#E3F2FD] font-medium"
+                }
+              >
+                {undosToday} / {undosPerDay}
+              </span>
+            </span>
+            {uploadAtLimit && (
+              <span className="text-xs px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300">
+                Upload limit reached — resets tomorrow
+              </span>
+            )}
+          </div>
+        </LiquidGlassCard>
+      )}
+
       {/* Upload Panels */}
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
         <UploadPanel
@@ -579,6 +686,8 @@ export function DataPage() {
           sourceType="primary"
           isAdmin={isAdminUser}
           onJobCreated={handleJobCreated}
+          onUploadComplete={handleUploadComplete}
+          uploadDisabled={uploadAtLimit}
           columns={[
             "invoice_date",
             "invoice_number",
@@ -598,12 +707,21 @@ export function DataPage() {
           ]}
         />
 
+        <PlanGate
+          feature="secondary_sales"
+          requiredPlan="pro"
+          title="Secondary Sales Import"
+          description="Unlock DMS offtake data and scheme master uploads."
+          priceHint="From ₹7,999/month"
+        >
         <UploadPanel
           title="Secondary Sales (DMS Offtake)"
           description="What distributors actually sold to retailers. Export from Bizom, Botree, FieldAssist, or your DMS."
           sourceType="secondary"
           isAdmin={isAdminUser}
           onJobCreated={handleJobCreated}
+          onUploadComplete={handleUploadComplete}
+          uploadDisabled={uploadAtLimit}
           columns={[
             "invoice_date",
             "party_name",
@@ -615,13 +733,22 @@ export function DataPage() {
             "total_amount",
           ]}
         />
+        </PlanGate>
 
+        <PlanGate
+          feature="secondary_sales"
+          requiredPlan="pro"
+          title="Scheme Master Import"
+          description="Upload scheme claims to detect leakage vs secondary offtake."
+        >
         <UploadPanel
           title="Scheme Master (Distributor Claims)"
           description="Scheme claims filed by distributors. Used to detect leakage vs. actual secondary offtake."
           sourceType="scheme"
           isAdmin={isAdminUser}
           onJobCreated={handleJobCreated}
+          onUploadComplete={handleUploadComplete}
+          uploadDisabled={uploadAtLimit}
           columns={[
             "scheme_name",
             "party_name",
@@ -632,6 +759,18 @@ export function DataPage() {
             "discount_pct (optional)",
           ]}
         />
+        </PlanGate>
+
+        {/* Slot G — upgrade nudge */}
+        <LiquidGlassCard className="p-4 mt-4 border-[#42A5F5]/20">
+          <p className="text-sm text-[#90CAF9]">
+            Unlock secondary sales and scheme data —{" "}
+            <span className="text-[#5C8FBF]">From ₹7,999/month</span>
+          </p>
+          <Link to="/upgrade" className="text-sm font-semibold text-[#42A5F5] hover:underline mt-1 inline-block">
+            View plans →
+          </Link>
+        </LiquidGlassCard>
       </div>
 
       {/* Import History Table */}
@@ -780,10 +919,21 @@ export function DataPage() {
                         </button>
                         {job.status === 'completed' && (
                           <button
-                            className="p-1 text-[#5C8FBF] hover:text-red-400 transition-colors"
-                            title="Undo import"
+                            type="button"
+                            onClick={() => handleUndoImport(job.id)}
+                            disabled={undoAtLimit || undoingJobId === job.id}
+                            className="p-1 text-[#5C8FBF] hover:text-red-400 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                            title={
+                              undoAtLimit
+                                ? `${undosPerDay} undos used today. Resets tomorrow.`
+                                : "Undo import"
+                            }
                           >
-                            <Trash2 className="h-4 w-4" />
+                            {undoingJobId === job.id ? (
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                            ) : (
+                              <Trash2 className="h-4 w-4" />
+                            )}
                           </button>
                         )}
                       </div>

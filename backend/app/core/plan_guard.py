@@ -15,6 +15,7 @@ frontend can show the right upgrade CTA without parsing error text.
 from __future__ import annotations
 
 import logging
+from datetime import UTC, datetime
 from uuid import UUID
 
 from fastapi import Depends, HTTPException, status
@@ -24,7 +25,7 @@ from app.core.plan_limits import (
     is_feature_enabled,
     required_plan_for_feature,
 )
-from app.core.tenant import TenantContext, get_tenant_context
+from app.core.tenant import TenantContext, get_supabase_service_client, get_tenant_context
 
 logger = logging.getLogger(__name__)
 
@@ -104,8 +105,6 @@ def _get_current_usage(tenant_id: UUID) -> dict:
 
 def _get_total_rows(tenant_id: UUID) -> int:
     """Count total rows in sales_data for the tenant."""
-    from app.core.tenant import get_supabase_service_client
-
     result = (
         get_supabase_service_client()
         .table("sales_data")
@@ -114,6 +113,54 @@ def _get_total_rows(tenant_id: UUID) -> int:
         .execute()
     )
     return result.count or 0
+
+
+def _fetch_billing_state(tenant_id: UUID) -> dict:
+    try:
+        result = (
+            get_supabase_service_client()
+            .table("tenants")
+            .select("plan, plan_status, trial_ends_at")
+            .eq("id", str(tenant_id))
+            .single()
+            .execute()
+        )
+        return result.data or {}
+    except Exception:
+        return {}
+
+
+def _effective_plan(tenant: TenantContext) -> str:
+    """Return plan for quota checks — cancelled after grace → free."""
+    state = _fetch_billing_state(tenant.tenant_id)
+    plan = state.get("plan") or tenant.plan
+    plan_status = state.get("plan_status") or tenant.plan_status
+    trial_ends_at = state.get("trial_ends_at")
+
+    if plan_status == "cancelled" and trial_ends_at:
+        try:
+            end = datetime.fromisoformat(str(trial_ends_at).replace("Z", "+00:00"))
+            if end.tzinfo is None:
+                end = end.replace(tzinfo=UTC)
+            if datetime.now(UTC) > end:
+                return "free"
+        except (ValueError, TypeError):
+            return "free"
+    return plan
+
+
+def _check_plan_status(tenant: TenantContext, block_past_due: bool = False) -> None:
+    """Enforce past_due blocks on write operations."""
+    state = _fetch_billing_state(tenant.tenant_id)
+    plan_status = state.get("plan_status") or tenant.plan_status
+    if block_past_due and plan_status == "past_due":
+        raise UsageExceeded(
+            message=(
+                "Payment overdue. Update your payment method in Billing "
+                "to restore copilot and imports."
+            ),
+            feature="payment_overdue",
+        )
 
 
 # ---------------------------------------------------------------------------
@@ -134,7 +181,8 @@ def require_copilot_quota():
     async def _check(
         tenant: TenantContext = Depends(get_tenant_context),
     ) -> None:
-        plan = tenant.plan
+        _check_plan_status(tenant, block_past_due=True)
+        plan = _effective_plan(tenant)
         limit = get_limit(plan, "copilot_calls_per_month")
         if limit == -1:
             return  # unlimited
@@ -175,7 +223,8 @@ def require_import_quota(row_count: int):
     """
 
     async def _check(tenant: TenantContext) -> None:
-        plan = tenant.plan
+        _check_plan_status(tenant, block_past_due=True)
+        plan = _effective_plan(tenant)
         usage = _get_current_usage(tenant.tenant_id)
 
         # 1. Daily upload cap (ALL plans, hard limit)
@@ -266,7 +315,8 @@ def require_feature(feature_name: str):
     async def _check(
         tenant: TenantContext = Depends(get_tenant_context),
     ) -> None:
-        if not is_feature_enabled(tenant.plan, feature_name, tenant.feature_overrides):
+        plan = _effective_plan(tenant)
+        if not is_feature_enabled(plan, feature_name, tenant.feature_overrides):
             required = required_plan_for_feature(feature_name)
             raise FeatureBlocked(
                 message=f"This feature requires {required}. Upgrade to unlock it.",

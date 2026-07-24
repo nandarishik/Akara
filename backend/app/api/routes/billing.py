@@ -1,70 +1,116 @@
-"""Billing API — usage summary for the authenticated tenant.
+"""Billing API — usage, checkout, portal, webhooks, GST details, invoices."""
 
-Endpoint:
-  GET /billing/usage  — returns current plan, plan_status, monthly counters,
-                        daily counters, users, and feature flags.
+from __future__ import annotations
 
-The frontend UsageBanner reads this endpoint to decide which quota warning
-to show. No limits are hardcoded in the frontend — all come from here.
-"""
+import hashlib
+import json
+import logging
+import re
 
-from fastapi import APIRouter
-from pydantic import BaseModel
+from uuid import UUID
+
+from fastapi import APIRouter, HTTPException, Request, status
+from fastapi.responses import Response
+from pydantic import BaseModel, Field
 
 from app.core.auth import CurrentUser
+from app.core.idempotency import IdempotencyKey
 from app.core.plan_guard import _get_current_usage
 from app.core.plan_limits import PLAN_LIMITS
 from app.core.tenant import TenantCtx, get_supabase_service_client
+from app.services.billing.checkout import (
+    cancel_subscription,
+    create_checkout_session,
+    fetch_subscription_status,
+)
+from app.services.billing.idempotency_store import get_cached_response, store_response
+from app.services.billing.webhook_handler import dispatch_razorpay_event, verify_webhook_signature
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/billing", tags=["billing"])
+
+GSTIN_RE = re.compile(
+    r"^\d{2}[A-Z]{5}\d{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$"
+)
+
+CHECKOUT_ENDPOINT = "POST /billing/create-checkout-session"
 
 
 class UsageResponse(BaseModel):
     plan: str
     plan_status: str
-
-    # Monthly copilot quota
     copilot_calls_used: int
-    copilot_calls_limit: int            # -1 = unlimited
-
-    # Row storage
+    copilot_calls_limit: int
     rows_used: int
-    rows_limit: int                     # -1 = unlimited
-
-    # Monthly uploads (free = 5, pro/business = unlimited)
+    rows_limit: int
     uploads_used: int
-    uploads_limit: int                  # -1 = unlimited
-
-    # Daily upload cap (all plans = 3)
+    uploads_limit: int
     uploads_today: int
     uploads_per_day: int
-
-    # Daily undo cap (all plans = 2)
     undos_today: int
     undos_per_day: int
-
-    # User seats
     users_used: int
     users_limit: int
-
-    # Feature flags (plan + overrides applied)
     features: dict
-
-    # Retention info
     retention_days: int
+
+
+class CheckoutRequest(BaseModel):
+    plan: str = Field(..., pattern="^(pro|business)$")
+    interval: str = Field(default="month", pattern="^(month|year)$")
+
+
+class CheckoutResponse(BaseModel):
+    checkout_url: str
+
+
+class SubscriptionResponse(BaseModel):
+    has_subscription: bool
+    plan: str
+    plan_status: str
+    razorpay_status: str | None = None
+    current_end: int | None = None
+    cancel_at_cycle_end: bool = False
+    trial_ends_at: str | None = None
+
+
+class CancelSubscriptionResponse(BaseModel):
+    status: str
+    at_cycle_end: bool
+    subscription_id: str
+
+
+class BillingDetailsRequest(BaseModel):
+    gstin: str | None = None
+    company_name: str | None = None
+    billing_address: str | None = None
+    billing_state: str | None = None
+
+
+class BillingDetailsResponse(BaseModel):
+    billing_details: dict
+
+
+class InvoiceSummary(BaseModel):
+    id: str
+    invoice_number: str
+    total_amount: float
+    tax_type: str
+    status: str
+    created_at: str
+    pdf_storage_path: str | None = None
+
+
+class InvoiceListResponse(BaseModel):
+    invoices: list[InvoiceSummary]
 
 
 @router.get("/usage", response_model=UsageResponse)
 def get_usage(user: CurrentUser, tenant: TenantCtx) -> UsageResponse:
-    """Return current month usage + plan limits for the authenticated tenant.
-
-    Called by the frontend UsageBanner on every page load (cached 60 s).
-    Uses service role to bypass RLS so all counters are accurate.
-    """
     supa = get_supabase_service_client()
     limits = PLAN_LIMITS.get(tenant.plan, PLAN_LIMITS["free"])
 
-    # Apply feature overrides from tenant
     effective_features: dict = {}
     for feature, default in limits["features"].items():
         if feature in tenant.feature_overrides:
@@ -72,10 +118,8 @@ def get_usage(user: CurrentUser, tenant: TenantCtx) -> UsageResponse:
         else:
             effective_features[feature] = default
 
-    # Current month usage via RPC (handles daily reset semantics internally)
     usage: dict = _get_current_usage(tenant.tenant_id)
 
-    # Total row count (live count from sales_data)
     rows_result = (
         supa.table("sales_data")
         .select("id", count="exact")
@@ -83,7 +127,6 @@ def get_usage(user: CurrentUser, tenant: TenantCtx) -> UsageResponse:
         .execute()
     )
 
-    # Active user count in tenant
     users_result = (
         supa.table("profiles")
         .select("id", count="exact")
@@ -108,4 +151,177 @@ def get_usage(user: CurrentUser, tenant: TenantCtx) -> UsageResponse:
         users_limit=limits["users"],
         features=effective_features,
         retention_days=limits["retention_days"],
+    )
+
+
+@router.post("/create-checkout-session", response_model=CheckoutResponse)
+def create_checkout(
+    body: CheckoutRequest,
+    user: CurrentUser,
+    tenant: TenantCtx,
+    idempotency_key: IdempotencyKey,
+) -> CheckoutResponse:
+    cached = get_cached_response(idempotency_key, tenant.tenant_id, CHECKOUT_ENDPOINT)
+    if cached:
+        status_code, response_body = cached
+        if status_code != 200:
+            raise HTTPException(status_code=status_code, detail=response_body)
+        return CheckoutResponse(**response_body)
+
+    if not user.email:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, detail="User email required for checkout")
+
+    try:
+        url = create_checkout_session(
+            tenant_id=tenant.tenant_id,
+            user_email=user.email,
+            plan=body.plan,
+            interval=body.interval,
+        )
+    except HTTPException as exc:
+        store_response(idempotency_key, tenant.tenant_id, CHECKOUT_ENDPOINT, exc.status_code, {"detail": exc.detail})
+        raise
+
+    response = CheckoutResponse(checkout_url=url)
+    store_response(idempotency_key, tenant.tenant_id, CHECKOUT_ENDPOINT, 200, response.model_dump())
+    return response
+
+
+@router.get("/subscription", response_model=SubscriptionResponse)
+def get_subscription(tenant: TenantCtx) -> SubscriptionResponse:
+    data = fetch_subscription_status(tenant.tenant_id)
+    return SubscriptionResponse(**data)
+
+
+@router.post("/cancel-subscription", response_model=CancelSubscriptionResponse)
+def cancel_sub(tenant: TenantCtx) -> CancelSubscriptionResponse:
+    if not tenant.is_admin:
+        raise HTTPException(
+            status.HTTP_403_FORBIDDEN,
+            detail="Only admins can cancel the subscription",
+        )
+    result = cancel_subscription(tenant.tenant_id, at_cycle_end=True)
+    return CancelSubscriptionResponse(**result)
+
+
+@router.post("/webhook")
+async def razorpay_webhook(request: Request) -> dict[str, bool]:
+    payload = await request.body()
+    sig_header = request.headers.get("X-Razorpay-Signature")
+    event_id = request.headers.get("X-Razorpay-Event-Id") or hashlib.sha256(payload).hexdigest()[:32]
+
+    try:
+        verify_webhook_signature(payload, sig_header)
+    except ValueError as exc:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
+
+    body = json.loads(payload.decode("utf-8"))
+    dispatch_razorpay_event(body, event_id)
+    return {"received": True}
+
+
+@router.patch("/details", response_model=BillingDetailsResponse)
+def update_billing_details(
+    body: BillingDetailsRequest,
+    tenant: TenantCtx,
+) -> BillingDetailsResponse:
+    if body.gstin and not GSTIN_RE.match(body.gstin.upper()):
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, detail="Invalid GSTIN format")
+
+    supa = get_supabase_service_client()
+    current = (
+        supa.table("tenants")
+        .select("billing_details")
+        .eq("id", str(tenant.tenant_id))
+        .single()
+        .execute()
+    )
+    details = (current.data or {}).get("billing_details") or {}
+
+    if body.gstin is not None:
+        details["gstin"] = body.gstin.upper()
+    if body.company_name is not None:
+        details["company_name"] = body.company_name
+    if body.billing_address is not None:
+        details["billing_address"] = body.billing_address
+    if body.billing_state is not None:
+        details["billing_state"] = body.billing_state
+
+    supa.table("tenants").update({"billing_details": details}).eq(
+        "id", str(tenant.tenant_id)
+    ).execute()
+    return BillingDetailsResponse(billing_details=details)
+
+
+@router.get("/details", response_model=BillingDetailsResponse)
+def get_billing_details(tenant: TenantCtx) -> BillingDetailsResponse:
+    supa = get_supabase_service_client()
+    result = (
+        supa.table("tenants")
+        .select("billing_details")
+        .eq("id", str(tenant.tenant_id))
+        .single()
+        .execute()
+    )
+    details = (result.data or {}).get("billing_details") or {}
+    return BillingDetailsResponse(billing_details=details)
+
+
+@router.get("/invoices", response_model=InvoiceListResponse)
+def list_invoices(tenant: TenantCtx) -> InvoiceListResponse:
+    supa = get_supabase_service_client()
+    result = (
+        supa.table("invoices")
+        .select("id, invoice_number, total_amount, tax_type, status, created_at, pdf_storage_path")
+        .eq("tenant_id", str(tenant.tenant_id))
+        .order("created_at", desc=True)
+        .limit(50)
+        .execute()
+    )
+    invoices = [
+        InvoiceSummary(
+            id=str(row["id"]),
+            invoice_number=row["invoice_number"],
+            total_amount=float(row["total_amount"]),
+            tax_type=row["tax_type"],
+            status=row["status"],
+            created_at=row["created_at"],
+            pdf_storage_path=row.get("pdf_storage_path"),
+        )
+        for row in (result.data or [])
+    ]
+    return InvoiceListResponse(invoices=invoices)
+
+
+@router.get("/invoices/{invoice_id}/download")
+def download_invoice(invoice_id: UUID, tenant: TenantCtx) -> Response:
+    supa = get_supabase_service_client()
+    result = (
+        supa.table("invoices")
+        .select("invoice_number, pdf_storage_path")
+        .eq("id", str(invoice_id))
+        .eq("tenant_id", str(tenant.tenant_id))
+        .maybe_single()
+        .execute()
+    )
+    if not result.data:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Invoice not found")
+
+    path = result.data.get("pdf_storage_path")
+    if not path:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Invoice PDF not available")
+
+    try:
+        pdf_bytes = supa.storage.from_("storage").download(path)
+    except Exception as exc:
+        logger.error("Failed to download invoice PDF %s: %s", path, exc)
+        raise HTTPException(
+            status.HTTP_502_BAD_GATEWAY, detail="Could not retrieve invoice PDF"
+        ) from exc
+
+    filename = f"{result.data['invoice_number']}.pdf"
+    return Response(
+        content=pdf_bytes,
+        media_type="application/pdf",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
     )

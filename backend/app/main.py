@@ -26,6 +26,7 @@ from app.api.routes import marketing as marketing_router
 from app.api.routes import onboarding as onboarding_router
 from app.api.routes import reports as reports_router
 from app.api.routes import simulator as simulator_router
+from app.api.routes.admin import billing as admin_billing_router
 from app.api.routes.admin import logs as admin_logs_router
 from app.api.routes.admin import reports as admin_reports_router
 from app.api.routes.admin import tenants as admin_tenants_router
@@ -124,6 +125,7 @@ app.include_router(data_router.router)
 app.include_router(reports_router.router)
 app.include_router(simulator_router.router)
 app.include_router(admin_tenants_router.router)
+app.include_router(admin_billing_router.router)
 app.include_router(admin_users_router.router)
 app.include_router(admin_logs_router.router)
 app.include_router(admin_reports_router.router)

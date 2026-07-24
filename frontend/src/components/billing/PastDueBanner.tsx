@@ -23,7 +23,7 @@ export function PastDueBanner({ usage }: PastDueBannerProps) {
       aria-live="assertive"
       aria-label="Payment overdue notice"
       className="flex items-center justify-between gap-3 px-4 py-3 text-sm
-        bg-red-50 border-b border-red-300 text-red-800"
+        bg-red-50/95 border-b border-red-200 text-red-900"
     >
       <div className="flex items-center gap-2">
         <AlertCircle className="h-4 w-4 shrink-0 text-red-600" aria-hidden />
@@ -31,8 +31,8 @@ export function PastDueBanner({ usage }: PastDueBannerProps) {
           <strong>Payment overdue.</strong> Your account is on hold — new
           copilot questions and imports are paused.{" "}
           <a
-            href="/upgrade"
-            className="font-semibold underline underline-offset-2 hover:opacity-80"
+            href="/billing"
+            className="font-semibold underline underline-offset-2 hover:opacity-80 text-[#1565C0]"
           >
             Update payment method
           </a>{" "}

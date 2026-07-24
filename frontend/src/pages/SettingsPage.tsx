@@ -74,9 +74,23 @@ export function SettingsPage() {
       <div>
         <h1 className="text-2xl font-bold text-slate-900">Settings</h1>
         <p className="text-sm text-slate-500 mt-1">
-          Manage your profile and notification preferences.
+          Manage your profile, billing, and notification preferences.
         </p>
       </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Billing</CardTitle>
+          <CardDescription>
+            View usage, manage your subscription, and update GST details.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <a href="/billing">
+            <Button variant="outline">Open Billing & Usage →</Button>
+          </a>
+        </CardContent>
+      </Card>
 
       {/* Profile Card */}
       <Card>

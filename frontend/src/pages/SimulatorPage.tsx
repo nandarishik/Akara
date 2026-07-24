@@ -14,7 +14,9 @@ import {
   Sparkles,
   Play
 } from "lucide-react";
+import { Link } from "react-router-dom";
 import { apiFetch } from "@/lib/api";
+import { useBilling } from "@/hooks/useBilling";
 import LiquidGlassCard from "@/components/ui/LiquidGlassCard";
 import GradientButton, { SecondaryButton } from "@/components/ui/GradientButton";
 import AnimatedNumber from "@/components/ui/AnimatedNumber";
@@ -140,25 +142,20 @@ function BlueGradientSlider({
   );
 }
 
-// Mock user plan - in real app this would come from auth context
-function getUserPlan(): 'free' | 'pro' | 'business' {
-  // For demo, randomly assign or use a mock
-  return 'free'; // Change to 'pro' or 'business' to test different views
-}
-
 // ────────────────────────────────────────────────────────────────
 // Page
 // ────────────────────────────────────────────────────────────────
 
 export function SimulatorPage() {
+  const { data: billing } = useBilling();
+  const userPlan = billing?.plan ?? "free";
+  const isPremium = billing?.features?.simulator ?? false;
+
   const [growthRate, setGrowthRate] = useState(0);
   const [discountChange, setDiscountChange] = useState(0);
   const [marketExpansion, setMarketExpansion] = useState(0);
   const [customerRetention, setCustomerRetention] = useState(0);
   const [isRunningSimulation, setIsRunningSimulation] = useState(false);
-
-  const userPlan = getUserPlan(); // In real app: get from auth context
-  const isPremium = userPlan === 'pro' || userPlan === 'business';
 
   // ── Fetch real baseline on mount ──
   const {
@@ -257,10 +254,12 @@ export function SimulatorPage() {
               </div>
             </div>
 
-            <GradientButton className="mb-4">
-              <Crown className="h-4 w-4 mr-2" />
-              Upgrade to Pro
-            </GradientButton>
+            <Link to="/upgrade">
+              <GradientButton className="mb-4">
+                <Crown className="h-4 w-4 mr-2" />
+                Upgrade to Pro
+              </GradientButton>
+            </Link>
             
             <p className="text-[#5C8FBF] text-xs">
               Or contact sales for Business plan features
