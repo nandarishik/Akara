@@ -57,12 +57,18 @@ Full Razorpay setup: [`docs/razorpay_setup.md`](docs/razorpay_setup.md)
 
 ### Background jobs
 ```bash
-# Import worker (every 60s)
+# Import worker (every 60s) — separate Railway service or cron
 python -m app.tasks.import_worker
 
-# Dunning (daily)
+# Dunning (daily) — Railway cron service (see backend/railway.dunning.json)
 python -m app.tasks.dunning
 ```
+
+**Railway dunning cron:** Add a second service in the same project, root directory `backend`, paste config from `railway.dunning.json` or set:
+- **Cron schedule:** `0 4 * * *` (daily 4:00 UTC ≈ 9:30 AM IST)
+- **Start command:** `/opt/venv/bin/python -m app.tasks.dunning`
+- Copy the same env vars as the API service (Supabase, SendGrid)
+- Optional: `HEALTHCHECKS_PING_URL` base URL; task pings `/dunning` on success
 
 ### E2E checklist
 [`docs/day5_e2e_checklist.md`](docs/day5_e2e_checklist.md)

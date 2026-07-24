@@ -8,7 +8,7 @@ Setup: [`razorpay_setup.md`](razorpay_setup.md)
 - Migrations **015** and **016** applied (`python backend/scripts/verify_supabase.py` — all OK)
 - Railway: `RAZORPAY_*`, `COMPANY_GSTIN`, `SENDGRID_*`, `CUSTOMER_FRONTEND_URL`
 - Razorpay webhook → `/billing/webhook` with signing secret set
-- Dunning cron: `python -m app.tasks.dunning` (daily)
+- Dunning cron: second Railway service using `railway.dunning.json` (`python -m app.tasks.dunning`, daily)
 
 ## Checkout and upgrade
 
@@ -62,6 +62,6 @@ Setup: [`razorpay_setup.md`](razorpay_setup.md)
 ## Automated gates
 
 ```bash
-cd akara/backend && pytest tests/test_razorpay_webhook.py tests/test_billing_checkout.py tests/test_gst_invoice.py tests/test_dunning.py
+cd akara/backend && pytest tests/test_razorpay_webhook.py tests/test_billing_checkout.py tests/test_gst_invoice.py tests/test_dunning.py tests/test_admin_billing.py
 cd akara/frontend && npx tsc --noEmit && npm run build
 ```

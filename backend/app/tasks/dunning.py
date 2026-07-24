@@ -6,6 +6,7 @@ import asyncio
 import logging
 from datetime import UTC, datetime
 
+from app.core.cron_ping import ping_cron_health
 from app.core.tenant import get_supabase_service_client
 from app.services.billing.email import send_dunning_reminder_email, send_downgrade_email
 
@@ -109,8 +110,14 @@ async def dunning_loop(interval_seconds: int = 86400) -> None:
 async def main() -> None:
     """Run one dunning cycle and exit (Railway cron: python -m app.tasks.dunning)."""
     logger.info("Starting dunning cycle")
-    await run_dunning_cycle()
-    logger.info("Dunning cycle complete")
+    try:
+        await run_dunning_cycle()
+        ping_cron_health("dunning")
+    except Exception:
+        logger.exception("Dunning cycle failed")
+        raise
+    finally:
+        logger.info("Dunning cycle complete")
 
 
 if __name__ == "__main__":

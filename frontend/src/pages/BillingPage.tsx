@@ -63,17 +63,21 @@ export function BillingPage() {
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
 
   const sessionSuccess = params.get("session_id");
+  const upgradedSuccess = params.get("upgraded") === "1";
 
   useEffect(() => {
-    if (sessionSuccess) {
+    if (sessionSuccess || upgradedSuccess) {
       refetch();
+      fetchInvoices().then(setInvoices).catch(() => {});
+      fetchSubscription().then(setSubscription).catch(() => {});
       const t = setTimeout(() => {
         params.delete("session_id");
+        params.delete("upgraded");
         setParams(params, { replace: true });
       }, 5000);
       return () => clearTimeout(t);
     }
-  }, [sessionSuccess, params, setParams, refetch]);
+  }, [sessionSuccess, upgradedSuccess, params, setParams, refetch]);
 
   useEffect(() => {
     fetchInvoices().then(setInvoices).catch(() => {});
@@ -147,10 +151,10 @@ export function BillingPage() {
           </p>
         </div>
 
-        {sessionSuccess && (
+        {(sessionSuccess || upgradedSuccess) && (
           <div className="flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-emerald-700 text-sm">
             <CheckCircle className="h-4 w-4 shrink-0" />
-            Payment successful — your plan will update shortly.
+            Payment received — your plan will update shortly.
           </div>
         )}
 

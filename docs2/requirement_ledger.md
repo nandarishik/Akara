@@ -126,8 +126,8 @@ Columns: `source_ref` | `implementation_day` | `owner_lane` | `status` | `verifi
 
 | source_ref | implementation_day | owner_lane | status | verification_method | evidence_link |
 |------------|-------------------|------------|--------|---------------------|---------------|
-| 18.1–18.4 — Stripe integration | Day 5 | Backend/API | pending | webhook test | — |
-| Day 18 Quality Gate | Day 5 | QA/reliability | pending | checkout E2E | — |
+| 18.1–18.4 — Stripe integration | Day 5 | Backend/API | done | webhook test | `tests/test_razorpay_webhook.py` |
+| Day 18 Quality Gate | Day 5 | QA/reliability | done | checkout E2E | `docs/day5_e2e_checklist.md`, pytest suite |
 | 19.1 — Rate limiting (slowapi) | Day 6 | Backend/API | pending | load test | — |
 | 19.2 — HTTP security headers | Day 6 | Backend/API | pending | header scan | — |
 | 19.3 — PII redaction before LLM | Day 6 | Backend/API | pending | redaction unit test | — |
@@ -148,7 +148,7 @@ Columns: `source_ref` | `implementation_day` | `owner_lane` | `status` | `verifi
 
 | source_ref | implementation_day | owner_lane | status | verification_method | evidence_link |
 |------------|-------------------|------------|--------|---------------------|---------------|
-| GAP 1 — GST invoicing | Day 5 | Backend/API | pending | invoice PDF test | — |
+| GAP 1 — GST invoicing | Day 5 | Backend/API | done | invoice PDF test | `tests/test_gst_invoice.py` |
 | GAP 2 — Async large file imports | Day 6 | Backend/API | pending | job queue test | — |
 | GAP 3 — Empty state components | Day 4 | Customer frontend | pending | empty state E2E | — |
 | GAP 4 — Activation email sequence | Day 7 | Backend/API | pending | email trigger test | — |
@@ -159,7 +159,7 @@ Columns: `source_ref` | `implementation_day` | `owner_lane` | `status` | `verifi
 | GAP 9 — Copilot feedback loop | Day 11 | Customer frontend | pending | thumbs up/down test | — |
 | GAP 10 — Data provenance on answers | Day 11 | Customer frontend | pending | citation UI test | — |
 | GAP 11 — Superadmin re-authentication | Day 8 | Backend/API | pending | sudo cookie test | — |
-| GAP 12 — Payment dunning sequence | Day 5 | Backend/API | pending | webhook sequence | — |
+| GAP 12 — Payment dunning sequence | Day 5 | Backend/API | done | webhook sequence | `tests/test_dunning.py`, `railway.dunning.json` |
 | GAP 13 — robots.txt + sitemap.xml | Day 3 | Customer frontend | pending | crawler test | — |
 
 ---
@@ -199,8 +199,8 @@ Columns: `source_ref` | `implementation_day` | `owner_lane` | `status` | `verifi
 | P12 — Reports | Phase 1 | Customer frontend | done | existing | — |
 | P13 — Simulator | Phase 1 | Customer frontend | done | existing | — |
 | P14 — Settings | Day 4 | Customer frontend | pending | billing nav | — |
-| P15 — Billing Page | Day 4 | Customer frontend | pending | E2E | — |
-| P16 — Upgrade Page | Day 4 | Customer frontend | pending | E2E | — |
+| P15 — Billing Page | Day 4 | Customer frontend | done | E2E | `BillingPage.tsx`, `?upgraded=1` banner |
+| P16 — Upgrade Page | Day 4 | Customer frontend | done | E2E | `UpgradePage.tsx`, Razorpay Checkout.js |
 | P17 — 404 Not Found | Day 3 | Customer frontend | pending | smoke.spec.ts | — |
 | P18 — 500 Server Error | Day 13 | Customer frontend | pending | error boundary test | — |
 | P19 — Password Reset Landing | Day 3 | Customer frontend | pending | E2E | — |
@@ -216,9 +216,9 @@ Columns: `source_ref` | `implementation_day` | `owner_lane` | `status` | `verifi
 | E2 — Password reset | Day 3 | Backend/API | pending | email trigger | — |
 | E3 — Weekly debrief | Day 7 | Backend/API | pending | cron email | — |
 | E4 — Daily morning brief | Day 7 | Backend/API | pending | cron email | — |
-| E5 — Payment failed | Day 5 | Backend/API | pending | webhook trigger | — |
-| E6 — Payment successful / Invoice | Day 5 | Backend/API | pending | Stripe test | — |
-| E7 — Plan downgrade | Day 5 | Backend/API | pending | dunning test | — |
+| E5 — Payment failed | Day 5 | Backend/API | done | webhook trigger | `tests/test_razorpay_webhook.py` |
+| E6 — Payment successful / Invoice | Day 5 | Backend/API | done | Razorpay test | `tests/test_gst_invoice.py`, `email.py` |
+| E7 — Plan downgrade | Day 5 | Backend/API | done | dunning test | `tests/test_dunning.py` |
 | E8 — Activation Day 1 | Day 7 | Backend/API | pending | cron trigger | — |
 | E9 — Activation Day 3 | Day 7 | Backend/API | pending | cron trigger | — |
 | E10 — Quota warning 80% | Day 4 | Backend/API | pending | usage threshold | — |
