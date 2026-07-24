@@ -49,17 +49,17 @@ DROP POLICY IF EXISTS tenant_alerts_update ON public.tenant_alerts;
 DROP POLICY IF EXISTS tenant_alerts_delete ON public.tenant_alerts;
 
 CREATE POLICY tenant_alerts_select ON public.tenant_alerts
-    FOR SELECT USING (tenant_id = public.get_user_tenant_id());
+    FOR SELECT USING (tenant_id = public.get_my_tenant_id());
 
 CREATE POLICY tenant_alerts_insert ON public.tenant_alerts
-    FOR INSERT WITH CHECK (tenant_id = public.get_user_tenant_id());
+    FOR INSERT WITH CHECK (tenant_id = public.get_my_tenant_id());
 
 CREATE POLICY tenant_alerts_update ON public.tenant_alerts
-    FOR UPDATE USING (tenant_id = public.get_user_tenant_id());
+    FOR UPDATE USING (tenant_id = public.get_my_tenant_id());
 
 CREATE POLICY tenant_alerts_delete ON public.tenant_alerts
-    FOR DELETE USING (tenant_id = public.get_user_tenant_id());
+    FOR DELETE USING (tenant_id = public.get_my_tenant_id());
 
 DROP POLICY IF EXISTS alert_trigger_events_select ON public.alert_trigger_events;
 CREATE POLICY alert_trigger_events_select ON public.alert_trigger_events
-    FOR SELECT USING (tenant_id = public.get_user_tenant_id());
+    FOR SELECT USING (tenant_id = public.get_my_tenant_id());

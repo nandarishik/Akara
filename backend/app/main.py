@@ -52,17 +52,17 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     """Startup validation -- fail fast on critical misconfiguration."""
     errors = settings.validate_for_environment()
     if errors:
-        if settings.is_production or settings.is_staging:
+        fatal = [e for e in errors if e.startswith("MISSING_REQUIRED:")]
+        if fatal and (settings.is_production or settings.is_staging):
             logger.critical(
                 "STARTUP FAILED -- missing required configuration:\n%s",
-                "\n".join(f"  * {e}" for e in errors),
+                "\n".join(f"  * {e}" for e in fatal),
             )
             sys.exit(1)
-        else:
-            logger.warning(
-                "Configuration warnings (non-fatal in development):\n%s",
-                "\n".join(f"  * {e}" for e in errors),
-            )
+        logger.warning(
+            "Configuration warnings (service will start; /ready may report degraded):\n%s",
+            "\n".join(f"  * {e}" for e in errors),
+        )
     else:
         logger.info(
             "Startup OK -- environment=%s model=%s",
