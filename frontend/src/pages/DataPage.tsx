@@ -18,8 +18,8 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { isAdmin } from "@/lib/auth-utils";
-import LiquidGlassCard from "@/components/ui/LiquidGlassCard";
-import GradientButton, { SecondaryButton } from "@/components/ui/GradientButton";
+import SurfaceCard from "@/components/ui/SurfaceCard";
+import { AkaraButton, SecondaryButton } from "@/components/ui/GradientButton";
 import { TableSkeleton } from "@/components/ui/ShimmerSkeleton";
 import { NoDataEmptyState } from "@/components/ui/EmptyState";
 import AnimatedNumber from "@/components/ui/AnimatedNumber";
@@ -29,6 +29,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
 import { toast } from "@/components/ui/toast";
+import { formatApiError } from "@/lib/formatApiError";
 
 interface ImportResult {
   rows_inserted: number;
@@ -100,7 +101,7 @@ async function uploadFile(
 
     if (!res.ok) {
       const errData = await res.json().catch(() => ({}));
-      throw new Error(errData.detail || `Upload failed: ${res.status}`);
+      throw new Error(formatApiError(errData.detail, `Upload failed (${res.status})`));
     }
 
     return res.json();
@@ -196,14 +197,6 @@ function UploadPanel({
   const [useAsync, setUseAsync] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const sourceColors = {
-    primary: { border: '#1565C0', bg: 'rgba(21, 101, 192, 0.05)', accent: '#42A5F5' },
-    secondary: { border: '#0288D1', bg: 'rgba(2, 136, 209, 0.05)', accent: '#29B6F6' },
-    scheme: { border: '#7B1FA2', bg: 'rgba(123, 31, 162, 0.05)', accent: '#AB47BC' }
-  };
-
-  const colors = sourceColors[sourceType] || sourceColors.primary;
-
   async function handleUpload() {
     if (!file || !isAdmin || uploadDisabled) return;
     setUploading(true);
@@ -227,7 +220,10 @@ function UploadPanel({
       }
       onUploadComplete?.();
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : "Upload failed";
+      const message =
+        err instanceof Error
+          ? err.message
+          : formatApiError(err, "Upload failed");
       setError(message);
       toast.error(message);
     } finally {
@@ -249,48 +245,33 @@ function UploadPanel({
   }
 
   return (
-    <LiquidGlassCard className="p-6" style={{ borderColor: colors.border + '20' }}>
+    <SurfaceCard padding="md">
       {/* Header */}
       <div className="mb-6">
-        <h3 
-          className="text-lg font-semibold bg-clip-text text-transparent mb-2"
-          style={{
-            backgroundImage: 'linear-gradient(135deg, #FFFFFF 0%, #90CAF9 100%)'
-          }}
-        >
-          {title}
-        </h3>
-        <p className="text-[#90CAF9] text-sm">{description}</p>
+        <h3 className="text-h2 mb-2">{title}</h3>
+        <p className="text-body text-sm">{description}</p>
       </div>
 
-      {/* Blue Gradient Drop Zone */}
+      {/* Drop Zone */}
       <div
         onClick={() => isAdmin && inputRef.current?.click()}
-        className={`border-2 border-dashed rounded-xl p-8 text-center transition-all duration-300 ${
+        className={`border-2 border-dashed border-surface-border rounded-xl p-8 text-center transition-all duration-300 ${
           isAdmin
-            ? "cursor-pointer hover:border-[#42A5F5] hover:bg-[rgba(66,165,245,0.05)]"
+            ? "cursor-pointer hover:border-accent hover:bg-accent-soft"
             : "cursor-not-allowed opacity-50"
-        }`}
-        style={{
-          borderColor: file ? colors.accent : 'rgba(33, 150, 243, 0.2)',
-          backgroundColor: file ? colors.bg : 'transparent'
-        }}
+        } ${file ? "border-accent bg-accent-soft" : ""}`}
       >
-        <div 
-          className="w-12 h-12 mx-auto mb-3 rounded-lg flex items-center justify-center"
-          style={{
-            background: file 
-              ? `linear-gradient(135deg, ${colors.border} 0%, ${colors.accent} 100%)`
-              : 'rgba(15, 52, 96, 0.6)',
-            boxShadow: file ? `0 8px 32px ${colors.accent}40` : 'none'
-          }}
+        <div
+          className={`w-12 h-12 mx-auto mb-3 rounded-lg flex items-center justify-center ${
+            file ? "bg-accent text-white" : "bg-surface-raised text-accent"
+          }`}
         >
-          <Upload className={`h-6 w-6 ${file ? 'text-white' : 'text-[#42A5F5]'}`} />
+          <Upload className="h-6 w-6" />
         </div>
-        <p className="text-[#E3F2FD] font-medium">
+        <p className="text-text-primary font-medium">
           {file ? file.name : "Click to select file or drag & drop"}
         </p>
-        <p className="text-[#90CAF9] text-xs mt-2">
+        <p className="text-caption text-xs mt-2">
           {file
             ? `${(file.size / 1024 / 1024).toFixed(2)} MB ${file.size > 5 * 1024 * 1024 ? '(Large file - will use async processing)' : ''}`
             : ".xlsx, .xls, .csv — max 50 MB"}
@@ -311,35 +292,31 @@ function UploadPanel({
           <button
             onClick={() => setUseAsync(!useAsync)}
             className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-all ${
-              useAsync 
-                ? 'bg-[rgba(66,165,245,0.1)] border border-[#42A5F5]/30 text-[#42A5F5]'
-                : 'border border-[rgba(33,150,243,0.12)] text-[#90CAF9] hover:bg-[rgba(66,165,245,0.05)]'
+              useAsync
+                ? "bg-accent-soft border border-accent/30 text-accent"
+                : "border border-surface-border text-text-secondary hover:bg-surface-raised"
             }`}
           >
             <Activity className="h-4 w-4" />
             Background Processing
           </button>
-          <span className="text-xs text-[#5C8FBF]">
+          <span className="text-xs text-caption">
             {useAsync ? 'Will process in background' : 'Will process immediately'}
           </span>
         </div>
       )}
 
-      {/* Blue Gradient Progress Bar */}
+      {/* Progress Bar */}
       {uploading && (
         <div className="mt-4 space-y-2">
-          <div className="flex justify-between text-xs text-[#90CAF9]">
+          <div className="flex justify-between text-xs text-text-secondary">
             <span>Importing...</span>
             <span>{progress}%</span>
           </div>
-          <div className="w-full bg-[rgba(15,52,96,0.6)] rounded-full h-2">
-            <div 
-              className="h-2 rounded-full transition-all duration-300"
-              style={{
-                width: `${progress}%`,
-                background: 'linear-gradient(135deg, #1565C0 0%, #42A5F5 50%, #80D8FF 100%)',
-                boxShadow: '0 0 8px rgba(66, 165, 245, 0.4)'
-              }}
+          <div className="w-full bg-surface-raised rounded-full h-2">
+            <div
+              className="h-2 rounded-full bg-accent transition-all duration-300"
+              style={{ width: `${progress}%` }}
             />
           </div>
         </div>
@@ -348,11 +325,11 @@ function UploadPanel({
       {/* Action Button */}
       <div className="mt-6">
         {uploadDisabled && (
-          <p className="text-xs text-amber-400 mb-2 text-center">
+          <p className="text-xs text-amber-600 mb-2 text-center">
             Upload limit reached — resets tomorrow at midnight IST
           </p>
         )}
-        <GradientButton
+        <AkaraButton
           onClick={handleUpload}
           disabled={!file || uploading || !isAdmin || uploadDisabled}
           className="w-full"
@@ -368,25 +345,25 @@ function UploadPanel({
               {useAsync ? 'Queue Import' : 'Import Data'}
             </>
           )}
-        </GradientButton>
+        </AkaraButton>
       </div>
 
       {/* Error State */}
       {error && (
-        <LiquidGlassCard className="mt-4 p-4 border-red-500/20 bg-red-500/5">
+        <SurfaceCard padding="sm" className="mt-4 border-red-200 bg-red-50">
           <div className="flex items-start gap-3">
-            <AlertCircle className="h-5 w-5 text-red-400 mt-0.5 shrink-0" />
+            <AlertCircle className="h-5 w-5 text-red-500 mt-0.5 shrink-0" />
             <div>
-              <p className="text-red-400 font-medium">Import failed</p>
-              <p className="text-red-300 text-sm mt-1">{error}</p>
+              <p className="text-red-700 font-medium">Import failed</p>
+              <p className="text-red-600 text-sm mt-1">{error}</p>
             </div>
           </div>
-        </LiquidGlassCard>
+        </SurfaceCard>
       )}
 
       {/* Success State */}
       {result && (
-        <LiquidGlassCard className="mt-4 p-4 border-emerald-500/20 bg-emerald-500/5">
+        <SurfaceCard padding="sm" className="mt-4 border-emerald-200 bg-emerald-50">
           {'job_id' in result ? (
             <div className="flex items-center gap-3">
               <PlayCircle className="h-5 w-5 text-emerald-400 shrink-0" />
@@ -436,12 +413,12 @@ function UploadPanel({
               )}
             </div>
           )}
-        </LiquidGlassCard>
+        </SurfaceCard>
       )}
 
       {/* Expected Columns */}
       <details className="mt-4">
-        <summary className="cursor-pointer font-medium text-[#90CAF9] text-sm flex items-center gap-2 select-none hover:text-[#42A5F5] transition-colors">
+        <summary className="cursor-pointer font-medium text-text-secondary text-sm flex items-center gap-2 select-none hover:text-accent transition-colors">
           <FileText className="h-4 w-4" /> 
           Expected columns ({columns.length})
         </summary>
@@ -449,19 +426,15 @@ function UploadPanel({
           {columns.map((col, i) => (
             <code
               key={col}
-              className={`px-2 py-1 rounded text-xs font-mono animate-fadeInUp`}
-              style={{
-                backgroundColor: 'rgba(66, 165, 245, 0.1)',
-                color: '#90CAF9',
-                animationDelay: `${i * 30}ms`
-              }}
+              className="px-2 py-1 rounded text-xs font-mono bg-accent-soft text-text-secondary animate-fadeInUp"
+              style={{ animationDelay: `${i * 30}ms` }}
             >
               {col}
             </code>
           ))}
         </div>
       </details>
-    </LiquidGlassCard>
+    </SurfaceCard>
   );
 }
 
@@ -569,113 +542,64 @@ export function DataPage() {
   const totalStorageUsed = dailyUsage.reduce((sum, day) => sum + day.storage_mb, 0);
 
   return (
-    <div className="p-8 max-w-7xl mx-auto space-y-8">
+    <div className="p-6 lg:p-8 space-y-6 max-w-7xl mx-auto bg-surface-canvas">
       {/* Header */}
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
         <div>
-          <h1 
-            className="text-3xl font-bold bg-clip-text text-transparent"
-            style={{
-              backgroundImage: 'linear-gradient(135deg, #FFFFFF 0%, #90CAF9 100%)'
-            }}
-          >
-            Data Command Center
-          </h1>
-          <p className="text-[#90CAF9] mt-2">
+          <h1 className="text-display">Data Command Center</h1>
+          <p className="text-body mt-2">
             Import primary sales, secondary DMS data, and scheme master with real-time processing
           </p>
         </div>
 
         {/* Daily Counters */}
         <div className="flex gap-4">
-          <LiquidGlassCard hover={false} className="px-4 py-3 text-center min-w-[100px]">
+          <SurfaceCard hover={false} padding="sm" className="text-center min-w-[100px]">
             <div className="flex items-center gap-2 mb-1">
-              <Activity className="h-4 w-4 text-[#42A5F5]" />
-              <span className="text-xs text-[#90CAF9]">Today</span>
+              <Activity className="h-4 w-4 text-accent" />
+              <span className="text-xs text-caption">Today</span>
             </div>
-            <div className="text-lg font-bold text-[#E3F2FD]">
+            <div className="text-lg font-bold text-text-primary">
               <AnimatedNumber value={totalImportsToday} />
             </div>
-            <div className="text-xs text-[#5C8FBF]">imports</div>
-          </LiquidGlassCard>
+            <div className="text-xs text-caption">imports</div>
+          </SurfaceCard>
 
-          <LiquidGlassCard hover={false} className="px-4 py-3 text-center min-w-[100px]">
+          <SurfaceCard hover={false} padding="sm" className="text-center min-w-[100px]">
             <div className="flex items-center gap-2 mb-1">
-              <BarChart3 className="h-4 w-4 text-[#42A5F5]" />
-              <span className="text-xs text-[#90CAF9]">Rows</span>
+              <BarChart3 className="h-4 w-4 text-accent" />
+              <span className="text-xs text-caption">Rows</span>
             </div>
-            <div className="text-lg font-bold text-[#E3F2FD]">
+            <div className="text-lg font-bold text-text-primary">
               <AnimatedNumber value={totalRowsToday} />
             </div>
-            <div className="text-xs text-[#5C8FBF]">processed</div>
-          </LiquidGlassCard>
+            <div className="text-xs text-caption">processed</div>
+          </SurfaceCard>
 
-          <LiquidGlassCard hover={false} className="px-4 py-3 text-center min-w-[100px]">
+          <SurfaceCard hover={false} padding="sm" className="text-center min-w-[100px]">
             <div className="flex items-center gap-2 mb-1">
-              <Database className="h-4 w-4 text-[#42A5F5]" />
-              <span className="text-xs text-[#90CAF9]">Storage</span>
+              <Database className="h-4 w-4 text-accent" />
+              <span className="text-xs text-caption">Storage</span>
             </div>
-            <div className="text-lg font-bold text-[#E3F2FD]">
+            <div className="text-lg font-bold text-text-primary">
               <AnimatedNumber value={totalStorageUsed} />
             </div>
-            <div className="text-xs text-[#5C8FBF]">MB</div>
-          </LiquidGlassCard>
+            <div className="text-xs text-caption">MB</div>
+          </SurfaceCard>
         </div>
       </div>
 
       {/* Admin Warning */}
       {!isAdminUser && (
-        <LiquidGlassCard className="p-4 border-amber-500/20 bg-amber-500/5">
+        <SurfaceCard padding="sm" className="border-amber-200 bg-amber-50">
           <div className="flex items-center gap-3">
-            <AlertCircle className="h-5 w-5 text-amber-400" />
+            <AlertCircle className="h-5 w-5 text-amber-500" />
             <div>
-              <p className="text-amber-400 font-medium">Admin access required</p>
-              <p className="text-amber-300 text-sm">Contact your administrator to import data files.</p>
+              <p className="text-amber-800 font-medium">Admin access required</p>
+              <p className="text-amber-700 text-sm">Contact your administrator to import data files.</p>
             </div>
           </div>
-        </LiquidGlassCard>
-      )}
-
-      {/* Daily rate limits — above upload panels */}
-      {billing && (
-        <LiquidGlassCard className="p-4 border-[#42A5F5]/20">
-          <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm">
-            <span className="text-[#90CAF9]">
-              Uploads today:{" "}
-              <span
-                className={
-                  uploadAtLimit
-                    ? "text-amber-400 font-semibold"
-                    : uploadsToday >= uploadsPerDay - 1
-                      ? "text-amber-300"
-                      : "text-[#E3F2FD] font-medium"
-                }
-              >
-                {uploadsToday} / {uploadsPerDay}
-              </span>
-            </span>
-            <span className="text-[#5C8FBF]">·</span>
-            <span className="text-[#90CAF9]">
-              Data undos today:{" "}
-              <span
-                className={
-                  undoAtLimit
-                    ? "text-amber-400 font-semibold"
-                    : undosToday >= undosPerDay - 1
-                      ? "text-amber-300"
-                      : "text-[#E3F2FD] font-medium"
-                }
-              >
-                {undosToday} / {undosPerDay}
-              </span>
-            </span>
-            {uploadAtLimit && (
-              <span className="text-xs px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300">
-                Upload limit reached — resets tomorrow
-              </span>
-            )}
-          </div>
-        </LiquidGlassCard>
+        </SurfaceCard>
       )}
 
       {/* Upload Panels */}
@@ -762,30 +686,23 @@ export function DataPage() {
         </PlanGate>
 
         {/* Slot G — upgrade nudge */}
-        <LiquidGlassCard className="p-4 mt-4 border-[#42A5F5]/20">
-          <p className="text-sm text-[#90CAF9]">
+        <SurfaceCard padding="sm" className="mt-4">
+          <p className="text-sm text-body">
             Unlock secondary sales and scheme data —{" "}
-            <span className="text-[#5C8FBF]">From ₹7,999/month</span>
+            <span className="text-caption">From ₹7,999/month</span>
           </p>
-          <Link to="/upgrade" className="text-sm font-semibold text-[#42A5F5] hover:underline mt-1 inline-block">
+          <Link to="/upgrade" className="text-sm font-semibold text-accent hover:underline mt-1 inline-block">
             View plans →
           </Link>
-        </LiquidGlassCard>
+        </SurfaceCard>
       </div>
 
       {/* Import History Table */}
-      <LiquidGlassCard className="p-6">
+      <SurfaceCard padding="md">
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-3">
-            <Clock className="h-5 w-5 text-[#42A5F5]" />
-            <h2 
-              className="text-lg font-semibold bg-clip-text text-transparent"
-              style={{
-                backgroundImage: 'linear-gradient(135deg, #FFFFFF 0%, #90CAF9 100%)'
-              }}
-            >
-              Import History
-            </h2>
+            <Clock className="h-5 w-5 text-accent" />
+            <h2 className="text-h2">Import History</h2>
           </div>
           <SecondaryButton size="sm" onClick={handleJobCreated}>
             <RotateCcw className="h-4 w-4 mr-2" />
@@ -805,41 +722,31 @@ export function DataPage() {
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
-                <tr className="border-b border-[rgba(33,150,243,0.08)]">
-                  <th className="text-left py-3 text-[#90CAF9] font-medium text-sm">File</th>
-                  <th className="text-left py-3 text-[#90CAF9] font-medium text-sm">Type</th>
-                  <th className="text-left py-3 text-[#90CAF9] font-medium text-sm">Status</th>
-                  <th className="text-left py-3 text-[#90CAF9] font-medium text-sm">Progress</th>
-                  <th className="text-left py-3 text-[#90CAF9] font-medium text-sm">Rows</th>
-                  <th className="text-left py-3 text-[#90CAF9] font-medium text-sm">Started</th>
-                  <th className="text-right py-3 text-[#90CAF9] font-medium text-sm">Actions</th>
+                <tr className="border-b border-surface-border">
+                  <th className="text-left py-3 text-caption font-medium text-sm">File</th>
+                  <th className="text-left py-3 text-caption font-medium text-sm">Type</th>
+                  <th className="text-left py-3 text-caption font-medium text-sm">Status</th>
+                  <th className="text-left py-3 text-caption font-medium text-sm">Progress</th>
+                  <th className="text-left py-3 text-caption font-medium text-sm">Rows</th>
+                  <th className="text-left py-3 text-caption font-medium text-sm">Started</th>
+                  <th className="text-right py-3 text-caption font-medium text-sm">Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {importJobs.slice(0, 10).map((job, i) => (
                   <tr 
                     key={job.id} 
-                    className={`border-b border-[rgba(33,150,243,0.05)] animate-fadeInUp hover:bg-[rgba(66,165,245,0.02)] transition-colors`}
+                    className="border-b border-surface-border animate-fadeInUp hover:bg-surface-raised transition-colors"
                     style={{ animationDelay: `${i * 50}ms` }}
                   >
-                    <td className="py-4 text-[#E3F2FD] font-medium truncate max-w-[200px]">
+                    <td className="py-4 text-text-primary font-medium truncate max-w-[200px]">
                       {job.filename}
-                      <div className="text-xs text-[#90CAF9] mt-1">
+                      <div className="text-xs text-text-secondary mt-1">
                         {(job.file_size / 1024 / 1024).toFixed(1)} MB
                       </div>
                     </td>
                     <td className="py-4">
-                      <span 
-                        className="inline-block px-2 py-1 rounded text-xs font-medium capitalize"
-                        style={{
-                          backgroundColor: job.source_type === 'primary' ? 'rgba(21, 101, 192, 0.1)' :
-                                           job.source_type === 'secondary' ? 'rgba(2, 136, 209, 0.1)' :
-                                           'rgba(123, 31, 162, 0.1)',
-                          color: job.source_type === 'primary' ? '#42A5F5' :
-                                 job.source_type === 'secondary' ? '#29B6F6' :
-                                 '#AB47BC'
-                        }}
-                      >
+                      <span className="inline-block px-2 py-1 rounded text-xs font-medium capitalize bg-accent-soft text-accent">
                         {job.source_type}
                       </span>
                     </td>
@@ -853,8 +760,8 @@ export function DataPage() {
                         )}
                         {job.status === 'processing' && (
                           <>
-                            <Loader2 className="h-4 w-4 text-[#42A5F5] animate-spin" />
-                            <span className="text-[#42A5F5] text-sm">Processing</span>
+                            <Loader2 className="h-4 w-4 text-accent animate-spin" />
+                            <span className="text-accent text-sm">Processing</span>
                           </>
                         )}
                         {job.status === 'completed' && (
@@ -873,46 +780,45 @@ export function DataPage() {
                     </td>
                     <td className="py-4">
                       <div className="w-20">
-                        <div className="w-full bg-[rgba(15,52,96,0.6)] rounded-full h-2">
-                          <div 
-                            className="h-2 rounded-full transition-all duration-500"
-                            style={{
-                              width: `${job.progress_pct}%`,
-                              background: job.status === 'completed' 
-                                ? 'linear-gradient(135deg, #10B981 0%, #34D399 100%)'
+                        <div className="w-full bg-surface-raised rounded-full h-2">
+                          <div
+                            className={`h-2 rounded-full transition-all duration-500 ${
+                              job.status === 'completed'
+                                ? 'bg-emerald-500'
                                 : job.status === 'failed'
-                                ? 'linear-gradient(135deg, #EF4444 0%, #F87171 100%)'
-                                : 'linear-gradient(135deg, #1565C0 0%, #42A5F5 100%)',
-                            }}
+                                ? 'bg-red-500'
+                                : 'bg-accent'
+                            }`}
+                            style={{ width: `${job.progress_pct}%` }}
                           />
                         </div>
-                        <div className="text-xs text-[#90CAF9] mt-1">{job.progress_pct}%</div>
+                        <div className="text-xs text-text-secondary mt-1">{job.progress_pct}%</div>
                       </div>
                     </td>
-                    <td className="py-4 text-[#E3F2FD]">
+                    <td className="py-4 text-text-primary">
                       {job.rows_inserted ? (
                         <div>
                           <AnimatedNumber value={job.rows_inserted} className="font-medium" />
                           {job.rows_skipped ? (
-                            <div className="text-xs text-[#90CAF9]">
+                            <div className="text-xs text-text-secondary">
                               {job.rows_skipped} skipped
                             </div>
                           ) : null}
                         </div>
                       ) : (
-                        <span className="text-[#5C8FBF]">—</span>
+                        <span className="text-caption">—</span>
                       )}
                     </td>
-                    <td className="py-4 text-[#90CAF9] text-sm">
+                    <td className="py-4 text-text-secondary text-sm">
                       {new Date(job.created_at).toLocaleDateString()}
-                      <div className="text-xs text-[#5C8FBF]">
+                      <div className="text-xs text-caption">
                         {new Date(job.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                       </div>
                     </td>
                     <td className="py-4 text-right">
                       <div className="flex items-center gap-2 justify-end">
                         <button
-                          className="p-1 text-[#5C8FBF] hover:text-[#42A5F5] transition-colors"
+                          className="p-1 text-text-muted hover:text-accent transition-colors"
                           title="View details"
                         >
                           <Eye className="h-4 w-4" />
@@ -922,7 +828,7 @@ export function DataPage() {
                             type="button"
                             onClick={() => handleUndoImport(job.id)}
                             disabled={undoAtLimit || undoingJobId === job.id}
-                            className="p-1 text-[#5C8FBF] hover:text-red-400 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                            className="p-1 text-text-muted hover:text-red-500 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                             title={
                               undoAtLimit
                                 ? `${undosPerDay} undos used today. Resets tomorrow.`
@@ -944,40 +850,27 @@ export function DataPage() {
             </table>
           </div>
         )}
-      </LiquidGlassCard>
+      </SurfaceCard>
 
       {/* Ad Slot G - Data Enhancement */}
-      <LiquidGlassCard className="p-6 border-[#42A5F5]/20">
+      <SurfaceCard padding="md">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <div 
-              className="w-10 h-10 rounded-lg flex items-center justify-center"
-              style={{
-                background: 'linear-gradient(135deg, #1565C0 0%, #42A5F5 100%)',
-                boxShadow: '0 4px 16px rgba(66, 165, 245, 0.3)'
-              }}
-            >
-              <Plus className="h-5 w-5 text-white" />
+            <div className="w-10 h-10 rounded-lg flex items-center justify-center bg-accent text-white">
+              <Plus className="h-5 w-5" />
             </div>
             <div>
-              <h3 
-                className="font-semibold bg-clip-text text-transparent"
-                style={{
-                  backgroundImage: 'linear-gradient(135deg, #FFFFFF 0%, #90CAF9 100%)'
-                }}
-              >
-                Data Enhancement Services
-              </h3>
-              <p className="text-[#90CAF9] text-sm">
+              <h3 className="font-semibold text-h2">Data Enhancement Services</h3>
+              <p className="text-body text-sm">
                 Let our experts clean and enrich your data for better insights
               </p>
             </div>
           </div>
-          <GradientButton size="sm">
+          <AkaraButton size="sm">
             Learn More
-          </GradientButton>
+          </AkaraButton>
         </div>
-      </LiquidGlassCard>
+      </SurfaceCard>
     </div>
   );
 }

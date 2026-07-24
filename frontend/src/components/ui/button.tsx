@@ -6,29 +6,29 @@ import { Loader2 } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 const buttonVariants = cva(
-  "btn-press inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-lg text-[15px] font-semibold transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
+  "btn-press inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full text-[15px] font-semibold transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 active:scale-[0.97] [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
   {
     variants: {
       variant: {
         primary:
-          "bg-accent text-white shadow-cta hover:bg-orange-600 hover:shadow-lg hover:scale-[1.02] focus-visible:ring-accent/50 active:scale-[0.98]",
+          "bg-accent text-white shadow-cta hover:bg-accent-hover",
         secondary:
-          "bg-brand text-white shadow-brand hover:bg-brand-light focus-visible:ring-brand/50",
+          "border-2 border-accent bg-transparent text-accent hover:bg-accent-soft",
         default:
-          "bg-brand text-white shadow-brand hover:bg-brand-light focus-visible:ring-brand/50",
+          "bg-accent text-white shadow-cta hover:bg-accent-hover",
         outline:
-          "border-2 border-brand bg-transparent text-brand hover:bg-brand-dim focus-visible:ring-brand/30",
+          "border-2 border-accent bg-transparent text-accent hover:bg-accent-soft",
         ghost:
-          "bg-transparent text-text-secondary hover:bg-surface-raised hover:text-text-primary focus-visible:ring-brand/20",
+          "bg-transparent text-text-secondary hover:bg-surface-raised hover:text-text-primary",
         destructive:
-          "bg-danger text-white hover:bg-red-600 focus-visible:ring-danger/50",
-        link: "text-brand underline-offset-4 hover:underline focus-visible:ring-brand/20 p-0 h-auto",
+          "bg-red-600 text-white hover:bg-red-700 focus-visible:ring-red-500/40",
+        link: "text-accent underline-offset-4 hover:underline p-0 h-auto min-h-0 rounded-none",
       },
       size: {
-        default: "h-11 px-6 py-3",
-        sm: "h-9 rounded-lg px-4 text-sm",
-        lg: "h-12 rounded-lg px-8 text-base",
-        icon: "h-10 w-10 rounded-lg",
+        default: "min-h-11 px-6 py-2.5",
+        sm: "min-h-9 px-4 text-sm",
+        lg: "min-h-12 px-8 text-base",
+        icon: "h-11 w-11 rounded-full",
       },
     },
     defaultVariants: {

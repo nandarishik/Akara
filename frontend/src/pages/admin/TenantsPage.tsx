@@ -1,6 +1,8 @@
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
+import SurfaceCard from "@/components/ui/SurfaceCard";
+
 import {
   Table,
   TableBody,
@@ -35,11 +37,12 @@ export function TenantsPage() {
     enabled: !!session,
   });
 
-  if (isLoading) return <div className="p-8">Loading tenants...</div>;
+  if (isLoading) return <div className="p-8 text-text-secondary">Loading tenants...</div>;
 
   return (
-    <div className="p-8 space-y-6">
-      <h1 className="text-2xl font-bold">Tenants</h1>
+    <div className="p-6 lg:p-8 space-y-6 max-w-7xl mx-auto bg-surface-canvas">
+      <h1 className="text-display text-2xl">Tenants</h1>
+      <SurfaceCard padding="none" className="overflow-hidden">
       <Table>
         <TableHeader>
           <TableRow>
@@ -68,6 +71,7 @@ export function TenantsPage() {
           ))}
         </TableBody>
       </Table>
+      </SurfaceCard>
     </div>
   );
 }

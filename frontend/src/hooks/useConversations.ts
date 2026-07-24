@@ -20,12 +20,12 @@ export function useConversations() {
     const token = data.session?.access_token;
     if (!token) return;
 
-    const res = await fetch(`${BASE}/copilot/conversations`, {
+    const res = await fetch(`${BASE}/copilot/conversations/`, {
       headers: { Authorization: `Bearer ${token}` },
     });
     if (res.ok) {
-      const data = await res.json();
-      setConversations(data);
+      const list = await res.json();
+      setConversations(Array.isArray(list) ? list : []);
     }
     setLoading(false);
   }, []);
@@ -35,7 +35,7 @@ export function useConversations() {
     const token = data.session?.access_token;
     if (!token) return null;
 
-    const res = await fetch(`${BASE}/copilot/conversations`, {
+    const res = await fetch(`${BASE}/copilot/conversations/`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

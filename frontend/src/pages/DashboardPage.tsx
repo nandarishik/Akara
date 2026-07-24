@@ -24,6 +24,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Link } from "react-router-dom";
+import SurfaceCard from "@/components/ui/SurfaceCard";
+import { DashboardEmptyState } from "@/components/ui/EmptyState";
 
 function getDateRange(period: string): [string, string] {
   const end = new Date();
@@ -50,41 +52,27 @@ export function DashboardPage() {
 
   if (!isLoading && !data) {
     return (
-      <div className="flex items-center justify-center min-h-[500px] p-8">
-        <div className="text-center max-w-sm">
-          <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-slate-100 flex items-center justify-center">
-            <BarChart3 className="h-8 w-8 text-slate-300" />
-          </div>
-          <h2 className="text-xl font-semibold text-slate-800 mb-2">No data yet</h2>
-          <p className="text-slate-500 text-sm mb-6">Import your sales data to see your dashboard come alive.</p>
-          <Link
-            to="/data"
-            className="inline-flex items-center gap-2 text-white px-5 py-2.5 rounded-lg font-semibold text-sm transition-all hover:shadow-lg hover:shadow-blue-500/20"
-            style={{ background: "linear-gradient(135deg, #1565C0, #1E88E5)" }}
-          >
-            Import Data →
-          </Link>
-        </div>
+      <div className="p-6 lg:p-8 bg-surface-canvas min-h-full">
+        <DashboardEmptyState />
       </div>
     );
   }
 
   return (
-    <div className="p-6 lg:p-8 space-y-6 max-w-7xl mx-auto">
-      {/* Header */}
+    <div className="p-6 lg:p-8 space-y-6 max-w-7xl mx-auto bg-surface-canvas">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-[#0A1628] tracking-tight">Dashboard</h1>
+          <h1 className="text-display text-2xl">Dashboard</h1>
           <div className="flex items-center gap-2 mt-1">
-            <Calendar className="h-3.5 w-3.5 text-slate-400" />
-            <p className="text-sm text-slate-500">{start} → {end}</p>
+            <Calendar className="h-3.5 w-3.5 text-text-muted" />
+            <p className="text-caption">{start} → {end}</p>
           </div>
         </div>
         <Select value={period} onValueChange={setPeriod}>
-          <SelectTrigger className="w-40 bg-white border-slate-200 text-slate-700 text-sm">
+          <SelectTrigger className="w-40 bg-surface-card border-surface-border text-text-primary text-sm">
             <SelectValue />
           </SelectTrigger>
-          <SelectContent className="bg-white border-slate-200">
+          <SelectContent className="bg-surface-card border-surface-border">
             <SelectItem value="7d">Last 7 days</SelectItem>
             <SelectItem value="30d">Last 30 days</SelectItem>
             <SelectItem value="90d">Last 90 days</SelectItem>
@@ -93,44 +81,43 @@ export function DashboardPage() {
         </Select>
       </div>
 
-      {/* Alerts */}
       {error && (
-        <div className="flex items-center gap-3 p-4 rounded-xl bg-red-50 border border-red-100">
-          <AlertTriangle className="h-5 w-5 text-red-500 shrink-0" />
-          <div>
-            <p className="text-red-700 font-medium text-sm">Failed to load dashboard</p>
-            <p className="text-red-500 text-xs mt-0.5">{error.message}</p>
+        <SurfaceCard className="border-red-200 bg-red-50/50">
+          <div className="flex items-center gap-3">
+            <AlertTriangle className="h-5 w-5 text-red-500 shrink-0" />
+            <div>
+              <p className="text-red-800 font-medium text-sm">Failed to load dashboard</p>
+              <p className="text-red-600 text-xs mt-0.5">{error.message}</p>
+            </div>
           </div>
-        </div>
+        </SurfaceCard>
       )}
 
       {isStale && !isLoading && (
-        <div className="flex items-center justify-between p-4 rounded-xl bg-amber-50 border border-amber-100">
-          <div className="flex items-center gap-3">
-            <AlertTriangle className="h-5 w-5 text-amber-500 shrink-0" />
-            <div>
-              <p className="text-amber-800 font-medium text-sm">Data is {dataAge} days old</p>
-              <p className="text-amber-600 text-xs">Import fresh data for current metrics</p>
+        <SurfaceCard className="border-amber-200 bg-amber-50/50">
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <AlertTriangle className="h-5 w-5 text-amber-500 shrink-0" />
+              <div>
+                <p className="text-amber-800 font-medium text-sm">Data is {dataAge} days old</p>
+                <p className="text-amber-700 text-xs">Import fresh data for current metrics</p>
+              </div>
             </div>
+            <Link to="/data" className="text-sm font-semibold text-accent hover:underline shrink-0">
+              Import →
+            </Link>
           </div>
-          <Link
-            to="/data"
-            className="text-sm font-semibold text-[#1565C0] hover:underline"
-          >
-            Import →
-          </Link>
-        </div>
+        </SurfaceCard>
       )}
 
-      {/* KPI Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {isLoading ? (
           Array.from({ length: 4 }).map((_, i) => (
-            <div key={i} className="bg-white rounded-xl border border-slate-100 p-5 animate-pulse">
-              <div className="h-3 w-20 bg-slate-100 rounded mb-3" />
-              <div className="h-7 w-24 bg-slate-100 rounded mb-2" />
-              <div className="h-3 w-16 bg-slate-50 rounded" />
-            </div>
+            <SurfaceCard key={i}>
+              <div className="skeleton h-3 w-20 mb-3" />
+              <div className="skeleton h-8 w-24 mb-2" />
+              <div className="skeleton h-3 w-16" />
+            </SurfaceCard>
           ))
         ) : (
           <>
@@ -162,76 +149,71 @@ export function DashboardPage() {
         )}
       </div>
 
-      {/* Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
-        <div className="lg:col-span-2 bg-white rounded-xl border border-slate-100 p-6 shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
+        <SurfaceCard className="lg:col-span-2">
           <div className="flex items-center gap-2 mb-5">
-            <BarChart3 className="h-4 w-4 text-[#1976D2]" />
-            <h2 className="font-semibold text-[#0A1628]">Revenue Trend</h2>
+            <BarChart3 className="h-4 w-4 text-accent" />
+            <h2 className="text-h2">Revenue Trend</h2>
           </div>
           {isLoading ? (
-            <div className="h-64 bg-slate-50 rounded-lg animate-pulse" />
+            <div className="h-64 skeleton rounded-lg" />
           ) : (data?.revenue_trend?.length || 0) > 0 ? (
             <RevenueTrendChart data={data?.revenue_trend || []} />
           ) : (
-            <div className="flex items-center justify-center h-64 text-slate-400 text-sm">No data</div>
+            <div className="flex items-center justify-center h-64 text-text-muted text-sm">No data</div>
           )}
-        </div>
+        </SurfaceCard>
 
-        <div className="bg-white rounded-xl border border-slate-100 p-6 shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
+        <SurfaceCard>
           <div className="flex items-center gap-2 mb-5">
-            <Package className="h-4 w-4 text-[#1976D2]" />
-            <h2 className="font-semibold text-[#0A1628]">Revenue by Zone</h2>
+            <Package className="h-4 w-4 text-accent" />
+            <h2 className="text-h2">Revenue by Zone</h2>
           </div>
           {isLoading ? (
-            <div className="h-48 bg-slate-50 rounded-lg animate-pulse" />
+            <div className="h-48 skeleton rounded-lg" />
           ) : (data?.zone_breakdown?.length || 0) > 0 ? (
             <ZoneChart data={data?.zone_breakdown || []} />
           ) : (
-            <div className="flex items-center justify-center h-48 text-slate-400 text-sm">No data</div>
+            <div className="flex items-center justify-center h-48 text-text-muted text-sm">No data</div>
           )}
-        </div>
+        </SurfaceCard>
       </div>
 
-      {/* Top Products */}
-      <div className="bg-white rounded-xl border border-slate-100 p-6 shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
+      <SurfaceCard>
         <div className="flex items-center gap-2 mb-5">
-          <Package className="h-4 w-4 text-[#1976D2]" />
-          <h2 className="font-semibold text-[#0A1628]">Top Products</h2>
+          <Package className="h-4 w-4 text-accent" />
+          <h2 className="text-h2">Top Products</h2>
         </div>
         {isLoading ? (
           <div className="space-y-3">
             {Array.from({ length: 5 }).map((_, i) => (
-              <div key={i} className="h-10 bg-slate-50 rounded animate-pulse" />
+              <div key={i} className="skeleton h-10 rounded" />
             ))}
           </div>
         ) : (data?.top_products?.length || 0) > 0 ? (
-          <div className="divide-y divide-slate-50">
+          <div className="divide-y divide-surface-border">
             {data!.top_products.slice(0, 5).map((p, i) => (
               <div key={i} className="flex items-center justify-between py-3">
                 <div className="flex items-center gap-3">
-                  <span className="w-6 h-6 rounded bg-slate-100 flex items-center justify-center text-xs font-bold text-slate-600">
+                  <span className="w-6 h-6 rounded bg-surface-raised flex items-center justify-center text-xs font-bold text-text-secondary">
                     {i + 1}
                   </span>
-                  <span className="text-sm font-medium text-slate-800">{p.product_name}</span>
+                  <span className="text-sm font-medium text-text-primary">{p.product_name}</span>
                 </div>
-                <span className="text-sm font-semibold text-[#0A1628]">{formatINR(p.total_revenue)}</span>
+                <span className="text-sm font-semibold text-text-primary">{formatINR(p.total_revenue)}</span>
               </div>
             ))}
           </div>
         ) : (
-          <div className="flex items-center justify-center h-32 text-slate-400 text-sm">No product data</div>
+          <div className="flex items-center justify-center h-32 text-text-muted text-sm">No product data</div>
         )}
-      </div>
+      </SurfaceCard>
 
-      {/* Route Performance */}
       {(data?.route_performance?.length ?? 0) > 0 && (
-        <div className="bg-white rounded-xl border border-slate-100 p-6 shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
-          <div className="flex items-center justify-between mb-5">
-            <div className="flex items-center gap-2">
-              <ExternalLink className="h-4 w-4 text-[#1976D2]" />
-              <h2 className="font-semibold text-[#0A1628]">Route Performance</h2>
-            </div>
+        <SurfaceCard>
+          <div className="flex items-center gap-2 mb-5">
+            <ExternalLink className="h-4 w-4 text-accent" />
+            <h2 className="text-h2">Route Performance</h2>
           </div>
           <div className="space-y-4">
             {data!.route_performance.slice(0, 5).map((r) => {
@@ -240,50 +222,47 @@ export function DashboardPage() {
               return (
                 <div key={r.route}>
                   <div className="flex items-center justify-between mb-1.5 text-sm">
-                    <span className="font-medium text-slate-700 truncate max-w-[200px]">{r.route}</span>
-                    <div className="flex items-center gap-3 text-slate-500">
+                    <span className="font-medium text-text-primary truncate max-w-[200px]">{r.route}</span>
+                    <div className="flex items-center gap-3 text-text-secondary">
                       <span className="text-xs">{r.order_count} orders</span>
-                      <span className="font-semibold text-[#0A1628]">{formatINR(r.revenue)}</span>
+                      <span className="font-semibold text-text-primary">{formatINR(r.revenue)}</span>
                     </div>
                   </div>
-                  <div className="w-full bg-slate-100 rounded-full h-1.5">
+                  <div className="w-full bg-surface-raised rounded-full h-1.5">
                     <div
-                      className="h-1.5 rounded-full transition-all duration-700"
-                      style={{ width: `${pct}%`, background: "linear-gradient(90deg, #1976D2, #42A5F5)" }}
+                      className="h-1.5 rounded-full bg-accent transition-all duration-700"
+                      style={{ width: `${pct}%` }}
                     />
                   </div>
                 </div>
               );
             })}
           </div>
-        </div>
+        </SurfaceCard>
       )}
 
-      {/* Outstanding */}
       {(data?.outstanding_parties?.length ?? 0) > 0 && (
-        <div className="bg-white rounded-xl border border-amber-100 p-6 shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
+        <SurfaceCard className="border-amber-200">
           <div className="flex items-center gap-2 mb-5">
             <AlertTriangle className="h-4 w-4 text-amber-500" />
-            <h2 className="font-semibold text-[#0A1628]">Credit Exposure</h2>
+            <h2 className="text-h2">Credit Exposure</h2>
           </div>
-          <div className="divide-y divide-slate-50">
+          <div className="divide-y divide-surface-border">
             {data!.outstanding_parties.slice(0, 5).map((p) => (
               <div key={p.party_name} className="flex items-center justify-between py-3">
-                <span className="text-sm text-slate-700">{p.party_name}</span>
+                <span className="text-sm text-text-primary">{p.party_name}</span>
                 <span className="text-sm font-semibold text-amber-700">{formatINR(p.outstanding_amount)}</span>
               </div>
             ))}
           </div>
-          <p className="text-xs text-amber-600 font-medium mt-4 pt-3 border-t border-amber-50">
+          <p className="text-xs text-amber-700 font-medium mt-4 pt-3 border-t border-amber-100">
             Total: ₹{data!.outstanding_parties.reduce((s, p) => s + toNum(p.outstanding_amount), 0).toLocaleString()} across {data!.outstanding_parties.length} parties
           </p>
-        </div>
+        </SurfaceCard>
       )}
     </div>
   );
 }
-
-// ── KPI Card component (clean, light) ───────────────────────────────────────
 
 function KPICard({
   title,
@@ -298,21 +277,21 @@ function KPICard({
 }) {
   const isPositive = (change ?? 0) >= 0;
   return (
-    <div className="bg-white rounded-xl border border-slate-100 p-5 shadow-[0_1px_3px_rgba(0,0,0,0.04)] hover:shadow-[0_4px_12px_rgba(0,0,0,0.06)] transition-shadow">
+    <SurfaceCard accent="blue" hover>
       <div className="flex items-center justify-between mb-3">
-        <span className="text-xs font-medium text-slate-500 uppercase tracking-wide">{title}</span>
-        <div className="w-7 h-7 rounded-lg bg-[#EBF5FF] flex items-center justify-center text-[#1976D2]">
+        <span className="text-caption uppercase tracking-wide">{title}</span>
+        <div className="w-7 h-7 rounded-lg bg-accent-soft flex items-center justify-center text-accent">
           {icon}
         </div>
       </div>
-      <p className="text-2xl font-bold text-[#0A1628] mb-1">{value}</p>
+      <p className="kpi-value text-2xl mb-1">{value}</p>
       {change != null && (
-        <div className={`flex items-center gap-1 text-xs font-medium ${isPositive ? "text-emerald-600" : "text-red-500"}`}>
+        <div className={`flex items-center gap-1 text-xs font-medium ${isPositive ? "text-green-700" : "text-red-600"}`}>
           {isPositive ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />}
           <span>{Math.abs(change).toFixed(1)}%</span>
-          <span className="text-slate-400 font-normal ml-1">vs last period</span>
+          <span className="text-text-muted font-normal ml-1">vs last period</span>
         </div>
       )}
-    </div>
+    </SurfaceCard>
   );
 }

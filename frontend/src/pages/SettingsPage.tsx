@@ -1,16 +1,10 @@
 import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/lib/supabase";
-import { Button } from "@/components/ui/button";
+import AkaraButton from "@/components/ui/GradientButton";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import SurfaceCard from "@/components/ui/SurfaceCard";
 import { Badge } from "@/components/ui/badge";
 import { CheckCircle, AlertCircle } from "lucide-react";
 import { roleLabel } from "@/lib/auth-utils";
@@ -24,7 +18,6 @@ export function SettingsPage() {
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState("");
 
-  // Morning brief opt-in toggle
   const [briefEnabled, setBriefEnabled] = useState(true);
   const [briefSaving, setBriefSaving] = useState(false);
 
@@ -70,142 +63,127 @@ export function SettingsPage() {
   const role = roleLabel(user, session);
 
   return (
-    <div className="p-8 max-w-2xl mx-auto space-y-6">
+    <div className="p-8 max-w-2xl mx-auto space-y-6 bg-surface-canvas min-h-full">
       <div>
-        <h1 className="text-2xl font-bold text-slate-900">Settings</h1>
-        <p className="text-sm text-slate-500 mt-1">
+        <h1 className="text-2xl font-bold text-text-primary">Settings</h1>
+        <p className="text-sm text-text-secondary mt-1">
           Manage your profile, billing, and notification preferences.
         </p>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Billing</CardTitle>
-          <CardDescription>
-            View usage, manage your subscription, and update GST details.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <a href="/billing">
-            <Button variant="outline">Open Billing & Usage →</Button>
-          </a>
-        </CardContent>
-      </Card>
+      <SurfaceCard>
+        <h2 className="text-base font-semibold text-text-primary">Billing</h2>
+        <p className="text-sm text-text-secondary mt-1">
+          View usage, manage your subscription, and update GST details.
+        </p>
+        <a href="/billing" className="inline-block mt-4">
+          <AkaraButton variant="secondary" size="sm">
+            Open Billing & Usage →
+          </AkaraButton>
+        </a>
+      </SurfaceCard>
 
-      {/* Profile Card */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Profile</CardTitle>
-          <CardDescription>Your account information</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-5">
-          {/* Avatar + identity row */}
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-full bg-slate-900 text-white flex items-center justify-center text-lg font-bold select-none">
-              {user?.email?.[0]?.toUpperCase() || "?"}
-            </div>
-            <div>
-              <p className="font-medium text-slate-900">{user?.email}</p>
-              <Badge variant="outline" className="text-xs mt-0.5">
-                {role}
-              </Badge>
-            </div>
+      <SurfaceCard className="space-y-5">
+        <div>
+          <h2 className="text-base font-semibold text-text-primary">Profile</h2>
+          <p className="text-sm text-text-secondary mt-1">Your account information</p>
+        </div>
+
+        <div className="flex items-center gap-4">
+          <div className="w-12 h-12 rounded-full bg-accent text-white flex items-center justify-center text-lg font-bold select-none">
+            {user?.email?.[0]?.toUpperCase() || "?"}
           </div>
-
-          {/* Display name */}
-          <div className="space-y-2">
-            <Label htmlFor="displayName">Display Name</Label>
-            <Input
-              id="displayName"
-              value={displayName}
-              onChange={(e) => setDisplayName(e.target.value)}
-              placeholder="Your name"
-              className="max-w-sm"
-            />
+          <div>
+            <p className="font-medium text-text-primary">{user?.email}</p>
+            <Badge variant="outline" className="text-xs mt-0.5">
+              {role}
+            </Badge>
           </div>
+        </div>
 
-          {/* Feedback */}
-          {error && (
-            <div className="flex items-center gap-2 text-sm text-red-600">
-              <AlertCircle className="h-4 w-4 shrink-0" />
-              {error}
-            </div>
-          )}
-          {saved && (
-            <div className="flex items-center gap-2 text-sm text-green-600">
-              <CheckCircle className="h-4 w-4 shrink-0" />
-              Saved successfully!
-            </div>
-          )}
+        <div className="space-y-2">
+          <Label htmlFor="displayName">Display Name</Label>
+          <Input
+            id="displayName"
+            value={displayName}
+            onChange={(e) => setDisplayName(e.target.value)}
+            placeholder="Your name"
+            className="max-w-sm"
+          />
+        </div>
 
-          <Button
-            onClick={handleSave}
-            disabled={saving}
-            className="w-fit"
-          >
-            {saving ? "Saving..." : "Save Changes"}
-          </Button>
-        </CardContent>
-      </Card>
+        {error && (
+          <div className="flex items-center gap-2 text-sm text-red-600">
+            <AlertCircle className="h-4 w-4 shrink-0" />
+            {error}
+          </div>
+        )}
+        {saved && (
+          <div className="flex items-center gap-2 text-sm text-emerald-600">
+            <CheckCircle className="h-4 w-4 shrink-0" />
+            Saved successfully!
+          </div>
+        )}
 
-      {/* Notifications Card */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Notifications</CardTitle>
-          <CardDescription>
+        <AkaraButton onClick={handleSave} disabled={saving} size="sm">
+          {saving ? "Saving..." : "Save Changes"}
+        </AkaraButton>
+      </SurfaceCard>
+
+      <SurfaceCard className="space-y-4">
+        <div>
+          <h2 className="text-base font-semibold text-text-primary">Notifications</h2>
+          <p className="text-sm text-text-secondary mt-1">
             Control which automated reports you receive
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex items-center justify-between py-2">
-            <div>
-              <p className="text-sm font-medium text-slate-900">
-                Daily Morning Brief
-              </p>
-              <p className="text-xs text-slate-500 mt-0.5">
-                Receive a daily revenue summary at 7:00 AM with actionable
-                insights for your business
-              </p>
-            </div>
-            <button
-              role="switch"
-              aria-checked={briefEnabled}
-              onClick={() => !briefSaving && handleBriefToggle(!briefEnabled)}
-              className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full border-2 border-transparent transition-colors focus:outline-none ${
-                briefEnabled ? "bg-indigo-600" : "bg-slate-200"
-              } ${briefSaving ? "opacity-50 cursor-not-allowed" : ""}`}
-            >
-              <span
-                className={`pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow-lg transform ring-0 transition-transform duration-200 ${
-                  briefEnabled ? "translate-x-5" : "translate-x-0"
-                }`}
-              />
-            </button>
-          </div>
-        </CardContent>
-      </Card>
+          </p>
+        </div>
 
-      {/* Account Details Card */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Account Details</CardTitle>
-          <CardDescription>Read-only system identifiers</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-3 text-sm text-slate-600">
-          <div className="flex items-center justify-between gap-4">
-            <span className="shrink-0">Tenant ID</span>
-            <code className="font-mono text-xs bg-slate-100 px-2 py-1 rounded text-slate-700 truncate max-w-[260px]">
-              {user?.tenantId}
-            </code>
+        <div className="flex items-center justify-between py-2">
+          <div>
+            <p className="text-sm font-medium text-text-primary">
+              Daily Morning Brief
+            </p>
+            <p className="text-xs text-text-muted mt-0.5">
+              Receive a daily revenue summary at 7:00 AM with actionable
+              insights for your business
+            </p>
           </div>
-          <div className="flex items-center justify-between gap-4">
-            <span className="shrink-0">User ID</span>
-            <code className="font-mono text-xs bg-slate-100 px-2 py-1 rounded text-slate-700 truncate max-w-[260px]">
-              {user?.id}
-            </code>
-          </div>
-        </CardContent>
-      </Card>
+          <button
+            role="switch"
+            aria-checked={briefEnabled}
+            onClick={() => !briefSaving && handleBriefToggle(!briefEnabled)}
+            className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full border-2 border-transparent transition-colors focus:outline-none ${
+              briefEnabled ? "bg-accent" : "bg-surface-raised"
+            } ${briefSaving ? "opacity-50 cursor-not-allowed" : ""}`}
+          >
+            <span
+              className={`pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow-lg transform ring-0 transition-transform duration-200 ${
+                briefEnabled ? "translate-x-5" : "translate-x-0"
+              }`}
+            />
+          </button>
+        </div>
+      </SurfaceCard>
+
+      <SurfaceCard className="space-y-3">
+        <div>
+          <h2 className="text-base font-semibold text-text-primary">Account Details</h2>
+          <p className="text-sm text-text-secondary mt-1">Read-only system identifiers</p>
+        </div>
+
+        <div className="flex items-center justify-between gap-4 text-sm text-text-secondary">
+          <span className="shrink-0">Tenant ID</span>
+          <code className="font-mono text-xs bg-surface-raised px-2 py-1 rounded text-text-primary truncate max-w-[260px]">
+            {user?.tenantId}
+          </code>
+        </div>
+        <div className="flex items-center justify-between gap-4 text-sm text-text-secondary">
+          <span className="shrink-0">User ID</span>
+          <code className="font-mono text-xs bg-surface-raised px-2 py-1 rounded text-text-primary truncate max-w-[260px]">
+            {user?.id}
+          </code>
+        </div>
+      </SurfaceCard>
     </div>
   );
 }

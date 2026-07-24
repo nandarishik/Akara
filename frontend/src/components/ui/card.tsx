@@ -168,9 +168,9 @@ function PlanCard({
   return (
     <Card
       className={cn(
-        "card-hover relative flex flex-col rounded-2xl border-2 p-6 transition-transform hover:scale-[1.01]",
-        popular ? "border-brand shadow-card-hover" : "border-surface-border",
-        current && "ring-2 ring-brand/30",
+        "card-hover relative flex flex-col rounded-2xl border-2 p-6",
+        popular ? "border-accent shadow-card-hover ring-1 ring-accent/20" : "border-surface-border",
+        current && "ring-2 ring-accent/30",
         className
       )}
       {...props}

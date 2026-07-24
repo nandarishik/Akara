@@ -5,6 +5,7 @@ import { isAdmin } from "@/lib/auth-utils";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { useBilling } from "@/hooks/useBilling";
 import { UsageBanner, PastDueBanner, TrialWarning } from "@/components/billing";
+import { AkaraButton } from "@/components/ui/GradientButton";
 import { getQuotaLevel } from "@/lib/api/billing";
 import {
   LayoutDashboard,
@@ -37,6 +38,46 @@ const ADMIN_NAV_ITEMS = [
   { to: "/admin/users", label: "Users", icon: Users },
 ];
 
+const PLAN_BADGE: Record<string, string> = {
+  free: "bg-surface-raised text-text-muted",
+  pro: "bg-accent-soft text-accent",
+  business: "bg-accent-soft text-accent-hover",
+};
+
+function NavLink({
+  to,
+  label,
+  icon: Icon,
+  isActive,
+  isLocked,
+  onClick,
+}: {
+  to: string;
+  label: string;
+  icon: React.ComponentType<{ className?: string }>;
+  isActive: boolean;
+  isLocked?: boolean;
+  onClick?: () => void;
+}) {
+  return (
+    <Link
+      to={to}
+      onClick={onClick}
+      className={cn(
+        "flex items-center gap-3 px-3 py-2 text-[13px] font-medium transition-colors",
+        isActive
+          ? "bg-accent-soft text-accent rounded-full"
+          : "text-text-secondary hover:text-text-primary hover:bg-surface-raised rounded-lg",
+        isLocked && "opacity-70"
+      )}
+    >
+      <Icon className="h-4 w-4 shrink-0" />
+      <span className="flex-1">{label}</span>
+      {isLocked && <Lock className="h-3 w-3 text-text-muted" aria-label="Locked" />}
+    </Link>
+  );
+}
+
 export function AppShell() {
   const { user, session, signOut } = useAuth();
   const location = useLocation();
@@ -58,10 +99,10 @@ export function AppShell() {
   const isCopilot = location.pathname.startsWith("/copilot");
 
   return (
-    <div className="flex h-screen bg-[#FAFCFF]">
+    <div className="flex h-screen bg-surface-canvas">
       {sidebarOpen && (
         <div
-          className="fixed inset-0 bg-black/30 backdrop-blur-sm z-40 lg:hidden"
+          className="fixed inset-0 bg-black/20 z-40 lg:hidden"
           onClick={closeSidebar}
           aria-hidden="true"
         />
@@ -69,31 +110,33 @@ export function AppShell() {
 
       <aside
         className={cn(
-          "w-60 flex flex-col z-10",
-          "bg-[#0A1628] border-r border-slate-800/50",
+          "w-60 flex flex-col z-10 bg-white border-r border-surface-border",
           "fixed inset-y-0 left-0 z-50",
           "lg:relative lg:z-10",
           "transform transition-transform duration-200",
           sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
         )}
       >
-        <div className="px-5 py-5 border-b border-white/[0.06] flex items-center justify-between">
+        <div className="px-5 py-5 border-b border-surface-border flex items-center justify-between">
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2">
-              <span className="text-lg font-bold text-white">AKARA</span>
+              <span className="text-lg font-bold font-display text-text-primary">AKARA</span>
               {quotaWarning && (
-                <div className="p-1 rounded-full bg-amber-500/20">
-                  <AlertTriangle className="h-3 w-3 text-amber-400" />
-                </div>
+                <AlertTriangle className="h-3.5 w-3.5 text-amber-500" aria-label="Quota warning" />
               )}
             </div>
-            <p className="text-[11px] text-slate-400 mt-0.5 truncate">{user?.email}</p>
-            <span className="inline-block mt-1 text-[10px] px-2 py-0.5 rounded-full bg-white/[0.06] text-slate-400 capitalize">
+            <p className="text-caption mt-0.5 truncate">{user?.email}</p>
+            <span
+              className={cn(
+                "inline-block mt-1.5 text-[10px] px-2.5 py-0.5 rounded-full font-medium capitalize",
+                PLAN_BADGE[plan] ?? PLAN_BADGE.free
+              )}
+            >
               {plan}
             </span>
           </div>
           <button
-            className="lg:hidden p-1.5 rounded-lg text-slate-400 hover:text-white"
+            className="lg:hidden p-1.5 rounded-lg text-text-muted hover:text-text-primary"
             onClick={closeSidebar}
             aria-label="Close sidebar"
           >
@@ -102,99 +145,69 @@ export function AppShell() {
         </div>
 
         <nav className="flex-1 px-3 py-3 space-y-0.5 overflow-y-auto">
-          {NAV_ITEMS.map(({ to, label, icon: Icon, feature }) => {
+          {NAV_ITEMS.map(({ to, label, icon, feature }) => {
             const isActive = location.pathname.startsWith(to);
             const isLocked = feature && features && !features[feature as keyof typeof features];
             return (
-              <Link
+              <NavLink
                 key={to}
                 to={to}
+                label={label}
+                icon={icon}
+                isActive={isActive}
+                isLocked={!!isLocked}
                 onClick={closeSidebar}
-                className={cn(
-                  "flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium transition-colors",
-                  isActive
-                    ? "bg-white/[0.08] text-white"
-                    : "text-slate-400 hover:text-white hover:bg-white/[0.04]",
-                  isLocked && "opacity-70"
-                )}
-              >
-                <Icon className="h-4 w-4 shrink-0" />
-                <span className="flex-1">{label}</span>
-                {isLocked && <Lock className="h-3 w-3 text-slate-500" aria-label="Locked" />}
-              </Link>
+              />
             );
           })}
 
-          <div className="pt-3 mt-2 border-t border-white/[0.06] space-y-0.5">
-            <Link
+          <div className="pt-3 mt-2 border-t border-surface-border space-y-0.5">
+            <NavLink
               to="/billing"
+              label="Billing"
+              icon={CreditCard}
+              isActive={location.pathname.startsWith("/billing")}
               onClick={closeSidebar}
-              className={cn(
-                "flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium transition-colors",
-                location.pathname.startsWith("/billing")
-                  ? "bg-white/[0.08] text-white"
-                  : "text-slate-400 hover:text-white hover:bg-white/[0.04]"
-              )}
-            >
-              <CreditCard className="h-4 w-4 shrink-0" />
-              Billing
-            </Link>
-            <Link
+            />
+            <NavLink
               to="/settings"
+              label="Settings"
+              icon={Settings}
+              isActive={location.pathname.startsWith("/settings")}
               onClick={closeSidebar}
-              className={cn(
-                "flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium transition-colors",
-                location.pathname.startsWith("/settings")
-                  ? "bg-white/[0.08] text-white"
-                  : "text-slate-400 hover:text-white hover:bg-white/[0.04]"
-              )}
-            >
-              <Settings className="h-4 w-4 shrink-0" />
-              Settings
-            </Link>
-            {plan === "free" && (
-              <Link
-                to="/upgrade"
-                onClick={closeSidebar}
-                className="flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium text-[#42A5F5] hover:bg-[#42A5F5]/10"
-              >
-                Upgrade →
-              </Link>
-            )}
+            />
           </div>
 
           {isAdminUser && (
             <>
               <div className="pt-5 pb-1.5 px-3">
-                <p className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider">Admin</p>
+                <p className="text-[10px] font-semibold text-text-muted uppercase tracking-wider">Admin</p>
               </div>
-              {ADMIN_NAV_ITEMS.map(({ to, label, icon: Icon }) => {
-                const isActive = location.pathname.startsWith(to);
-                return (
-                  <Link
-                    key={to}
-                    to={to}
-                    onClick={closeSidebar}
-                    className={cn(
-                      "flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium transition-colors",
-                      isActive
-                        ? "bg-white/[0.08] text-white"
-                        : "text-slate-400 hover:text-white hover:bg-white/[0.04]"
-                    )}
-                  >
-                    <Icon className="h-4 w-4 shrink-0" />
-                    {label}
-                  </Link>
-                );
-              })}
+              {ADMIN_NAV_ITEMS.map(({ to, label, icon }) => (
+                <NavLink
+                  key={to}
+                  to={to}
+                  label={label}
+                  icon={icon}
+                  isActive={location.pathname.startsWith(to)}
+                  onClick={closeSidebar}
+                />
+              ))}
             </>
           )}
         </nav>
 
-        <div className="px-3 py-3 border-t border-white/[0.06]">
+        <div className="px-3 py-4 border-t border-surface-border space-y-2">
+          {plan === "free" && (
+            <Link to="/upgrade" onClick={closeSidebar} className="block">
+              <AkaraButton size="sm" className="w-full">
+                Upgrade to Pro
+              </AkaraButton>
+            </Link>
+          )}
           <button
             onClick={signOut}
-            className="flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium text-slate-400 hover:text-white hover:bg-white/[0.04] transition-colors w-full"
+            className="flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium text-text-secondary hover:text-text-primary hover:bg-surface-raised transition-colors w-full"
           >
             <LogOut className="h-4 w-4 shrink-0" />
             Sign out
@@ -203,7 +216,7 @@ export function AppShell() {
       </aside>
 
       <div className="fixed bottom-0 inset-x-0 z-30 lg:hidden">
-        <nav className="mx-3 mb-3 rounded-2xl bg-white/95 backdrop-blur-lg border border-slate-200 shadow-lg">
+        <nav className="mx-3 mb-3 rounded-2xl bg-white border border-surface-border shadow-card">
           <div className="flex items-center justify-around py-2">
             {NAV_ITEMS.slice(0, 5).map(({ to, shortLabel, icon: Icon }) => {
               const isActive = location.pathname.startsWith(to);
@@ -212,8 +225,8 @@ export function AppShell() {
                   key={to}
                   to={to}
                   className={cn(
-                    "flex flex-col items-center gap-0.5 p-2 rounded-lg min-w-0 transition-colors",
-                    isActive ? "text-[#1565C0]" : "text-slate-400"
+                    "flex flex-col items-center gap-0.5 p-2 rounded-full min-w-0 transition-colors",
+                    isActive ? "text-accent bg-accent-soft" : "text-text-muted"
                   )}
                 >
                   <Icon className="h-5 w-5 shrink-0" />
@@ -226,18 +239,18 @@ export function AppShell() {
       </div>
 
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
-        <header className="lg:hidden flex items-center gap-3 px-4 py-3 bg-white border-b border-slate-100 shrink-0">
+        <header className="lg:hidden flex items-center gap-3 px-4 py-3 bg-white border-b border-surface-border shrink-0">
           <button
             onClick={() => setSidebarOpen(true)}
-            className="p-1.5 rounded-lg text-slate-500 hover:text-slate-800"
+            className="p-1.5 rounded-lg text-text-muted hover:text-text-primary"
             aria-label="Open navigation"
           >
             <Menu className="h-5 w-5" />
           </button>
-          <span className="text-lg font-bold text-[#0A1628]">AKARA</span>
+          <span className="text-lg font-bold font-display text-text-primary">AKARA</span>
         </header>
 
-        {usage && (
+        {usage && !isCopilot && (
           <>
             <PastDueBanner usage={usage} />
             <TrialWarning usage={usage} />
@@ -247,7 +260,7 @@ export function AppShell() {
 
         <main
           className={cn(
-            "flex-1 relative",
+            "flex-1 relative bg-surface-canvas",
             isCopilot ? "overflow-hidden" : "overflow-auto",
             "mb-16 lg:mb-0"
           )}

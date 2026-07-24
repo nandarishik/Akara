@@ -1,9 +1,9 @@
 export function PrivacyPage() {
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-surface-bg">
       <div className="max-w-3xl mx-auto px-6 py-16 prose prose-slate">
-        <h1 className="text-3xl font-bold">Privacy Policy</h1>
-        <p className="text-slate-500">Last updated: {new Date().getFullYear()}</p>
+        <h1 className="text-3xl font-bold text-text-primary">Privacy Policy</h1>
+        <p className="text-text-muted">Last updated: {new Date().getFullYear()}</p>
 
         <h2>Information We Collect</h2>
         <p>

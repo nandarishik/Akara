@@ -1,27 +1,22 @@
 /**
- * TrialWarning — sticky top banner for tenants in trial (plan_status === 'trialing').
- *
- * Shows a countdown to trial expiry and an upgrade CTA.
- * Dismissible per session (stored in sessionStorage, not localStorage —
- * so it reappears on each new browser session).
+ * TrialWarning — trial countdown banner (light, dismissible per session).
  */
 
 import { useState } from "react";
-
 import { Clock, X } from "lucide-react";
+import { Link } from "react-router-dom";
 
 import type { UsageResponse } from "@/lib/api/billing";
 
 interface TrialWarningProps {
   usage: UsageResponse;
-  trialEndsAt?: string | null; // ISO date string from tenant metadata
+  trialEndsAt?: string | null;
 }
 
 function getDaysRemaining(trialEndsAt: string): number {
   const end = new Date(trialEndsAt);
   const now = new Date();
-  const diffMs = end.getTime() - now.getTime();
-  return Math.max(0, Math.ceil(diffMs / (1000 * 60 * 60 * 24)));
+  return Math.max(0, Math.ceil((end.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)));
 }
 
 export function TrialWarning({ usage, trialEndsAt }: TrialWarningProps) {
@@ -44,19 +39,18 @@ export function TrialWarning({ usage, trialEndsAt }: TrialWarningProps) {
   return (
     <div
       role="banner"
-      aria-label="Trial period notice"
-      className={`flex items-center justify-between gap-3 px-4 py-2.5 text-sm
-        ${urgency
-          ? "bg-orange-50 border-b border-orange-200 text-orange-800"
-          : "bg-violet-50 border-b border-violet-200 text-violet-800"
-        }`}
+      className={`flex items-center justify-between gap-3 px-4 py-2 text-sm border-b ${
+        urgency
+          ? "bg-orange-50/80 border-orange-200/60 text-orange-800"
+          : "bg-accent-soft border-surface-border text-accent-hover"
+      }`}
     >
       <div className="flex items-center gap-2">
         <Clock className="h-4 w-4 shrink-0" aria-hidden />
         <span>
           {daysLeft !== null ? (
             <>
-              Your free trial ends in{" "}
+              Trial ends in{" "}
               <strong>
                 {daysLeft} day{daysLeft !== 1 ? "s" : ""}
               </strong>
@@ -65,20 +59,15 @@ export function TrialWarning({ usage, trialEndsAt }: TrialWarningProps) {
           ) : (
             "You're on a free trial. "
           )}
-          <a
-            href="/upgrade"
-            className="font-semibold underline underline-offset-2 hover:opacity-80"
-          >
+          <Link to="/upgrade" className="font-semibold underline underline-offset-2">
             Upgrade to Pro
-          </a>{" "}
-          to keep your data and features.
+          </Link>
         </span>
       </div>
-
       <button
         onClick={handleDismiss}
         aria-label="Dismiss trial warning"
-        className="shrink-0 rounded-full p-0.5 hover:bg-black/10 transition-colors"
+        className="shrink-0 rounded-full p-1 hover:bg-black/5 transition-colors"
       >
         <X className="h-4 w-4" aria-hidden />
       </button>

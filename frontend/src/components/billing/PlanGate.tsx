@@ -1,5 +1,5 @@
 /**
- * PlanGate — lock overlay for Pro/Business features (uirehaul §5.4–5.5).
+ * PlanGate — unified light overlay for Pro/Business features.
  */
 
 import { Lock } from "lucide-react";
@@ -7,7 +7,8 @@ import { Link } from "react-router-dom";
 
 import { useBilling } from "@/hooks/useBilling";
 import type { UsageResponse } from "@/lib/api/billing";
-import GradientButton from "@/components/ui/GradientButton";
+import { AkaraButton } from "@/components/ui/GradientButton";
+import SurfaceCard from "@/components/ui/SurfaceCard";
 import { cn } from "@/lib/utils";
 
 type FeatureKey = keyof UsageResponse["features"];
@@ -57,26 +58,20 @@ export function PlanGate({
   const price = priceHint ?? `From ${PLAN_PRICES[requiredPlan]}`;
 
   return (
-    <div className={cn("relative rounded-2xl overflow-hidden", className)}>
-      <div className="pointer-events-none select-none blur-sm opacity-40">{children}</div>
-      <div
-        className="absolute inset-0 flex flex-col items-center justify-center p-8 text-center
-          bg-[rgba(5,27,55,0.88)] backdrop-blur-lg border border-[rgba(33,150,243,0.15)] rounded-2xl"
-      >
-        <Lock
-          className="h-12 w-12 text-[#42A5F5] mb-4 drop-shadow-[0_0_20px_rgba(66,165,245,0.5)]"
-          aria-hidden
-        />
-        <h3 className="text-xl font-bold bg-gradient-to-r from-[#42A5F5] to-[#80D8FF] bg-clip-text text-transparent">
-          {displayTitle}
-        </h3>
-        <p className="mt-2 text-sm text-[#90CAF9] max-w-md">{displayDesc}</p>
-        <p className="mt-1 text-xs text-[#5C8FBF]">{price}</p>
-        <Link to="/upgrade" className="mt-6">
-          <GradientButton>
-            Upgrade to {PLAN_LABELS[requiredPlan]} →
-          </GradientButton>
-        </Link>
+    <div className={cn("relative min-h-[200px]", className)}>
+      <div className="pointer-events-none select-none opacity-30 blur-[2px]">
+        {children}
+      </div>
+      <div className="absolute inset-0 flex items-center justify-center p-6">
+        <SurfaceCard className="max-w-md w-full text-center shadow-card-hover">
+          <Lock className="h-10 w-10 text-text-muted mx-auto mb-4" aria-hidden />
+          <h3 className="text-h2">{displayTitle}</h3>
+          <p className="mt-2 text-body text-sm">{displayDesc}</p>
+          <p className="mt-1 text-caption">{price}</p>
+          <Link to="/upgrade" className="inline-block mt-6">
+            <AkaraButton>Upgrade to {PLAN_LABELS[requiredPlan]} →</AkaraButton>
+          </Link>
+        </SurfaceCard>
       </div>
     </div>
   );
@@ -87,7 +82,7 @@ export function SimulatorPlanGate({ children }: { children: React.ReactNode }) {
     <PlanGate
       feature="simulator"
       requiredPlan="pro"
-      mode="hide"
+      mode="lock"
       title="What-If Simulator"
       description="Model revenue scenarios with sliders and projections."
     >

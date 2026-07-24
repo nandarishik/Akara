@@ -2,9 +2,8 @@ import { useEffect, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { CheckCircle, Loader2 } from "lucide-react";
 
-import GradientMesh from "@/components/ui/GradientMesh";
-import LiquidGlassCard from "@/components/ui/LiquidGlassCard";
-import GradientButton from "@/components/ui/GradientButton";
+import SurfaceCard from "@/components/ui/SurfaceCard";
+import AkaraButton from "@/components/ui/GradientButton";
 import { useBilling } from "@/hooks/useBilling";
 import {
   fetchBillingDetails,
@@ -21,7 +20,6 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { cn } from "@/lib/utils";
 import { toast } from "@/components/ui/toast";
 
 function UsageBar({
@@ -37,15 +35,15 @@ function UsageBar({
   const displayLimit = limit === -1 ? "∞" : limit.toLocaleString("en-IN");
   return (
     <div className="space-y-1">
-      <div className="flex justify-between text-xs text-[#90CAF9]">
+      <div className="flex justify-between text-xs text-text-secondary">
         <span>{label}</span>
         <span>
           {used.toLocaleString("en-IN")} / {displayLimit}
         </span>
       </div>
-      <div className="h-2 rounded-full bg-[rgba(15,52,96,0.6)] overflow-hidden">
+      <div className="h-2 rounded-full bg-surface-raised overflow-hidden">
         <div
-          className="h-full rounded-full bg-gradient-to-r from-[#1565C0] to-[#42A5F5] transition-all"
+          className="h-full rounded-full bg-accent transition-all"
           style={{ width: `${pct}%` }}
         />
       </div>
@@ -127,53 +125,50 @@ export function BillingPage() {
   if (isLoading || !usage) {
     return (
       <div className="flex items-center justify-center min-h-[40vh]">
-        <Loader2 className="h-8 w-8 animate-spin text-[#42A5F5]" />
+        <Loader2 className="h-8 w-8 animate-spin text-accent" />
       </div>
     );
   }
 
-  const statusColors: Record<string, string> = {
-    active: "bg-emerald-500/20 text-emerald-300",
-    trialing: "bg-violet-500/20 text-violet-300",
-    past_due: "bg-red-500/20 text-red-300",
-    cancelled: "bg-amber-500/20 text-amber-300",
+  const statusVariant: Record<string, "status-active" | "status-trialing" | "status-past_due" | "status-cancelled"> = {
+    active: "status-active",
+    trialing: "status-trialing",
+    past_due: "status-past_due",
+    cancelled: "status-cancelled",
   };
 
   return (
-    <div className="relative min-h-full">
-      <GradientMesh />
-      <div className="relative z-10 p-6 lg:p-10 max-w-4xl mx-auto space-y-6">
+    <div className="min-h-full bg-surface-canvas">
+      <div className="p-6 lg:p-10 max-w-4xl mx-auto space-y-6">
         <div>
-          <h1 className="text-2xl font-bold text-white">Billing & Usage</h1>
-          <p className="text-sm text-[#90CAF9] mt-1">
+          <h1 className="text-2xl font-bold text-text-primary">Billing & Usage</h1>
+          <p className="text-sm text-text-secondary mt-1">
             Manage your plan, usage, and GST details.
           </p>
         </div>
 
         {sessionSuccess && (
-          <div className="flex items-center gap-2 rounded-xl border border-emerald-400/30 bg-emerald-500/10 px-4 py-3 text-emerald-200 text-sm">
+          <div className="flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-emerald-700 text-sm">
             <CheckCircle className="h-4 w-4 shrink-0" />
             Payment successful — your plan will update shortly.
           </div>
         )}
 
-        <LiquidGlassCard className="p-6 space-y-4">
+        <SurfaceCard className="space-y-4">
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div>
               <div className="flex items-center gap-2">
-                <span className="text-lg font-semibold text-white capitalize">
+                <span className="text-lg font-semibold text-text-primary capitalize">
                   {usage.plan} plan
                 </span>
-                <span
-                  className={cn(
-                    "text-xs px-2 py-0.5 rounded-full capitalize",
-                    statusColors[usage.plan_status] ?? "bg-white/10 text-[#90CAF9]"
-                  )}
+                <Badge
+                  variant={statusVariant[usage.plan_status] ?? "secondary"}
+                  className="capitalize"
                 >
                   {usage.plan_status.replace("_", " ")}
-                </span>
+                </Badge>
               </div>
-              <p className="text-xs text-[#5C8FBF] mt-1">
+              <p className="text-xs text-text-muted mt-1">
                 {usage.retention_days}-day data retention
                 {subscription?.current_end && (
                   <>
@@ -187,17 +182,17 @@ export function BillingPage() {
             <div className="flex flex-wrap gap-2">
               {usage.plan === "free" ? (
                 <Link to="/upgrade">
-                  <GradientButton size="sm">Upgrade plan</GradientButton>
+                  <AkaraButton size="sm">Upgrade plan</AkaraButton>
                 </Link>
               ) : (
                 <>
                   <Link to="/upgrade">
-                    <GradientButton size="sm" variant="secondary">
+                    <AkaraButton size="sm" variant="secondary">
                       Change plan
-                    </GradientButton>
+                    </AkaraButton>
                   </Link>
                   {usage.plan_status !== "cancelled" && subscription?.has_subscription && (
-                    <GradientButton
+                    <AkaraButton
                       size="sm"
                       variant="secondary"
                       onClick={handleCancelSubscription}
@@ -208,27 +203,27 @@ export function BillingPage() {
                       ) : (
                         "Cancel subscription"
                       )}
-                    </GradientButton>
+                    </AkaraButton>
                   )}
                 </>
               )}
             </div>
           </div>
           {usage.plan_status === "past_due" && (
-            <p className="text-sm text-red-300">
+            <p className="text-sm text-red-600">
               Payment failed. Complete payment via the link in your email or upgrade again to
               restore access.
             </p>
           )}
           {usage.plan_status === "cancelled" && (
-            <p className="text-sm text-amber-300">
+            <p className="text-sm text-amber-700">
               Subscription cancelled — access continues until your grace period ends.
             </p>
           )}
-        </LiquidGlassCard>
+        </SurfaceCard>
 
-        <LiquidGlassCard className="p-6 space-y-4">
-          <h2 className="text-sm font-semibold text-[#90CAF9] uppercase tracking-wide">
+        <SurfaceCard className="space-y-4">
+          <h2 className="text-sm font-semibold text-text-secondary uppercase tracking-wide">
             Usage this month
           </h2>
           <UsageBar
@@ -245,7 +240,7 @@ export function BillingPage() {
             />
           )}
           <UsageBar label="Team users" used={usage.users_used} limit={usage.users_limit} />
-          <div className="flex gap-4 pt-2 text-xs text-[#5C8FBF]">
+          <div className="flex gap-4 pt-2 text-xs text-text-muted">
             <span>
               Uploads today: {usage.uploads_today}/{usage.uploads_per_day}
             </span>
@@ -253,75 +248,73 @@ export function BillingPage() {
               Undos today: {usage.undos_today}/{usage.undos_per_day}
             </span>
           </div>
-        </LiquidGlassCard>
+        </SurfaceCard>
 
-        <LiquidGlassCard className="p-6">
-          <h2 className="text-sm font-semibold text-[#90CAF9] uppercase tracking-wide mb-4">
+        <SurfaceCard>
+          <h2 className="text-sm font-semibold text-text-secondary uppercase tracking-wide mb-4">
             GST billing details
           </h2>
           <form onSubmit={handleSaveDetails} className="space-y-4">
             <div>
-              <Label className="text-[#90CAF9]">Company GSTIN (optional)</Label>
+              <Label>Company GSTIN (optional)</Label>
               <Input
                 value={details.gstin ?? ""}
                 onChange={(e) => setDetails({ ...details, gstin: e.target.value })}
                 placeholder="27AAAAA0000A1Z5"
-                className="mt-1 bg-[rgba(15,52,96,0.4)] border-[rgba(33,150,243,0.2)] text-white"
+                className="mt-1"
               />
             </div>
             <div>
-              <Label className="text-[#90CAF9]">Company name</Label>
+              <Label>Company name</Label>
               <Input
                 value={details.company_name ?? ""}
                 onChange={(e) => setDetails({ ...details, company_name: e.target.value })}
-                className="mt-1 bg-[rgba(15,52,96,0.4)] border-[rgba(33,150,243,0.2)] text-white"
+                className="mt-1"
               />
             </div>
             <div>
-              <Label className="text-[#90CAF9]">Billing state (for IGST vs CGST/SGST)</Label>
+              <Label>Billing state (for IGST vs CGST/SGST)</Label>
               <Input
                 value={details.billing_state ?? ""}
                 onChange={(e) => setDetails({ ...details, billing_state: e.target.value })}
                 placeholder="Maharashtra"
-                className="mt-1 bg-[rgba(15,52,96,0.4)] border-[rgba(33,150,243,0.2)] text-white"
+                className="mt-1"
               />
             </div>
             <div>
-              <Label className="text-[#90CAF9]">Billing address</Label>
+              <Label>Billing address</Label>
               <Input
                 value={details.billing_address ?? ""}
                 onChange={(e) => setDetails({ ...details, billing_address: e.target.value })}
-                className="mt-1 bg-[rgba(15,52,96,0.4)] border-[rgba(33,150,243,0.2)] text-white"
+                className="mt-1"
               />
             </div>
-            <GradientButton type="submit" size="sm" disabled={saving}>
+            <AkaraButton type="submit" size="sm" disabled={saving}>
               {saving ? "Saving…" : saved ? "Saved ✓" : "Save GST details"}
-            </GradientButton>
+            </AkaraButton>
           </form>
-        </LiquidGlassCard>
+        </SurfaceCard>
 
         {invoices.length > 0 && (
-          <LiquidGlassCard className="p-6">
-            <h2 className="text-sm font-semibold text-[#90CAF9] uppercase tracking-wide mb-4">
+          <SurfaceCard>
+            <h2 className="text-sm font-semibold text-text-secondary uppercase tracking-wide mb-4">
               Invoice history
             </h2>
             <div className="space-y-2">
               {invoices.map((inv) => (
                 <div
                   key={inv.id}
-                  className="flex justify-between items-center text-sm py-2 border-b border-white/5 last:border-0"
+                  className="flex justify-between items-center text-sm py-2 border-b border-surface-border last:border-0"
                 >
-                  <span className="text-white">{inv.invoice_number}</span>
-                  <span className="text-[#90CAF9]">₹{inv.total_amount.toLocaleString("en-IN")}</span>
-                  <Badge variant="outline" className="text-[#5C8FBF] border-[#5C8FBF]/30">
-                    {inv.tax_type}
-                  </Badge>
+                  <span className="text-text-primary">{inv.invoice_number}</span>
+                  <span className="text-text-secondary">₹{inv.total_amount.toLocaleString("en-IN")}</span>
+                  <Badge variant="outline">{inv.tax_type}</Badge>
                   {inv.pdf_storage_path && (
                     <button
                       type="button"
                       onClick={() => handleDownloadInvoice(inv)}
                       disabled={downloadingId === inv.id}
-                      className="text-xs text-[#42A5F5] hover:underline disabled:opacity-50"
+                      className="text-xs text-accent hover:text-accent-hover hover:underline disabled:opacity-50"
                     >
                       {downloadingId === inv.id ? "Downloading…" : "Download PDF"}
                     </button>
@@ -329,7 +322,7 @@ export function BillingPage() {
                 </div>
               ))}
             </div>
-          </LiquidGlassCard>
+          </SurfaceCard>
         )}
       </div>
     </div>

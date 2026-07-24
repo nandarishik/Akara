@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
 import { Badge } from "@/components/ui/badge";
+import SurfaceCard from "@/components/ui/SurfaceCard";
 import {
   Table,
   TableBody,
@@ -85,31 +86,32 @@ export function UsersPage() {
 
   if (isLoading) {
     return (
-      <div className="p-8 space-y-3">
+      <div className="p-6 lg:p-8 space-y-3 bg-surface-canvas">
         {[1, 2, 3].map((i) => (
-          <div key={i} className="h-12 bg-slate-100 rounded animate-pulse" />
+          <div key={i} className="skeleton h-12 rounded" />
         ))}
       </div>
     );
   }
 
   return (
-    <div className="p-8 max-w-4xl mx-auto space-y-6">
+    <div className="p-6 lg:p-8 max-w-4xl mx-auto space-y-6 bg-surface-canvas">
       <div>
-        <h1 className="text-2xl font-bold text-slate-900">Users</h1>
-        <p className="text-sm text-slate-500 mt-1">
+        <h1 className="text-display text-2xl">Users</h1>
+        <p className="text-caption mt-1">
           Manage roles for users in your tenant
         </p>
       </div>
 
       {(!users || users.length === 0) ? (
-        <div className="text-center py-16 text-slate-400">
-          <p className="font-medium">No users found</p>
-          <p className="text-sm mt-1">
+        <SurfaceCard className="text-center py-16">
+          <p className="font-medium text-text-primary">No users found</p>
+          <p className="text-caption mt-1">
             Invite users via Supabase Auth → Users → Invite User
           </p>
-        </div>
+        </SurfaceCard>
       ) : (
+        <SurfaceCard padding="none" className="overflow-hidden">
         <Table>
           <TableHeader>
             <TableRow>
@@ -165,6 +167,7 @@ export function UsersPage() {
             ))}
           </TableBody>
         </Table>
+        </SurfaceCard>
       )}
     </div>
   );

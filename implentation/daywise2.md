@@ -383,6 +383,20 @@ Implement source 16.1–16.7 and P15–P16:
 
 ---
 
+## Post–Day 5 — FireAI Premium UI Polish (frontend-only)
+
+After Day 5 billing/Razorpay, run the **FireAI light product rehaul**:
+
+- Phase 0: tokens + `SurfaceCard` + `AkaraButton` + `ComponentGallery` at `/gallery`
+- Phase 1: light `AppShell` (white sidebar, pill nav, slim `UsageBanner`)
+- Phase 2: landing + `AuthLayout` for all auth/onboarding pages
+- Phase 3–4: product pages + billing/upgrade on light system; remove `GradientMesh` from authenticated routes
+- Spec addendum: `implentation/uirehaulday4.md` v2
+
+**Gate:** `npm run build` passes; upgrade → Razorpay flow unchanged; Plan gates consistent across Data/Reports/Simulator.
+
+---
+
 # Day 6 — Security, DPDP, alerts, limits, legal pages, and resilience
 
 ## Backend/API lane

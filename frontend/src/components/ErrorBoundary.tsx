@@ -1,5 +1,6 @@
 import { Component, type ReactNode } from "react";
-import { Button } from "@/components/ui/button";
+import SurfaceCard from "@/components/ui/SurfaceCard";
+import { AkaraButton } from "@/components/ui/GradientButton";
 
 interface Props {
   children: ReactNode;
@@ -24,15 +25,19 @@ export class ErrorBoundary extends Component<Props, State> {
   render() {
     if (this.state.hasError) {
       return (
-        <div className="flex flex-col items-center justify-center h-full min-h-[400px] p-8 text-center">
-          <div className="text-6xl mb-4">⚠️</div>
-          <h2 className="text-xl font-bold text-slate-900 mb-2">
-            Something went wrong
-          </h2>
-          <p className="text-sm text-slate-500 mb-6 max-w-md">
-            {this.state.error?.message || "An unexpected error occurred."}
-          </p>
-          <Button onClick={() => window.location.reload()}>Reload page</Button>
+        <div className="flex flex-col items-center justify-center h-full min-h-[400px] p-8 bg-surface-canvas">
+          <SurfaceCard className="max-w-md w-full text-center">
+            <p className="text-4xl mb-4" aria-hidden>
+              ⚠️
+            </p>
+            <h2 className="text-h2">Something went wrong</h2>
+            <p className="text-body text-sm mt-2">
+              {this.state.error?.message || "An unexpected error occurred."}
+            </p>
+            <AkaraButton className="mt-6" onClick={() => window.location.reload()}>
+              Reload page
+            </AkaraButton>
+          </SurfaceCard>
         </div>
       );
     }

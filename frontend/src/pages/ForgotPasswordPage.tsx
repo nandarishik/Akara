@@ -1,7 +1,7 @@
 /**
  * ForgotPasswordPage — Sprint Phase 2, Day 3
- * UI Bible P4: email field, success state with checkmark, "Link valid for 1 hour",
- * error state "No account found".
+ * FireAI light auth — AuthLayout + shared Input + AkaraButton.
+ * Success state with checkmark, "Link valid for 1 hour", error "No account found".
  */
 
 import { useState } from "react"
@@ -9,6 +9,10 @@ import type { FormEvent } from "react"
 import { Link } from "react-router-dom"
 import { CheckCircle } from "lucide-react"
 import { supabase } from "@/lib/supabase"
+import { AuthLayout } from "@/components/layout/AuthLayout"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { AkaraButton, SecondaryButton } from "@/components/ui/GradientButton"
 
 export function ForgotPasswordPage() {
   const [email, setEmail] = useState("")
@@ -37,81 +41,54 @@ export function ForgotPasswordPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#FAFCFF] flex items-center justify-center px-4">
-      <div className="w-full max-w-sm">
-        {/* Logo */}
-        <div className="text-center mb-8">
-          <Link to="/" className="text-3xl font-extrabold text-[#0F3460] font-display">AKARA</Link>
+    <AuthLayout>
+      {status === "sent" ? (
+        <div className="text-center">
+          <CheckCircle className="w-14 h-14 text-emerald-500 mx-auto mb-4" aria-hidden="true" />
+          <h1 className="text-xl font-extrabold text-text-primary mb-2">Reset link sent</h1>
+          <p className="text-text-muted text-sm mb-1">
+            Check your email at{" "}
+            <span className="font-medium text-text-primary">{email}</span>.
+          </p>
+          <p className="text-text-muted text-sm mb-6">Link valid for 1 hour.</p>
+          <Link to="/login" className="block">
+            <SecondaryButton className="w-full">Back to sign in</SecondaryButton>
+          </Link>
         </div>
+      ) : (
+        <>
+          <h1 className="text-xl font-extrabold text-text-primary mb-2">Reset your password</h1>
+          <p className="text-text-muted text-sm mb-6">Enter your email and we&apos;ll send you a reset link.</p>
 
-        <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-8">
-          {status === "sent" ? (
-            /* Success state */
-            <div className="text-center">
-              <CheckCircle className="w-14 h-14 text-emerald-500 mx-auto mb-4" aria-hidden="true" />
-              <h1 className="text-xl font-extrabold text-slate-900 mb-2">Reset link sent</h1>
-              <p className="text-slate-500 text-sm mb-1">
-                Check your email at{" "}
-                <span className="font-medium text-slate-800">{email}</span>.
-              </p>
-              <p className="text-slate-400 text-sm mb-6">Link valid for 1 hour.</p>
-              <Link
-                to="/login"
-                className="block w-full text-center border-2 border-[#1565C0] text-[#0F3460] hover:bg-blue-50 py-2.5 rounded-lg font-semibold transition-colors"
-              >
-                Back to sign in
-              </Link>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="space-y-1.5">
+              <Label htmlFor="email" className="text-text-secondary">Work email</Label>
+              <Input
+                id="email"
+                type="email"
+                required
+                autoComplete="email"
+                placeholder="you@company.com"
+                value={email}
+                onChange={(e) => { setEmail(e.target.value); setError("") }}
+                aria-describedby={error ? "forgot-error" : undefined}
+                className={error ? "border-red-400 bg-red-50" : undefined}
+              />
+              {error && (
+                <p id="forgot-error" className="text-xs text-red-600" role="alert">{error}</p>
+              )}
             </div>
-          ) : (
-            /* Form state */
-            <>
-              <h1 className="text-xl font-extrabold text-slate-900 mb-2">Reset your password</h1>
-              <p className="text-slate-500 text-sm mb-6">Enter your email and we'll send you a reset link.</p>
 
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <div>
-                  <label htmlFor="email" className="block text-sm font-medium text-slate-700 mb-1">
-                    Work email
-                  </label>
-                  <input
-                    id="email"
-                    type="email"
-                    required
-                    autoComplete="email"
-                    placeholder="you@company.com"
-                    value={email}
-                    onChange={(e) => { setEmail(e.target.value); setError("") }}
-                    aria-describedby={error ? "forgot-error" : undefined}
-                    className={`w-full border rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 ${
-                      error ? "border-red-400 bg-red-50" : "border-slate-300"
-                    }`}
-                  />
-                  {error && (
-                    <p id="forgot-error" className="text-xs text-red-600 mt-1" role="alert">{error}</p>
-                  )}
-                </div>
+            <AkaraButton type="submit" loading={status === "loading"} className="w-full">
+              Send reset link →
+            </AkaraButton>
+          </form>
 
-                <button
-                  type="submit"
-                  disabled={status === "loading"}
-                  className="w-full bg-[#1565C0] hover:bg-[#1976D2] disabled:opacity-50 text-white py-3 rounded-lg font-semibold transition-colors"
-                >
-                  {status === "loading" ? (
-                    <span className="flex items-center justify-center gap-2">
-                      <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                      Sending...
-                    </span>
-                  ) : "Send reset link →"}
-                </button>
-              </form>
-
-              <p className="text-center text-sm text-slate-500 mt-4">
-                <Link to="/login" className="text-blue-600 hover:underline">Back to sign in</Link>
-              </p>
-            </>
-          )}
-        </div>
-      </div>
-    </div>
+          <p className="text-center text-sm text-text-muted mt-4">
+            <Link to="/login" className="text-accent hover:underline">Back to sign in</Link>
+          </p>
+        </>
+      )}
+    </AuthLayout>
   )
 }

@@ -27,6 +27,8 @@ cp .env.example .env.local  # fill in your values
 npm run dev
 ```
 
+**Design system:** Dev-only component gallery at [`/gallery`](http://localhost:5173/gallery) — FireAI-inspired light tokens, `SurfaceCard`, pill `AkaraButton`. See `implentation/uirehaulday4.md` v2 addendum.
+
 ### Database
 Migrations live in `supabase/migrations/`. Apply via Supabase SQL Editor or `supabase db push`.
 

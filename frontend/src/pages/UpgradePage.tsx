@@ -3,8 +3,8 @@ import { CreditCard, Loader2 } from "lucide-react";
 import { useState } from "react";
 import { useSearchParams } from "react-router-dom";
 
-import GradientMesh from "@/components/ui/GradientMesh";
-import GradientButton from "@/components/ui/GradientButton";
+import AkaraButton from "@/components/ui/GradientButton";
+import SurfaceCard from "@/components/ui/SurfaceCard";
 import { PlanCard } from "@/components/ui/card";
 import { createCheckoutSession, BillingApiError } from "@/lib/api/billing";
 import { openRazorpaySubscriptionCheckout } from "@/lib/razorpayCheckout";
@@ -86,43 +86,42 @@ export function UpgradePage() {
   const currentPlan = usage?.plan ?? "free";
 
   return (
-    <div className="relative min-h-screen text-white">
-      <GradientMesh />
-      <div className="relative z-10 max-w-6xl mx-auto px-6 py-16">
+    <div className="min-h-screen bg-surface-bg text-text-primary">
+      <div className="max-w-6xl mx-auto px-6 py-16">
         <div className="text-center mb-12">
-          <Link to="/dashboard" className="text-sm text-[#90CAF9] hover:text-white">
+          <Link to="/dashboard" className="text-sm text-accent hover:text-accent-hover">
             ← Back to app
           </Link>
-          <h1 className="mt-6 text-4xl font-bold bg-gradient-to-r from-white to-[#90CAF9] bg-clip-text text-transparent">
+          <h1 className="mt-6 text-4xl font-bold text-text-primary tracking-tight">
             Choose your plan
           </h1>
-          <p className="mt-3 text-[#90CAF9]">
+          <p className="mt-3 text-text-secondary">
             Start free, upgrade when you&apos;re ready. No long-term contracts.
           </p>
-          <p className="mt-2 text-xs text-[#5C8FBF]">
+          <p className="mt-2 text-xs text-text-muted">
             GST invoice included · Cancel anytime · India data residency
           </p>
         </div>
 
         {cancelled && (
-          <div className="mb-6 rounded-xl border border-amber-400/30 bg-amber-500/10 px-4 py-3 text-amber-100 text-sm text-center">
+          <div className="mb-6 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-amber-800 text-sm text-center">
             Checkout cancelled. You can try again anytime.
           </div>
         )}
         {alreadySubscribed && (
-          <div className="mb-6 rounded-xl border border-[#42A5F5]/30 bg-[#1565C0]/20 px-4 py-4 text-sm text-center">
-            <p className="text-white font-medium">You already have an active subscription.</p>
-            <p className="text-[#90CAF9] mt-1">Manage your plan, payment method, or cancellation from Billing.</p>
+          <div className="mb-6 rounded-xl border border-accent/30 bg-accent-soft px-4 py-4 text-sm text-center">
+            <p className="text-text-primary font-medium">You already have an active subscription.</p>
+            <p className="text-text-secondary mt-1">Manage your plan, payment method, or cancellation from Billing.</p>
             <Link to="/billing" className="inline-block mt-3">
-              <GradientButton size="sm">
+              <AkaraButton size="sm">
                 <CreditCard className="h-4 w-4 mr-2 inline" />
                 Manage subscription
-              </GradientButton>
+              </AkaraButton>
             </Link>
           </div>
         )}
         {error && !alreadySubscribed && (
-          <div className="mb-6 rounded-xl border border-red-400/30 bg-red-500/10 px-4 py-3 text-red-100 text-sm text-center">
+          <div className="mb-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-red-700 text-sm text-center">
             {error}
           </div>
         )}
@@ -136,8 +135,8 @@ export function UpgradePage() {
               className={cn(
                 "px-4 py-2 rounded-full text-sm font-medium transition-colors",
                 interval === iv
-                  ? "bg-[#1565C0] text-white"
-                  : "bg-white/10 text-[#90CAF9] hover:bg-white/15"
+                  ? "bg-accent text-white"
+                  : "bg-surface-raised text-text-secondary hover:bg-surface-border"
               )}
             >
               {iv === "month" ? "Monthly" : "Annual (save ~17%)"}
@@ -146,7 +145,7 @@ export function UpgradePage() {
         </div>
 
         <div className="grid md:grid-cols-3 gap-6">
-          <div className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur p-6">
+          <SurfaceCard padding="lg">
             <PlanCard
               name="Free"
               price="₹0"
@@ -159,15 +158,18 @@ export function UpgradePage() {
                 "30-day retention",
               ]}
               cta={
-                <button disabled className="w-full py-2 rounded-lg bg-white/10 text-[#5C8FBF] text-sm">
+                <button disabled className="w-full py-2 rounded-full bg-surface-raised text-text-muted text-sm">
                   {currentPlan === "free" ? "Current plan" : "Included"}
                 </button>
               }
               className="border-0 bg-transparent shadow-none p-0"
             />
-          </div>
+          </SurfaceCard>
 
-          <div className="rounded-2xl border border-[#42A5F5]/40 bg-[rgba(15,52,96,0.5)] backdrop-blur p-6 ring-1 ring-[#42A5F5]/20">
+          <SurfaceCard
+            padding="lg"
+            className="border-2 border-accent ring-1 ring-accent/20 shadow-card-hover"
+          >
             <PlanCard
               name="Pro"
               price={interval === "month" ? "₹7,999" : "₹79,999"}
@@ -184,13 +186,13 @@ export function UpgradePage() {
               cta={
                 currentPlan === "pro" ? (
                   <Link to="/billing" className="block">
-                    <GradientButton className="w-full" variant="secondary">
+                    <AkaraButton className="w-full" variant="secondary">
                       <CreditCard className="h-4 w-4 mr-2 inline" />
                       Manage subscription
-                    </GradientButton>
+                    </AkaraButton>
                   </Link>
                 ) : (
-                  <GradientButton
+                  <AkaraButton
                     className="w-full"
                     onClick={() => handleUpgrade("pro")}
                     disabled={loadingPlan !== null}
@@ -200,14 +202,14 @@ export function UpgradePage() {
                     ) : (
                       "Upgrade to Pro"
                     )}
-                  </GradientButton>
+                  </AkaraButton>
                 )
               }
-              className="border-0 bg-transparent shadow-none p-0 text-white"
+              className="border-0 bg-transparent shadow-none p-0"
             />
-          </div>
+          </SurfaceCard>
 
-          <div className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur p-6">
+          <SurfaceCard padding="lg">
             <PlanCard
               name="Business"
               price={interval === "month" ? "₹13,999" : "₹1,39,999"}
@@ -223,12 +225,12 @@ export function UpgradePage() {
               cta={
                 currentPlan === "business" ? (
                   <Link to="/billing" className="block">
-                    <GradientButton className="w-full" variant="secondary">
+                    <AkaraButton className="w-full" variant="secondary">
                       Manage subscription
-                    </GradientButton>
+                    </AkaraButton>
                   </Link>
                 ) : (
-                  <GradientButton
+                  <AkaraButton
                     className="w-full"
                     onClick={() => handleUpgrade("business")}
                     disabled={loadingPlan !== null}
@@ -238,34 +240,33 @@ export function UpgradePage() {
                     ) : (
                       "Upgrade to Business"
                     )}
-                  </GradientButton>
+                  </AkaraButton>
                 )
               }
-              className="border-0 bg-transparent shadow-none p-0 text-white"
+              className="border-0 bg-transparent shadow-none p-0"
             />
-          </div>
+          </SurfaceCard>
         </div>
 
-        <div className="mt-12 rounded-2xl border border-white/10 bg-white/5 backdrop-blur p-6 text-center">
-          <p className="text-[#90CAF9] text-sm">
+        <SurfaceCard className="mt-12 text-center" padding="lg">
+          <p className="text-text-secondary text-sm">
             Pay via bank transfer / NEFT? Email{" "}
-            <a href="mailto:billing@akara.ai" className="text-[#42A5F5] underline">
+            <a href="mailto:billing@akara.ai" className="text-accent hover:text-accent-hover underline">
               billing@akara.ai
             </a>{" "}
             with your company GSTIN and plan choice.
           </p>
-        </div>
+        </SurfaceCard>
 
         <div className="mt-16 max-w-2xl mx-auto space-y-4">
-          <h2 className="text-lg font-semibold text-center text-[#90CAF9]">FAQ</h2>
+          <h2 className="text-lg font-semibold text-center text-text-primary">FAQ</h2>
           {FAQ.map(({ q, a }) => (
-            <details
-              key={q}
-              className="rounded-xl border border-white/10 bg-white/5 px-4 py-3"
-            >
-              <summary className="cursor-pointer font-medium text-sm">{q}</summary>
-              <p className="mt-2 text-sm text-[#5C8FBF]">{a}</p>
-            </details>
+            <SurfaceCard key={q} padding="sm">
+              <details>
+                <summary className="cursor-pointer font-medium text-sm text-text-primary">{q}</summary>
+                <p className="mt-2 text-sm text-text-secondary">{a}</p>
+              </details>
+            </SurfaceCard>
           ))}
         </div>
       </div>

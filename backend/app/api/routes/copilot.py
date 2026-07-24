@@ -1,6 +1,7 @@
+import json
 import logging
 import time
-from datetime import date
+from datetime import date, datetime, UTC
 from uuid import UUID
 
 import openai
@@ -106,6 +107,55 @@ def _extract_provenance(result, supabase, tenant_id: UUID) -> dict:
     return provenance
 
 
+def _create_conversation(supabase, tenant_id: UUID, user_id: UUID, question: str) -> UUID | None:
+    """Create a conversation row from the first message."""
+    try:
+        title = question[:50].strip()
+        if len(question) > 50:
+            title += "..."
+        conv_result = (
+            supabase.table("conversations")
+            .insert({
+                "tenant_id": str(tenant_id),
+                "user_id": str(user_id),
+                "title": title,
+            })
+            .execute()
+        )
+        return conv_result.data[0]["id"]
+    except Exception as exc:
+        logger.warning("Failed to create conversation: %s", exc)
+        return None
+
+
+def _save_chat_turn(
+    supabase,
+    *,
+    tenant_id: UUID,
+    user_id: UUID,
+    conversation_id: UUID | None,
+    question: str,
+    response: str,
+) -> None:
+    """Persist one Q&A turn and bump conversation updated_at."""
+    if not conversation_id or not response.strip():
+        return
+    try:
+        supabase.table("chat_history").insert({
+            "tenant_id": str(tenant_id),
+            "user_id": str(user_id),
+            "conversation_id": str(conversation_id),
+            "question": question,
+            "response": response,
+            "metadata": {},
+        }).execute()
+        supabase.table("conversations").update({
+            "updated_at": datetime.now(UTC).isoformat(),
+        }).eq("id", str(conversation_id)).execute()
+    except Exception as exc:
+        logger.warning("Failed to save chat history: %s", exc)
+
+
 def _build_agent(tenant_id: UUID) -> CopilotAgent:
     """Factory: build a CopilotAgent with all dependencies wired."""
     llm = LLMManager(openrouter_api_key=settings.openrouter_api_key)
@@ -150,6 +200,20 @@ async def chat(
 
         async def event_stream():
             usage_incremented = False
+            conversation_id = request.conversation_id
+            response_parts: list[str] = []
+
+            if conversation_id is None:
+                conversation_id = _create_conversation(
+                    supabase, tenant.tenant_id, user.user_id, request.question
+                )
+                if conversation_id:
+                    yield (
+                        "data: "
+                        + json.dumps({"type": "conversation_id", "id": str(conversation_id)})
+                        + "\n\n"
+                    )
+
             try:
                 async for chunk in agent.answer_stream(
                     question=request.question,
@@ -159,9 +223,9 @@ async def chat(
                     planner_addendum=planner_addendum,
                     synthesizer_addendum=synthesizer_addendum,
                 ):
+                    response_parts.append(chunk)
                     yield f"data: {chunk}\n\n"
 
-                # Only increment usage after successful completion
                 try:
                     supabase.rpc(
                         "increment_usage",
@@ -170,6 +234,15 @@ async def chat(
                     usage_incremented = True
                 except Exception as exc:
                     logger.warning("Failed to increment copilot usage (stream): %s", exc)
+
+                _save_chat_turn(
+                    supabase,
+                    tenant_id=tenant.tenant_id,
+                    user_id=user.user_id,
+                    conversation_id=conversation_id,
+                    question=request.question,
+                    response="".join(response_parts),
+                )
 
             except openai.APIStatusError as e:
                 # Day 4: Graceful LLM degradation
@@ -266,40 +339,18 @@ async def chat(
     # Auto-create conversation if none exists
     conversation_id = request.conversation_id
     if conversation_id is None:
-        try:
-            # Generate title from first 50 chars of question
-            title = request.question[:50].strip()
-            if len(request.question) > 50:
-                title += "..."
+        conversation_id = _create_conversation(
+            supabase, tenant.tenant_id, user.user_id, request.question
+        )
 
-            conv_result = (
-                supabase.table("conversations")
-                .insert({
-                    "tenant_id": str(tenant.tenant_id),
-                    "user_id": str(user.user_id),
-                    "title": title,
-                })
-                .execute()
-            )
-            conversation_id = conv_result.data[0]["id"]
-        except Exception as e:
-            logger.warning("Failed to create conversation: %s", e)
-
-    # Save chat history to Supabase
-    try:
-        supabase.table("chat_history").insert({
-            "tenant_id": str(tenant.tenant_id),
-            "user_id": str(user.user_id),
-            "conversation_id": str(conversation_id) if conversation_id else None,
-            "question": request.question,
-            "response": result.response,
-            "metadata": {
-                "intent": result.intent,
-                "response_time_ms": result.response_time_ms,
-            },
-        }).execute()
-    except Exception as e:
-        logger.warning("Failed to save chat history: %s", e)
+    _save_chat_turn(
+        supabase,
+        tenant_id=tenant.tenant_id,
+        user_id=user.user_id,
+        conversation_id=conversation_id,
+        question=request.question,
+        response=result.response,
+    )
 
     # Day 4: Add data provenance for transparency
     provenance = _extract_provenance(result, supabase, tenant.tenant_id)
