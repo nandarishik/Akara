@@ -1,6 +1,17 @@
 """Canonical sales_data column and table names — single source of truth."""
 
 SALES_DATA_TABLE = "public.sales_data"
+COMPANION_DATA_TABLE = "public.tenant_companion_data"
+
+COMPANION_DATA_COLUMNS: tuple[str, ...] = (
+    "record_date",
+    "source_file",
+    "dataset_type",
+    "party_name",
+    "product_name",
+    "amount",
+    "quantity",
+)
 
 SALES_DATA_COLUMNS: tuple[str, ...] = (
     "invoice_date",

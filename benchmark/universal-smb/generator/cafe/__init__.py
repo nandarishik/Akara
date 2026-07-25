@@ -1,0 +1,1 @@
+"""BrewLab Café data generator."""

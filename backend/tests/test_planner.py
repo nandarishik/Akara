@@ -83,3 +83,10 @@ async def test_planner_greeting_skips_sql() -> None:
     assert plan.steps == []
     assert plan.intent == "greeting"
     llm.complete.assert_not_called()
+
+
+def test_fallback_channel_count_plan() -> None:
+    planner = Planner(llm=MagicMock())
+    plan = planner._fallback_analytics_plan("How many Swiggy orders in February 2026?")
+    assert plan is not None
+    assert "COUNT(DISTINCT" in plan.steps[0].sql

@@ -1,0 +1,501 @@
+Daily Sales Report - BrewLab Café,Unnamed: 1,Unnamed: 2,Unnamed: 3,Unnamed: 4,Unnamed: 5,Unnamed: 6,Unnamed: 7,Unnamed: 8,Unnamed: 9,Unnamed: 10,Unnamed: 11
+Period: Jan 2026 - Jun 2026,,,,,,,,,,,
+Exported from Petpooja / BrainPower,,,,,,,,,,,
+Date,WEB_BILLNO,Buyer,POS Display Name,Category,Qty,Gross Amt,Discount,NET SALES,Bill Amt,Cashier,Order Type
+2026-01-01,BL-260101-0001,Swiggy,Avocado Toast,Food,1,280,5.91,274.09,287.8,Priya S,swiggy
+2026-01-01,BL-260101-0001,Swiggy,Latte,Hot Beverages,1,200,5.05,194.95,204.69,Priya S,swiggy
+2026-01-01,BL-260101-0001,Swiggy,Avocado Toast,Food,1,280,9.1,270.9,284.45,Walk-in,swiggy
+2026-01-01,BL-260101-0002,Swiggy,Iced Latte,Cold Beverages,1,240,11.49,228.51,239.94,Sneha R,swiggy
+2026-01-01,BL-260101-0002,Swiggy,Latte,Hot Beverages,1,200,0.97,199.03,208.98,Sneha R,swiggy
+2026-01-01,BL-260101-0002,Swiggy,Club Sandwich,Food,1,320,0.7,319.3,335.27,Walk-in,swiggy
+2026-01-01,BL-260101-0003,Customer 97,Cold Brew,Cold Beverages,1,220,1.21,218.79,229.73,Amit K,dine-in
+2026-01-01,BL-260101-0003,Customer 97,Seasonal Special,Seasonal,1,385,3.69,381.31,400.38,Amit K,dine-in
+2026-01-01,BL-260101-0004,Customer 94,Chocolate Brownie,Bakery,2,320,24.88,295.12,309.87,Amit K,dine-in
+2026-01-01,BL-260101-0005,Swiggy,Cappuccino,Hot Beverages,1,180,3.61,176.39,185.21,Priya S,swiggy
+2026-01-01,BL-260101-0005,Swiggy,Cold Brew,Cold Beverages,2,440,12.48,427.52,448.9,Sneha R,swiggy
+2026-01-01,BL-260101-0006,Customer 165,Avocado Toast,Food,1,280,10.46,269.54,283.02,Walk-in,takeaway
+2026-01-01,BL-260101-0006,Customer 165,Club Sandwich,Food,1,320,3.51,316.49,332.32,Amit K,takeaway
+2026-01-01,BL-260101-0007,Customer 29,Club Sandwich,Food,2,640,40.64,599.36,629.33,Priya S,dine-in
+2026-01-01,BL-260101-0008,Swiggy,Blueberry Muffin,Bakery,1,140,5.05,134.95,141.69,Sneha R,swiggy
+2026-01-01,BL-260101-0009,Zomato,Espresso,Hot Beverages,1,150,1.21,148.79,156.23,Priya S,zomato
+2026-01-01,BL-260101-0010,Zomato,Iced Latte,Cold Beverages,1,240,2.89,237.11,248.97,Priya S,zomato
+2026-01-01,BL-260101-0011,Zomato,Espresso,Hot Beverages,1,150,6.54,143.46,150.63,Walk-in,zomato
+2026-01-01,BL-260101-0012,Swiggy,Veg Wrap,Food,1,260,5.7,254.3,267.02,Walk-in,swiggy
+2026-01-01,BL-260101-0013,Customer 87,Cappuccino,Hot Beverages,1,180,19.56,160.44,168.47,Sneha R,dine-in
+2026-01-01,BL-260101-0013,Customer 87,Latte,Hot Beverages,1,200,6.68,193.32,202.98,Walk-in,dine-in
+2026-01-01,BL-260101-0013,Customer 87,Cold Brew,Cold Beverages,1,220,19.1,200.9,210.95,Walk-in,dine-in
+2026-01-01,BL-260101-0014,Customer 111,Cappuccino,Hot Beverages,1,180,8.86,171.14,179.7,Priya S,takeaway
+2026-01-01,BL-260101-0014,Customer 111,Cappuccino,Hot Beverages,1,180,3.05,176.95,185.79,Priya S,takeaway
+2026-01-01,BL-260101-0015,Customer 36,Avocado Toast,Food,1,280,9.13,270.87,284.41,Priya S,takeaway
+2026-01-01,BL-260101-0015,Customer 36,Latte,Hot Beverages,2,400,16.97,383.03,402.18,Amit K,takeaway
+2026-01-01,BL-260101-0015,Customer 36,Croissant,Bakery,1,120,1.28,118.72,124.65,Walk-in,takeaway
+2026-01-01,BL-260101-0016,Customer 100,Croissant,Bakery,1,120,10.52,109.48,114.95,Walk-in,dine-in
+2026-01-01,BL-260101-0017,Swiggy,Espresso,Hot Beverages,1,150,3.81,146.19,153.5,Amit K,swiggy
+2026-01-01,BL-260101-0018,Customer 104,Club Sandwich,Food,1,320,3.15,316.85,332.69,Sneha R,dine-in
+2026-01-01,BL-260101-0018,Customer 104,Iced Latte,Cold Beverages,1,240,20.63,219.37,230.34,Amit K,dine-in
+2026-01-01,BL-260101-0019,Zomato,Avocado Toast,Food,1,280,3.71,276.29,290.1,Sneha R,zomato
+2026-01-01,BL-260101-0020,Customer 95,Iced Latte,Cold Beverages,1,240,28.43,211.57,222.15,Priya S,dine-in
+2026-01-01,BL-260101-0020,Customer 95,Veg Wrap,Food,1,260,9.34,250.66,263.19,Priya S,dine-in
+2026-01-01,BL-260101-0021,Customer 191,Veg Wrap,Food,2,520,13.14,506.86,532.2,Sneha R,delivery
+2026-01-01,BL-260101-0021,Customer 191,Cappuccino,Hot Beverages,1,180,3.81,176.19,185,Sneha R,delivery
+2026-01-01,BL-260101-0022,Zomato,Chocolate Brownie,Bakery,1,160,0.08,159.92,167.92,Priya S,zomato
+2026-01-01,BL-260101-0023,Customer 39,Iced Latte,Cold Beverages,1,240,11.2,228.8,240.24,Priya S,delivery
+2026-01-01,BL-260101-0023,Customer 39,Masala Chai,Hot Beverages,1,80,1,79,82.95,Priya S,delivery
+2026-01-01,BL-260101-0024,Zomato,Cold Brew,Cold Beverages,2,440,21.48,418.52,439.45,Amit K,zomato
+2026-01-01,BL-260101-0024,Zomato,Croissant,Bakery,1,120,4.42,115.58,121.36,Sneha R,zomato
+2026-01-01,BL-260101-0025,Zomato,Cappuccino,Hot Beverages,2,360,4,356,373.8,Walk-in,zomato
+2026-01-01,BL-260101-0025,Zomato,Masala Chai,Hot Beverages,1,80,3.18,76.82,80.66,Amit K,zomato
+2026-01-01,BL-260101-0026,Customer 103,Iced Latte,Cold Beverages,1,240,14.67,225.33,236.6,Sneha R,dine-in
+2026-01-01,BL-260101-0027,Customer 68,Avocado Toast,Food,1,280,30.22,249.78,262.27,Amit K,dine-in
+2026-01-01,BL-260101-0027,Customer 68,Iced Latte,Cold Beverages,1,240,12.56,227.44,238.81,Amit K,dine-in
+2026-01-01,BL-260101-0028,Customer 160,Iced Latte,Cold Beverages,1,240,19.21,220.79,231.83,Sneha R,dine-in
+2026-01-01,BL-260101-0029,Zomato,Avocado Toast,Food,1,280,4.25,275.75,289.53,Amit K,zomato
+2026-01-01,BL-260101-0030,Customer 168,Avocado Toast,Food,1,280,30.28,249.72,262.21,Amit K,dine-in
+2026-01-01,BL-260101-0031,Customer 86,Espresso,Hot Beverages,1,150,4.41,145.59,152.87,Walk-in,dine-in
+2026-01-01,BL-260101-0032,Customer 162,Croissant,Bakery,1,120,3.94,116.06,121.87,Priya S,delivery
+2026-01-01,BL-260101-0032,Customer 162,Seasonal Special,Seasonal,2,770,34.09,735.91,772.71,Walk-in,delivery
+2026-01-01,BL-260101-0032,Customer 162,Cold Brew,Cold Beverages,1,220,10.54,209.46,219.94,Walk-in,delivery
+2026-01-01,BL-260101-0033,Customer 32,Seasonal Special,Seasonal,2,770,23.59,746.41,783.73,Walk-in,takeaway
+2026-01-01,BL-260101-0033,Customer 32,Avocado Toast,Food,1,280,2.23,277.77,291.66,Walk-in,takeaway
+2026-01-01,BL-260101-0033,Customer 32,Blueberry Muffin,Bakery,1,140,1.73,138.27,145.18,Sneha R,takeaway
+2026-01-01,BL-260101-0034,Customer 62,Iced Latte,Cold Beverages,1,240,25.72,214.28,224.99,Priya S,dine-in
+2026-01-01,BL-260101-0034,Customer 62,Espresso,Hot Beverages,1,150,6.89,143.11,150.26,Amit K,dine-in
+2026-01-01,BL-260101-0035,Customer 120,Chocolate Brownie,Bakery,1,160,7.05,152.95,160.6,Walk-in,takeaway
+2026-01-01,BL-260101-0035,Customer 120,Blueberry Muffin,Bakery,1,140,2.46,137.54,144.41,Walk-in,takeaway
+2026-01-01,BL-260101-0035,Customer 120,Croissant,Bakery,1,120,4.41,115.59,121.37,Amit K,takeaway
+2026-01-01,BL-260101-0036,Customer 8,Chocolate Brownie,Bakery,1,160,3.74,156.26,164.07,Amit K,takeaway
+2026-01-01,BL-260101-0037,Swiggy,Iced Latte,Cold Beverages,1,240,2.54,237.46,249.33,Sneha R,swiggy
+2026-01-01,BL-260101-0037,Swiggy,Masala Chai,Hot Beverages,1,80,1.52,78.48,82.41,Walk-in,swiggy
+2026-01-01,BL-260101-0038,Swiggy,Cold Brew,Cold Beverages,1,220,8.59,211.41,221.98,Priya S,swiggy
+2026-01-01,BL-260101-0039,Zomato,Cold Brew,Cold Beverages,1,220,2.82,217.18,228.04,Sneha R,zomato
+2026-01-01,BL-260101-0040,Swiggy,Iced Latte,Cold Beverages,1,240,0.31,239.69,251.68,Sneha R,swiggy
+2026-01-01,BL-260101-0040,Swiggy,Club Sandwich,Food,1,320,15.33,304.67,319.9,Walk-in,swiggy
+2026-01-01,BL-260101-0041,Swiggy,Club Sandwich,Food,1,320,12.74,307.26,322.62,Priya S,swiggy
+2026-01-01,BL-260101-0041,Swiggy,Masala Chai,Hot Beverages,1,80,2.65,77.35,81.22,Priya S,swiggy
+2026-01-01,BL-260101-0042,Zomato,Veg Wrap,Food,2,520,11.95,508.05,533.45,Amit K,zomato
+2026-01-01,BL-260101-0043,Customer 167,Chocolate Brownie,Bakery,1,160,6.19,153.81,161.5,Amit K,dine-in
+2026-01-01,BL-260101-0044,Customer 119,Blueberry Muffin,Bakery,2,280,2.55,277.45,291.33,Amit K,delivery
+2026-01-01,BL-260101-0044,Customer 119,Masala Chai,Hot Beverages,1,80,1.36,78.64,82.57,Sneha R,delivery
+2026-01-01,BL-260101-0045,Customer 22,Chocolate Brownie,Bakery,1,160,15.22,144.78,152.01,Priya S,dine-in
+2026-01-01,BL-260101-0045,Customer 22,Iced Latte,Cold Beverages,1,240,19.92,220.08,231.08,Sneha R,dine-in
+2026-01-01,BL-260101-0046,Zomato,Blueberry Muffin,Bakery,1,140,1.76,138.24,145.15,Priya S,zomato
+2026-01-01,BL-260101-0046,Zomato,Chocolate Brownie,Bakery,1,160,0.96,159.04,167,Amit K,zomato
+2026-01-01,BL-260101-0046,Zomato,Cold Brew,Cold Beverages,1,220,5.33,214.67,225.41,Sneha R,zomato
+2026-01-01,BL-260101-0047,Customer 76,Cappuccino,Hot Beverages,1,180,15.06,164.94,173.18,Amit K,dine-in
+2026-01-01,BL-260101-0048,Customer 147,Cappuccino,Hot Beverages,1,180,18.61,161.39,169.46,Priya S,dine-in
+2026-01-01,BL-260101-0048,Customer 147,Latte,Hot Beverages,1,200,1.78,198.22,208.13,Priya S,dine-in
+2026-01-01,BL-260101-0049,Customer 31,Croissant,Bakery,1,120,2.66,117.34,123.21,Walk-in,delivery
+2026-01-01,BL-260101-0050,Zomato,Veg Wrap,Food,1,260,3.12,256.88,269.73,Priya S,zomato
+2026-01-01,BL-260101-0051,Customer 177,Blueberry Muffin,Bakery,1,140,1.63,138.37,145.28,Sneha R,delivery
+2026-01-01,BL-260101-0052,Customer 51,Iced Latte,Cold Beverages,1,240,0.86,239.14,251.1,Amit K,takeaway
+2026-01-01,BL-260101-0053,Zomato,Iced Latte,Cold Beverages,1,240,5.93,234.07,245.78,Priya S,zomato
+2026-01-01,BL-260101-0053,Zomato,Club Sandwich,Food,1,320,6.91,313.09,328.74,Sneha R,zomato
+2026-01-01,BL-260101-0054,Zomato,Seasonal Special,Seasonal,1,385,5.19,379.81,398.8,Priya S,zomato
+2026-01-01,BL-260101-0054,Zomato,Seasonal Special,Seasonal,1,385,9.06,375.94,394.74,Walk-in,zomato
+2026-01-01,BL-260101-0054,Zomato,Iced Latte,Cold Beverages,1,240,7.02,232.98,244.62,Walk-in,zomato
+2026-01-01,BL-260101-0055,Customer 105,Iced Latte,Cold Beverages,1,240,11.53,228.47,239.89,Priya S,dine-in
+2026-01-01,BL-260101-0056,Customer 198,Veg Wrap,Food,2,520,12.01,507.99,533.39,Priya S,takeaway
+2026-01-01,BL-260101-0056,Customer 198,Cold Brew,Cold Beverages,1,220,6.85,213.15,223.81,Walk-in,takeaway
+2026-01-01,BL-260101-0056,Customer 198,Veg Wrap,Food,1,260,0.67,259.33,272.3,Sneha R,takeaway
+2026-01-01,BL-260101-0057,Customer 179,Iced Latte,Cold Beverages,1,240,6.63,233.37,245.04,Priya S,takeaway
+2026-01-01,BL-260101-0057,Customer 179,Cold Brew,Cold Beverages,2,440,20.08,419.92,440.91,Walk-in,takeaway
+2026-01-01,BL-260101-0058,Zomato,Croissant,Bakery,1,120,5.88,114.12,119.82,Amit K,zomato
+2026-01-01,BL-260101-0059,Zomato,Seasonal Special,Seasonal,2,770,13.09,756.91,794.76,Sneha R,zomato
+2026-01-01,BL-260101-0059,Zomato,Cappuccino,Hot Beverages,1,180,2.69,177.31,186.18,Walk-in,zomato
+2026-01-01,BL-260101-0060,Customer 124,Blueberry Muffin,Bakery,2,280,29.22,250.78,263.32,Amit K,dine-in
+2026-01-01,BL-260101-0061,Zomato,Espresso,Hot Beverages,1,150,0.28,149.72,157.21,Sneha R,zomato
+2026-01-01,BL-260101-0061,Zomato,Latte,Hot Beverages,2,400,8.81,391.19,410.75,Walk-in,zomato
+2026-01-01,BL-260101-0062,Zomato,Iced Latte,Cold Beverages,1,240,8.31,231.69,243.27,Priya S,zomato
+2026-01-01,BL-260101-0063,Customer 137,Cappuccino,Hot Beverages,1,180,2.11,177.89,186.78,Sneha R,takeaway
+2026-01-01,BL-260101-0063,Customer 137,Cold Brew,Cold Beverages,1,220,4.77,215.23,225.99,Priya S,takeaway
+2026-01-01,BL-260101-0064,Customer 114,Masala Chai,Hot Beverages,1,80,2.82,77.18,81.04,Sneha R,dine-in
+2026-01-01,BL-260101-0065,Customer 47,Club Sandwich,Food,1,320,17.71,302.29,317.41,Sneha R,dine-in
+2026-01-01,BL-260101-0066,Customer 174,Club Sandwich,Food,1,320,15.39,304.61,319.84,Sneha R,delivery
+2026-01-01,BL-260101-0067,Zomato,Chocolate Brownie,Bakery,1,160,7.82,152.18,159.79,Walk-in,zomato
+2026-01-01,BL-260101-0068,Swiggy,Chocolate Brownie,Bakery,1,160,7.23,152.77,160.41,Sneha R,swiggy
+2026-01-01,BL-260101-0068,Swiggy,Seasonal Special,Seasonal,1,385,11.69,373.31,391.98,Sneha R,swiggy
+2026-01-01,BL-260101-0069,Swiggy,Veg Wrap,Food,1,260,4.02,255.98,268.78,Walk-in,swiggy
+2026-01-01,BL-260101-0069,Swiggy,Cappuccino,Hot Beverages,1,180,6.59,173.41,182.08,Priya S,swiggy
+2026-01-01,BL-260101-0070,Customer 107,Masala Chai,Hot Beverages,1,80,8.77,71.23,74.79,Amit K,dine-in
+2026-01-01,BL-260101-0071,Zomato,Veg Wrap,Food,1,260,12.74,247.26,259.62,Sneha R,zomato
+2026-01-01,BL-260101-0071,Zomato,Latte,Hot Beverages,1,200,0.14,199.86,209.85,Priya S,zomato
+2026-01-01,BL-260101-0072,Customer 173,Masala Chai,Hot Beverages,1,80,2.24,77.76,81.64,Priya S,dine-in
+2026-01-01,BL-260101-0073,Swiggy,Latte,Hot Beverages,1,200,9.46,190.54,200.06,Sneha R,swiggy
+2026-01-01,BL-260101-0074,Zomato,Veg Wrap,Food,2,520,18.11,501.89,526.99,Walk-in,zomato
+2026-01-01,BL-260101-0075,Swiggy,Chocolate Brownie,Bakery,1,160,3.55,156.45,164.28,Amit K,swiggy
+2026-01-01,BL-260101-0075,Swiggy,Masala Chai,Hot Beverages,1,80,2.74,77.26,81.12,Sneha R,swiggy
+2026-01-01,BL-260101-0076,Zomato,Cold Brew,Cold Beverages,1,220,6.57,213.43,224.1,Priya S,zomato
+2026-01-01,BL-260101-0076,Zomato,Cappuccino,Hot Beverages,1,180,2.19,177.81,186.7,Amit K,zomato
+2026-01-01,BL-260101-0077,Customer 196,Seasonal Special,Seasonal,2,770,0.11,769.89,808.39,Amit K,delivery
+2026-01-01,BL-260101-0077,Customer 196,Espresso,Hot Beverages,1,150,5.99,144.01,151.21,Priya S,delivery
+2026-01-01,BL-260101-0078,Swiggy,Espresso,Hot Beverages,1,150,0.95,149.05,156.5,Walk-in,swiggy
+2026-01-01,BL-260101-0078,Swiggy,Avocado Toast,Food,1,280,0.89,279.11,293.07,Walk-in,swiggy
+2026-01-01,BL-260101-0078,Swiggy,Seasonal Special,Seasonal,1,385,11.43,373.57,392.25,Walk-in,swiggy
+2026-01-01,BL-260101-0079,Swiggy,Cappuccino,Hot Beverages,1,180,4.31,175.69,184.47,Walk-in,swiggy
+2026-01-01,BL-260101-0080,Zomato,Club Sandwich,Food,1,320,2.02,317.98,333.88,Sneha R,zomato
+2026-01-01,BL-260101-0080,Zomato,Croissant,Bakery,2,240,6.37,233.63,245.31,Walk-in,zomato
+2026-01-01,BL-260101-0080,Zomato,Avocado Toast,Food,1,280,1.39,278.61,292.54,Priya S,zomato
+2026-01-01,BL-260101-0081,Customer 197,Blueberry Muffin,Bakery,1,140,5.11,134.89,141.64,Sneha R,delivery
+2026-01-01,BL-260101-0081,Customer 197,Croissant,Bakery,1,120,1.53,118.47,124.39,Amit K,delivery
+2026-01-01,BL-260101-0082,Customer 24,Espresso,Hot Beverages,1,150,4.4,145.6,152.88,Sneha R,takeaway
+2026-01-01,BL-260101-0083,Zomato,Iced Latte,Cold Beverages,1,240,6.94,233.06,244.72,Amit K,zomato
+2026-01-01,BL-260101-0083,Zomato,Espresso,Hot Beverages,1,150,1.68,148.32,155.73,Priya S,zomato
+2026-01-01,BL-260101-0084,Swiggy,Avocado Toast,Food,2,560,22.92,537.08,563.94,Priya S,swiggy
+2026-01-01,BL-260101-0084,Swiggy,Club Sandwich,Food,2,640,26.54,613.46,644.13,Sneha R,swiggy
+2026-01-01,BL-260101-0085-R,Customer 196,Croissant,Bakery,1,120,10.67,109.33,114.8,Priya S,dine-in
+2026-01-01,BL-260101-0085-R,Customer 196,Latte,Hot Beverages,1,200,5.16,194.84,204.58,Walk-in,dine-in
+2026-01-01,BL-260101-0085-R,Customer 196,Blueberry Muffin,Bakery,1,140,6.22,133.78,140.47,Sneha R,dine-in
+2026-01-01,BL-260101-0086,Zomato,Cappuccino,Hot Beverages,1,180,2.45,177.55,186.43,Walk-in,zomato
+2026-01-01,BL-260101-0087,Customer 70,Club Sandwich,Food,1,320,25.62,294.38,309.1,Priya S,dine-in
+2026-01-01,BL-260101-0087,Customer 70,Cold Brew,Cold Beverages,1,220,15.82,204.18,214.39,Priya S,dine-in
+2026-01-01,BL-260101-0087,Customer 70,Cold Brew,Cold Beverages,1,220,5.58,214.42,225.14,Amit K,dine-in
+2026-01-02,BL-260102-0088,Customer 190,Masala Chai,Hot Beverages,1,80,5.5,74.5,78.22,Walk-in,dine-in
+2026-01-02,BL-260102-0088,Customer 190,Iced Latte,Cold Beverages,1,240,0.6,239.4,251.37,Sneha R,dine-in
+2026-01-02,BL-260102-0088,Customer 190,Espresso,Hot Beverages,1,150,11.13,138.87,145.82,Sneha R,dine-in
+2026-01-02,BL-260102-0089,Customer 21,Avocado Toast,Food,1,280,7.43,272.57,286.2,Amit K,takeaway
+2026-01-02,BL-260102-0089,Customer 21,Seasonal Special,Seasonal,1,385,14,371,389.55,Amit K,takeaway
+2026-01-02,BL-260102-0090,Swiggy,Espresso,Hot Beverages,2,300,9.42,290.58,305.11,Walk-in,swiggy
+2026-01-02,BL-260102-0090,Swiggy,Seasonal Special,Seasonal,1,385,11.15,373.85,392.54,Sneha R,swiggy
+2026-01-02,BL-260102-0091,Customer 39,Masala Chai,Hot Beverages,1,80,1.24,78.76,82.7,Walk-in,takeaway
+2026-01-02,BL-260102-0091,Customer 39,Cappuccino,Hot Beverages,1,180,7.49,172.51,181.14,Priya S,takeaway
+2026-01-02,BL-260102-0092,Customer 130,Chocolate Brownie,Bakery,2,320,7.2,312.8,328.44,Amit K,takeaway
+2026-01-02,BL-260102-0093,Customer 16,Veg Wrap,Food,1,260,3.22,256.78,269.62,Walk-in,takeaway
+2026-01-02,BL-260102-0093,Customer 16,Blueberry Muffin,Bakery,1,140,4.27,135.73,142.52,Sneha R,takeaway
+2026-01-02,BL-260102-0094,Customer 199,Veg Wrap,Food,1,260,10.29,249.71,262.2,Walk-in,dine-in
+2026-01-02,BL-260102-0094,Customer 199,Iced Latte,Cold Beverages,1,240,24.53,215.47,226.25,Amit K,dine-in
+2026-01-02,BL-260102-0095,Zomato,Iced Latte,Cold Beverages,1,240,7.72,232.28,243.89,Sneha R,zomato
+2026-01-02,BL-260102-0096,Zomato,Veg Wrap,Food,1,260,4.7,255.3,268.06,Sneha R,zomato
+2026-01-02,BL-260102-0097,Zomato,Seasonal Special,Seasonal,1,385,14.84,370.16,388.67,Priya S,zomato
+2026-01-02,BL-260102-0097,Zomato,Veg Wrap,Food,1,260,9.96,250.04,262.54,Amit K,zomato
+2026-01-02,BL-260102-0098,Zomato,Espresso,Hot Beverages,1,150,0.33,149.67,157.16,Sneha R,zomato
+2026-01-02,BL-260102-0098,Zomato,Veg Wrap,Food,1,260,12.6,247.4,259.77,Sneha R,zomato
+2026-01-02,BL-260102-0099,Customer 60,Masala Chai,Hot Beverages,1,80,2.28,77.72,81.6,Walk-in,delivery
+2026-01-02,BL-260102-0100,Customer 129,Seasonal Special,Seasonal,1,385,16.81,368.19,386.6,Priya S,delivery
+2026-01-02,BL-260102-0100,Customer 129,Veg Wrap,Food,1,260,4.83,255.17,267.93,Priya S,delivery
+2026-01-02,BL-260102-0101,Customer 73,Latte,Hot Beverages,2,400,10.66,389.34,408.81,Walk-in,dine-in
+2026-01-02,BL-260102-0102,Customer 61,Masala Chai,Hot Beverages,2,160,6.71,153.29,160.95,Sneha R,takeaway
+2026-01-02,BL-260102-0102,Customer 61,Seasonal Special,Seasonal,1,385,0.74,384.26,403.48,Walk-in,takeaway
+2026-01-02,BL-260102-0103,Customer 121,Espresso,Hot Beverages,1,150,5.45,144.55,151.77,Walk-in,takeaway
+2026-01-02,BL-260102-0103,Customer 121,Latte,Hot Beverages,1,200,2.38,197.62,207.5,Priya S,takeaway
+2026-01-02,BL-260102-0104,Customer 13,Latte,Hot Beverages,1,200,21.72,178.28,187.19,Priya S,dine-in
+2026-01-02,BL-260102-0104,Customer 13,Veg Wrap,Food,1,260,7.55,252.45,265.07,Amit K,dine-in
+2026-01-02,BL-260102-0105,Swiggy,Seasonal Special,Seasonal,2,770,21.33,748.67,786.1,Walk-in,swiggy
+2026-01-02,BL-260102-0105,Swiggy,Blueberry Muffin,Bakery,1,140,2.71,137.29,144.16,Sneha R,swiggy
+2026-01-02,BL-260102-0105,Swiggy,Iced Latte,Cold Beverages,1,240,4.29,235.71,247.5,Priya S,swiggy
+2026-01-02,BL-260102-0106,Customer 161,Espresso,Hot Beverages,1,150,9.83,140.17,147.18,Amit K,dine-in
+2026-01-02,BL-260102-0106,Customer 161,Seasonal Special,Seasonal,1,385,45.31,339.69,356.67,Walk-in,dine-in
+2026-01-02,BL-260102-0107,Customer 118,Iced Latte,Cold Beverages,1,240,28.49,211.51,222.09,Walk-in,dine-in
+2026-01-02,BL-260102-0107,Customer 118,Iced Latte,Cold Beverages,1,240,18.63,221.37,232.44,Sneha R,dine-in
+2026-01-02,BL-260102-0108,Swiggy,Blueberry Muffin,Bakery,2,280,5.41,274.59,288.32,Amit K,swiggy
+2026-01-02,BL-260102-0109,Customer 133,Espresso,Hot Beverages,1,150,5.78,144.22,151.43,Priya S,dine-in
+2026-01-02,BL-260102-0110,Customer 110,Chocolate Brownie,Bakery,2,320,13.54,306.46,321.78,Walk-in,dine-in
+2026-01-02,BL-260102-0110,Customer 110,Iced Latte,Cold Beverages,1,240,22.79,217.21,228.07,Priya S,dine-in
+2026-01-02,BL-260102-0110,Customer 110,Latte,Hot Beverages,1,200,9.75,190.25,199.76,Amit K,dine-in
+2026-01-02,BL-260102-0111,Customer 113,Club Sandwich,Food,1,320,5.89,314.11,329.81,Walk-in,dine-in
+2026-01-02,BL-260102-0112,Customer 136,Latte,Hot Beverages,1,200,1.86,198.14,208.05,Walk-in,takeaway
+2026-01-02,BL-260102-0112,Customer 136,Avocado Toast,Food,1,280,10.85,269.15,282.61,Walk-in,takeaway
+2026-01-02,BL-260102-0113,Customer 126,Latte,Hot Beverages,1,200,23.22,176.78,185.62,Sneha R,dine-in
+2026-01-02,BL-260102-0113,Customer 126,Veg Wrap,Food,1,260,2.03,257.97,270.87,Sneha R,dine-in
+2026-01-02,BL-260102-0114,Swiggy,Latte,Hot Beverages,2,400,15.84,384.16,403.37,Amit K,swiggy
+2026-01-02,BL-260102-0114,Swiggy,Seasonal Special,Seasonal,1,385,6.95,378.05,396.96,Sneha R,swiggy
+2026-01-02,BL-260102-0114,Swiggy,Blueberry Muffin,Bakery,1,140,3.86,136.14,142.95,Priya S,swiggy
+2026-01-02,BL-260102-0115,Swiggy,Masala Chai,Hot Beverages,1,80,1.8,78.2,82.11,Sneha R,swiggy
+2026-01-02,BL-260102-0115,Swiggy,Espresso,Hot Beverages,2,300,11.7,288.3,302.71,Amit K,swiggy
+2026-01-02,BL-260102-0116,Zomato,Espresso,Hot Beverages,1,150,1.21,148.79,156.22,Amit K,zomato
+2026-01-02,BL-260102-0116,Zomato,Masala Chai,Hot Beverages,2,160,4.15,155.85,163.64,Sneha R,zomato
+2026-01-02,BL-260102-0117,Zomato,Veg Wrap,Food,1,260,12.24,247.76,260.15,Amit K,zomato
+2026-01-02,BL-260102-0117,Zomato,Espresso,Hot Beverages,1,150,5.4,144.6,151.83,Sneha R,zomato
+2026-01-02,BL-260102-0118,Customer 8,Iced Latte,Cold Beverages,1,240,22.09,217.91,228.81,Walk-in,dine-in
+2026-01-02,BL-260102-0118,Customer 8,Club Sandwich,Food,1,320,19.12,300.88,315.92,Sneha R,dine-in
+2026-01-02,BL-260102-0119,Customer 176,Blueberry Muffin,Bakery,1,140,4.25,135.75,142.54,Sneha R,takeaway
+2026-01-02,BL-260102-0119,Customer 176,Chocolate Brownie,Bakery,1,160,7.9,152.1,159.7,Sneha R,takeaway
+2026-01-02,BL-260102-0120,Customer 132,Iced Latte,Cold Beverages,1,240,1.69,238.31,250.22,Priya S,delivery
+2026-01-02,BL-260102-0120,Customer 132,Iced Latte,Cold Beverages,2,480,20.74,459.26,482.22,Walk-in,delivery
+2026-01-02,BL-260102-0121,Swiggy,Iced Latte,Cold Beverages,1,240,1.08,238.92,250.87,Walk-in,swiggy
+2026-01-02,BL-260102-0121,Swiggy,Avocado Toast,Food,1,280,3.37,276.63,290.46,Sneha R,swiggy
+2026-01-02,BL-260102-0121,Swiggy,Cappuccino,Hot Beverages,1,180,4.45,175.55,184.32,Walk-in,swiggy
+2026-01-02,BL-260102-0122,Zomato,Masala Chai,Hot Beverages,1,80,0.2,79.8,83.79,Amit K,zomato
+2026-01-02,BL-260102-0122,Zomato,Masala Chai,Hot Beverages,1,80,0.29,79.71,83.69,Walk-in,zomato
+2026-01-02,BL-260102-0123,Swiggy,Masala Chai,Hot Beverages,1,80,1.46,78.54,82.46,Amit K,swiggy
+2026-01-02,BL-260102-0124,Customer 129,Seasonal Special,Seasonal,1,385,21.11,363.89,382.08,Amit K,dine-in
+2026-01-02,BL-260102-0124,Customer 129,Masala Chai,Hot Beverages,2,160,6.12,153.88,161.58,Walk-in,dine-in
+2026-01-02,BL-260102-0124,Customer 129,Club Sandwich,Food,1,320,11.49,308.51,323.93,Sneha R,dine-in
+2026-01-02,BL-260102-0125,Customer 77,Iced Latte,Cold Beverages,1,240,8.7,231.3,242.86,Priya S,takeaway
+2026-01-02,BL-260102-0125,Customer 77,Club Sandwich,Food,1,320,15.47,304.53,319.75,Amit K,takeaway
+2026-01-02,BL-260102-0126,Swiggy,Espresso,Hot Beverages,1,150,1.82,148.18,155.59,Priya S,swiggy
+2026-01-02,BL-260102-0126,Swiggy,Cold Brew,Cold Beverages,1,220,3.45,216.55,227.38,Amit K,swiggy
+2026-01-02,BL-260102-0127,Swiggy,Espresso,Hot Beverages,1,150,4.21,145.79,153.08,Walk-in,swiggy
+2026-01-02,BL-260102-0127,Swiggy,Avocado Toast,Food,1,280,13.39,266.61,279.94,Walk-in,swiggy
+2026-01-02,BL-260102-0128,Swiggy,Seasonal Special,Seasonal,1,385,11.74,373.26,391.92,Amit K,swiggy
+2026-01-02,BL-260102-0128,Swiggy,Cold Brew,Cold Beverages,1,220,3.28,216.72,227.55,Sneha R,swiggy
+2026-01-02,BL-260102-0129,Swiggy,Iced Latte,Cold Beverages,1,240,6.88,233.12,244.77,Walk-in,swiggy
+2026-01-02,BL-260102-0129,Swiggy,Croissant,Bakery,1,120,5.73,114.27,119.99,Amit K,swiggy
+2026-01-02,BL-260102-0129,Swiggy,Iced Latte,Cold Beverages,1,240,11.46,228.54,239.96,Priya S,swiggy
+2026-01-02,BL-260102-0130,Swiggy,Iced Latte,Cold Beverages,2,480,16.71,463.29,486.46,Amit K,swiggy
+2026-01-02,BL-260102-0131,Customer 62,Croissant,Bakery,1,120,6.8,113.2,118.86,Amit K,dine-in
+2026-01-02,BL-260102-0131,Customer 62,Cappuccino,Hot Beverages,2,360,42.25,317.75,333.64,Amit K,dine-in
+2026-01-02,BL-260102-0132,Swiggy,Cappuccino,Hot Beverages,2,360,1.61,358.39,376.31,Amit K,swiggy
+2026-01-02,BL-260102-0132,Swiggy,Avocado Toast,Food,1,280,11.9,268.1,281.5,Priya S,swiggy
+2026-01-02,BL-260102-0133,Zomato,Chocolate Brownie,Bakery,2,320,14.82,305.18,320.44,Priya S,zomato
+2026-01-02,BL-260102-0133,Zomato,Cappuccino,Hot Beverages,1,180,5.43,174.57,183.3,Sneha R,zomato
+2026-01-02,BL-260102-0134,Customer 140,Avocado Toast,Food,1,280,2.7,277.3,291.17,Priya S,delivery
+2026-01-02,BL-260102-0135,Swiggy,Cold Brew,Cold Beverages,1,220,9.42,210.58,221.11,Walk-in,swiggy
+2026-01-02,BL-260102-0136,Customer 23,Blueberry Muffin,Bakery,1,140,1.74,138.26,145.18,Sneha R,takeaway
+2026-01-02,BL-260102-0136,Customer 23,Croissant,Bakery,1,120,4.52,115.48,121.25,Sneha R,takeaway
+2026-01-02,BL-260102-0136,Customer 23,Iced Latte,Cold Beverages,1,240,6.87,233.13,244.78,Sneha R,takeaway
+2026-01-02,BL-260102-0137,Customer 171,Chocolate Brownie,Bakery,1,160,13.25,146.75,154.08,Sneha R,dine-in
+2026-01-02,BL-260102-0138,Swiggy,Avocado Toast,Food,2,560,21.21,538.79,565.73,Amit K,swiggy
+2026-01-02,BL-260102-0138,Swiggy,Seasonal Special,Seasonal,1,385,14.53,370.47,388.99,Priya S,swiggy
+2026-01-02,BL-260102-0139,Customer 93,Club Sandwich,Food,1,320,6.32,313.68,329.37,Walk-in,dine-in
+2026-01-02,BL-260102-0140,Zomato,Blueberry Muffin,Bakery,1,140,3.91,136.09,142.89,Sneha R,zomato
+2026-01-02,BL-260102-0140,Zomato,Chocolate Brownie,Bakery,1,160,2.04,157.96,165.86,Priya S,zomato
+2026-01-02,BL-260102-0141,Customer 12,Blueberry Muffin,Bakery,1,140,2.86,137.14,143.99,Amit K,takeaway
+2026-01-02,BL-260102-0141,Customer 12,Seasonal Special,Seasonal,1,385,14.04,370.96,389.51,Walk-in,takeaway
+2026-01-02,BL-260102-0141,Customer 12,Masala Chai,Hot Beverages,2,160,3.06,156.94,164.79,Walk-in,takeaway
+2026-01-02,BL-260102-0142,Customer 139,Avocado Toast,Food,1,280,4.28,275.72,289.51,Amit K,dine-in
+2026-01-02,BL-260102-0142,Customer 139,Cappuccino,Hot Beverages,1,180,21.14,158.86,166.81,Walk-in,dine-in
+2026-01-02,BL-260102-0143,Customer 59,Latte,Hot Beverages,1,200,15.84,184.16,193.36,Priya S,dine-in
+2026-01-02,BL-260102-0143,Customer 59,Cold Brew,Cold Beverages,1,220,2.66,217.34,228.2,Priya S,dine-in
+2026-01-02,BL-260102-0143,Customer 59,Blueberry Muffin,Bakery,1,140,11.82,128.18,134.59,Priya S,dine-in
+2026-01-02,BL-260102-0144,Customer 199,Chocolate Brownie,Bakery,1,160,11.09,148.91,156.36,Sneha R,dine-in
+2026-01-02,BL-260102-0145,Customer 77,Veg Wrap,Food,1,260,15.46,244.54,256.76,Sneha R,dine-in
+2026-01-02,BL-260102-0145,Customer 77,Veg Wrap,Food,1,260,24.52,235.48,247.26,Sneha R,dine-in
+2026-01-02,BL-260102-0146,Customer 194,Chocolate Brownie,Bakery,1,160,3.7,156.3,164.11,Priya S,delivery
+2026-01-02,BL-260102-0147,Customer 35,Masala Chai,Hot Beverages,1,80,2.9,77.1,80.96,Amit K,takeaway
+2026-01-02,BL-260102-0147,Customer 35,Cappuccino,Hot Beverages,1,180,6.06,173.94,182.63,Priya S,takeaway
+2026-01-02,BL-260102-0147,Customer 35,Latte,Hot Beverages,1,200,7.62,192.38,202,Amit K,takeaway
+2026-01-02,BL-260102-0148,Customer 4,Chocolate Brownie,Bakery,2,320,18.39,301.61,316.69,Amit K,dine-in
+2026-01-02,BL-260102-0148,Customer 4,Chocolate Brownie,Bakery,1,160,3.93,156.07,163.88,Amit K,dine-in
+2026-01-02,BL-260102-0149,Customer 167,Chocolate Brownie,Bakery,1,160,6.72,153.28,160.95,Amit K,takeaway
+2026-01-02,BL-260102-0150,Customer 190,Club Sandwich,Food,1,320,11.34,308.66,324.1,Amit K,dine-in
+2026-01-02,BL-260102-0150,Customer 190,Masala Chai,Hot Beverages,1,80,5.47,74.53,78.26,Amit K,dine-in
+2026-01-02,BL-260102-0151,Zomato,Seasonal Special,Seasonal,1,385,2.69,382.31,401.42,Walk-in,zomato
+2026-01-02,BL-260102-0152,Zomato,Latte,Hot Beverages,2,400,13.36,386.64,405.97,Priya S,zomato
+2026-01-02,BL-260102-0152,Zomato,Croissant,Bakery,1,120,3.78,116.22,122.03,Priya S,zomato
+2026-01-02,BL-260102-0153,Customer 96,Cappuccino,Hot Beverages,1,180,11.92,168.08,176.49,Priya S,dine-in
+2026-01-02,BL-260102-0153,Customer 96,Cappuccino,Hot Beverages,1,180,5.93,174.07,182.77,Sneha R,dine-in
+2026-01-02,BL-260102-0153,Customer 96,Cappuccino,Hot Beverages,1,180,15.07,164.93,173.17,Walk-in,dine-in
+2026-01-02,BL-260102-0154,Customer 135,Masala Chai,Hot Beverages,1,80,3.81,76.19,80,Sneha R,dine-in
+2026-01-02,BL-260102-0155,Customer 58,Cappuccino,Hot Beverages,1,180,8.19,171.81,180.4,Walk-in,dine-in
+2026-01-02,BL-260102-0155,Customer 58,Cappuccino,Hot Beverages,1,180,15.18,164.82,173.06,Priya S,dine-in
+2026-01-02,BL-260102-0155,Customer 58,Blueberry Muffin,Bakery,1,140,10.83,129.17,135.62,Sneha R,dine-in
+2026-01-02,BL-260102-0156,Customer 11,Club Sandwich,Food,1,320,1.79,318.21,334.12,Priya S,dine-in
+2026-01-02,BL-260102-0156,Customer 11,Veg Wrap,Food,2,520,56.12,463.88,487.08,Priya S,dine-in
+2026-01-02,BL-260102-0157,Zomato,Club Sandwich,Food,1,320,6.23,313.77,329.46,Sneha R,zomato
+2026-01-02,BL-260102-0158,Swiggy,Cappuccino,Hot Beverages,1,180,2.09,177.91,186.81,Priya S,swiggy
+2026-01-02,BL-260102-0158,Swiggy,Masala Chai,Hot Beverages,1,80,2.46,77.54,81.42,Walk-in,swiggy
+2026-01-02,BL-260102-0158,Swiggy,Seasonal Special,Seasonal,1,385,12.21,372.79,391.43,Walk-in,swiggy
+2026-01-02,BL-260102-0159,Customer 97,Seasonal Special,Seasonal,1,385,1.42,383.58,402.76,Sneha R,takeaway
+2026-01-02,BL-260102-0159,Customer 97,Espresso,Hot Beverages,1,150,5.88,144.12,151.33,Amit K,takeaway
+2026-01-02,BL-260102-0159,Customer 97,Chocolate Brownie,Bakery,1,160,2.89,157.11,164.97,Priya S,takeaway
+2026-01-02,BL-260102-0160,Customer 195,Blueberry Muffin,Bakery,1,140,8.61,131.39,137.96,Priya S,dine-in
+2026-01-02,BL-260102-0160,Customer 195,Cappuccino,Hot Beverages,1,180,11.97,168.03,176.43,Sneha R,dine-in
+2026-01-02,BL-260102-0161,Swiggy,Veg Wrap,Food,1,260,1.8,258.2,271.1,Sneha R,swiggy
+2026-01-02,BL-260102-0161,Swiggy,Iced Latte,Cold Beverages,1,240,0.76,239.24,251.2,Walk-in,swiggy
+2026-01-02,BL-260102-0162,Customer 20,Blueberry Muffin,Bakery,1,140,1.37,138.63,145.56,Priya S,takeaway
+2026-01-02,BL-260102-0162,Customer 20,Espresso,Hot Beverages,1,150,7.12,142.88,150.03,Sneha R,takeaway
+2026-01-02,BL-260102-0162,Customer 20,Club Sandwich,Food,1,320,13.8,306.2,321.52,Walk-in,takeaway
+2026-01-02,BL-260102-0163,Customer 35,Croissant,Bakery,2,240,8.39,231.61,243.19,Walk-in,dine-in
+2026-01-02,BL-260102-0164,Customer 101,Avocado Toast,Food,1,280,10.75,269.25,282.72,Priya S,takeaway
+2026-01-02,BL-260102-0164,Customer 101,Chocolate Brownie,Bakery,1,160,5.67,154.33,162.05,Walk-in,takeaway
+2026-01-02,BL-260102-0165,Swiggy,Croissant,Bakery,1,120,0.44,119.56,125.53,Walk-in,swiggy
+2026-01-02,BL-260102-0165,Swiggy,Club Sandwich,Food,1,320,8.11,311.89,327.49,Walk-in,swiggy
+2026-01-02,BL-260102-0166,Swiggy,Latte,Hot Beverages,1,200,2.48,197.52,207.39,Sneha R,swiggy
+2026-01-02,BL-260102-0166,Swiggy,Espresso,Hot Beverages,1,150,0.33,149.67,157.15,Walk-in,swiggy
+2026-01-02,BL-260102-0167,Customer 111,Chocolate Brownie,Bakery,1,160,8.56,151.44,159.01,Walk-in,dine-in
+2026-01-02,BL-260102-0167,Customer 111,Blueberry Muffin,Bakery,1,140,9.89,130.11,136.62,Amit K,dine-in
+2026-01-02,BL-260102-0168,Customer 22,Iced Latte,Cold Beverages,1,240,22.59,217.41,228.28,Walk-in,dine-in
+2026-01-02,BL-260102-0169,Customer 82,Latte,Hot Beverages,1,200,3.94,196.06,205.86,Amit K,dine-in
+2026-01-02,BL-260102-0169,Customer 82,Avocado Toast,Food,1,280,5.38,274.62,288.35,Walk-in,dine-in
+2026-01-02,BL-260102-0169,Customer 82,Blueberry Muffin,Bakery,1,140,6.8,133.2,139.85,Amit K,dine-in
+2026-01-02,BL-260102-0170-R,Customer 51,Cold Brew,Cold Beverages,1,220,8.28,211.72,222.31,Priya S,takeaway
+2026-01-02,BL-260102-0170-R,Customer 51,Club Sandwich,Food,1,320,13.95,306.05,321.35,Amit K,takeaway
+2026-01-02,BL-260102-0171,Customer 51,Club Sandwich,Food,1,320,6.28,313.72,329.41,Priya S,takeaway
+2026-01-02,BL-260102-0172,Swiggy,Latte,Hot Beverages,1,200,3.13,196.87,206.71,Amit K,swiggy
+2026-01-02,BL-260102-0172,Swiggy,Iced Latte,Cold Beverages,1,240,4.48,235.52,247.3,Amit K,swiggy
+2026-01-02,BL-260102-0173,Customer 36,Espresso,Hot Beverages,1,150,3.67,146.33,153.64,Amit K,delivery
+2026-01-02,BL-260102-0174,Zomato,Croissant,Bakery,2,240,6.07,233.93,245.63,Walk-in,zomato
+2026-01-02,BL-260102-0175,Zomato,Iced Latte,Cold Beverages,1,240,2.7,237.3,249.17,Sneha R,zomato
+2026-01-02,BL-260102-0175,Zomato,Espresso,Hot Beverages,1,150,4.24,145.76,153.05,Walk-in,zomato
+2026-01-02,BL-260102-0175,Zomato,Avocado Toast,Food,1,280,8.02,271.98,285.58,Sneha R,zomato
+2026-01-02,BL-260102-0176,Customer 94,Blueberry Muffin,Bakery,1,140,6.93,133.07,139.73,Priya S,delivery
+2026-01-02,BL-260102-0176,Customer 94,Chocolate Brownie,Bakery,1,160,6.01,153.99,161.69,Sneha R,delivery
+2026-01-02,BL-260102-0177,Zomato,Cold Brew,Cold Beverages,1,220,6.47,213.53,224.21,Sneha R,zomato
+2026-01-02,BL-260102-0177,Zomato,Chocolate Brownie,Bakery,1,160,3.43,156.57,164.4,Amit K,zomato
+2026-01-02,BL-260102-0177,Zomato,Seasonal Special,Seasonal,1,385,3.98,381.02,400.07,Priya S,zomato
+2026-01-02,BL-260102-0178,Customer 153,Iced Latte,Cold Beverages,1,240,11.43,228.57,240,Priya S,delivery
+2026-01-02,BL-260102-0178,Customer 153,Espresso,Hot Beverages,2,300,11.79,288.21,302.63,Priya S,delivery
+2026-01-02,BL-260102-0178,Customer 153,Iced Latte,Cold Beverages,2,480,3.05,476.95,500.8,Amit K,delivery
+2026-01-02,BL-260102-0179,Swiggy,Croissant,Bakery,1,120,0.45,119.55,125.52,Priya S,swiggy
+2026-01-02,BL-260102-0180,Zomato,Masala Chai,Hot Beverages,1,80,3.48,76.52,80.35,Priya S,zomato
+2026-01-02,BL-260102-0180,Zomato,Chocolate Brownie,Bakery,2,320,10.16,309.84,325.33,Sneha R,zomato
+2026-01-02,BL-260102-0181,Customer 102,Masala Chai,Hot Beverages,1,80,1.25,78.75,82.68,Walk-in,dine-in
+2026-01-02,BL-260102-0181,Customer 102,Seasonal Special,Seasonal,1,385,31.53,353.47,371.14,Priya S,dine-in
+2026-01-02,BL-260102-0182,Customer 41,Croissant,Bakery,1,120,4.13,115.87,121.66,Amit K,takeaway
+2026-01-02,BL-260102-0182,Customer 41,Veg Wrap,Food,1,260,11.37,248.63,261.06,Sneha R,takeaway
+2026-01-02,BL-260102-0182,Customer 41,Latte,Hot Beverages,1,200,2.5,197.5,207.37,Sneha R,takeaway
+2026-01-02,BL-260102-0183,Zomato,Cold Brew,Cold Beverages,1,220,1,219,229.95,Priya S,zomato
+2026-01-02,BL-260102-0184,Customer 123,Blueberry Muffin,Bakery,1,140,11.69,128.31,134.73,Priya S,dine-in
+2026-01-02,BL-260102-0184,Customer 123,Croissant,Bakery,1,120,6.88,113.12,118.78,Amit K,dine-in
+2026-01-02,BL-260102-0184,Customer 123,Croissant,Bakery,1,120,11.61,108.39,113.81,Priya S,dine-in
+2026-01-02,BL-260102-0185,Zomato,Club Sandwich,Food,1,320,7.04,312.96,328.61,Amit K,zomato
+2026-01-02,BL-260102-0185,Zomato,Veg Wrap,Food,1,260,11.96,248.04,260.44,Walk-in,zomato
+2026-01-02,BL-260102-0185,Zomato,Cold Brew,Cold Beverages,1,220,1.11,218.89,229.84,Priya S,zomato
+2026-01-02,BL-260102-0186,Customer 110,Latte,Hot Beverages,1,200,14.42,185.58,194.85,Sneha R,dine-in
+2026-01-02,BL-260102-0186,Customer 110,Seasonal Special,Seasonal,2,770,2.48,767.52,805.9,Sneha R,dine-in
+2026-01-02,BL-260102-0187,Swiggy,Veg Wrap,Food,1,260,6.87,253.13,265.79,Priya S,swiggy
+2026-01-02,BL-260102-0188,Customer 34,Avocado Toast,Food,1,280,10.68,269.32,282.79,Priya S,takeaway
+2026-01-02,BL-260102-0188,Customer 34,Cappuccino,Hot Beverages,1,180,0.12,179.88,188.87,Amit K,takeaway
+2026-01-02,BL-260102-0189,Customer 102,Latte,Hot Beverages,1,200,5.38,194.62,204.35,Amit K,delivery
+2026-01-02,BL-260102-0190,Customer 40,Veg Wrap,Food,1,260,0.86,259.14,272.1,Walk-in,delivery
+2026-01-02,BL-260102-0190,Customer 40,Chocolate Brownie,Bakery,2,320,3.82,316.18,331.99,Amit K,delivery
+2026-01-02,BL-260102-0191,Swiggy,Chocolate Brownie,Bakery,1,160,0.09,159.91,167.9,Walk-in,swiggy
+2026-01-02,BL-260102-0191,Swiggy,Masala Chai,Hot Beverages,1,80,3.13,76.87,80.71,Sneha R,swiggy
+2026-01-02,BL-260102-0192,Zomato,Cappuccino,Hot Beverages,1,180,3.86,176.14,184.94,Priya S,zomato
+2026-01-03,BL-260103-0193,Customer 1,Espresso,Hot Beverages,1,150,17.29,132.71,139.35,Priya S,dine-in
+2026-01-03,BL-260103-0194,Customer 58,Iced Latte,Cold Beverages,1,240,16.46,223.54,234.72,Priya S,dine-in
+2026-01-03,BL-260103-0194,Customer 58,Avocado Toast,Food,1,280,1.77,278.23,292.14,Amit K,dine-in
+2026-01-03,BL-260103-0195,Swiggy,Iced Latte,Cold Beverages,1,240,3.65,236.35,248.17,Amit K,swiggy
+2026-01-03,BL-260103-0196,Zomato,Avocado Toast,Food,1,280,3.43,276.57,290.4,Priya S,zomato
+2026-01-03,BL-260103-0196,Zomato,Croissant,Bakery,1,120,3.25,116.75,122.59,Priya S,zomato
+2026-01-03,BL-260103-0197,Swiggy,Cappuccino,Hot Beverages,2,360,2.56,357.44,375.31,Sneha R,swiggy
+2026-01-03,BL-260103-0197,Swiggy,Latte,Hot Beverages,1,200,2.31,197.69,207.57,Walk-in,swiggy
+2026-01-03,BL-260103-0198,Customer 192,Croissant,Bakery,1,120,8.18,111.82,117.41,Walk-in,dine-in
+2026-01-03,BL-260103-0198,Customer 192,Veg Wrap,Food,2,520,14.77,505.23,530.49,Sneha R,dine-in
+2026-01-03,BL-260103-0198,Customer 192,Masala Chai,Hot Beverages,2,160,7.54,152.46,160.08,Sneha R,dine-in
+2026-01-03,BL-260103-0199,Swiggy,Croissant,Bakery,1,120,2.15,117.85,123.74,Amit K,swiggy
+2026-01-03,BL-260103-0199,Swiggy,Blueberry Muffin,Bakery,1,140,1.86,138.14,145.05,Priya S,swiggy
+2026-01-03,BL-260103-0200,Zomato,Masala Chai,Hot Beverages,1,80,2.84,77.16,81.01,Sneha R,zomato
+2026-01-03,BL-260103-0200,Zomato,Croissant,Bakery,1,120,4.06,115.94,121.73,Sneha R,zomato
+2026-01-03,BL-260103-0200,Zomato,Espresso,Hot Beverages,1,150,3.03,146.97,154.32,Walk-in,zomato
+2026-01-03,BL-260103-0201,Customer 25,Cold Brew,Cold Beverages,1,220,9.06,210.94,221.49,Sneha R,takeaway
+2026-01-03,BL-260103-0201,Customer 25,Veg Wrap,Food,1,260,8.38,251.62,264.2,Sneha R,takeaway
+2026-01-03,BL-260103-0201,Customer 25,Latte,Hot Beverages,1,200,0.64,199.36,209.32,Walk-in,takeaway
+2026-01-03,BL-260103-0202,Customer 85,Club Sandwich,Food,1,320,27.82,292.18,306.79,Walk-in,dine-in
+2026-01-03,BL-260103-0202,Customer 85,Cappuccino,Hot Beverages,1,180,9.22,170.78,179.32,Sneha R,dine-in
+2026-01-03,BL-260103-0203,Swiggy,Croissant,Bakery,1,120,1.2,118.8,124.74,Amit K,swiggy
+2026-01-03,BL-260103-0204,Zomato,Avocado Toast,Food,1,280,4.82,275.18,288.94,Sneha R,zomato
+2026-01-03,BL-260103-0204,Zomato,Croissant,Bakery,1,120,0.16,119.84,125.84,Amit K,zomato
+2026-01-03,BL-260103-0205,Customer 72,Espresso,Hot Beverages,1,150,11.82,138.18,145.09,Sneha R,dine-in
+2026-01-03,BL-260103-0205,Customer 72,Avocado Toast,Food,1,280,30.82,249.18,261.64,Priya S,dine-in
+2026-01-03,BL-260103-0206,Customer 100,Espresso,Hot Beverages,1,150,2.39,147.61,155,Sneha R,takeaway
+2026-01-03,BL-260103-0207,Zomato,Blueberry Muffin,Bakery,1,140,1.23,138.77,145.71,Priya S,zomato
+2026-01-03,BL-260103-0207,Zomato,Latte,Hot Beverages,1,200,6.02,193.98,203.68,Priya S,zomato
+2026-01-03,BL-260103-0207,Zomato,Avocado Toast,Food,1,280,4.64,275.36,289.12,Amit K,zomato
+2026-01-03,BL-260103-0208,Zomato,Cappuccino,Hot Beverages,1,180,6.34,173.66,182.34,Amit K,zomato
+2026-01-03,BL-260103-0208,Zomato,Seasonal Special,Seasonal,1,385,10.13,374.87,393.61,Sneha R,zomato
+2026-01-03,BL-260103-0208,Zomato,Latte,Hot Beverages,1,200,9.42,190.58,200.11,Walk-in,zomato
+2026-01-03,BL-260103-0208,Zomato,Club Sandwich,Food,1,320,4.83,315.17,330.93,Amit K,zomato
+2026-01-03,BL-260103-0209,Swiggy,Chocolate Brownie,Bakery,2,320,9.82,310.18,325.69,Sneha R,swiggy
+2026-01-03,BL-260103-0209,Swiggy,Cold Brew,Cold Beverages,1,220,8.96,211.04,221.59,Walk-in,swiggy
+2026-01-03,BL-260103-0209,Swiggy,Iced Latte,Cold Beverages,1,240,3.53,236.47,248.29,Amit K,swiggy
+2026-01-03,BL-260103-0210,Customer 147,Cappuccino,Hot Beverages,1,180,2.86,177.14,185.99,Amit K,takeaway
+2026-01-03,BL-260103-0210,Customer 147,Veg Wrap,Food,1,260,12.18,247.82,260.21,Amit K,takeaway
+2026-01-03,BL-260103-0210,Customer 147,Masala Chai,Hot Beverages,1,80,0.95,79.05,83,Sneha R,takeaway
+2026-01-03,BL-260103-0210,Customer 147,Espresso,Hot Beverages,1,150,7.22,142.78,149.92,Sneha R,takeaway
+2026-01-03,BL-260103-0211,Customer 178,Chocolate Brownie,Bakery,1,160,3.19,156.81,164.65,Walk-in,dine-in
+2026-01-03,BL-260103-0211,Customer 178,Blueberry Muffin,Bakery,2,280,11.8,268.2,281.61,Walk-in,dine-in
+2026-01-03,BL-260103-0211,Customer 178,Latte,Hot Beverages,1,200,18.93,181.07,190.12,Amit K,dine-in
+2026-01-03,BL-260103-0212,Customer 27,Chocolate Brownie,Bakery,1,160,18.08,141.92,149.01,Priya S,dine-in
+2026-01-03,BL-260103-0212,Customer 27,Masala Chai,Hot Beverages,1,80,5.89,74.11,77.81,Walk-in,dine-in
+2026-01-03,BL-260103-0213,Customer 112,Chocolate Brownie,Bakery,2,320,20.74,299.26,314.22,Sneha R,dine-in
+2026-01-03,BL-260103-0213,Customer 112,Iced Latte,Cold Beverages,1,240,1.43,238.57,250.5,Walk-in,dine-in
+2026-01-03,BL-260103-0214,Swiggy,Espresso,Hot Beverages,1,150,7.33,142.67,149.81,Walk-in,swiggy
+2026-01-03,BL-260103-0214,Swiggy,Latte,Hot Beverages,1,200,3.97,196.03,205.83,Walk-in,swiggy
+2026-01-03,BL-260103-0214,Swiggy,Veg Wrap,Food,1,260,8.34,251.66,264.24,Walk-in,swiggy
+2026-01-03,BL-260103-0215,Customer 95,Club Sandwich,Food,1,320,28.89,291.11,305.67,Priya S,dine-in
+2026-01-03,BL-260103-0215,Customer 95,Latte,Hot Beverages,1,200,19.4,180.6,189.63,Walk-in,dine-in
+2026-01-03,BL-260103-0216,Customer 134,Blueberry Muffin,Bakery,1,140,1.65,138.35,145.27,Sneha R,takeaway
+2026-01-03,BL-260103-0216,Customer 134,Latte,Hot Beverages,1,200,8.54,191.46,201.03,Priya S,takeaway
+2026-01-03,BL-260103-0216,Customer 134,Avocado Toast,Food,1,280,7.24,272.76,286.4,Amit K,takeaway
+2026-01-03,BL-260103-0217,Zomato,Croissant,Bakery,1,120,4.94,115.06,120.82,Amit K,zomato
+2026-01-03,BL-260103-0218,Zomato,Croissant,Bakery,1,120,5.14,114.86,120.6,Walk-in,zomato
+2026-01-03,BL-260103-0218,Zomato,Cappuccino,Hot Beverages,1,180,5.61,174.39,183.11,Walk-in,zomato
+2026-01-03,BL-260103-0218,Zomato,Latte,Hot Beverages,1,200,1.48,198.52,208.44,Priya S,zomato
+2026-01-03,BL-260103-0219,Swiggy,Veg Wrap,Food,1,260,7.92,252.08,264.69,Priya S,swiggy
+2026-01-03,BL-260103-0219,Swiggy,Espresso,Hot Beverages,1,150,1.08,148.92,156.37,Walk-in,swiggy
+2026-01-03,BL-260103-0220,Swiggy,Iced Latte,Cold Beverages,2,480,0.49,479.51,503.49,Sneha R,swiggy
+2026-01-03,BL-260103-0221,Swiggy,Seasonal Special,Seasonal,1,385,5.19,379.81,398.8,Walk-in,swiggy
+2026-01-03,BL-260103-0222,Customer 114,Seasonal Special,Seasonal,1,385,17.27,367.73,386.11,Priya S,dine-in
+2026-01-03,BL-260103-0222,Customer 114,Avocado Toast,Food,1,280,2.2,277.8,291.69,Walk-in,dine-in
+2026-01-03,BL-260103-0222,Customer 114,Espresso,Hot Beverages,1,150,9.44,140.56,147.59,Priya S,dine-in
+2026-01-03,BL-260103-0223,Customer 117,Croissant,Bakery,1,120,1.78,118.22,124.13,Priya S,dine-in
+2026-01-03,BL-260103-0224,Customer 90,Chocolate Brownie,Bakery,1,160,0.53,159.47,167.45,Priya S,dine-in
+2026-01-03,BL-260103-0224,Customer 90,Espresso,Hot Beverages,2,300,28.07,271.93,285.52,Amit K,dine-in
+2026-01-03,BL-260103-0225,Customer 167,Espresso,Hot Beverages,1,150,4.51,145.49,152.77,Priya S,takeaway
+2026-01-03,BL-260103-0225,Customer 167,Cold Brew,Cold Beverages,1,220,8.86,211.14,221.7,Sneha R,takeaway
+2026-01-03,BL-260103-0226,Zomato,Cold Brew,Cold Beverages,1,220,7.45,212.55,223.18,Walk-in,zomato
+2026-01-03,BL-260103-0226,Zomato,Club Sandwich,Food,1,320,8.18,311.82,327.41,Sneha R,zomato
+2026-01-03,BL-260103-0227,Customer 73,Iced Latte,Cold Beverages,1,240,20.48,219.52,230.5,Sneha R,dine-in
+2026-01-03,BL-260103-0227,Customer 73,Cold Brew,Cold Beverages,1,220,20.21,199.79,209.78,Priya S,dine-in
+2026-01-03,BL-260103-0227,Customer 73,Seasonal Special,Seasonal,2,770,74.85,695.15,729.91,Walk-in,dine-in
+2026-01-03,BL-260103-0228,Customer 76,Cappuccino,Hot Beverages,1,180,21.49,158.51,166.44,Amit K,dine-in
+2026-01-03,BL-260103-0228,Customer 76,Masala Chai,Hot Beverages,1,80,2.13,77.87,81.76,Walk-in,dine-in
+2026-01-03,BL-260103-0229,Zomato,Iced Latte,Cold Beverages,1,240,6.71,233.29,244.96,Amit K,zomato
+2026-01-03,BL-260103-0229,Zomato,Veg Wrap,Food,2,520,17.02,502.98,528.13,Amit K,zomato
+2026-01-03,BL-260103-0230,Customer 79,Club Sandwich,Food,1,320,13.62,306.38,321.7,Walk-in,takeaway
+2026-01-03,BL-260103-0230,Customer 79,Cappuccino,Hot Beverages,2,360,10.5,349.5,366.97,Priya S,takeaway
+2026-01-03,BL-260103-0231,Customer 175,Cold Brew,Cold Beverages,1,220,10.86,209.14,219.6,Walk-in,takeaway
+2026-01-03,BL-260103-0231,Customer 175,Espresso,Hot Beverages,1,150,5.37,144.63,151.86,Priya S,takeaway
+2026-01-03,BL-260103-0232,Swiggy,Iced Latte,Cold Beverages,1,240,9.28,230.72,242.25,Amit K,swiggy
+2026-01-03,BL-260103-0233,Swiggy,Croissant,Bakery,2,240,4.6,235.4,247.17,Priya S,swiggy
+2026-01-03,BL-260103-0234,Zomato,Cappuccino,Hot Beverages,1,180,5.64,174.36,183.08,Amit K,zomato
+2026-01-03,BL-260103-0234,Zomato,Cold Brew,Cold Beverages,1,220,3.79,216.21,227.02,Amit K,zomato
+2026-01-03,BL-260103-0235,Customer 79,Club Sandwich,Food,1,320,16.65,303.35,318.51,Amit K,dine-in
+2026-01-03,BL-260103-0236,Zomato,Cold Brew,Cold Beverages,1,220,10.83,209.17,219.62,Amit K,zomato
+2026-01-03,BL-260103-0236,Zomato,Chocolate Brownie,Bakery,1,160,4.04,155.96,163.76,Priya S,zomato
+2026-01-03,BL-260103-0236,Zomato,Masala Chai,Hot Beverages,1,80,3.17,76.83,80.67,Walk-in,zomato
+2026-01-03,BL-260103-0237,Swiggy,Cappuccino,Hot Beverages,1,180,3.75,176.25,185.06,Walk-in,swiggy
+2026-01-03,BL-260103-0237,Swiggy,Latte,Hot Beverages,1,200,4.74,195.26,205.02,Amit K,swiggy
+2026-01-03,BL-260103-0237,Swiggy,Cold Brew,Cold Beverages,1,220,6.93,213.07,223.72,Sneha R,swiggy
+2026-01-03,BL-260103-0238,Customer 134,Latte,Hot Beverages,1,200,14.82,185.18,194.43,Sneha R,dine-in
+2026-01-03,BL-260103-0238,Customer 134,Latte,Hot Beverages,1,200,11.95,188.05,197.46,Amit K,dine-in
+2026-01-03,BL-260103-0238,Customer 134,Seasonal Special,Seasonal,1,385,24.17,360.83,378.87,Amit K,dine-in
+2026-01-03,BL-260103-0239,Swiggy,Latte,Hot Beverages,1,200,6.69,193.31,202.98,Amit K,swiggy
+2026-01-03,BL-260103-0239,Swiggy,Latte,Hot Beverages,1,200,0.75,199.25,209.21,Priya S,swiggy
+2026-01-03,BL-260103-0240,Zomato,Latte,Hot Beverages,1,200,8.74,191.26,200.82,Sneha R,zomato
+2026-01-03,BL-260103-0240,Zomato,Masala Chai,Hot Beverages,1,80,1.25,78.75,82.69,Priya S,zomato
+2026-01-03,BL-260103-0241,Customer 12,Club Sandwich,Food,1,320,28.15,291.85,306.44,Sneha R,dine-in
+2026-01-03,BL-260103-0242,Customer 117,Seasonal Special,Seasonal,1,385,40.94,344.06,361.26,Amit K,dine-in
+2026-01-03,BL-260103-0242,Customer 117,Latte,Hot Beverages,1,200,17.43,182.57,191.69,Amit K,dine-in
+2026-01-03,BL-260103-0242,Customer 117,Latte,Hot Beverages,1,200,14.18,185.82,195.11,Walk-in,dine-in
+2026-01-03,BL-260103-0243,Zomato,Cappuccino,Hot Beverages,1,180,5.89,174.11,182.81,Priya S,zomato
+2026-01-03,BL-260103-0243,Zomato,Chocolate Brownie,Bakery,2,320,8.4,311.6,327.18,Amit K,zomato
+2026-01-03,BL-260103-0244,Customer 87,Croissant,Bakery,1,120,1.49,118.51,124.43,Sneha R,delivery
+2026-01-03,BL-260103-0244,Customer 87,Veg Wrap,Food,1,260,5,255,267.75,Priya S,delivery
+2026-01-03,BL-260103-0245,Zomato,Iced Latte,Cold Beverages,1,240,2.67,237.33,249.19,Walk-in,zomato
+2026-01-03,BL-260103-0246,Customer 118,Blueberry Muffin,Bakery,1,140,0.83,139.17,146.13,Walk-in,takeaway
+2026-01-03,BL-260103-0246,Customer 118,Chocolate Brownie,Bakery,1,160,0.82,159.18,167.14,Walk-in,takeaway
+2026-01-03,BL-260103-0247,Zomato,Blueberry Muffin,Bakery,2,280,5.09,274.91,288.66,Priya S,zomato
+2026-01-03,BL-260103-0248,Customer 85,Veg Wrap,Food,1,260,5.88,254.12,266.82,Priya S,delivery
+2026-01-03,BL-260103-0249,Zomato,Espresso,Hot Beverages,1,150,6.16,143.84,151.03,Walk-in,zomato
+2026-01-03,BL-260103-0249,Zomato,Latte,Hot Beverages,1,200,1.96,198.04,207.94,Priya S,zomato
+2026-01-03,BL-260103-0250,Zomato,Seasonal Special,Seasonal,1,385,17.84,367.16,385.52,Priya S,zomato
+2026-01-03,BL-260103-0250,Zomato,Seasonal Special,Seasonal,2,770,17.61,752.39,790.01,Amit K,zomato
+2026-01-03,BL-260103-0251,Zomato,Espresso,Hot Beverages,1,150,1.3,148.7,156.13,Amit K,zomato
+2026-01-03,BL-260103-0252,Zomato,Club Sandwich,Food,2,640,24.4,615.6,646.38,Sneha R,zomato
+2026-01-03,BL-260103-0252,Zomato,Croissant,Bakery,2,240,11.65,228.35,239.77,Walk-in,zomato
+2026-01-03,BL-260103-0253,Swiggy,Chocolate Brownie,Bakery,1,160,4.43,155.57,163.35,Amit K,swiggy
+2026-01-03,BL-260103-0254,Swiggy,Chocolate Brownie,Bakery,1,160,7.67,152.33,159.95,Sneha R,swiggy
+2026-01-03,BL-260103-0255,Customer 144,Avocado Toast,Food,1,280,11.86,268.14,281.54,Priya S,takeaway
+2026-01-03,BL-260103-0256,Swiggy,Espresso,Hot Beverages,2,300,10.25,289.75,304.24,Amit K,swiggy
+2026-01-03,BL-260103-0256,Swiggy,Cappuccino,Hot Beverages,1,180,2.66,177.34,186.21,Priya S,swiggy
+2026-01-03,BL-260103-0257,Zomato,Cold Brew,Cold Beverages,1,220,8.77,211.23,221.8,Sneha R,zomato
+2026-01-03,BL-260103-0257,Zomato,Chocolate Brownie,Bakery,1,160,7.41,152.59,160.22,Walk-in,zomato
+2026-01-03,BL-260103-0258,Customer 176,Iced Latte,Cold Beverages,1,240,25.02,214.98,225.73,Walk-in,dine-in
+2026-01-03,BL-260103-0259,Swiggy,Iced Latte,Cold Beverages,1,240,11.8,228.2,239.61,Priya S,swiggy
+2026-01-03,BL-260103-0259,Swiggy,Espresso,Hot Beverages,2,300,11.03,288.97,303.42,Priya S,swiggy
+2026-01-03,BL-260103-0260,Customer 143,Cappuccino,Hot Beverages,1,180,15.33,164.67,172.9,Amit K,dine-in
+2026-01-03,BL-260103-0261,Customer 170,Avocado Toast,Food,1,280,6.18,273.82,287.51,Priya S,dine-in
+2026-01-03,BL-260103-0261,Customer 170,Seasonal Special,Seasonal,1,385,19.22,365.78,384.07,Walk-in,dine-in
+2026-01-03,BL-260103-0261,Customer 170,Latte,Hot Beverages,1,200,21.2,178.8,187.74,Sneha R,dine-in
+2026-01-03,BL-260103-0262-R,Zomato,Veg Wrap,Food,1,260,3.12,256.88,269.72,Amit K,zomato
+2026-01-03,BL-260103-0262-R,Zomato,Cappuccino,Hot Beverages,1,180,2.89,177.11,185.97,Priya S,zomato
+2026-01-03,BL-260103-0263,Swiggy,Avocado Toast,Food,1,280,0.61,279.39,293.36,Amit K,swiggy
+2026-01-03,BL-260103-0263,Swiggy,Masala Chai,Hot Beverages,1,80,3.79,76.21,80.02,Amit K,swiggy
+2026-01-03,BL-260103-0264,Customer 137,Seasonal Special,Seasonal,1,385,31.67,353.33,371,Priya S,dine-in
+2026-01-03,BL-260103-0265,Zomato,Cappuccino,Hot Beverages,1,180,0.49,179.51,188.49,Sneha R,zomato
+2026-01-03,BL-260103-0265,Zomato,Avocado Toast,Food,1,280,11.5,268.5,281.92,Sneha R,zomato
+2026-01-03,BL-260103-0265,Zomato,Croissant,Bakery,1,120,3.78,116.22,122.03,Walk-in,zomato
+2026-01-03,BL-260103-0266,Customer 31,Seasonal Special,Seasonal,1,385,0.88,384.12,403.33,Priya S,delivery
+2026-01-03,BL-260103-0266,Customer 31,Masala Chai,Hot Beverages,2,160,0.85,159.15,167.11,Sneha R,delivery

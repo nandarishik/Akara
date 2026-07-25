@@ -4,34 +4,64 @@ from uuid import UUID
 from app.services.schema.discovery import SchemaDiscovery
 
 # ── Industry-specific addendum registry ──────────────────────────────────────
-#
-# Each entry maps an industry slug (from tenants.config.industry) to a pair of
-# addendum strings appended to the generic _PLAN_SYSTEM and _SYNTHESIZE_SYSTEM
-# constants. Language rules are NOT stored here — see _LANGUAGE_NAMES below.
-# Adding a new vertical = one new entry in _INDUSTRY_ADDENDUMS.
 
 _FMCG_DISTRIBUTION_SYNTHESIZER = """
 Currency and number formatting:
 - Always express monetary values in Indian format using the ₹ symbol with lakh/crore notation.
-  Examples: ₹4.2 lakh, ₹1.3 crore, ₹85,000. Never write raw numbers like 420000 or 1300000.
-  Threshold: < ₹1 lakh → ₹X,XXX; ≥ ₹1 lakh → ₹X.X lakh; ≥ ₹1 crore → ₹X.XX crore.
-- Where the data supports it, estimate the business impact in ₹ lakh or ₹ crore.
-  Example: "This represents an estimated ₹6.8 lakh in recoverable revenue if corrected."
-
 Domain knowledge:
-- Parties = distributors or retailers. Zones = geographic sales territories. Routes = distributor beats.
-- Primary sales = ERP dispatch (sales_data). Secondary sales = DMS offtake (secondary_sales_data).
-- Scheme leakage = claimed_amount > actual secondary offtake for the same party + product + date window.
+- Parties = distributors or retailers. Routes = distributor beats or sales channels.
+- Prefer revenue = SUM(COALESCE(net_amount, total_amount)) and orders = COUNT(DISTINCT invoice_number).
 """
 
 _FMCG_DISTRIBUTION_PLANNER = """
 Additional table rules for FMCG distribution:
-- For primary-vs-secondary comparisons: join or compare sales_data vs secondary_sales_data
-  on party_name, product_name, and the relevant date range.
-- For scheme leakage detection: join scheme_master vs secondary_sales_data on
-  party_name + product_name WHERE invoice_date BETWEEN scheme_start AND scheme_end.
-- outstanding_amount is nullable — always filter with IS NOT NULL AND outstanding_amount > 0.
-- Prefer revenue = SUM(total_amount) and orders = COUNT(DISTINCT invoice_number).
+- outstanding_amount is nullable — filter with IS NOT NULL AND outstanding_amount > 0 when needed.
+- Prefer revenue = SUM(COALESCE(net_amount, total_amount)) and orders = COUNT(DISTINCT invoice_number).
+- Filter channels on route when present.
+"""
+
+_RETAIL_HOSPITALITY_SYNTHESIZER = """
+Domain knowledge (café / restaurant / retail POS):
+- route = order channel (dine-in, swiggy, zomato, takeaway, delivery).
+- Orders/bills = COUNT(DISTINCT invoice_number), never COUNT(*).
+"""
+
+_RETAIL_HOSPITALITY_PLANNER = """
+POS / retail rules:
+- Filter dine-in, swiggy, zomato, takeaway on route ILIKE — NOT product_category.
+- Order counts and bill counts: COUNT(DISTINCT invoice_number).
+- Repeat customers: GROUP BY party_name HAVING COUNT(DISTINCT invoice_number) > N.
+- Cross-file: JOIN tenant_companion_data for wastage (dataset_type='wastage'), shifts ('shift'), settlements ('settlement').
+"""
+
+_PHARMACY_SYNTHESIZER = """
+Domain knowledge (pharmacy retail):
+- route = OTC vs Rx vs delivery channel.
+- party_name = patient; pharmacist may be in raw_data or companion shift data.
+"""
+
+_PHARMACY_PLANNER = """
+Pharmacy rules:
+- OTC/Rx channel filters on route, not product_category.
+- Bill counts: COUNT(DISTINCT invoice_number).
+- Write-offs: SUM(amount) FROM tenant_companion_data WHERE dataset_type='writeoff'.
+- Referrals: tenant_companion_data dataset_type='referral'.
+- Pharmacist performance: companion dataset_type='shift' or raw_data keys.
+"""
+
+_AUTO_SERVICE_SYNTHESIZER = """
+Domain knowledge (garage / auto service):
+- route = payment channel (insurance, cash, credit).
+- product_group = Parts vs Labour (Category column maps here; product_category is usually empty).
+"""
+
+_AUTO_SERVICE_PLANNER = """
+Garage / auto service rules:
+- Parts vs labour: filter product_group ILIKE 'parts' or 'labour' — NOT product_category.
+- Insurance jobs: route ILIKE 'insurance'.
+- Job/order counts: COUNT(DISTINCT invoice_number).
+- Cross-file: vendor purchases dataset_type='vendor', timesheets='timesheet', estimates='estimate', insurance_claim='insurance_claim'.
+- Revenue: SUM(COALESCE(net_amount, total_amount)).
 """
 
 _INDUSTRY_ADDENDUMS: dict[str, dict[str, str]] = {
@@ -39,18 +69,42 @@ _INDUSTRY_ADDENDUMS: dict[str, dict[str, str]] = {
         "synthesizer": _FMCG_DISTRIBUTION_SYNTHESIZER,
         "planner": _FMCG_DISTRIBUTION_PLANNER,
     },
-    # Future verticals:
-    # "pharma_distribution": { "synthesizer": ..., "planner": ... },
-    # "retail": { "synthesizer": ..., "planner": ... },
+    "retail_chain": {
+        "synthesizer": _RETAIL_HOSPITALITY_SYNTHESIZER,
+        "planner": _RETAIL_HOSPITALITY_PLANNER,
+    },
+    "cafe": {
+        "synthesizer": _RETAIL_HOSPITALITY_SYNTHESIZER,
+        "planner": _RETAIL_HOSPITALITY_PLANNER,
+    },
+    "restaurant": {
+        "synthesizer": _RETAIL_HOSPITALITY_SYNTHESIZER,
+        "planner": _RETAIL_HOSPITALITY_PLANNER,
+    },
+    "pharmacy": {
+        "synthesizer": _PHARMACY_SYNTHESIZER,
+        "planner": _PHARMACY_PLANNER,
+    },
+    "pharma_retail": {
+        "synthesizer": _PHARMACY_SYNTHESIZER,
+        "planner": _PHARMACY_PLANNER,
+    },
+    "auto_service": {
+        "synthesizer": _AUTO_SERVICE_SYNTHESIZER,
+        "planner": _AUTO_SERVICE_PLANNER,
+    },
+    "garage": {
+        "synthesizer": _AUTO_SERVICE_SYNTHESIZER,
+        "planner": _AUTO_SERVICE_PLANNER,
+    },
 }
 
-
-# ── Language registry ─────────────────────────────────────────────────────────
-#
-# Maps ISO-639-1 code → (language name, script description).
-# Used by build_language_addendum() to produce a mirror-language instruction
-# that is completely independent of industry.
-# Adding a new language = one new entry here.
+# Benchmark business keys override tenant industry for deterministic tests
+_BUSINESS_ADDENDUMS: dict[str, dict[str, str]] = {
+    "cafe_brewlab": _INDUSTRY_ADDENDUMS["cafe"],
+    "pharmacy_medplus": _INDUSTRY_ADDENDUMS["pharmacy"],
+    "garage_autocare": _INDUSTRY_ADDENDUMS["garage"],
+}
 
 _LANGUAGE_NAMES: dict[str, tuple[str, str]] = {
     "hi": ("Hindi", "Devanagari script"),
@@ -64,15 +118,7 @@ _LANGUAGE_NAMES: dict[str, tuple[str, str]] = {
 
 
 class PromptGenerator:
-    """Builds context-aware system prompts for the copilot.
-
-    Injects tenant-specific schema context, industry-specific addendums, and
-    a mirror-language instruction derived from the tenant's configured language.
-    Language and industry concerns are fully decoupled:
-      - build_synthesizer_addendum() → industry rules only (currency, domain)
-      - build_language_addendum()    → language mirror rules only
-    The copilot route concatenates both before passing to the synthesizer.
-    """
+    """Builds context-aware system prompts for the copilot."""
 
     def __init__(self, schema_discovery: SchemaDiscovery) -> None:
         self._schema = schema_discovery
@@ -80,34 +126,34 @@ class PromptGenerator:
     def build_schema_context(self, tenant_id: UUID) -> str:
         return self._schema.get_schema_context(tenant_id)
 
-    def build_synthesizer_addendum(self, tenant_config: dict) -> str:
-        """Returns the industry-specific addendum for the synthesizer system prompt
-        (currency formatting, domain knowledge). Language rules are NOT included here.
-        Returns empty string for unknown or unconfigured industries."""
+    def _resolve_addendum(self, tenant_config: dict, kind: str) -> str:
         industry = tenant_config.get("industry", "")
-        return _INDUSTRY_ADDENDUMS.get(industry, {}).get("synthesizer", "")
+        entry = _INDUSTRY_ADDENDUMS.get(industry, {})
+        return entry.get(kind, "")
 
-    def build_planner_addendum(self, tenant_config: dict) -> str:
-        """Returns the industry-specific addendum for the planner system prompt."""
-        industry = tenant_config.get("industry", "")
-        return _INDUSTRY_ADDENDUMS.get(industry, {}).get("planner", "")
+    def build_synthesizer_addendum(
+        self, tenant_config: dict, *, business: str | None = None
+    ) -> str:
+        if business and business in _BUSINESS_ADDENDUMS:
+            return _BUSINESS_ADDENDUMS[business].get("synthesizer", "")
+        return self._resolve_addendum(tenant_config, "synthesizer")
+
+    def build_planner_addendum(
+        self, tenant_config: dict, *, business: str | None = None
+    ) -> str:
+        if business and business in _BUSINESS_ADDENDUMS:
+            return _BUSINESS_ADDENDUMS[business].get("planner", "")
+        return self._resolve_addendum(tenant_config, "planner")
 
     def build_language_addendum(self, tenant_config: dict) -> str:
-        """Returns a universal mirror-language instruction for the synthesizer.
-        Completely independent of industry — any tenant type gets this behavior.
-        Returns empty string for English-only tenants (language = 'en' or not set)."""
         language = tenant_config.get("language", "en")
         if language == "en" or language not in _LANGUAGE_NAMES:
             return ""
         name, script = _LANGUAGE_NAMES[language]
         return f"""
 Language rules:
-This user has selected English and {name} as their languages.
-Mirror the language of the user's question exactly:
-- If the question is in English, respond in English.
-- If the question is in {name} ({script}), respond in {name}. English technical or business terms are acceptable where there is no natural {name} equivalent.
-- If the question mixes English and {name}, mirror that same mix in your response.
-SQL is always generated in English internally regardless of response language.
+Mirror the language of the user's question. SQL is always generated in English.
+Selected languages: English and {name} ({script}).
 """
 
     def build_system_prompt(
@@ -117,16 +163,10 @@ SQL is always generated in English internally regardless of response language.
         start_date: str,
         end_date: str,
     ) -> str:
-        """Legacy method — kept for backward compatibility. Returns a planner-style
-        context prompt embedding schema + date range."""
         schema_context = self._schema.get_schema_context(tenant_id)
         return (
             f"You are AKARA Copilot, analytics assistant for {tenant_name}.\n"
             f"Today's date: {date.today().isoformat()}\n"
             f"Data available: {start_date} to {end_date}\n\n"
-            f"Database schema:\n{schema_context}\n\n"
-            f"Always:\n"
-            f"- Filter by tenant_id = :tenant_id\n"
-            f"- Reference only tables listed above\n"
-            f"- Be specific with numbers and cite the date range\n"
+            f"Database schema:\n{schema_context}\n"
         )

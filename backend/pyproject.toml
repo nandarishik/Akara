@@ -36,7 +36,11 @@ dev = [
     "httpx>=0.27.0",
     "ruff>=0.4.0",
     "httpx2>=2.7.0",
+    "pyyaml>=6.0.0",
 ]
+
+[project.scripts]
+benchmark-parser = "app.benchmark_cli:parser_only"
 
 [tool.ruff]
 line-length = 88

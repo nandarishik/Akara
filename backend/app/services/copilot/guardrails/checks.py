@@ -12,41 +12,43 @@ class GuardrailResult:
     message: str
 
 
-def premise_check(question: str, available_columns: list[str]) -> GuardrailResult:
+_QUESTION_STOPWORDS = frozenset({
+    "sales", "revenue", "orders", "products", "customers", "total", "average",
+    "top", "bottom", "compare", "trend", "last", "month", "week", "year",
+    "quarter", "today", "yesterday", "best", "worst", "highest", "lowest",
+    "what", "when", "where", "which", "were", "there", "many", "much", "more",
+    "than", "from", "with", "have", "made", "across", "during", "period",
+    "change", "percentage", "percent", "across", "after", "before", "between",
+    "february", "january", "march", "april", "june", "july", "august",
+    "september", "october", "november", "december",
+    "dine", "menu", "items", "sold", "visited", "times", "bills", "raised",
+    "channel", "jobs", "completed", "patients", "purchases", "distinct",
+    "service", "visits", "invoice", "lines", "labour", "parts", "approximate",
+    "gross", "profit", "proxy", "estimated", "settlement", "variance",
+    "expected", "minus", "collected", "linked", "doctor", "referrals",
+    "return", "rate", "refund", "amount", "insurance", "approved", "estimate",
+    "final", "mechanic", "pharmacist", "cashier", "shift", "hour", "write",
+    "expired", "medicine", "discount", "retail", "swiggy", "zomato", "takeaway",
+})
+
+
+def premise_check(
+    question: str,
+    available_columns: list[str],
+    allowed_terms: list[str] | None = None,
+) -> GuardrailResult:
     """
     Checks that the question refers to data that actually exists in the schema.
     Rejects queries about data we clearly don't have.
     """
     question_lower = question.lower()
+    allowed = set(available_columns) | _QUESTION_STOPWORDS
+    if allowed_terms:
+        allowed |= {t.lower() for t in allowed_terms}
     unknown_entities = [
         term
         for term in re.findall(r"\b[a-z_]{4,}\b", question_lower)
-        if term not in available_columns
-        and term
-        not in {
-            "sales",
-            "revenue",
-            "orders",
-            "products",
-            "customers",
-            "total",
-            "average",
-            "top",
-            "bottom",
-            "compare",
-            "trend",
-            "last",
-            "month",
-            "week",
-            "year",
-            "quarter",
-            "today",
-            "yesterday",
-            "best",
-            "worst",
-            "highest",
-            "lowest",
-        }
+        if term not in allowed
     ]
     if len(unknown_entities) > 3:
         return GuardrailResult(
@@ -145,10 +147,11 @@ def run_all_guardrails(
     sql_results: list[dict],
     available_columns: list[str],
     tenant_date_range: tuple[str, str],
+    allowed_terms: list[str] | None = None,
 ) -> list[GuardrailResult]:
     """Run all guardrail checks and return list of results."""
     return [
-        premise_check(question, available_columns),
+        premise_check(question, available_columns, allowed_terms=allowed_terms),
         numeric_digest(response, sql_results),
         numeric_postcheck(response),
         causal_postcheck(response),

@@ -1,0 +1,4 @@
+datasets/**/*.xlsx filter=lfs diff=lfs merge=lfs -text
+datasets/**/*.xls filter=lfs diff=lfs merge=lfs -text
+datasets/**/BrewLab*.xlsx filter=lfs diff=lfs merge=lfs -text
+datasets/**/service_invoices.xlsx filter=lfs diff=lfs merge=lfs -text

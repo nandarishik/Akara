@@ -1,0 +1,168 @@
+# Universal SMB benchmark manifest
+version: "1.0"
+seed: 42
+date_range:
+  start: "2026-01-01"
+  end: "2026-06-30"
+
+businesses:
+  cafe_brewlab:
+    display_name: "BrewLab Café"
+    tenant_env: BENCHMARK_CAFE_TENANT
+    canonical_db: canonical/cafe_brewlab.db
+    dataset_dir: datasets/cafe_brewlab
+    files:
+      - path: BrewLab_Sales_Report_Jan-Jun2026.xlsx
+        format: xlsx
+        import: true
+        source_type: primary
+        recommended_sheet: "Discount Report Item Wise"
+        expected_rows_min: 18000
+        stress_tags: [metadata_rows, subtotal_rows, duplicate_bills, malformed_rows, unicode]
+      - path: online_orders_jan_jun.csv
+        format: csv
+        import: true
+        source_type: primary
+        expected_rows_min: 1500
+        stress_tags: [column_synonyms, date_formats]
+        skip_when_xlsx_only: true
+      - path: loyalty_members.csv
+        format: csv
+        import: false
+        stress_tags: [optional_fields]
+      - path: settlement_summary.csv
+        format: csv
+        import: false
+        companion_import: true
+        dataset_type: settlement
+        stress_tags: [reconciliation, payment_methods]
+      - path: wastage_report.csv
+        format: csv
+        import: false
+        companion_import: true
+        dataset_type: wastage
+        stress_tags: [inventory_penalty, cross_file]
+      - path: stock_grn_register.csv
+        format: csv
+        import: false
+        stress_tags: [inventory_penalty, cross_file]
+      - path: shift_roster.csv
+        format: csv
+        import: false
+        companion_import: true
+        dataset_type: shift
+        stress_tags: [employee_data, cross_file]
+
+  garage_autocare:
+    display_name: "AutoCare Garage"
+    tenant_env: BENCHMARK_GARAGE_TENANT
+    canonical_db: canonical/garage_autocare.db
+    dataset_dir: datasets/garage_autocare
+    files:
+      - path: service_invoices.xlsx
+        format: xlsx
+        import: true
+        source_type: primary
+        recommended_sheet: "Parts & Labour Register"
+        expected_rows_min: 3500
+        stress_tags: [entity_variants, section_headers, raw_data_overflow]
+      - path: job_cards_jan_jun.csv
+        format: csv
+        import: false
+        stress_tags: [orphan_records, wip]
+      - path: estimates_vs_final.csv
+        format: csv
+        import: false
+        companion_import: true
+        dataset_type: estimate
+        stress_tags: [cross_file, estimate_variance]
+      - path: parts_inventory.csv
+        format: csv
+        import: false
+        stress_tags: [inventory]
+      - path: vendor_purchases.csv
+        format: csv
+        import: false
+        companion_import: true
+        dataset_type: vendor
+        stress_tags: [cost_basis, cross_file]
+      - path: insurance_claims.csv
+        format: csv
+        import: false
+        companion_import: true
+        dataset_type: insurance_claim
+        stress_tags: [insurance_flag]
+      - path: mechanic_timesheets.csv
+        format: csv
+        import: false
+        companion_import: true
+        dataset_type: timesheet
+        stress_tags: [employee_performance]
+      - path: pending_jobs.csv
+        format: csv
+        import: false
+        stress_tags: [wip]
+
+  pharmacy_medplus:
+    display_name: "MedPlus Pharmacy"
+    tenant_env: BENCHMARK_PHARMACY_TENANT
+    canonical_db: canonical/pharmacy_medplus.db
+    dataset_dir: datasets/pharmacy_medplus
+    files:
+      - path: retail_sales_register.csv
+        format: csv
+        import: true
+        source_type: primary
+        expected_rows_min: 25000
+        stress_tags: [batch_expiry, gst_formats, schedule_flags]
+      - path: purchase_register.csv
+        format: csv
+        import: false
+        stress_tags: [supplier_data]
+      - path: batch_stock.csv
+        format: csv
+        import: false
+        stress_tags: [inventory, expiry]
+      - path: expired_writeoffs.csv
+        format: csv
+        import: false
+        companion_import: true
+        dataset_type: writeoff
+        stress_tags: [cross_file, writeoffs]
+      - path: returns_substitutions.csv
+        format: csv
+        import: false
+        companion_import: true
+        dataset_type: returns
+        stress_tags: [returns, cross_file]
+      - path: otc_vs_rx_summary.csv
+        format: csv
+        import: false
+        stress_tags: [channel_split]
+      - path: doctor_referrals.csv
+        format: csv
+        import: false
+        companion_import: true
+        dataset_type: referral
+        stress_tags: [doctor_ref]
+      - path: home_delivery_log.csv
+        format: csv
+        import: false
+        stress_tags: [delivery_channel]
+      - path: pharmacist_shifts.csv
+        format: csv
+        import: false
+        companion_import: true
+        dataset_type: shift
+        stress_tags: [employee_performance]
+
+harness:
+  scoring_weights:
+    ingestion: 0.30
+    normalization: 0.20
+    copilot_answers: 0.40
+    cross_file: 0.10
+  parser_only_files:
+    - datasets/cafe_brewlab/BrewLab_Sales_Report_Jan-Jun2026.xlsx
+    - datasets/garage_autocare/service_invoices.xlsx
+    - datasets/pharmacy_medplus/retail_sales_register.csv

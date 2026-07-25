@@ -1,0 +1,91 @@
+business: cafe_brewlab
+questions:
+  - id: cafe_q01
+    difficulty: 1
+    requires_import: [primary_sales]
+    requires_files: []
+    question: "What was total dine-in revenue in March 2026?"
+    answer_type: currency
+    tolerance: 0.01
+    tags: [filter, aggregation, channel]
+
+  - id: cafe_q02
+    difficulty: 2
+    requires_import: [primary_sales]
+    requires_files: []
+    question: "How many Swiggy orders were there in February 2026?"
+    answer_type: integer
+    tolerance: 0
+    tags: [filter, count, channel]
+
+  - id: cafe_q03
+    difficulty: 3
+    requires_import: [primary_sales]
+    requires_files: []
+    question: "What are the top 5 menu items by quantity sold across all six months?"
+    answer_type: list
+    tolerance: 0
+    tags: [ranking, aggregation]
+
+  - id: cafe_q04
+    difficulty: 4
+    requires_import: [primary_sales]
+    requires_files: []
+    question: "What was the percentage change in total revenue from March 2026 to April 2026?"
+    answer_type: percent
+    tolerance: 0.02
+    tags: [mom_comparison, aggregation]
+
+  - id: cafe_q05
+    difficulty: 5
+    requires_import: [primary_sales]
+    requires_files: []
+    question: "How many customers visited more than 3 times during the six-month period?"
+    answer_type: integer
+    tolerance: 0
+    tags: [customer_history, aggregation]
+
+  - id: cafe_q06
+    difficulty: 6
+    requires_import: [primary_sales]
+    requires_files: []
+    question: "What was the average discount percentage on dine-in orders?"
+    answer_type: percent
+    tolerance: 0.03
+    tags: [discount_analysis]
+
+  - id: cafe_q07
+    difficulty: 7
+    requires_import: [primary_sales]
+    requires_files: [wastage_report.csv]
+    question: "What is estimated gross profit proxy for March 2026 (dine-in + takeaway revenue minus wastage cost)?"
+    answer_type: currency
+    tolerance: 0.02
+    tags: [cross_file, profitability]
+
+  - id: cafe_q08
+    difficulty: 8
+    requires_import: [primary_sales]
+    requires_files: [shift_roster.csv]
+    question: "What was dine-in revenue per cashier shift hour in April 2026?"
+    answer_type: currency
+    tolerance: 0.05
+    tags: [employee_efficiency, cross_file]
+
+  - id: cafe_q09
+    difficulty: 9
+    requires_import: [primary_sales]
+    requires_files: [settlement_summary.csv]
+    question: "What is the total settlement variance (expected minus collected) for June 2026?"
+    answer_type: currency
+    tolerance: 0.05
+    tags: [reconciliation, cross_file]
+
+  - id: cafe_q10
+    difficulty: 10
+    requires_import: [primary_sales]
+    requires_files: []
+    question: "How many invoices have line-item totals that do not sum to the invoice header total (excluding cancelled and zero-value bills)?"
+    answer_type: integer
+    tolerance: 0
+    tags: [anomaly_detection, multi_step]

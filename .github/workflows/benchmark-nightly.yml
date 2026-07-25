@@ -1,0 +1,45 @@
+name: Benchmark Full Harness (Nightly)
+
+on:
+  schedule:
+    - cron: "0 2 * * *"
+  workflow_dispatch:
+
+jobs:
+  full-harness:
+    runs-on: ubuntu-latest
+    if: ${{ secrets.BENCHMARK_JWT != '' }}
+    defaults:
+      run:
+        working-directory: akara/benchmark/universal-smb
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install deps
+        run: |
+          uv sync --extra dev
+          cd ../../backend && uv sync --extra dev
+
+      - name: Generate datasets
+        run: uv run python -m generator
+
+      - name: Run full benchmark harness
+        env:
+          PYTHONPATH: ${{ github.workspace }}/akara/backend:${{ github.workspace }}/akara/benchmark/universal-smb
+          BENCHMARK_JWT: ${{ secrets.BENCHMARK_JWT }}
+          BENCHMARK_BASE_URL: ${{ secrets.BENCHMARK_BASE_URL }}
+          BENCHMARK_CAFE_JWT: ${{ secrets.BENCHMARK_CAFE_JWT }}
+          BENCHMARK_GARAGE_JWT: ${{ secrets.BENCHMARK_GARAGE_JWT }}
+          BENCHMARK_PHARMACY_JWT: ${{ secrets.BENCHMARK_PHARMACY_JWT }}
+        run: uv run python -m harness.run_benchmark --base-url "${BENCHMARK_BASE_URL:-http://localhost:8000}"
+
+      - name: Upload scorecard
+        uses: actions/upload-artifact@v4
+        with:
+          name: benchmark-report
+          path: akara/benchmark/universal-smb/reports/
+          if-no-files-found: warn

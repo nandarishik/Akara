@@ -1,0 +1,45 @@
+name: Benchmark Parser Regression
+
+on:
+  push:
+    paths:
+      - "benchmark/universal-smb/**"
+      - "backend/app/services/data_import/**"
+  pull_request:
+    paths:
+      - "benchmark/universal-smb/**"
+      - "backend/app/services/data_import/**"
+  workflow_dispatch:
+
+jobs:
+  parser-regression:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: akara/benchmark/universal-smb
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install benchmark deps
+        run: uv sync --extra dev
+
+      - name: Install backend deps for parser
+        working-directory: akara/backend
+        run: uv sync --extra dev
+
+      - name: Generate datasets
+        run: uv run python -m generator
+
+      - name: Run parser + ground truth tests
+        env:
+          PYTHONPATH: ${{ github.workspace }}/akara/backend:${{ github.workspace }}/akara/benchmark/universal-smb
+        run: uv run pytest tests/ -v --tb=short
+
+      - name: Parser-only harness
+        env:
+          PYTHONPATH: ${{ github.workspace }}/akara/backend:${{ github.workspace }}/akara/benchmark/universal-smb
+        run: uv run python -m harness.run_benchmark --parser-only

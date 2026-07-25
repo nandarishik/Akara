@@ -303,6 +303,23 @@ def _score_columns(columns: list[str], sheet_name: str) -> int:
     return score
 
 
+def _norm_header_label(value: object) -> str:
+    return str(value).strip().lower().replace("_", " ")
+
+
+def _looks_like_column_header_row(non_null: list) -> bool:
+    """True when most cells look like export column names (not data values)."""
+    labels = [_norm_header_label(v) for v in non_null]
+    hits = 0
+    for label in labels:
+        if label in SALES_SIGNAL_COLS:
+            hits += 1
+            continue
+        if any(label == sig or label.startswith(sig + " ") for sig in SALES_SIGNAL_COLS):
+            hits += 1
+    return hits >= 2 and hits >= len(labels) * 0.5
+
+
 def _get_header_columns(df: pd.DataFrame, header_row: int | None) -> list[str]:
     if header_row is None or header_row >= len(df):
         return []
@@ -326,6 +343,9 @@ def detect_header_row_in_df(df: pd.DataFrame) -> int:
         if len(non_null) < 3:
             continue
 
+        if _looks_like_column_header_row(non_null):
+            return i
+
         first_val = str(non_null[0]).strip().lower()
         if any(first_val.startswith(p) or first_val == p for p in METADATA_PHRASES):
             continue
@@ -333,6 +353,8 @@ def detect_header_row_in_df(df: pd.DataFrame) -> int:
         row_text = " ".join(str(v).strip().lower() for v in non_null)
         is_metadata = False
         for phrase in METADATA_PHRASES:
+            if phrase == "total" and _looks_like_column_header_row(non_null):
+                continue
             if phrase in row_text[:80]:
                 is_metadata = True
                 break

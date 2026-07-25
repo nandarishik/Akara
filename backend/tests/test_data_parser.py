@@ -58,3 +58,29 @@ def test_parse_column_alias_mapping(parser: SalesDataParser) -> None:
     assert "invoice_date" in df.columns
     assert "party_name" in df.columns
     assert "total_amount" in df.columns
+
+
+def test_parse_net_amount_from_total(parser: SalesDataParser) -> None:
+    csv = make_csv(
+        [
+            {
+                "invoice_date": "2024-01-15",
+                "party_name": "Garage Co",
+                "total_amount": 1500.0,
+            }
+        ]
+    )
+    df = parser.parse(csv, "test.csv")
+    assert df.iloc[0]["net_amount"] == 1500.0
+
+
+def test_parse_skips_section_header_rows(parser: SalesDataParser) -> None:
+    csv = make_csv(
+        [
+            {"invoice_date": "2024-01-15", "party_name": "A", "total_amount": 100.0},
+            {"invoice_date": "--- INSURANCE JOBS ---", "party_name": "", "total_amount": ""},
+            {"invoice_date": "2024-01-16", "party_name": "B", "total_amount": 200.0},
+        ]
+    )
+    df = parser.parse(csv, "test.csv")
+    assert len(df) == 2

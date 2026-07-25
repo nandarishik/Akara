@@ -1,0 +1,93 @@
+business: garage_autocare
+questions:
+  - id: garage_q01
+    difficulty: 1
+    requires_import: [primary_sales]
+    requires_files: []
+    question: "What was total service revenue in March 2026?"
+    answer_type: currency
+    tolerance: 0.01
+    tags: [filter, aggregation]
+
+  - id: garage_q02
+    difficulty: 2
+    requires_import: [primary_sales]
+    requires_files: []
+    question: "How many insurance channel jobs were completed in February 2026?"
+    answer_type: integer
+    tolerance: 0
+    tags: [filter, count]
+
+  - id: garage_q03
+    difficulty: 3
+    requires_import: [primary_sales]
+    requires_files: []
+    question: "What are the top 5 spare parts by revenue?"
+    answer_type: list
+    tolerance: 0
+    tags: [ranking]
+
+  - id: garage_q04
+    difficulty: 4
+    requires_import: [primary_sales]
+    requires_files: []
+    question: "What was the percentage change in total revenue from March to April 2026?"
+    answer_type: percent
+    tolerance: 0.02
+    tags: [mom_comparison]
+
+  - id: garage_q05
+    difficulty: 5
+    requires_import: [primary_sales]
+    requires_files: []
+    question: "How many distinct customers had more than 2 service visits?"
+    answer_type: integer
+    tolerance: 0
+    tags: [customer_history]
+
+  - id: garage_q06
+    difficulty: 6
+    requires_import: [primary_sales]
+    requires_files: []
+    question: "What percentage of invoice lines are labour versus parts by line count?"
+    answer_type: text
+    tolerance: 0
+    tags: [mix_analysis]
+    rubric_keywords: ["labour", "parts"]
+
+  - id: garage_q07
+    difficulty: 7
+    requires_import: [primary_sales]
+    requires_files: [vendor_purchases.csv, parts_inventory.csv]
+    question: "What is the approximate parts gross margin for March 2026 (parts sales revenue minus vendor purchase cost in that month)?"
+    answer_type: currency
+    tolerance: 0.05
+    tags: [cross_file, profitability]
+
+  - id: garage_q08
+    difficulty: 8
+    requires_import: [primary_sales]
+    requires_files: [mechanic_timesheets.csv]
+    question: "Which mechanic generated the highest revenue per labour hour in Q2 2026 (Apr-Jun)?"
+    answer_type: text
+    tolerance: 0
+    tags: [employee_performance, cross_file]
+
+  - id: garage_q09
+    difficulty: 9
+    requires_import: [primary_sales]
+    requires_files: [estimates_vs_final.csv]
+    question: "What is the average estimate-to-final-invoice variance percentage for jobs with both estimate and final bill?"
+    answer_type: percent
+    tolerance: 0.05
+    tags: [cross_file, estimate_variance]
+
+  - id: garage_q10
+    difficulty: 10
+    requires_import: [primary_sales]
+    requires_files: [insurance_claims.csv]
+    question: "What is total approved insurance claim amount versus total billed insurance job revenue?"
+    answer_type: text
+    tolerance: 0
+    tags: [insurance, cross_file, anomaly]
+    rubric_keywords: ["approved", "billed"]

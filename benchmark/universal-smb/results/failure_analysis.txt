@@ -1,0 +1,109 @@
+FAILURE REASON COUNTS
+=====================
+13  wrong_sql_or_logic
+ 8  cross_file_wrong_logic
+ 2  cross_file_wrong_sql
+ 1  close_but_outside_tolerance
+ 1  count_lines_not_invoices
+
+BY QUESTION
+===========
+cafe_q01: close_but_outside_tolerance
+  exp=544633.06 parsed=531023.03
+  sql=SELECT COALESCE(SUM(net_amount), SUM(total_amount)) AS total_revenue FROM public.sales_data WHERE tenant_id = :tenant_id AND invoice_date BETWEEN '2026-03-01' AND '2026-03-31' AND 
+
+cafe_q02: wrong_sql_or_logic
+  exp=629 parsed=3962.0
+  sql=SELECT COUNT(DISTINCT invoice_number) AS swiggy_order_count FROM public.sales_data WHERE tenant_id = :tenant_id AND route ILIKE '%swiggy%' AND invoice_date BETWEEN :start_date AND 
+
+cafe_q04: wrong_sql_or_logic
+  exp=-14.39 parsed=-30.0
+  sql=SELECT SUM(COALESCE(net_amount, total_amount)) AS total_revenue_march FROM public.sales_data WHERE tenant_id = :tenant_id AND invoice_date >= '2026-03-01' AND invoice_date < '2026-
+
+cafe_q05: wrong_sql_or_logic
+  exp=200 parsed=189.0
+  sql=SELECT party_name, COUNT(DISTINCT invoice_number) AS visit_count FROM public.sales_data WHERE tenant_id = :tenant_id AND invoice_date BETWEEN :start_date AND :end_date GROUP BY par
+
+cafe_q06: wrong_sql_or_logic
+  exp=6.0 parsed=-30.0
+  sql=SELECT SUM(discount_amount) / NULLIF(SUM(COALESCE(net_amount, total_amount)), 0) * 100 AS average_discount_percentage FROM public.sales_data WHERE tenant_id = :tenant_id AND invoic
+
+cafe_q08: cross_file_wrong_logic
+  exp=1926.56 parsed=2026.0
+  sql=SELECT COALESCE(SUM(net_amount), SUM(total_amount)) AS total_revenue FROM public.sales_data WHERE tenant_id = :tenant_id AND route ILIKE 'dine-in' AND invoice_date BETWEEN '2026-04
+
+cafe_q09: cross_file_wrong_logic
+  exp=165.63 parsed=-30.0
+  sql=SELECT SUM(amount) AS expected_settlement FROM public.tenant_companion_data WHERE tenant_id = :tenant_id AND dataset_type = 'settlement' AND record_date BETWEEN '2026-06-01' AND '2
+
+cafe_q10: cross_file_wrong_sql
+  exp=0 parsed=-260628.0
+  sql=SELECT invoice_number, SUM(total_amount) AS line_item_total, SUM(net_amount) AS header_total FROM public.sales_data WHERE tenant_id = :tenant_id AND invoice_date BETWEEN :start_dat
+
+garage_q01: wrong_sql_or_logic
+  exp=1305673.36 parsed=134874.0
+  sql=SELECT SUM(COALESCE(net_amount, total_amount)) AS total_service_revenue FROM public.sales_data WHERE tenant_id = :tenant_id AND invoice_date BETWEEN '2026-03-01' AND '2026-03-31' A
+
+garage_q02: wrong_sql_or_logic
+  exp=15 parsed=2026.0
+  sql=SELECT COUNT(DISTINCT invoice_number) AS completed_jobs FROM public.sales_data WHERE tenant_id = :tenant_id AND route ILIKE 'insurance' AND invoice_date >= '2026-02-01' AND invoice
+
+garage_q03: wrong_sql_or_logic
+  exp=['Battery 45Ah', 'Brake Pad Set', 'Engine Oil 5W30', 'Air Filter', 'Wiper Blade'] parsed=None
+  sql=SELECT product_name, SUM(COALESCE(net_amount, total_amount)) AS total_revenue FROM public.sales_data WHERE tenant_id = :tenant_id AND invoice_date BETWEEN :start_date AND :end_date
+
+garage_q04: wrong_sql_or_logic
+  exp=3.92 parsed=555449.6
+  sql=SELECT SUM(COALESCE(net_amount, total_amount)) AS march_revenue FROM public.sales_data WHERE tenant_id = :tenant_id AND invoice_date BETWEEN '2026-03-01' AND '2026-03-31'
+
+garage_q05: wrong_sql_or_logic
+  exp=120 parsed=111.0
+  sql=SELECT party_name, COUNT(DISTINCT invoice_number) AS visit_count FROM public.sales_data WHERE tenant_id = :tenant_id AND invoice_date BETWEEN :start_date AND :end_date GROUP BY par
+
+garage_q06: count_lines_not_invoices
+  exp=parts=71.4%, labour=28.6% parsed=None
+  sql=SELECT product_group, COUNT(*) AS line_count FROM public.sales_data WHERE tenant_id = :tenant_id AND invoice_date BETWEEN :start_date AND :end_date AND product_group ILIKE 'labour'
+
+garage_q07: cross_file_wrong_logic
+  exp=927809.71 parsed=-30.0
+  sql=SELECT SUM(COALESCE(net_amount, total_amount)) AS parts_sales_revenue FROM public.sales_data WHERE tenant_id = :tenant_id AND invoice_date BETWEEN '2026-03-01' AND '2026-03-31' AND
+
+garage_q09: cross_file_wrong_logic
+  exp=60.34 parsed=-30.0
+  sql=SELECT party_name, SUM(amount) AS total_estimate FROM public.tenant_companion_data WHERE tenant_id = :tenant_id AND dataset_type = 'estimate' AND record_date BETWEEN :start_date AN
+
+garage_q10: cross_file_wrong_logic
+  exp=billed=424525.65, approved=360846.8 parsed=None
+  sql=SELECT SUM(COALESCE(net_amount, total_amount)) AS total_insurance_job_revenue FROM public.sales_data WHERE tenant_id = :tenant_id AND invoice_date BETWEEN :start_date AND :end_date
+
+pharmacy_q02: wrong_sql_or_logic
+  exp=1201 parsed=2026.0
+  sql=SELECT COUNT(DISTINCT invoice_number) AS otc_bills_count FROM public.sales_data WHERE tenant_id = :tenant_id AND route = 'OTC' AND invoice_date >= '2026-02-01' AND invoice_date < '
+
+pharmacy_q04: wrong_sql_or_logic
+  exp=-0.54 parsed=1290598.68
+  sql=SELECT SUM(COALESCE(net_amount, total_amount)) AS revenue_march FROM public.sales_data WHERE tenant_id = :tenant_id AND invoice_date BETWEEN '2026-03-01' AND '2026-03-31'
+
+pharmacy_q05: wrong_sql_or_logic
+  exp=500 parsed=176.0
+  sql=SELECT party_name, COUNT(DISTINCT invoice_number) AS purchase_count FROM public.sales_data WHERE tenant_id = :tenant_id AND invoice_date BETWEEN :start_date AND :end_date GROUP BY 
+
+pharmacy_q06: wrong_sql_or_logic
+  exp=4.0 parsed=-30.0
+  sql=SELECT AVG(SUM(discount_amount) / NULLIF(SUM(COALESCE(net_amount, total_amount)), 0) * 100) AS average_discount_percentage FROM public.sales_data WHERE tenant_id = :tenant_id AND i
+
+pharmacy_q07: cross_file_wrong_logic
+  exp=1282578.89 parsed=-30.0
+  sql=SELECT COALESCE(SUM(net_amount), SUM(total_amount)) AS total_net_revenue FROM public.sales_data WHERE tenant_id = :tenant_id AND invoice_date BETWEEN '2026-06-01' AND '2026-06-30'
+
+pharmacy_q08: cross_file_wrong_sql
+  exp=Meera K parsed=None
+  sql=SELECT raw_data->>'key' AS pharmacist, COUNT(DISTINCT invoice_number) AS bill_count, SUM(COALESCE(net_amount, total_amount)) AS total_revenue FROM public.sales_data WHERE tenant_id
+
+pharmacy_q09: cross_file_wrong_logic
+  exp=792953.87 parsed=12026.0
+  sql=SELECT SUM(COALESCE(net_amount, total_amount)) AS total_revenue FROM public.sales_data WHERE tenant_id = :tenant_id AND invoice_date BETWEEN '2026-01-01' AND '2026-03-31' AND invoi
+
+pharmacy_q10: cross_file_wrong_logic
+  exp=0.34 parsed=1288732.9
+  sql=SELECT SUM(COALESCE(net_amount, total_amount)) AS total_revenue FROM public.sales_data WHERE tenant_id = :tenant_id AND invoice_date BETWEEN '2026-06-01' AND '2026-06-30'

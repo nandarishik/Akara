@@ -46,24 +46,11 @@ class CopilotAgent:
         self._context_tool = context_tool
         self._tenant_id = tenant_id
 
-    async def answer(
+    async def _execute_plan(
         self,
-        question: str,
-        schema_context: str,
-        available_columns: list[str],
+        plan,
         date_range: tuple[str, str],
-        planner_addendum: str = "",
-        synthesizer_addendum: str = "",
-    ) -> CopilotResponse:
-        start_ms = int(time.time() * 1000)
-
-        plan = await self._planner.plan(
-            question, schema_context, date_range, system_addendum=planner_addendum
-        )
-        logger.info(
-            "Plan produced with %d steps for intent: %s", len(plan.steps), plan.intent
-        )
-
+    ) -> tuple[list[dict], list[str]]:
         all_results: list[dict] = []
         queries_run: list[str] = []
         for step in plan.steps:
@@ -72,6 +59,50 @@ class CopilotAgent:
             )
             all_results.extend(result.get("rows", []))
             queries_run.append(step.sql)
+        return all_results, queries_run
+
+    async def answer(
+        self,
+        question: str,
+        schema_context: str,
+        available_columns: list[str],
+        date_range: tuple[str, str],
+        planner_addendum: str = "",
+        synthesizer_addendum: str = "",
+        allowed_vocabulary: list[str] | None = None,
+        retry_hint: str = "",
+    ) -> CopilotResponse:
+        start_ms = int(time.time() * 1000)
+        full_addendum = planner_addendum + retry_hint
+
+        plan = await self._planner.plan(
+            question, schema_context, date_range, system_addendum=full_addendum
+        )
+        logger.info(
+            "Plan produced with %d steps for intent: %s", len(plan.steps), plan.intent
+        )
+
+        all_results, queries_run = await self._execute_plan(plan, date_range)
+
+        if (
+            not all_results
+            and plan.steps
+            and not is_conversational(question)
+            and not retry_hint
+            and allowed_vocabulary
+        ):
+            routes = [t for t in allowed_vocabulary if t in question.lower()]
+            if routes:
+                hint = (
+                    "\n\nRETRY: Previous query returned 0 rows. "
+                    "Use route or product_group filters (NOT product_category). "
+                    f"Known channel/value terms: {', '.join(routes[:8])}. "
+                    "Use COALESCE(net_amount, total_amount) for revenue if net is empty."
+                )
+                plan = await self._planner.plan(
+                    question, schema_context, date_range, system_addendum=planner_addendum + hint
+                )
+                all_results, queries_run = await self._execute_plan(plan, date_range)
 
         context_data = None
         today = date.today()
@@ -101,6 +132,7 @@ class CopilotAgent:
             sql_results=all_results,
             available_columns=available_columns,
             tenant_date_range=date_range,
+            allowed_terms=allowed_vocabulary,
         )
 
         for gr in guardrail_results:
@@ -132,18 +164,33 @@ class CopilotAgent:
         date_range: tuple[str, str],
         planner_addendum: str = "",
         synthesizer_addendum: str = "",
+        allowed_vocabulary: list[str] | None = None,
     ) -> AsyncGenerator[str, None]:
         """Streaming version — yields text chunks as they arrive."""
         plan = await self._planner.plan(
             question, schema_context, date_range, system_addendum=planner_addendum
         )
 
-        all_results: list[dict] = []
-        for step in plan.steps:
-            result = self._sql_tool.run(
-                step.sql, start_date=date_range[0], end_date=date_range[1]
-            )
-            all_results.extend(result.get("rows", []))
+        all_results, _ = await self._execute_plan(plan, date_range)
+
+        if (
+            not all_results
+            and plan.steps
+            and not is_conversational(question)
+            and allowed_vocabulary
+        ):
+            routes = [t for t in allowed_vocabulary if t in question.lower()]
+            if routes:
+                hint = (
+                    "\n\nRETRY: Previous query returned 0 rows. "
+                    "Use route or product_group filters (NOT product_category). "
+                    f"Known channel/value terms: {', '.join(routes[:8])}. "
+                    "Use COALESCE(net_amount, total_amount) for revenue if net is empty."
+                )
+                plan = await self._planner.plan(
+                    question, schema_context, date_range, system_addendum=planner_addendum + hint
+                )
+                all_results, _ = await self._execute_plan(plan, date_range)
 
         context_data = None
         for ctx_type in plan.requires_context:

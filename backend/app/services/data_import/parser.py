@@ -198,6 +198,8 @@ COLUMN_ALIASES: dict[str, str] = {
     "splcategoryname":              "product_group",
     "company_name":                 "product_group",  # Marg pharma (manufacturer)
     "manufacturer":                 "product_group",
+    "line_type":                    "product_group",
+    "linetype":                     "product_group",
 
     # ── quantity ──────────────────────────────────────────────────────────────
     "quantity":                     "quantity",
@@ -474,6 +476,23 @@ def _coerce_numeric(df: pd.DataFrame, numeric_cols: set[str]) -> pd.DataFrame:
     return df
 
 
+def _filter_section_and_blank_rows(df: pd.DataFrame) -> pd.DataFrame:
+    """Drop section header rows (e.g. --- INSURANCE JOBS ---) and fully blank rows."""
+    if df.empty:
+        return df
+    mask = []
+    for _, row in df.iterrows():
+        texts = [str(v).strip() for v in row.values if pd.notna(v) and str(v).strip()]
+        if not texts:
+            mask.append(False)
+            continue
+        if any(t.startswith("---") and t.endswith("---") for t in texts):
+            mask.append(False)
+            continue
+        mask.append(True)
+    return df.loc[mask].reset_index(drop=True)
+
+
 class SalesDataParser:
     def __init__(self, sheet_name: str | int | None = None) -> None:
         self._sheet_name = sheet_name
@@ -498,8 +517,12 @@ class SalesDataParser:
             elif "gross_amount" in df.columns:
                 df = df.copy()
                 df["total_amount"] = df["gross_amount"]
+        if "net_amount" not in df.columns and "total_amount" in df.columns:
+            df = df.copy()
+            df["net_amount"] = df["total_amount"]
 
         df = _validate_required(df, REQUIRED_COLUMNS)
+        df = _filter_section_and_blank_rows(df)
         df["invoice_date"] = pd.to_datetime(df["invoice_date"], errors="coerce").dt.date
         df = df.dropna(subset=["invoice_date"])
         df = _coerce_numeric(df, NUMERIC_COLUMNS)

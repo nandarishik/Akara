@@ -1,0 +1,10 @@
+canonical/*.db
+canonical/*.sqlite
+reports/
+__pycache__/
+*.pyc
+.pytest_cache/
+.venv/
+uv.lock
+*.log
+fadenthreads_*.log

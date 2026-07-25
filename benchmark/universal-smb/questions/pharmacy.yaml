@@ -1,0 +1,91 @@
+business: pharmacy_medplus
+questions:
+  - id: pharmacy_q01
+    difficulty: 1
+    requires_import: [primary_sales]
+    requires_files: []
+    question: "What was total retail revenue in March 2026?"
+    answer_type: currency
+    tolerance: 0.01
+    tags: [filter, aggregation]
+
+  - id: pharmacy_q02
+    difficulty: 2
+    requires_import: [primary_sales]
+    requires_files: []
+    question: "How many OTC channel bills were raised in February 2026?"
+    answer_type: integer
+    tolerance: 0
+    tags: [filter, count]
+
+  - id: pharmacy_q03
+    difficulty: 3
+    requires_import: [primary_sales]
+    requires_files: []
+    question: "What are the top 5 medicines by quantity sold?"
+    answer_type: list
+    tolerance: 0
+    tags: [ranking]
+
+  - id: pharmacy_q04
+    difficulty: 4
+    requires_import: [primary_sales]
+    requires_files: []
+    question: "What was the percentage change in revenue from March to April 2026?"
+    answer_type: percent
+    tolerance: 0.02
+    tags: [mom_comparison]
+
+  - id: pharmacy_q05
+    difficulty: 5
+    requires_import: [primary_sales]
+    requires_files: []
+    question: "How many patients made more than 3 purchases in the six-month period?"
+    answer_type: integer
+    tolerance: 0
+    tags: [customer_history]
+
+  - id: pharmacy_q06
+    difficulty: 6
+    requires_import: [primary_sales]
+    requires_files: []
+    question: "What was the average discount percentage across all bills?"
+    answer_type: percent
+    tolerance: 0.03
+    tags: [discount_analysis]
+
+  - id: pharmacy_q07
+    difficulty: 7
+    requires_import: [primary_sales]
+    requires_files: [expired_writeoffs.csv]
+    question: "What is net revenue after expired medicine write-off losses for June 2026?"
+    answer_type: currency
+    tolerance: 0.03
+    tags: [cross_file, expiry]
+
+  - id: pharmacy_q08
+    difficulty: 8
+    requires_import: [primary_sales]
+    requires_files: [pharmacist_shifts.csv]
+    question: "Which pharmacist had the highest revenue per bill in April 2026?"
+    answer_type: text
+    tolerance: 0
+    tags: [employee_performance]
+
+  - id: pharmacy_q09
+    difficulty: 9
+    requires_import: [primary_sales]
+    requires_files: [doctor_referrals.csv]
+    question: "What total revenue is linked to doctor referrals in Q1 2026 (Jan-Mar)?"
+    answer_type: currency
+    tolerance: 0.02
+    tags: [cross_file, doctor_ref]
+
+  - id: pharmacy_q10
+    difficulty: 10
+    requires_import: [primary_sales]
+    requires_files: [returns_substitutions.csv]
+    question: "What is the return rate by refund amount as a percentage of total revenue in June 2026?"
+    answer_type: percent
+    tolerance: 0.05
+    tags: [returns, anomaly]

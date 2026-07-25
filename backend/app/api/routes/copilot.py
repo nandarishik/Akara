@@ -195,6 +195,7 @@ async def chat(
 
     schema_context = prompt_gen.build_schema_context(tenant.tenant_id)
     available_columns = schema.get_columns()
+    allowed_vocabulary = schema.get_allowed_vocabulary(tenant.tenant_id)
 
     # Industry-specific addendums — empty string for unknown industries.
     # Language addendum is industry-agnostic and always appended last so it
@@ -240,6 +241,7 @@ async def chat(
                     date_range=date_range,
                     planner_addendum=planner_addendum,
                     synthesizer_addendum=synthesizer_addendum,
+                    allowed_vocabulary=allowed_vocabulary,
                 ):
                     response_parts.append(chunk)
                     yield f"data: {chunk}\n\n"
@@ -296,6 +298,7 @@ async def chat(
             date_range=date_range,
             planner_addendum=planner_addendum,
             synthesizer_addendum=synthesizer_addendum,
+            allowed_vocabulary=allowed_vocabulary,
         )
         latency_ms = int(time.time() * 1000) - start_ms
 

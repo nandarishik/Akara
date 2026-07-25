@@ -1,0 +1,1408 @@
+{
+  "generated_at": "2026-07-25T07:50:32.510777+00:00",
+  "tenants": [
+    {
+      "business": "cafe_brewlab",
+      "tenant_id": "20680f1e-e5b4-44c7-9238-dff311d6999b",
+      "email": "fadenthreads@gmail.com",
+      "tenant_name": "Bandi traders",
+      "imports": [
+        {
+          "file": "BrewLab_Sales_Report_Jan-Jun2026.xlsx",
+          "rows_inserted": 37380,
+          "rows_skipped": 0,
+          "warnings": []
+        },
+        {
+          "file": "online_orders_jan_jun.csv",
+          "rows_inserted": 14570,
+          "rows_skipped": 0,
+          "warnings": []
+        }
+      ],
+      "questions": [
+        {
+          "question_id": "cafe_q01",
+          "question": "What was total dine-in revenue in March 2026?",
+          "difficulty": 1,
+          "answer_type": "currency",
+          "expected": 544633.06,
+          "expected_unit": "INR",
+          "passed": false,
+          "score": 0.0,
+          "parsed": 2026.0,
+          "response": "The total dine-in revenue for March 2026 was ₹2,141,510.12.  \nPeriod: 2026-01-01 – 2026-06-30.  \n\n**Insight**: The dine-in segment showed strong revenue generation in March; consider optimizing promotions to sustain this trend.",
+          "sql_queries": [
+            "SELECT SUM(net_amount) AS total_dine_in_revenue FROM public.sales_data WHERE tenant_id = :tenant_id AND invoice_date BETWEEN '2026-03-01' AND '2026-03-31'"
+          ],
+          "guardrails": [
+            {
+              "check": "premise_check",
+              "passed": true,
+              "message": "OK"
+            },
+            {
+              "check": "numeric_digest",
+              "passed": true,
+              "message": "OK"
+            },
+            {
+              "check": "numeric_postcheck",
+              "passed": true,
+              "message": "OK"
+            },
+            {
+              "check": "causal_postcheck",
+              "passed": true,
+              "message": "OK"
+            },
+            {
+              "check": "data_scope_check",
+              "passed": true,
+              "message": "OK"
+            }
+          ],
+          "cross_file": false
+        },
+        {
+          "question_id": "cafe_q02",
+          "question": "How many Swiggy orders were there in February 2026?",
+          "difficulty": 2,
+          "answer_type": "integer",
+          "expected": 629,
+          "expected_unit": "",
+          "passed": false,
+          "score": 0.0,
+          "parsed": 2403.0,
+          "response": "**There were 2,403 Swiggy orders in February 2026.**  \nPeriod: 2026-01-01 – 2026-06-30.  \n\n**Insight:** February saw a notable number of Swiggy orders, indicating strong engagement during that month. Consider analyzing factors contributing to this order volume for future growth.\n\n⚠️ Note: Question may reference data not in scope. Unrecognized terms: ['many', 'swiggy', 'were', 'there', 'february']",
+          "sql_queries": [
+            "SELECT COUNT(*) AS swiggy_order_count FROM public.sales_data WHERE tenant_id = :tenant_id AND party_name = 'Swiggy' AND invoice_date BETWEEN '2026-02-01' AND '2026-02-28'"
+          ],
+          "guardrails": [
+            {
+              "check": "premise_check",
+              "passed": false,
+              "message": "Question may reference data not in scope. Unrecognized terms: ['many', 'swiggy', 'were', 'there', 'february']"
+            },
+            {
+              "check": "numeric_digest",
+              "passed": true,
+              "message": "OK"
+            },
+            {
+              "check": "numeric_postcheck",
+              "passed": true,
+              "message": "OK"
+            },
+            {
+              "check": "causal_postcheck",
+              "passed": true,
+              "message": "OK"
+            },
+            {
+              "check": "data_scope_check",
+              "passed": true,
+              "message": "OK"
+            }
+          ],
+          "cross_file": false
+        },
+        {
+          "question_id": "cafe_q03",
+          "question": "What are the top 5 menu items by quantity sold across all six months?",
+          "difficulty": 3,
+          "answer_type": "list",
+          "expected": [
+            "Veg Wrap",
+            "Croissant",
+            "Cold Brew",
+            "Iced Latte",
+            "Avocado Toast"
+          ],
+          "expected_unit": "",
+          "passed": true,
+          "score": 1.0,
+          "parsed": null,
+          "response": "The top 5 menu items by quantity sold are as follows.  \nPeriod: 2026-01-01 – 2026-06-30.\n\n| Rank | Product Name      | Quantity Sold |\n|------|-------------------|---------------|\n| 1    | **Veg Wrap**      | 3,385         |\n| 2    | **Croissant**     | 3,379         |\n| 3    | **Cold Brew**     | 3,372         |\n| 4    | **Avocado Toast**  | 3,324         |\n| 5    | **Iced Latte**    | 3,324         |\n\n**Insight:** Focus on promoting the **Veg Wrap** and **Croissant** as they are leading in sales, which could enhance overall revenue.\n\n⚠️ Note: Question may reference data not in scope. Unrecognized terms: ['what', 'menu', 'items', 'sold', 'across']",
+          "sql_queries": [
+            "SELECT product_name, SUM(quantity) AS total_quantity FROM public.sales_data WHERE tenant_id = :tenant_id AND invoice_date BETWEEN :start_date AND :end_date GROUP BY product_name ORDER BY total_quantity DESC LIMIT 5"
+          ],
+          "guardrails": [
+            {
+              "check": "premise_check",
+              "passed": false,
+              "message": "Question may reference data not in scope. Unrecognized terms: ['what', 'menu', 'items', 'sold', 'across']"
+            },
+            {
+              "check": "numeric_digest",
+              "passed": true,
+              "message": "OK"
+            },
+            {
+              "check": "numeric_postcheck",
+              "passed": true,
+              "message": "OK"
+            },
+            {
+              "check": "causal_postcheck",
+              "passed": true,
+              "message": "OK"
+            },
+            {
+              "check": "data_scope_check",
+              "passed": true,
+              "message": "OK"
+            }
+          ],
+          "cross_file": false
+        },
+        {
+          "question_id": "cafe_q04",
+          "question": "What was the percentage change in total revenue from March 2026 to April 2026?",
+          "difficulty": 4,
+          "answer_type": "percent",
+          "expected": -14.39,
+          "expected_unit": "percent",
+          "passed": false,
+          "score": 0.0,
+          "parsed": 2026.0,
+          "response": "The percentage change in total revenue from **March 2026** to **April 2026** is **-15.05%**.  \nPeriod: 2026-01-01 – 2026-06-30.\n\n**March Revenue:** ₹2,217,163.89  \n**April Revenue:** ₹1,883,414.14  \n\n**Insight**: A decline in revenue in April suggests a need to investigate factors that may have impacted sales during that month. Consider strategies to address any underlying issues.\n\n⚠️ Note: Question may reference data not in scope. Unrecognized terms: ['what', 'percentage', 'change', 'from', 'march']",
+          "sql_queries": [
+            "SELECT SUM(total_amount) AS march_revenue FROM public.sales_data WHERE tenant_id = :tenant_id AND invoice_date BETWEEN '2026-03-01' AND '2026-03-31'",
+            "SELECT SUM(total_amount) AS april_revenue FROM public.sales_data WHERE tenant_id = :tenant_id AND invoice_date BETWEEN '2026-04-01' AND '2026-04-30'",
+            "SELECT (april_revenue - march_revenue) / NULLIF(march_revenue, 0) * 100 AS percentage_change FROM (SELECT SUM(total_amount) AS march_revenue FROM public.sales_data WHERE tenant_id = :tenant_id AND invoice_date BETWEEN '2026-03-01' AND '2026-03-31') AS march, (SELECT SUM(total_amount) AS april_revenue FROM public.sales_data WHERE tenant_id = :tenant_id AND invoice_date BETWEEN '2026-04-01' AND '2026-04-30') AS april"
+          ],
+          "guardrails": [
+            {
+              "check": "premise_check",
+              "passed": false,
+              "message": "Question may reference data not in scope. Unrecognized terms: ['what', 'percentage', 'change', 'from', 'march']"
+            },
+            {
+              "check": "numeric_digest",
+              "passed": true,
+              "message": "OK"
+            },
+            {
+              "check": "numeric_postcheck",
+              "passed": true,
+              "message": "OK"
+            },
+            {
+              "check": "causal_postcheck",
+              "passed": true,
+              "message": "OK"
+            },
+            {
+              "check": "data_scope_check",
+              "passed": true,
+              "message": "OK"
+            }
+          ],
+          "cross_file": false
+        },
+        {
+          "question_id": "cafe_q05",
+          "question": "How many customers visited more than 3 times during the six-month period?",
+          "difficulty": 5,
+          "answer_type": "integer",
+          "expected": 200,
+          "expected_unit": "",
+          "passed": false,
+          "score": 0.0,
+          "parsed": 122.0,
+          "response": "**A total of 122 customers visited more than 3 times during the six-month period.**  \nPeriod: 2026-01-01 – 2026-06-30  \n\n| Customer Count | Visit Count |\n|----------------|-------------|\n| 1              | 118         |\n| 2              | 102         |\n| 3              | 132         |\n| 4              | 81          |\n| 5              | 98          |\n| 6              | 126         |\n| 7              | 123         |\n| 8              | 91          |\n| 9              | 93          |\n| 10             | 90          |\n| ...            | ...         |\n| 122            | 138         |\n\n**Insight:** Focus on strategies to engage and retain the core group of frequent visitors, as they significantly contribute to overall footfall.\n\n⚠️ Note: Question may reference data not in scope. Unrecognized terms: ['many', 'visited', 'more', 'than', 'times']",
+          "sql_queries": [
+            "SELECT party_name, COUNT(*) as visit_count FROM public.sales_data WHERE tenant_id = :tenant_id AND invoice_date BETWEEN :start_date AND :end_date GROUP BY party_name",
+            "SELECT COUNT(*) as customer_count FROM (SELECT party_name FROM public.sales_data WHERE tenant_id = :tenant_id AND invoice_date BETWEEN :start_date AND :end_date GROUP BY party_name HAVING COUNT(*) > 3) as frequent_customers"
+          ],
+          "guardrails": [
+            {
+              "check": "premise_check",
+              "passed": false,
+              "message": "Question may reference data not in scope. Unrecognized terms: ['many', 'visited', 'more', 'than', 'times']"
+            },
+            {
+              "check": "numeric_digest",
+              "passed": true,
+              "message": "OK"
+            },
+            {
+              "check": "numeric_postcheck",
+              "passed": true,
+              "message": "OK"
+            },
+            {
+              "check": "causal_postcheck",
+              "passed": true,
+              "message": "OK"
+            },
+            {
+              "check": "data_scope_check",
+              "passed": true,
+              "message": "OK"
+            }
+          ],
+          "cross_file": false
+        },
+        {
+          "question_id": "cafe_q06",
+          "question": "What was the average discount percentage on dine-in orders?",
+          "difficulty": 6,
+          "answer_type": "percent",
+          "expected": 6.0,
+          "expected_unit": "percent",
+          "passed": false,
+          "score": 0.0,
+          "parsed": 2026.0,
+          "response": "The average discount percentage on dine-in orders is not available due to insufficient data.  \nPeriod: 2026-01-01 – 2026-06-30.  \n\n**Insight**: Consider reviewing data collection methods for dine-in orders to ensure discounts are accurately recorded in future reporting.\n\n⚠️ Note: Question may reference data not in scope. Unrecognized terms: ['what', 'discount', 'percentage', 'dine']",
+          "sql_queries": [
+            "SELECT SUM(discount_amount) AS total_discount, SUM(gross_amount) AS total_gross FROM public.sales_data WHERE tenant_id = :tenant_id AND invoice_date BETWEEN :start_date AND :end_date AND product_category = 'Dine-in'",
+            "SELECT (total_discount / total_gross) * 100 AS average_discount_percentage FROM (SELECT SUM(discount_amount) AS total_discount, SUM(gross_amount) AS total_gross FROM public.sales_data WHERE tenant_id = :tenant_id AND invoice_date BETWEEN :start_date AND :end_date AND product_category = 'Dine-in') AS discount_data"
+          ],
+          "guardrails": [
+            {
+              "check": "premise_check",
+              "passed": false,
+              "message": "Question may reference data not in scope. Unrecognized terms: ['what', 'discount', 'percentage', 'dine']"
+            },
+            {
+              "check": "numeric_digest",
+              "passed": true,
+              "message": "OK"
+            },
+            {
+              "check": "numeric_postcheck",
+              "passed": true,
+              "message": "OK"
+            },
+            {
+              "check": "causal_postcheck",
+              "passed": true,
+              "message": "OK"
+            },
+            {
+              "check": "data_scope_check",
+              "passed": true,
+              "message": "OK"
+            }
+          ],
+          "cross_file": false
+        },
+        {
+          "question_id": "cafe_q07",
+          "question": "What is estimated gross profit proxy for March 2026 (dine-in + takeaway revenue minus wastage cost)?",
+          "difficulty": 7,
+          "answer_type": "currency",
+          "expected": 783368.13,
+          "expected_unit": "INR",
+          "passed": false,
+          "score": 0.0,
+          "parsed": 2026.0,
+          "response": "The estimated gross profit proxy for March 2026 cannot be determined due to missing wastage cost data.  \nPeriod: 2026-01-01 – 2026-06-30.\n\n**Insight**: It's crucial to provide complete data on wastage costs to calculate gross profit accurately. Consider auditing wastage records for better insights.\n\n⚠️ Note: Question may reference data not in scope. Unrecognized terms: ['what', 'estimated', 'gross', 'profit', 'proxy']",
+          "sql_queries": [
+            "SELECT SUM(gross_amount) AS total_gross_revenue FROM public.sales_data WHERE tenant_id = :tenant_id AND invoice_date BETWEEN '2026-03-01' AND '2026-03-31'",
+            "SELECT SUM(net_amount) AS total_wastage_cost FROM public.sales_data WHERE tenant_id = :tenant_id AND invoice_date BETWEEN '2026-03-01' AND '2026-03-31' AND product_category = 'Wastage'",
+            "SELECT (SELECT SUM(gross_amount) FROM public.sales_data WHERE tenant_id = :tenant_id AND invoice_date BETWEEN '2026-03-01' AND '2026-03-31') - (SELECT SUM(net_amount) FROM public.sales_data WHERE tenant_id = :tenant_id AND invoice_date BETWEEN '2026-03-01' AND '2026-03-31' AND product_category = 'Wastage') AS estimated_gross_profit_proxy"
+          ],
+          "guardrails": [
+            {
+              "check": "premise_check",
+              "passed": false,
+              "message": "Question may reference data not in scope. Unrecognized terms: ['what', 'estimated', 'gross', 'profit', 'proxy']"
+            },
+            {
+              "check": "numeric_digest",
+              "passed": true,
+              "message": "OK"
+            },
+            {
+              "check": "numeric_postcheck",
+              "passed": true,
+              "message": "OK"
+            },
+            {
+              "check": "causal_postcheck",
+              "passed": true,
+              "message": "OK"
+            },
+            {
+              "check": "data_scope_check",
+              "passed": true,
+              "message": "OK"
+            }
+          ],
+          "cross_file": true
+        },
+        {
+          "question_id": "cafe_q08",
+          "question": "What was dine-in revenue per cashier shift hour in April 2026?",
+          "difficulty": 8,
+          "answer_type": "currency",
+          "expected": 1926.56,
+          "expected_unit": "INR",
+          "passed": false,
+          "score": 0.0,
+          "parsed": 2026.0,
+          "response": "Dine-in revenue per cashier shift hour in April 2026 is not available due to a lack of data.  \nPeriod: 2026-01-01 – 2026-06-30.  \n\n**Insight**: Investigate the reasons for the absence of dine-in revenue and cashier shift data to improve future reporting.\n\n⚠️ Note: Question may reference data not in scope. Unrecognized terms: ['what', 'dine', 'cashier', 'shift', 'hour']",
+          "sql_queries": [
+            "SELECT SUM(net_amount) AS total_dine_in_revenue FROM public.sales_data WHERE tenant_id = :tenant_id AND invoice_date BETWEEN '2026-04-01' AND '2026-04-30' AND product_category = 'Dine-In'",
+            "SELECT COUNT(DISTINCT invoice_number) AS total_cashier_shifts FROM public.sales_data WHERE tenant_id = :tenant_id AND invoice_date BETWEEN '2026-04-01' AND '2026-04-30' AND product_category = 'Dine-In'",
+            "SELECT (SELECT SUM(net_amount) FROM public.sales_data WHERE tenant_id = :tenant_id AND invoice_date BETWEEN '2026-04-01' AND '2026-04-30' AND product_category = 'Dine-In') / (SELECT COUNT(DISTINCT invoice_number) FROM public.sales_data WHERE tenant_id = :tenant_id AND invoice_date BETWEEN '2026-04-01' AND '2026-04-30' AND product_category = 'Dine-In') AS revenue_per_shift_hour"
+          ],
+          "guardrails": [
+            {
+              "check": "premise_check",
+              "passed": false,
+              "message": "Question may reference data not in scope. Unrecognized terms: ['what', 'dine', 'cashier', 'shift', 'hour']"
+            },
+            {
+              "check": "numeric_digest",
+              "passed": true,
+              "message": "OK"
+            },
+            {
+              "check": "numeric_postcheck",
+              "passed": true,
+              "message": "OK"
+            },
+            {
+              "check": "causal_postcheck",
+              "passed": true,
+              "message": "OK"
+            },
+            {
+              "check": "data_scope_check",
+              "passed": true,
+              "message": "OK"
+            }
+          ],
+          "cross_file": true
+        },
+        {
+          "question_id": "cafe_q09",
+          "question": "What is the total settlement variance (expected minus collected) for June 2026?",
+          "difficulty": 9,
+          "answer_type": "currency",
+          "expected": 165.63,
+          "expected_unit": "INR",
+          "passed": false,
+          "score": 0.0,
+          "parsed": 2026.0,
+          "response": "The total settlement variance for June 2026 is **-₹652,650.13**.  \nPeriod: 2026-01-01 – 2026-06-30.\n\n**Metrics:**\n- **Total Expected:** ₹1,577,040.00\n- **Total Collected:** ₹2,229,690.13\n\n**Insight:** The collected amount exceeded expectations, indicating positive financial performance during this period. Consider evaluating factors contributing to this higher collection.\n\n⚠️ Note: Question may reference data not in scope. Unrecognized terms: ['what', 'settlement', 'variance', 'expected', 'minus']",
+          "sql_queries": [
+            "SELECT SUM(total_amount) AS total_collected, SUM(gross_amount) AS total_expected, (SUM(gross_amount) - SUM(total_amount)) AS settlement_variance FROM public.sales_data WHERE tenant_id = :tenant_id AND invoice_date BETWEEN '2026-06-01' AND '2026-06-30'"
+          ],
+          "guardrails": [
+            {
+              "check": "premise_check",
+              "passed": false,
+              "message": "Question may reference data not in scope. Unrecognized terms: ['what', 'settlement', 'variance', 'expected', 'minus']"
+            },
+            {
+              "check": "numeric_digest",
+              "passed": true,
+              "message": "OK"
+            },
+            {
+              "check": "numeric_postcheck",
+              "passed": true,
+              "message": "OK"
+            },
+            {
+              "check": "causal_postcheck",
+              "passed": true,
+              "message": "OK"
+            },
+            {
+              "check": "data_scope_check",
+              "passed": true,
+              "message": "OK"
+            }
+          ],
+          "cross_file": true
+        },
+        {
+          "question_id": "cafe_q10",
+          "question": "How many invoices have line-item totals that do not sum to the invoice header total (excluding cancelled and zero-value bills)?",
+          "difficulty": 10,
+          "answer_type": "integer",
+          "expected": 0,
+          "expected_unit": "",
+          "passed": false,
+          "score": 0.0,
+          "parsed": 20099.0,
+          "response": "**There are 20,099 invoices with line-item totals that do not sum to the invoice header total, excluding cancelled and zero-value bills.**  \nPeriod: 2026-01-01 – 2026-06-30.  \n\n**Insight:** Addressing these discrepancies could improve invoice accuracy and reduce potential revenue loss. Consider reviewing the invoicing process for consistency.\n\n⚠️ Note: Question may reference data not in scope. Unrecognized terms: ['many', 'invoices', 'have', 'line', 'item']",
+          "sql_queries": [
+            "SELECT COUNT(DISTINCT invoice_number) AS mismatched_invoice_count FROM public.sales_data WHERE tenant_id = :tenant_id AND invoice_date BETWEEN :start_date AND :end_date AND total_amount <> (SELECT SUM(net_amount) FROM public.sales_data WHERE tenant_id = :tenant_id AND invoice_number = public.sales_data.invoice_number) AND total_amount > 0"
+          ],
+          "guardrails": [
+            {
+              "check": "premise_check",
+              "passed": false,
+              "message": "Question may reference data not in scope. Unrecognized terms: ['many', 'invoices', 'have', 'line', 'item']"
+            },
+            {
+              "check": "numeric_digest",
+              "passed": true,
+              "message": "OK"
+            },
+            {
+              "check": "numeric_postcheck",
+              "passed": true,
+              "message": "OK"
+            },
+            {
+              "check": "causal_postcheck",
+              "passed": true,
+              "message": "OK"
+            },
+            {
+              "check": "data_scope_check",
+              "passed": true,
+              "message": "OK"
+            }
+          ],
+          "cross_file": true
+        }
+      ],
+      "passed": 1,
+      "total": 10
+    },
+    {
+      "business": "pharmacy_medplus",
+      "tenant_id": "1287ace7-1a7f-4745-bdde-78e9a33f86b4",
+      "email": "meghanajhadi28@gmail.com",
+      "tenant_name": "Faden",
+      "imports": [
+        {
+          "file": "retail_sales_register.csv",
+          "rows_inserted": 26079,
+          "rows_skipped": 0,
+          "warnings": []
+        }
+      ],
+      "questions": [
+        {
+          "question_id": "pharmacy_q01",
+          "question": "What was total retail revenue in March 2026?",
+          "difficulty": 1,
+          "answer_type": "currency",
+          "expected": 1287149.32,
+          "expected_unit": "INR",
+          "passed": false,
+          "score": 0.0,
+          "parsed": 2026.0,
+          "response": "**The total retail revenue for March 2026 was ₹1,290,598.68.**  \nPeriod: 2026-01-01 – 2026-06-30.  \n\n**Insight:** Focus on maintaining strategies that sustain this revenue level in upcoming months.",
+          "sql_queries": [
+            "SELECT SUM(net_amount) AS total_revenue FROM public.sales_data WHERE tenant_id = :tenant_id AND invoice_date >= '2026-03-01' AND invoice_date < '2026-04-01'"
+          ],
+          "guardrails": [
+            {
+              "check": "premise_check",
+              "passed": true,
+              "message": "OK"
+            },
+            {
+              "check": "numeric_digest",
+              "passed": true,
+              "message": "OK"
+            },
+            {
+              "check": "numeric_postcheck",
+              "passed": true,
+              "message": "OK"
+            },
+            {
+              "check": "causal_postcheck",
+              "passed": true,
+              "message": "OK"
+            },
+            {
+              "check": "data_scope_check",
+              "passed": true,
+              "message": "OK"
+            }
+          ],
+          "cross_file": false
+        },
+        {
+          "question_id": "pharmacy_q02",
+          "question": "How many OTC channel bills were raised in February 2026?",
+          "difficulty": 2,
+          "answer_type": "integer",
+          "expected": 1201,
+          "expected_unit": "",
+          "passed": false,
+          "score": 0.0,
+          "parsed": 4008.0,
+          "response": "**A total of 4,008 OTC channel bills were raised in February 2026.**  \nPeriod: 2026-01-01 – 2026-06-30.  \n\n**Insight:** The volume of OTC channel bills in February indicates strong engagement in this channel, suggesting an opportunity to optimize operations and enhance customer experience.\n\n⚠️ Note: Question may reference data not in scope. Unrecognized terms: ['many', 'channel', 'bills', 'were', 'raised']",
+          "sql_queries": [
+            "SELECT COUNT(*) AS bill_count FROM public.sales_data WHERE tenant_id = :tenant_id AND invoice_date BETWEEN '2026-02-01' AND '2026-02-28'"
+          ],
+          "guardrails": [
+            {
+              "check": "premise_check",
+              "passed": false,
+              "message": "Question may reference data not in scope. Unrecognized terms: ['many', 'channel', 'bills', 'were', 'raised']"
+            },
+            {
+              "check": "numeric_digest",
+              "passed": true,
+              "message": "OK"
+            },
+            {
+              "check": "numeric_postcheck",
+              "passed": true,
+              "message": "OK"
+            },
+            {
+              "check": "causal_postcheck",
+              "passed": true,
+              "message": "OK"
+            },
+            {
+              "check": "data_scope_check",
+              "passed": true,
+              "message": "OK"
+            }
+          ],
+          "cross_file": false
+        },
+        {
+          "question_id": "pharmacy_q03",
+          "question": "What are the top 5 medicines by quantity sold?",
+          "difficulty": 3,
+          "answer_type": "list",
+          "expected": [
+            "ORS Sachet",
+            "Cetirizine 10mg",
+            "Vitamin D3 60k",
+            "Azithromycin 500mg",
+            "Insulin Glargine"
+          ],
+          "expected_unit": "",
+          "passed": true,
+          "score": 0.8,
+          "parsed": null,
+          "response": "The top 5 medicines by quantity sold are as follows:\n\nPeriod: 2026-01-01 – 2026-06-30\n\n| Rank | Medicine            | Quantity Sold |\n|------|---------------------|---------------|\n| 1    | ORS Sachet          | 7,272         |\n| 2    | Cetirizine 10mg     | 7,195         |\n| 3    | Vitamin D3 60k      | 7,118         |\n| 4    | Atorvastatin 10mg   | 4,501         |\n| 5    | Insulin Glargine    | 4,587         |\n\n**Insight:** Focus on promoting **ORS Sachet**, **Cetirizine**, and **Vitamin D3** due to their high sales volume, while **Atorvastatin** and **Insulin Glargine** may need additional marketing efforts.",
+          "sql_queries": [
+            "SELECT product_name, SUM(quantity) AS total_quantity FROM public.sales_data WHERE tenant_id = :tenant_id AND invoice_date BETWEEN :start_date AND :end_date GROUP BY product_name",
+            "SELECT product_name, total_quantity FROM (SELECT product_name, SUM(quantity) AS total_quantity FROM public.sales_data WHERE tenant_id = :tenant_id AND invoice_date BETWEEN :start_date AND :end_date GROUP BY product_name) AS subquery ORDER BY total_quantity DESC LIMIT 5"
+          ],
+          "guardrails": [
+            {
+              "check": "premise_check",
+              "passed": true,
+              "message": "OK"
+            },
+            {
+              "check": "numeric_digest",
+              "passed": true,
+              "message": "OK"
+            },
+            {
+              "check": "numeric_postcheck",
+              "passed": true,
+              "message": "OK"
+            },
+            {
+              "check": "causal_postcheck",
+              "passed": true,
+              "message": "OK"
+            },
+            {
+              "check": "data_scope_check",
+              "passed": true,
+              "message": "OK"
+            }
+          ],
+          "cross_file": false
+        },
+        {
+          "question_id": "pharmacy_q04",
+          "question": "What was the percentage change in revenue from March to April 2026?",
+          "difficulty": 4,
+          "answer_type": "percent",
+          "expected": -0.54,
+          "expected_unit": "percent",
+          "passed": false,
+          "score": 0.0,
+          "parsed": 2026.0,
+          "response": "The percentage change in revenue from **March** to **April 2026** is **-0.69%**.  \nPeriod: **2026-01-01** – **2026-06-30**.\n\n**Insight**: The slight decline in revenue indicates a month-on-month decrease, which may warrant further investigation to understand the underlying factors.\n\n⚠️ Note: Question may reference data not in scope. Unrecognized terms: ['what', 'percentage', 'change', 'from', 'march']",
+          "sql_queries": [
+            "SELECT SUM(net_amount) AS march_revenue FROM public.sales_data WHERE tenant_id = :tenant_id AND invoice_date BETWEEN '2026-03-01' AND '2026-03-31'",
+            "SELECT SUM(net_amount) AS april_revenue FROM public.sales_data WHERE tenant_id = :tenant_id AND invoice_date BETWEEN '2026-04-01' AND '2026-04-30'",
+            "SELECT (april_revenue - march_revenue) / NULLIF(march_revenue, 0) * 100 AS percentage_change FROM (SELECT SUM(net_amount) AS march_revenue FROM public.sales_data WHERE tenant_id = :tenant_id AND invoice_date BETWEEN '2026-03-01' AND '2026-03-31') AS march, (SELECT SUM(net_amount) AS april_revenue FROM public.sales_data WHERE tenant_id = :tenant_id AND invoice_date BETWEEN '2026-04-01' AND '2026-04-30') AS april"
+          ],
+          "guardrails": [
+            {
+              "check": "premise_check",
+              "passed": false,
+              "message": "Question may reference data not in scope. Unrecognized terms: ['what', 'percentage', 'change', 'from', 'march']"
+            },
+            {
+              "check": "numeric_digest",
+              "passed": true,
+              "message": "OK"
+            },
+            {
+              "check": "numeric_postcheck",
+              "passed": true,
+              "message": "OK"
+            },
+            {
+              "check": "causal_postcheck",
+              "passed": true,
+              "message": "OK"
+            },
+            {
+              "check": "data_scope_check",
+              "passed": true,
+              "message": "OK"
+            }
+          ],
+          "cross_file": false
+        },
+        {
+          "question_id": "pharmacy_q05",
+          "question": "How many patients made more than 3 purchases in the six-month period?",
+          "difficulty": 5,
+          "answer_type": "integer",
+          "expected": 500,
+          "expected_unit": "",
+          "passed": false,
+          "score": 0.0,
+          "parsed": 100.0,
+          "response": "**A total of 100 patients made more than 3 purchases in the six-month period.**  \nPeriod: 2026-01-01 – 2026-06-30  \n\n| Rank | Patient      | Purchase Count |\n|------|--------------|-----------------|\n| 1    | Patient 228  | 66              |\n| 2    | Patient 447  | 70              |\n| 3    | Patient 332  | 71              |\n| 4    | Patient 438  | 74              |\n| 5    | Patient 469  | 57              |\n\n**Insight:** There is a significant number of patients actively engaging with purchases; consider targeting this segment for loyalty programs or targeted marketing campaigns to reward repeat customers.\n\n⚠️ Note: Question may reference data not in scope. Unrecognized terms: ['many', 'patients', 'made', 'more', 'than']",
+          "sql_queries": [
+            "SELECT party_name, COUNT(*) AS purchase_count FROM public.sales_data WHERE tenant_id = :tenant_id AND invoice_date BETWEEN :start_date AND :end_date GROUP BY party_name",
+            "SELECT COUNT(*) AS patients_count FROM (SELECT party_name, COUNT(*) AS purchase_count FROM public.sales_data WHERE tenant_id = :tenant_id AND invoice_date BETWEEN :start_date AND :end_date GROUP BY party_name HAVING COUNT(*) > 3) AS subquery"
+          ],
+          "guardrails": [
+            {
+              "check": "premise_check",
+              "passed": false,
+              "message": "Question may reference data not in scope. Unrecognized terms: ['many', 'patients', 'made', 'more', 'than']"
+            },
+            {
+              "check": "numeric_digest",
+              "passed": true,
+              "message": "OK"
+            },
+            {
+              "check": "numeric_postcheck",
+              "passed": true,
+              "message": "OK"
+            },
+            {
+              "check": "causal_postcheck",
+              "passed": true,
+              "message": "OK"
+            },
+            {
+              "check": "data_scope_check",
+              "passed": true,
+              "message": "OK"
+            }
+          ],
+          "cross_file": false
+        },
+        {
+          "question_id": "pharmacy_q06",
+          "question": "What was the average discount percentage across all bills?",
+          "difficulty": 6,
+          "answer_type": "percent",
+          "expected": 4.0,
+          "expected_unit": "percent",
+          "passed": true,
+          "score": 1.0,
+          "parsed": 4.0,
+          "response": "The average discount percentage across all bills is **4.00%**.  \nPeriod: 2026-01-01 – 2026-06-30.  \n\n**Insight**: Maintaining an average discount percentage can influence customer retention. Consider evaluating the effectiveness of current discount strategies.\n\n⚠️ Note: Question may reference data not in scope. Unrecognized terms: ['what', 'discount', 'percentage', 'across', 'bills']",
+          "sql_queries": [
+            "SELECT SUM(discount_amount) AS total_discount, SUM(gross_amount) AS total_gross FROM public.sales_data WHERE tenant_id = :tenant_id AND invoice_date BETWEEN :start_date AND :end_date",
+            "SELECT (total_discount / total_gross) * 100 AS average_discount_percentage FROM (SELECT SUM(discount_amount) AS total_discount, SUM(gross_amount) AS total_gross FROM public.sales_data WHERE tenant_id = :tenant_id AND invoice_date BETWEEN :start_date AND :end_date) AS discounts"
+          ],
+          "guardrails": [
+            {
+              "check": "premise_check",
+              "passed": false,
+              "message": "Question may reference data not in scope. Unrecognized terms: ['what', 'discount', 'percentage', 'across', 'bills']"
+            },
+            {
+              "check": "numeric_digest",
+              "passed": true,
+              "message": "OK"
+            },
+            {
+              "check": "numeric_postcheck",
+              "passed": true,
+              "message": "OK"
+            },
+            {
+              "check": "causal_postcheck",
+              "passed": true,
+              "message": "OK"
+            },
+            {
+              "check": "data_scope_check",
+              "passed": true,
+              "message": "OK"
+            }
+          ],
+          "cross_file": false
+        },
+        {
+          "question_id": "pharmacy_q07",
+          "question": "What is net revenue after expired medicine write-off losses for June 2026?",
+          "difficulty": 7,
+          "answer_type": "currency",
+          "expected": 1282578.89,
+          "expected_unit": "INR",
+          "passed": false,
+          "score": 0.0,
+          "parsed": 2026.0,
+          "response": "**The net revenue after expired medicine write-off losses for June 2026 is ₹1,288,732.90.**  \nPeriod: 2026-01-01 – 2026-06-30.\n\n**Insight:** While the total net revenue is strong, monitoring expired medicine write-off losses is crucial for improving overall profitability.\n\n⚠️ Note: Question may reference data not in scope. Unrecognized terms: ['what', 'after', 'expired', 'medicine', 'write']",
+          "sql_queries": [
+            "SELECT SUM(net_amount) AS total_net_revenue FROM public.sales_data WHERE tenant_id = :tenant_id AND invoice_date BETWEEN '2026-06-01' AND '2026-06-30'",
+            "SELECT SUM(net_amount) AS total_write_off_losses FROM public.sales_data WHERE tenant_id = :tenant_id AND invoice_date BETWEEN '2026-06-01' AND '2026-06-30' AND product_name LIKE '%expired%'",
+            "SELECT (SELECT SUM(net_amount) FROM public.sales_data WHERE tenant_id = :tenant_id AND invoice_date BETWEEN '2026-06-01' AND '2026-06-30') - (SELECT SUM(net_amount) FROM public.sales_data WHERE tenant_id = :tenant_id AND invoice_date BETWEEN '2026-06-01' AND '2026-06-30' AND product_name LIKE '%expired%') AS net_revenue_after_losses"
+          ],
+          "guardrails": [
+            {
+              "check": "premise_check",
+              "passed": false,
+              "message": "Question may reference data not in scope. Unrecognized terms: ['what', 'after', 'expired', 'medicine', 'write']"
+            },
+            {
+              "check": "numeric_digest",
+              "passed": true,
+              "message": "OK"
+            },
+            {
+              "check": "numeric_postcheck",
+              "passed": true,
+              "message": "OK"
+            },
+            {
+              "check": "causal_postcheck",
+              "passed": true,
+              "message": "OK"
+            },
+            {
+              "check": "data_scope_check",
+              "passed": true,
+              "message": "OK"
+            }
+          ],
+          "cross_file": true
+        },
+        {
+          "question_id": "pharmacy_q08",
+          "question": "Which pharmacist had the highest revenue per bill in April 2026?",
+          "difficulty": 8,
+          "answer_type": "text",
+          "expected": "Meera K",
+          "expected_unit": "",
+          "passed": false,
+          "score": 0.0,
+          "parsed": null,
+          "response": "**The pharmacist with the highest revenue per bill in April 2026 is **Patient 148** with ₹348.14 per bill.**  \n**Period:** 2026-01-01 – 2026-06-30  \n\n| Rank | Party Name   | Total Revenue | Bill Count | Revenue per Bill |\n|------|--------------|---------------|------------|------------------|\n| 1    | Patient 148  | ₹6,267.45     | 18         | ₹348.14          |  \n| 2    | Patient 42   | ₹1,152.94     | 9          | ₹128.11          |  \n| 3    | Patient 220  | ₹2,467.54     | 8          | ₹308.44          |  \n\n**Insight:** Focus on replicating successful strategies from Patient 148 to improve revenue per bill across other pharmacists.\n\n⚠️ Note: Question may reference data not in scope. Unrecognized terms: ['which', 'pharmacist', 'bill', 'april']",
+          "sql_queries": [
+            "SELECT party_name, COUNT(invoice_number) AS bill_count, SUM(net_amount) AS total_revenue FROM public.sales_data WHERE tenant_id = :tenant_id AND invoice_date BETWEEN '2026-04-01' AND '2026-04-30' GROUP BY party_name",
+            "SELECT party_name, total_revenue / bill_count AS revenue_per_bill FROM (SELECT party_name, COUNT(invoice_number) AS bill_count, SUM(net_amount) AS total_revenue FROM public.sales_data WHERE tenant_id = :tenant_id AND invoice_date BETWEEN '2026-04-01' AND '2026-04-30' GROUP BY party_name) AS revenue_data",
+            "SELECT party_name, revenue_per_bill FROM (SELECT party_name, total_revenue / bill_count AS revenue_per_bill FROM (SELECT party_name, COUNT(invoice_number) AS bill_count, SUM(net_amount) AS total_revenue FROM public.sales_data WHERE tenant_id = :tenant_id AND invoice_date BETWEEN '2026-04-01' AND '2026-04-30' GROUP BY party_name) AS revenue_data) AS final_data ORDER BY revenue_per_bill DESC LIMIT 1"
+          ],
+          "guardrails": [
+            {
+              "check": "premise_check",
+              "passed": false,
+              "message": "Question may reference data not in scope. Unrecognized terms: ['which', 'pharmacist', 'bill', 'april']"
+            },
+            {
+              "check": "numeric_digest",
+              "passed": true,
+              "message": "OK"
+            },
+            {
+              "check": "numeric_postcheck",
+              "passed": true,
+              "message": "OK"
+            },
+            {
+              "check": "causal_postcheck",
+              "passed": true,
+              "message": "OK"
+            },
+            {
+              "check": "data_scope_check",
+              "passed": true,
+              "message": "OK"
+            }
+          ],
+          "cross_file": true
+        },
+        {
+          "question_id": "pharmacy_q09",
+          "question": "What total revenue is linked to doctor referrals in Q1 2026 (Jan-Mar)?",
+          "difficulty": 9,
+          "answer_type": "currency",
+          "expected": 792953.87,
+          "expected_unit": "INR",
+          "passed": false,
+          "score": 0.0,
+          "parsed": 12026.0,
+          "response": "The total revenue linked to doctor referrals in Q1 2026 is unavailable.  \nPeriod: 2026-01-01 – 2026-06-30.  \n\n**Insight**: Consider reviewing data sources or tracking mechanisms to enhance visibility on revenue linked to doctor referrals.\n\n⚠️ Note: Question may reference data not in scope. Unrecognized terms: ['what', 'linked', 'doctor', 'referrals']",
+          "sql_queries": [
+            "SELECT SUM(net_amount) AS total_revenue FROM public.sales_data WHERE tenant_id = :tenant_id AND invoice_date BETWEEN '2026-01-01' AND '2026-03-31' AND party_name LIKE '%Doctor%'"
+          ],
+          "guardrails": [
+            {
+              "check": "premise_check",
+              "passed": false,
+              "message": "Question may reference data not in scope. Unrecognized terms: ['what', 'linked', 'doctor', 'referrals']"
+            },
+            {
+              "check": "numeric_digest",
+              "passed": true,
+              "message": "OK"
+            },
+            {
+              "check": "numeric_postcheck",
+              "passed": true,
+              "message": "OK"
+            },
+            {
+              "check": "causal_postcheck",
+              "passed": true,
+              "message": "OK"
+            },
+            {
+              "check": "data_scope_check",
+              "passed": true,
+              "message": "OK"
+            }
+          ],
+          "cross_file": true
+        },
+        {
+          "question_id": "pharmacy_q10",
+          "question": "What is the return rate by refund amount as a percentage of total revenue in June 2026?",
+          "difficulty": 10,
+          "answer_type": "percent",
+          "expected": 0.34,
+          "expected_unit": "percent",
+          "passed": false,
+          "score": 0.0,
+          "parsed": 2026.0,
+          "response": "The return rate by refund amount as a percentage of total revenue in June 2026 is **95.91%**.  \nPeriod: 2026-01-01 – 2026-06-30.\n\n- **Total Revenue:** ₹1,288,732.90  \n- **Total Refund:** ₹1,236,058.00  \n\n**Insight:** The high return rate indicates a significant proportion of revenue is being refunded; consider analyzing product quality and customer satisfaction to address return issues.\n\n⚠️ Note: Question may reference data not in scope. Unrecognized terms: ['what', 'return', 'rate', 'refund', 'amount']",
+          "sql_queries": [
+            "SELECT SUM(net_amount) AS total_revenue FROM public.sales_data WHERE tenant_id = :tenant_id AND invoice_date BETWEEN '2026-06-01' AND '2026-06-30'",
+            "SELECT SUM(gross_amount) AS total_refund FROM public.sales_data WHERE tenant_id = :tenant_id AND invoice_date BETWEEN '2026-06-01' AND '2026-06-30' AND discount_amount > 0",
+            "SELECT (COALESCE(total_refund, 0) / NULLIF(total_revenue, 0)) * 100 AS return_rate FROM (SELECT SUM(net_amount) AS total_revenue, (SELECT SUM(gross_amount) FROM public.sales_data WHERE tenant_id = :tenant_id AND invoice_date BETWEEN '2026-06-01' AND '2026-06-30' AND discount_amount > 0) AS total_refund FROM public.sales_data WHERE tenant_id = :tenant_id AND invoice_date BETWEEN '2026-06-01' AND '2026-06-30') AS summary"
+          ],
+          "guardrails": [
+            {
+              "check": "premise_check",
+              "passed": false,
+              "message": "Question may reference data not in scope. Unrecognized terms: ['what', 'return', 'rate', 'refund', 'amount']"
+            },
+            {
+              "check": "numeric_digest",
+              "passed": true,
+              "message": "OK"
+            },
+            {
+              "check": "numeric_postcheck",
+              "passed": true,
+              "message": "OK"
+            },
+            {
+              "check": "causal_postcheck",
+              "passed": true,
+              "message": "OK"
+            },
+            {
+              "check": "data_scope_check",
+              "passed": true,
+              "message": "OK"
+            }
+          ],
+          "cross_file": true
+        }
+      ],
+      "passed": 2,
+      "total": 10
+    },
+    {
+      "business": "garage_autocare",
+      "tenant_id": "8a6141c2-8013-4b7e-a79c-353d1348e028",
+      "email": "nandarishik.bandi13@gmail.com",
+      "tenant_name": "AKARA Demo",
+      "imports": [
+        {
+          "file": "service_invoices.xlsx",
+          "rows_inserted": 6121,
+          "rows_skipped": 0,
+          "warnings": []
+        }
+      ],
+      "questions": [
+        {
+          "question_id": "garage_q01",
+          "question": "What was total service revenue in March 2026?",
+          "difficulty": 1,
+          "answer_type": "currency",
+          "expected": 1305673.36,
+          "expected_unit": "INR",
+          "passed": false,
+          "score": 0.0,
+          "parsed": 2026.0,
+          "response": "Total service revenue in March 2026 was ₹0.00.  \nPeriod: 2026-01-01 – 2026-06-30.\n\n**Insight:** There was no service revenue generated in March 2026; consider reviewing strategies to enhance service offerings.",
+          "sql_queries": [
+            "SELECT SUM(net_amount) AS total_service_revenue FROM public.sales_data WHERE tenant_id = :tenant_id AND invoice_date BETWEEN '2026-03-01' AND '2026-03-31'"
+          ],
+          "guardrails": [
+            {
+              "check": "premise_check",
+              "passed": true,
+              "message": "OK"
+            },
+            {
+              "check": "numeric_digest",
+              "passed": true,
+              "message": "OK"
+            },
+            {
+              "check": "numeric_postcheck",
+              "passed": true,
+              "message": "OK"
+            },
+            {
+              "check": "causal_postcheck",
+              "passed": true,
+              "message": "OK"
+            },
+            {
+              "check": "data_scope_check",
+              "passed": true,
+              "message": "OK"
+            }
+          ],
+          "cross_file": false
+        },
+        {
+          "question_id": "garage_q02",
+          "question": "How many insurance channel jobs were completed in February 2026?",
+          "difficulty": 2,
+          "answer_type": "integer",
+          "expected": 15,
+          "expected_unit": "",
+          "passed": false,
+          "score": 0.0,
+          "parsed": 2026.0,
+          "response": "No **insurance channel jobs** were completed in **February 2026**.  \nPeriod: **2026-01-01** – **2026-06-30**.  \n\n**Insight:** It's important to investigate potential barriers affecting job completions in the insurance channel during this period.\n\n⚠️ Note: Question may reference data not in scope. Unrecognized terms: ['many', 'insurance', 'channel', 'jobs', 'were']",
+          "sql_queries": [
+            "SELECT COUNT(*) AS completed_jobs FROM public.sales_data WHERE tenant_id = :tenant_id AND invoice_date BETWEEN '2026-02-01' AND '2026-02-28' AND product_category = 'Insurance Channel'"
+          ],
+          "guardrails": [
+            {
+              "check": "premise_check",
+              "passed": false,
+              "message": "Question may reference data not in scope. Unrecognized terms: ['many', 'insurance', 'channel', 'jobs', 'were']"
+            },
+            {
+              "check": "numeric_digest",
+              "passed": true,
+              "message": "OK"
+            },
+            {
+              "check": "numeric_postcheck",
+              "passed": true,
+              "message": "OK"
+            },
+            {
+              "check": "causal_postcheck",
+              "passed": true,
+              "message": "OK"
+            },
+            {
+              "check": "data_scope_check",
+              "passed": true,
+              "message": "OK"
+            }
+          ],
+          "cross_file": false
+        },
+        {
+          "question_id": "garage_q03",
+          "question": "What are the top 5 spare parts by revenue?",
+          "difficulty": 3,
+          "answer_type": "list",
+          "expected": [
+            "Battery 45Ah",
+            "Brake Pad Set",
+            "Engine Oil 5W30",
+            "Air Filter",
+            "Wiper Blade"
+          ],
+          "expected_unit": "",
+          "passed": false,
+          "score": 0.0,
+          "parsed": null,
+          "response": "There are no spare parts recorded with revenue in the specified period.  \nPeriod: 2026-01-01 – 2026-06-30.  \n\n**Insight**: Consider reviewing your inventory and sales processes for the first half of 2026 to identify potential gaps or data capturing issues.",
+          "sql_queries": [
+            "SELECT product_name, SUM(net_amount) AS total_revenue FROM public.sales_data WHERE tenant_id = :tenant_id AND invoice_date BETWEEN :start_date AND :end_date AND product_category = 'Spare Parts' GROUP BY product_name",
+            "SELECT product_name, total_revenue FROM (SELECT product_name, SUM(net_amount) AS total_revenue FROM public.sales_data WHERE tenant_id = :tenant_id AND invoice_date BETWEEN :start_date AND :end_date AND product_category = 'Spare Parts' GROUP BY product_name) AS revenue_data ORDER BY total_revenue DESC LIMIT 5"
+          ],
+          "guardrails": [
+            {
+              "check": "premise_check",
+              "passed": true,
+              "message": "OK"
+            },
+            {
+              "check": "numeric_digest",
+              "passed": true,
+              "message": "No SQL results to verify"
+            },
+            {
+              "check": "numeric_postcheck",
+              "passed": true,
+              "message": "OK"
+            },
+            {
+              "check": "causal_postcheck",
+              "passed": true,
+              "message": "OK"
+            },
+            {
+              "check": "data_scope_check",
+              "passed": true,
+              "message": "OK"
+            }
+          ],
+          "cross_file": false
+        },
+        {
+          "question_id": "garage_q04",
+          "question": "What was the percentage change in total revenue from March to April 2026?",
+          "difficulty": 4,
+          "answer_type": "percent",
+          "expected": 3.92,
+          "expected_unit": "percent",
+          "passed": false,
+          "score": 0.0,
+          "parsed": 5.9,
+          "response": "The total revenue decreased by **5.90%** from March to April 2026.  \nPeriod: 2026-01-01 – 2026-06-30.  \n\n**Insight**: Consider investigating the factors that contributed to the revenue decline in April to identify areas for improvement.\n\n⚠️ Note: Question may reference data not in scope. Unrecognized terms: ['what', 'percentage', 'change', 'from', 'march']",
+          "sql_queries": [
+            "SELECT SUM(total_amount) AS total_revenue_march FROM public.sales_data WHERE tenant_id = :tenant_id AND invoice_date BETWEEN '2026-03-01' AND '2026-03-31'",
+            "SELECT SUM(total_amount) AS total_revenue_april FROM public.sales_data WHERE tenant_id = :tenant_id AND invoice_date BETWEEN '2026-04-01' AND '2026-04-30'",
+            "SELECT ((total_revenue_april - total_revenue_march) / total_revenue_march) * 100 AS percentage_change FROM (SELECT (SELECT SUM(total_amount) FROM public.sales_data WHERE tenant_id = :tenant_id AND invoice_date BETWEEN '2026-03-01' AND '2026-03-31') AS total_revenue_march, (SELECT SUM(total_amount) FROM public.sales_data WHERE tenant_id = :tenant_id AND invoice_date BETWEEN '2026-04-01' AND '2026-04-30') AS total_revenue_april) AS revenue_data"
+          ],
+          "guardrails": [
+            {
+              "check": "premise_check",
+              "passed": false,
+              "message": "Question may reference data not in scope. Unrecognized terms: ['what', 'percentage', 'change', 'from', 'march']"
+            },
+            {
+              "check": "numeric_digest",
+              "passed": true,
+              "message": "OK"
+            },
+            {
+              "check": "numeric_postcheck",
+              "passed": true,
+              "message": "OK"
+            },
+            {
+              "check": "causal_postcheck",
+              "passed": true,
+              "message": "OK"
+            },
+            {
+              "check": "data_scope_check",
+              "passed": true,
+              "message": "OK"
+            }
+          ],
+          "cross_file": false
+        },
+        {
+          "question_id": "garage_q05",
+          "question": "How many distinct customers had more than 2 service visits?",
+          "difficulty": 5,
+          "answer_type": "integer",
+          "expected": 120,
+          "expected_unit": "",
+          "passed": false,
+          "score": 0.0,
+          "parsed": 2.0,
+          "response": "**The total number of distinct customers who had more than 2 service visits is 83.**  \nPeriod: 2026-01-01 – 2026-06-30  \n\n| Rank | Customer           | Service Visits |\n|------|--------------------|----------------|\n| 1    | Rajesh K           | 331            |\n| 2    | Mr Rajesh          | 248            |\n| 3    | Customer 7         | 80             |\n| 4    | Customer 34        | 84             |\n| 5    | Customer 111       | 81             |\n| 6    | Customer 102       | 80             |\n| 7    | Customer 23        | 70             |\n| 8    | Customer 93        | 59             |\n| 9    | Customer 72        | 59             |\n| 10   | Customer 12        | 50             |\n\n**Insight:** Focusing on the top customers with the highest service visits can help tailor engagement and retention strategies effectively.\n\n⚠️ Note: Question may reference data not in scope. Unrecognized terms: ['many', 'distinct', 'more', 'than', 'service']",
+          "sql_queries": [
+            "SELECT party_name, COUNT(invoice_number) as service_visits FROM public.sales_data WHERE tenant_id = :tenant_id AND invoice_date BETWEEN :start_date AND :end_date GROUP BY party_name HAVING COUNT(invoice_number) > 2",
+            "SELECT COUNT(DISTINCT party_name) as distinct_customers FROM (SELECT party_name FROM public.sales_data WHERE tenant_id = :tenant_id AND invoice_date BETWEEN :start_date AND :end_date GROUP BY party_name HAVING COUNT(invoice_number) > 2) AS subquery"
+          ],
+          "guardrails": [
+            {
+              "check": "premise_check",
+              "passed": false,
+              "message": "Question may reference data not in scope. Unrecognized terms: ['many', 'distinct', 'more', 'than', 'service']"
+            },
+            {
+              "check": "numeric_digest",
+              "passed": true,
+              "message": "OK"
+            },
+            {
+              "check": "numeric_postcheck",
+              "passed": true,
+              "message": "OK"
+            },
+            {
+              "check": "causal_postcheck",
+              "passed": true,
+              "message": "OK"
+            },
+            {
+              "check": "data_scope_check",
+              "passed": true,
+              "message": "OK"
+            }
+          ],
+          "cross_file": false
+        },
+        {
+          "question_id": "garage_q06",
+          "question": "What percentage of invoice lines are labour versus parts by line count?",
+          "difficulty": 6,
+          "answer_type": "text",
+          "expected": "parts=71.4%, labour=28.6%",
+          "expected_unit": "",
+          "passed": true,
+          "score": 1.0,
+          "parsed": null,
+          "response": "**0% of invoice lines are for labour and 0% are for parts.**  \nPeriod: 2026-01-01 – 2026-06-30.  \n\n- **Total Lines:** 6121  \n- **Labour Lines:** 0  \n- **Parts Lines:** 0  \n\n**Insight:** There were no invoice lines for labour or parts during this period. Exploring reasons for the inactivity could be beneficial for future planning.\n\n⚠️ Note: Question may reference data not in scope. Unrecognized terms: ['what', 'percentage', 'invoice', 'lines', 'labour']",
+          "sql_queries": [
+            "SELECT COUNT(*) AS total_lines FROM public.sales_data WHERE tenant_id = :tenant_id AND invoice_date BETWEEN :start_date AND :end_date",
+            "SELECT COUNT(*) AS labour_lines FROM public.sales_data WHERE tenant_id = :tenant_id AND invoice_date BETWEEN :start_date AND :end_date AND product_category = 'Labour'",
+            "SELECT COUNT(*) AS parts_lines FROM public.sales_data WHERE tenant_id = :tenant_id AND invoice_date BETWEEN :start_date AND :end_date AND product_category = 'Parts'"
+          ],
+          "guardrails": [
+            {
+              "check": "premise_check",
+              "passed": false,
+              "message": "Question may reference data not in scope. Unrecognized terms: ['what', 'percentage', 'invoice', 'lines', 'labour']"
+            },
+            {
+              "check": "numeric_digest",
+              "passed": true,
+              "message": "OK"
+            },
+            {
+              "check": "numeric_postcheck",
+              "passed": true,
+              "message": "OK"
+            },
+            {
+              "check": "causal_postcheck",
+              "passed": true,
+              "message": "OK"
+            },
+            {
+              "check": "data_scope_check",
+              "passed": true,
+              "message": "OK"
+            }
+          ],
+          "cross_file": false
+        },
+        {
+          "question_id": "garage_q07",
+          "question": "What is the approximate parts gross margin for March 2026 (parts sales revenue minus vendor purchase cost in that month)?",
+          "difficulty": 7,
+          "answer_type": "currency",
+          "expected": 927809.71,
+          "expected_unit": "INR",
+          "passed": false,
+          "score": 0.0,
+          "parsed": 2026.0,
+          "response": "The approximate parts gross margin for March 2026 is **-₹555,449.60**.  \nPeriod: 2026-01-01 – 2026-06-30.\n\n**Metrics:**\n- **Total Parts Gross Amount:** ₹0.00\n- **Total Vendor Purchase Cost:** ₹555,449.60\n\n**Insight:** The significant negative gross margin indicates that vendor purchase costs were incurred without any corresponding parts sales revenue in March 2026. It's crucial to investigate ways to increase sales or reduce costs.\n\n⚠️ Note: Question may reference data not in scope. Unrecognized terms: ['what', 'approximate', 'parts', 'gross', 'margin']",
+          "sql_queries": [
+            "SELECT SUM(gross_amount) AS total_parts_gross_amount FROM public.sales_data WHERE tenant_id = :tenant_id AND invoice_date BETWEEN '2026-03-01' AND '2026-03-31'",
+            "SELECT SUM(total_amount) AS total_vendor_purchase_cost FROM public.sales_data WHERE tenant_id = :tenant_id AND invoice_date BETWEEN '2026-03-01' AND '2026-03-31'",
+            "SELECT (SUM(gross_amount) - SUM(total_amount)) AS parts_gross_margin FROM public.sales_data WHERE tenant_id = :tenant_id AND invoice_date BETWEEN '2026-03-01' AND '2026-03-31'"
+          ],
+          "guardrails": [
+            {
+              "check": "premise_check",
+              "passed": false,
+              "message": "Question may reference data not in scope. Unrecognized terms: ['what', 'approximate', 'parts', 'gross', 'margin']"
+            },
+            {
+              "check": "numeric_digest",
+              "passed": true,
+              "message": "OK"
+            },
+            {
+              "check": "numeric_postcheck",
+              "passed": true,
+              "message": "OK"
+            },
+            {
+              "check": "causal_postcheck",
+              "passed": true,
+              "message": "OK"
+            },
+            {
+              "check": "data_scope_check",
+              "passed": true,
+              "message": "OK"
+            }
+          ],
+          "cross_file": true
+        },
+        {
+          "question_id": "garage_q08",
+          "question": "Which mechanic generated the highest revenue per labour hour in Q2 2026 (Apr-Jun)?",
+          "difficulty": 8,
+          "answer_type": "text",
+          "expected": "Suresh P",
+          "expected_unit": "",
+          "passed": false,
+          "score": 0.0,
+          "parsed": null,
+          "response": "No data on individual mechanics' revenue per labour hour is available for Q2 2026.  \nPeriod: 2026-01-01 – 2026-06-30.\n\n**Insight:** Consider gathering more detailed data on each mechanic's performance to assess individual contributions effectively.\n\n⚠️ Note: Question may reference data not in scope. Unrecognized terms: ['which', 'mechanic', 'generated', 'labour', 'hour']",
+          "sql_queries": [
+            "SELECT product_name, SUM(total_amount) AS total_revenue FROM public.sales_data WHERE tenant_id = :tenant_id AND invoice_date BETWEEN '2026-04-01' AND '2026-06-30' GROUP BY product_name",
+            "SELECT product_name, SUM(quantity) AS total_labour_hours FROM public.sales_data WHERE tenant_id = :tenant_id AND invoice_date BETWEEN '2026-04-01' AND '2026-06-30' GROUP BY product_name",
+            "SELECT r.product_name, (r.total_revenue / l.total_labour_hours) AS revenue_per_labour_hour FROM (SELECT product_name, SUM(total_amount) AS total_revenue FROM public.sales_data WHERE tenant_id = :tenant_id AND invoice_date BETWEEN '2026-04-01' AND '2026-06-30' GROUP BY product_name) r JOIN (SELECT product_name, SUM(quantity) AS total_labour_hours FROM public.sales_data WHERE tenant_id = :tenant_id AND invoice_date BETWEEN '2026-04-01' AND '2026-06-30' GROUP BY product_name) l ON r.product_name = l.product_name ORDER BY revenue_per_labour_hour DESC LIMIT 1"
+          ],
+          "guardrails": [
+            {
+              "check": "premise_check",
+              "passed": false,
+              "message": "Question may reference data not in scope. Unrecognized terms: ['which', 'mechanic', 'generated', 'labour', 'hour']"
+            },
+            {
+              "check": "numeric_digest",
+              "passed": true,
+              "message": "OK"
+            },
+            {
+              "check": "numeric_postcheck",
+              "passed": true,
+              "message": "OK"
+            },
+            {
+              "check": "causal_postcheck",
+              "passed": true,
+              "message": "OK"
+            },
+            {
+              "check": "data_scope_check",
+              "passed": true,
+              "message": "OK"
+            }
+          ],
+          "cross_file": true
+        },
+        {
+          "question_id": "garage_q09",
+          "question": "What is the average estimate-to-final-invoice variance percentage for jobs with both estimate and final bill?",
+          "difficulty": 9,
+          "answer_type": "percent",
+          "expected": 60.34,
+          "expected_unit": "percent",
+          "passed": false,
+          "score": 0.0,
+          "parsed": 2026.0,
+          "response": "The average estimate-to-final-invoice variance percentage for jobs with both estimate and final bill is not available due to insufficient data.  \nPeriod: 2026-01-01 – 2026-06-30.  \n\n**Insight**: It may be beneficial to gather more data on jobs to enable this calculation in the future.\n\n⚠️ Note: Question may reference data not in scope. Unrecognized terms: ['what', 'estimate', 'final', 'invoice', 'variance']",
+          "sql_queries": [
+            "SELECT AVG((final_bill - estimate) / estimate * 100) AS variance_percentage FROM public.sales_data WHERE tenant_id = :tenant_id AND invoice_date BETWEEN :start_date AND :end_date AND estimate IS NOT NULL AND final_bill IS NOT NULL"
+          ],
+          "guardrails": [
+            {
+              "check": "premise_check",
+              "passed": false,
+              "message": "Question may reference data not in scope. Unrecognized terms: ['what', 'estimate', 'final', 'invoice', 'variance']"
+            },
+            {
+              "check": "numeric_digest",
+              "passed": true,
+              "message": "No SQL results to verify"
+            },
+            {
+              "check": "numeric_postcheck",
+              "passed": true,
+              "message": "OK"
+            },
+            {
+              "check": "causal_postcheck",
+              "passed": true,
+              "message": "OK"
+            },
+            {
+              "check": "data_scope_check",
+              "passed": true,
+              "message": "OK"
+            }
+          ],
+          "cross_file": true
+        },
+        {
+          "question_id": "garage_q10",
+          "question": "What is total approved insurance claim amount versus total billed insurance job revenue?",
+          "difficulty": 10,
+          "answer_type": "text",
+          "expected": "billed=424525.65, approved=360846.8",
+          "expected_unit": "INR",
+          "passed": true,
+          "score": 1.0,
+          "parsed": null,
+          "response": "The total approved insurance claim amount is ₹0.00 and the total billed insurance job revenue is ₹0.00.  \nPeriod: 2026-01-01 – 2026-06-30.\n\n**Insight**: Both the approved claim amount and the job revenue indicate inactivity within this period. Consider reviewing processes or outreach to understand barriers to claims or job revenues.\n\n⚠️ Note: Question may reference data not in scope. Unrecognized terms: ['what', 'approved', 'insurance', 'claim', 'amount']",
+          "sql_queries": [
+            "SELECT SUM(net_amount) AS total_approved_insurance_claim_amount FROM public.sales_data WHERE tenant_id = :tenant_id AND invoice_date BETWEEN :start_date AND :end_date AND product_category = 'Insurance Claim'",
+            "SELECT SUM(net_amount) AS total_billed_insurance_job_revenue FROM public.sales_data WHERE tenant_id = :tenant_id AND invoice_date BETWEEN :start_date AND :end_date AND product_category = 'Insurance Job'"
+          ],
+          "guardrails": [
+            {
+              "check": "premise_check",
+              "passed": false,
+              "message": "Question may reference data not in scope. Unrecognized terms: ['what', 'approved', 'insurance', 'claim', 'amount']"
+            },
+            {
+              "check": "numeric_digest",
+              "passed": true,
+              "message": "OK"
+            },
+            {
+              "check": "numeric_postcheck",
+              "passed": true,
+              "message": "OK"
+            },
+            {
+              "check": "causal_postcheck",
+              "passed": true,
+              "message": "OK"
+            },
+            {
+              "check": "data_scope_check",
+              "passed": true,
+              "message": "OK"
+            }
+          ],
+          "cross_file": true
+        }
+      ],
+      "passed": 2,
+      "total": 10
+    }
+  ],
+  "summary": {
+    "total_passed": 5,
+    "total_questions": 30,
+    "pass_rate": 0.167
+  }
+}

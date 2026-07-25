@@ -1,0 +1,1080 @@
+{
+  "version": "1.0",
+  "answers": [
+    {
+      "question_id": "cafe_q01",
+      "answer": 544633.06,
+      "unit": "INR",
+      "calculation": [
+        "SUM(sales_lines.total_amount) WHERE invoices.channel='dine-in'",
+        "AND invoice_date in March 2026, status ACTIVE, total > 0"
+      ],
+      "source_tables": [
+        "sales_lines",
+        "invoices"
+      ],
+      "row_ids": [],
+      "assumptions": [
+        "Refunds and cancelled bills excluded"
+      ],
+      "question": "What was total dine-in revenue in March 2026?",
+      "difficulty": 1,
+      "answer_type": "currency",
+      "tolerance": 0.01
+    },
+    {
+      "question_id": "cafe_q02",
+      "answer": 629,
+      "unit": "",
+      "calculation": [
+        "COUNT(DISTINCT invoices) WHERE channel='swiggy' AND Feb 2026"
+      ],
+      "source_tables": [
+        "invoices"
+      ],
+      "row_ids": [],
+      "assumptions": [],
+      "question": "How many Swiggy orders were there in February 2026?",
+      "difficulty": 2,
+      "answer_type": "integer",
+      "tolerance": 0
+    },
+    {
+      "question_id": "cafe_q03",
+      "answer": [
+        "Veg Wrap",
+        "Croissant",
+        "Cold Brew",
+        "Iced Latte",
+        "Avocado Toast"
+      ],
+      "unit": "",
+      "calculation": [
+        "TOP 5 product_name BY SUM(quantity)"
+      ],
+      "source_tables": [
+        "sales_lines",
+        "invoices"
+      ],
+      "row_ids": [
+        "Veg Wrap",
+        "Croissant",
+        "Cold Brew",
+        "Iced Latte",
+        "Avocado Toast"
+      ],
+      "assumptions": [],
+      "question": "What are the top 5 menu items by quantity sold across all six months?",
+      "difficulty": 3,
+      "answer_type": "list",
+      "tolerance": 0
+    },
+    {
+      "question_id": "cafe_q04",
+      "answer": -14.39,
+      "unit": "percent",
+      "calculation": [
+        "March revenue=1553824.63",
+        "April revenue=1330229.16",
+        "Change=-14.39%"
+      ],
+      "source_tables": [
+        "invoices"
+      ],
+      "row_ids": [],
+      "assumptions": [],
+      "question": "What was the percentage change in total revenue from March 2026 to April 2026?",
+      "difficulty": 4,
+      "answer_type": "percent",
+      "tolerance": 0.02
+    },
+    {
+      "question_id": "cafe_q05",
+      "answer": 200,
+      "unit": "",
+      "calculation": [
+        "COUNT parties with >3 ACTIVE invoices"
+      ],
+      "source_tables": [
+        "invoices"
+      ],
+      "row_ids": [],
+      "assumptions": [
+        "Aggregator orders excluded (party_id NULL)"
+      ],
+      "question": "How many customers visited more than 3 times during the six-month period?",
+      "difficulty": 5,
+      "answer_type": "integer",
+      "tolerance": 0
+    },
+    {
+      "question_id": "cafe_q06",
+      "answer": 6.0,
+      "unit": "percent",
+      "calculation": [
+        "SUM(discount)/SUM(gross)*100 for dine-in lines"
+      ],
+      "source_tables": [
+        "sales_lines",
+        "invoices"
+      ],
+      "row_ids": [],
+      "assumptions": [],
+      "question": "What was the average discount percentage on dine-in orders?",
+      "difficulty": 6,
+      "answer_type": "percent",
+      "tolerance": 0.03
+    },
+    {
+      "question_id": "cafe_q07",
+      "answer": 783368.13,
+      "unit": "INR",
+      "calculation": [
+        "Mar dine-in+takeaway revenue=785626.77",
+        "Mar wastage cost=2258.64"
+      ],
+      "source_tables": [
+        "sales_lines",
+        "invoices",
+        "wastage"
+      ],
+      "row_ids": [],
+      "assumptions": [
+        "Proxy profit = revenue minus wastage only"
+      ],
+      "question": "What is estimated gross profit proxy for March 2026 (dine-in + takeaway revenue minus wastage cost)?",
+      "difficulty": 7,
+      "answer_type": "currency",
+      "tolerance": 0.02
+    },
+    {
+      "question_id": "cafe_q08",
+      "answer": 1926.56,
+      "unit": "INR",
+      "calculation": [
+        "Apr dine-in revenue=462373.73",
+        "Apr shift hours=240.00"
+      ],
+      "source_tables": [
+        "sales_lines",
+        "invoices",
+        "shifts"
+      ],
+      "row_ids": [],
+      "assumptions": [],
+      "question": "What was dine-in revenue per cashier shift hour in April 2026?",
+      "difficulty": 8,
+      "answer_type": "currency",
+      "tolerance": 0.05
+    },
+    {
+      "question_id": "cafe_q09",
+      "answer": 165.63,
+      "unit": "INR",
+      "calculation": [
+        "SUM(expected - collected) for June settlements"
+      ],
+      "source_tables": [
+        "settlements"
+      ],
+      "row_ids": [],
+      "assumptions": [],
+      "question": "What is the total settlement variance (expected minus collected) for June 2026?",
+      "difficulty": 9,
+      "answer_type": "currency",
+      "tolerance": 0.05
+    },
+    {
+      "question_id": "cafe_q10",
+      "answer": 0,
+      "unit": "",
+      "calculation": [
+        "Count invoices where header total != line sum + tip (tolerance 0.05)"
+      ],
+      "source_tables": [
+        "invoices",
+        "sales_lines"
+      ],
+      "row_ids": [],
+      "assumptions": [],
+      "question": "How many invoices have line-item totals that do not sum to the invoice header total (excluding cancelled and zero-value bills)?",
+      "difficulty": 10,
+      "answer_type": "integer",
+      "tolerance": 0
+    },
+    {
+      "question_id": "garage_q01",
+      "answer": 1305673.36,
+      "unit": "INR",
+      "calculation": [
+        "SUM(invoice total_amount) March 2026"
+      ],
+      "source_tables": [
+        "invoices"
+      ],
+      "row_ids": [],
+      "assumptions": [],
+      "question": "What was total service revenue in March 2026?",
+      "difficulty": 1,
+      "answer_type": "currency",
+      "tolerance": 0.01
+    },
+    {
+      "question_id": "garage_q02",
+      "answer": 15,
+      "unit": "",
+      "calculation": [
+        "COUNT insurance invoices Feb"
+      ],
+      "source_tables": [
+        "invoices"
+      ],
+      "row_ids": [],
+      "assumptions": [],
+      "question": "How many insurance channel jobs were completed in February 2026?",
+      "difficulty": 2,
+      "answer_type": "integer",
+      "tolerance": 0
+    },
+    {
+      "question_id": "garage_q03",
+      "answer": [
+        "Battery 45Ah",
+        "Brake Pad Set",
+        "Engine Oil 5W30",
+        "Air Filter",
+        "Wiper Blade"
+      ],
+      "unit": "",
+      "calculation": [
+        "TOP 5 parts by SUM(total_amount)"
+      ],
+      "source_tables": [
+        "sales_lines",
+        "invoices"
+      ],
+      "row_ids": [],
+      "assumptions": [],
+      "question": "What are the top 5 spare parts by revenue?",
+      "difficulty": 3,
+      "answer_type": "list",
+      "tolerance": 0
+    },
+    {
+      "question_id": "garage_q04",
+      "answer": 3.92,
+      "unit": "percent",
+      "calculation": [
+        "Mar=1305673.36",
+        "Apr=1356908.25"
+      ],
+      "source_tables": [
+        "invoices"
+      ],
+      "row_ids": [],
+      "assumptions": [],
+      "question": "What was the percentage change in total revenue from March to April 2026?",
+      "difficulty": 4,
+      "answer_type": "percent",
+      "tolerance": 0.02
+    },
+    {
+      "question_id": "garage_q05",
+      "answer": 120,
+      "unit": "",
+      "calculation": [
+        "Parties with >2 visits"
+      ],
+      "source_tables": [
+        "invoices"
+      ],
+      "row_ids": [],
+      "assumptions": [],
+      "question": "How many distinct customers had more than 2 service visits?",
+      "difficulty": 5,
+      "answer_type": "integer",
+      "tolerance": 0
+    },
+    {
+      "question_id": "garage_q06",
+      "answer": "parts=71.4%, labour=28.6%",
+      "unit": "",
+      "calculation": [
+        "parts lines=4354",
+        "labour lines=1745"
+      ],
+      "source_tables": [
+        "sales_lines"
+      ],
+      "row_ids": [],
+      "assumptions": [],
+      "question": "What percentage of invoice lines are labour versus parts by line count?",
+      "difficulty": 6,
+      "answer_type": "text",
+      "tolerance": 0
+    },
+    {
+      "question_id": "garage_q07",
+      "answer": 927809.71,
+      "unit": "INR",
+      "calculation": [
+        "Mar parts revenue=955309.71",
+        "Mar vendor purchases=27500.00"
+      ],
+      "source_tables": [
+        "sales_lines",
+        "vendor_purchases"
+      ],
+      "row_ids": [],
+      "assumptions": [],
+      "question": "What is the approximate parts gross margin for March 2026 (parts sales revenue minus vendor purchase cost in that month)?",
+      "difficulty": 7,
+      "answer_type": "currency",
+      "tolerance": 0.05
+    },
+    {
+      "question_id": "garage_q08",
+      "answer": "Suresh P",
+      "unit": "",
+      "calculation": [
+        "MAX(revenue/labour_hrs) by mechanic Apr-Jun"
+      ],
+      "source_tables": [
+        "invoices",
+        "sales_lines"
+      ],
+      "row_ids": [],
+      "assumptions": [],
+      "question": "Which mechanic generated the highest revenue per labour hour in Q2 2026 (Apr-Jun)?",
+      "difficulty": 8,
+      "answer_type": "text",
+      "tolerance": 0
+    },
+    {
+      "question_id": "garage_q09",
+      "answer": 60.34,
+      "unit": "percent",
+      "calculation": [
+        "AVG(ABS(final-estimate)/estimate*100)"
+      ],
+      "source_tables": [
+        "estimates",
+        "invoices"
+      ],
+      "row_ids": [],
+      "assumptions": [],
+      "question": "What is the average estimate-to-final-invoice variance percentage for jobs with both estimate and final bill?",
+      "difficulty": 9,
+      "answer_type": "percent",
+      "tolerance": 0.05
+    },
+    {
+      "question_id": "garage_q10",
+      "answer": "billed=424525.65, approved=360846.8",
+      "unit": "INR",
+      "calculation": [
+        "Insurance billed=424525.65",
+        "Claims approved=360846.80"
+      ],
+      "source_tables": [
+        "invoices",
+        "insurance_claims"
+      ],
+      "row_ids": [],
+      "assumptions": [],
+      "question": "What is total approved insurance claim amount versus total billed insurance job revenue?",
+      "difficulty": 10,
+      "answer_type": "text",
+      "tolerance": 0
+    },
+    {
+      "question_id": "pharmacy_q01",
+      "answer": 1287149.32,
+      "unit": "INR",
+      "calculation": [
+        "Mar total revenue"
+      ],
+      "source_tables": [
+        "invoices"
+      ],
+      "row_ids": [],
+      "assumptions": [],
+      "question": "What was total retail revenue in March 2026?",
+      "difficulty": 1,
+      "answer_type": "currency",
+      "tolerance": 0.01
+    },
+    {
+      "question_id": "pharmacy_q02",
+      "answer": 1201,
+      "unit": "",
+      "calculation": [
+        "OTC bills Feb"
+      ],
+      "source_tables": [
+        "invoices"
+      ],
+      "row_ids": [],
+      "assumptions": [],
+      "question": "How many OTC channel bills were raised in February 2026?",
+      "difficulty": 2,
+      "answer_type": "integer",
+      "tolerance": 0
+    },
+    {
+      "question_id": "pharmacy_q03",
+      "answer": [
+        "ORS Sachet",
+        "Cetirizine 10mg",
+        "Vitamin D3 60k",
+        "Azithromycin 500mg",
+        "Insulin Glargine"
+      ],
+      "unit": "",
+      "calculation": [
+        "TOP 5 by qty"
+      ],
+      "source_tables": [
+        "sales_lines"
+      ],
+      "row_ids": [],
+      "assumptions": [],
+      "question": "What are the top 5 medicines by quantity sold?",
+      "difficulty": 3,
+      "answer_type": "list",
+      "tolerance": 0
+    },
+    {
+      "question_id": "pharmacy_q04",
+      "answer": -0.54,
+      "unit": "percent",
+      "calculation": [
+        "Mar=1287149.32",
+        "Apr=1280166.60"
+      ],
+      "source_tables": [
+        "invoices"
+      ],
+      "row_ids": [],
+      "assumptions": [],
+      "question": "What was the percentage change in revenue from March to April 2026?",
+      "difficulty": 4,
+      "answer_type": "percent",
+      "tolerance": 0.02
+    },
+    {
+      "question_id": "pharmacy_q05",
+      "answer": 500,
+      "unit": "",
+      "calculation": [
+        "Patients >3 purchases"
+      ],
+      "source_tables": [
+        "invoices"
+      ],
+      "row_ids": [],
+      "assumptions": [],
+      "question": "How many patients made more than 3 purchases in the six-month period?",
+      "difficulty": 5,
+      "answer_type": "integer",
+      "tolerance": 0
+    },
+    {
+      "question_id": "pharmacy_q06",
+      "answer": 4.0,
+      "unit": "percent",
+      "calculation": [
+        "SUM disc/SUM gross"
+      ],
+      "source_tables": [
+        "sales_lines"
+      ],
+      "row_ids": [],
+      "assumptions": [],
+      "question": "What was the average discount percentage across all bills?",
+      "difficulty": 6,
+      "answer_type": "percent",
+      "tolerance": 0.03
+    },
+    {
+      "question_id": "pharmacy_q07",
+      "answer": 1282578.89,
+      "unit": "INR",
+      "calculation": [
+        "Jun revenue=1287297.14",
+        "Jun writeoffs=4718.25"
+      ],
+      "source_tables": [
+        "invoices",
+        "inventory_movements"
+      ],
+      "row_ids": [],
+      "assumptions": [],
+      "question": "What is net revenue after expired medicine write-off losses for June 2026?",
+      "difficulty": 7,
+      "answer_type": "currency",
+      "tolerance": 0.03
+    },
+    {
+      "question_id": "pharmacy_q08",
+      "answer": "Meera K",
+      "unit": "",
+      "calculation": [
+        "MAX(revenue/bills_count) pharmacist Apr"
+      ],
+      "source_tables": [
+        "pharmacist_shifts",
+        "employees"
+      ],
+      "row_ids": [],
+      "assumptions": [],
+      "question": "Which pharmacist had the highest revenue per bill in April 2026?",
+      "difficulty": 8,
+      "answer_type": "text",
+      "tolerance": 0
+    },
+    {
+      "question_id": "pharmacy_q09",
+      "answer": 792953.87,
+      "unit": "INR",
+      "calculation": [
+        "SUM invoice totals linked to Q1 referrals"
+      ],
+      "source_tables": [
+        "doctor_referrals",
+        "invoices"
+      ],
+      "row_ids": [],
+      "assumptions": [],
+      "question": "What total revenue is linked to doctor referrals in Q1 2026 (Jan-Mar)?",
+      "difficulty": 9,
+      "answer_type": "currency",
+      "tolerance": 0.02
+    },
+    {
+      "question_id": "pharmacy_q10",
+      "answer": 0.34,
+      "unit": "percent",
+      "calculation": [
+        "Jun returns=4389.56",
+        "Jun revenue=1287297.14"
+      ],
+      "source_tables": [
+        "returns",
+        "invoices"
+      ],
+      "row_ids": [],
+      "assumptions": [],
+      "question": "What is the return rate by refund amount as a percentage of total revenue in June 2026?",
+      "difficulty": 10,
+      "answer_type": "percent",
+      "tolerance": 0.05
+    }
+  ],
+  "questions": [
+    {
+      "id": "cafe_q01",
+      "difficulty": 1,
+      "requires_import": [
+        "primary_sales"
+      ],
+      "requires_files": [],
+      "question": "What was total dine-in revenue in March 2026?",
+      "answer_type": "currency",
+      "tolerance": 0.01,
+      "tags": [
+        "filter",
+        "aggregation",
+        "channel"
+      ],
+      "business": "cafe_brewlab"
+    },
+    {
+      "id": "cafe_q02",
+      "difficulty": 2,
+      "requires_import": [
+        "primary_sales"
+      ],
+      "requires_files": [],
+      "question": "How many Swiggy orders were there in February 2026?",
+      "answer_type": "integer",
+      "tolerance": 0,
+      "tags": [
+        "filter",
+        "count",
+        "channel"
+      ],
+      "business": "cafe_brewlab"
+    },
+    {
+      "id": "cafe_q03",
+      "difficulty": 3,
+      "requires_import": [
+        "primary_sales"
+      ],
+      "requires_files": [],
+      "question": "What are the top 5 menu items by quantity sold across all six months?",
+      "answer_type": "list",
+      "tolerance": 0,
+      "tags": [
+        "ranking",
+        "aggregation"
+      ],
+      "business": "cafe_brewlab"
+    },
+    {
+      "id": "cafe_q04",
+      "difficulty": 4,
+      "requires_import": [
+        "primary_sales"
+      ],
+      "requires_files": [],
+      "question": "What was the percentage change in total revenue from March 2026 to April 2026?",
+      "answer_type": "percent",
+      "tolerance": 0.02,
+      "tags": [
+        "mom_comparison",
+        "aggregation"
+      ],
+      "business": "cafe_brewlab"
+    },
+    {
+      "id": "cafe_q05",
+      "difficulty": 5,
+      "requires_import": [
+        "primary_sales"
+      ],
+      "requires_files": [],
+      "question": "How many customers visited more than 3 times during the six-month period?",
+      "answer_type": "integer",
+      "tolerance": 0,
+      "tags": [
+        "customer_history",
+        "aggregation"
+      ],
+      "business": "cafe_brewlab"
+    },
+    {
+      "id": "cafe_q06",
+      "difficulty": 6,
+      "requires_import": [
+        "primary_sales"
+      ],
+      "requires_files": [],
+      "question": "What was the average discount percentage on dine-in orders?",
+      "answer_type": "percent",
+      "tolerance": 0.03,
+      "tags": [
+        "discount_analysis"
+      ],
+      "business": "cafe_brewlab"
+    },
+    {
+      "id": "cafe_q07",
+      "difficulty": 7,
+      "requires_import": [
+        "primary_sales"
+      ],
+      "requires_files": [
+        "wastage_report.csv"
+      ],
+      "question": "What is estimated gross profit proxy for March 2026 (dine-in + takeaway revenue minus wastage cost)?",
+      "answer_type": "currency",
+      "tolerance": 0.02,
+      "tags": [
+        "cross_file",
+        "profitability"
+      ],
+      "business": "cafe_brewlab"
+    },
+    {
+      "id": "cafe_q08",
+      "difficulty": 8,
+      "requires_import": [
+        "primary_sales"
+      ],
+      "requires_files": [
+        "shift_roster.csv"
+      ],
+      "question": "What was dine-in revenue per cashier shift hour in April 2026?",
+      "answer_type": "currency",
+      "tolerance": 0.05,
+      "tags": [
+        "employee_efficiency",
+        "cross_file"
+      ],
+      "business": "cafe_brewlab"
+    },
+    {
+      "id": "cafe_q09",
+      "difficulty": 9,
+      "requires_import": [
+        "primary_sales"
+      ],
+      "requires_files": [
+        "settlement_summary.csv"
+      ],
+      "question": "What is the total settlement variance (expected minus collected) for June 2026?",
+      "answer_type": "currency",
+      "tolerance": 0.05,
+      "tags": [
+        "reconciliation",
+        "cross_file"
+      ],
+      "business": "cafe_brewlab"
+    },
+    {
+      "id": "cafe_q10",
+      "difficulty": 10,
+      "requires_import": [
+        "primary_sales"
+      ],
+      "requires_files": [],
+      "question": "How many invoices have line-item totals that do not sum to the invoice header total (excluding cancelled and zero-value bills)?",
+      "answer_type": "integer",
+      "tolerance": 0,
+      "tags": [
+        "anomaly_detection",
+        "multi_step"
+      ],
+      "business": "cafe_brewlab"
+    },
+    {
+      "id": "garage_q01",
+      "difficulty": 1,
+      "requires_import": [
+        "primary_sales"
+      ],
+      "requires_files": [],
+      "question": "What was total service revenue in March 2026?",
+      "answer_type": "currency",
+      "tolerance": 0.01,
+      "tags": [
+        "filter",
+        "aggregation"
+      ],
+      "business": "garage_autocare"
+    },
+    {
+      "id": "garage_q02",
+      "difficulty": 2,
+      "requires_import": [
+        "primary_sales"
+      ],
+      "requires_files": [],
+      "question": "How many insurance channel jobs were completed in February 2026?",
+      "answer_type": "integer",
+      "tolerance": 0,
+      "tags": [
+        "filter",
+        "count"
+      ],
+      "business": "garage_autocare"
+    },
+    {
+      "id": "garage_q03",
+      "difficulty": 3,
+      "requires_import": [
+        "primary_sales"
+      ],
+      "requires_files": [],
+      "question": "What are the top 5 spare parts by revenue?",
+      "answer_type": "list",
+      "tolerance": 0,
+      "tags": [
+        "ranking"
+      ],
+      "business": "garage_autocare"
+    },
+    {
+      "id": "garage_q04",
+      "difficulty": 4,
+      "requires_import": [
+        "primary_sales"
+      ],
+      "requires_files": [],
+      "question": "What was the percentage change in total revenue from March to April 2026?",
+      "answer_type": "percent",
+      "tolerance": 0.02,
+      "tags": [
+        "mom_comparison"
+      ],
+      "business": "garage_autocare"
+    },
+    {
+      "id": "garage_q05",
+      "difficulty": 5,
+      "requires_import": [
+        "primary_sales"
+      ],
+      "requires_files": [],
+      "question": "How many distinct customers had more than 2 service visits?",
+      "answer_type": "integer",
+      "tolerance": 0,
+      "tags": [
+        "customer_history"
+      ],
+      "business": "garage_autocare"
+    },
+    {
+      "id": "garage_q06",
+      "difficulty": 6,
+      "requires_import": [
+        "primary_sales"
+      ],
+      "requires_files": [],
+      "question": "What percentage of invoice lines are labour versus parts by line count?",
+      "answer_type": "text",
+      "tolerance": 0,
+      "tags": [
+        "mix_analysis"
+      ],
+      "rubric_keywords": [
+        "labour",
+        "parts"
+      ],
+      "business": "garage_autocare"
+    },
+    {
+      "id": "garage_q07",
+      "difficulty": 7,
+      "requires_import": [
+        "primary_sales"
+      ],
+      "requires_files": [
+        "vendor_purchases.csv",
+        "parts_inventory.csv"
+      ],
+      "question": "What is the approximate parts gross margin for March 2026 (parts sales revenue minus vendor purchase cost in that month)?",
+      "answer_type": "currency",
+      "tolerance": 0.05,
+      "tags": [
+        "cross_file",
+        "profitability"
+      ],
+      "business": "garage_autocare"
+    },
+    {
+      "id": "garage_q08",
+      "difficulty": 8,
+      "requires_import": [
+        "primary_sales"
+      ],
+      "requires_files": [
+        "mechanic_timesheets.csv"
+      ],
+      "question": "Which mechanic generated the highest revenue per labour hour in Q2 2026 (Apr-Jun)?",
+      "answer_type": "text",
+      "tolerance": 0,
+      "tags": [
+        "employee_performance",
+        "cross_file"
+      ],
+      "business": "garage_autocare"
+    },
+    {
+      "id": "garage_q09",
+      "difficulty": 9,
+      "requires_import": [
+        "primary_sales"
+      ],
+      "requires_files": [
+        "estimates_vs_final.csv"
+      ],
+      "question": "What is the average estimate-to-final-invoice variance percentage for jobs with both estimate and final bill?",
+      "answer_type": "percent",
+      "tolerance": 0.05,
+      "tags": [
+        "cross_file",
+        "estimate_variance"
+      ],
+      "business": "garage_autocare"
+    },
+    {
+      "id": "garage_q10",
+      "difficulty": 10,
+      "requires_import": [
+        "primary_sales"
+      ],
+      "requires_files": [
+        "insurance_claims.csv"
+      ],
+      "question": "What is total approved insurance claim amount versus total billed insurance job revenue?",
+      "answer_type": "text",
+      "tolerance": 0,
+      "tags": [
+        "insurance",
+        "cross_file",
+        "anomaly"
+      ],
+      "rubric_keywords": [
+        "approved",
+        "billed"
+      ],
+      "business": "garage_autocare"
+    },
+    {
+      "id": "pharmacy_q01",
+      "difficulty": 1,
+      "requires_import": [
+        "primary_sales"
+      ],
+      "requires_files": [],
+      "question": "What was total retail revenue in March 2026?",
+      "answer_type": "currency",
+      "tolerance": 0.01,
+      "tags": [
+        "filter",
+        "aggregation"
+      ],
+      "business": "pharmacy_medplus"
+    },
+    {
+      "id": "pharmacy_q02",
+      "difficulty": 2,
+      "requires_import": [
+        "primary_sales"
+      ],
+      "requires_files": [],
+      "question": "How many OTC channel bills were raised in February 2026?",
+      "answer_type": "integer",
+      "tolerance": 0,
+      "tags": [
+        "filter",
+        "count"
+      ],
+      "business": "pharmacy_medplus"
+    },
+    {
+      "id": "pharmacy_q03",
+      "difficulty": 3,
+      "requires_import": [
+        "primary_sales"
+      ],
+      "requires_files": [],
+      "question": "What are the top 5 medicines by quantity sold?",
+      "answer_type": "list",
+      "tolerance": 0,
+      "tags": [
+        "ranking"
+      ],
+      "business": "pharmacy_medplus"
+    },
+    {
+      "id": "pharmacy_q04",
+      "difficulty": 4,
+      "requires_import": [
+        "primary_sales"
+      ],
+      "requires_files": [],
+      "question": "What was the percentage change in revenue from March to April 2026?",
+      "answer_type": "percent",
+      "tolerance": 0.02,
+      "tags": [
+        "mom_comparison"
+      ],
+      "business": "pharmacy_medplus"
+    },
+    {
+      "id": "pharmacy_q05",
+      "difficulty": 5,
+      "requires_import": [
+        "primary_sales"
+      ],
+      "requires_files": [],
+      "question": "How many patients made more than 3 purchases in the six-month period?",
+      "answer_type": "integer",
+      "tolerance": 0,
+      "tags": [
+        "customer_history"
+      ],
+      "business": "pharmacy_medplus"
+    },
+    {
+      "id": "pharmacy_q06",
+      "difficulty": 6,
+      "requires_import": [
+        "primary_sales"
+      ],
+      "requires_files": [],
+      "question": "What was the average discount percentage across all bills?",
+      "answer_type": "percent",
+      "tolerance": 0.03,
+      "tags": [
+        "discount_analysis"
+      ],
+      "business": "pharmacy_medplus"
+    },
+    {
+      "id": "pharmacy_q07",
+      "difficulty": 7,
+      "requires_import": [
+        "primary_sales"
+      ],
+      "requires_files": [
+        "expired_writeoffs.csv"
+      ],
+      "question": "What is net revenue after expired medicine write-off losses for June 2026?",
+      "answer_type": "currency",
+      "tolerance": 0.03,
+      "tags": [
+        "cross_file",
+        "expiry"
+      ],
+      "business": "pharmacy_medplus"
+    },
+    {
+      "id": "pharmacy_q08",
+      "difficulty": 8,
+      "requires_import": [
+        "primary_sales"
+      ],
+      "requires_files": [
+        "pharmacist_shifts.csv"
+      ],
+      "question": "Which pharmacist had the highest revenue per bill in April 2026?",
+      "answer_type": "text",
+      "tolerance": 0,
+      "tags": [
+        "employee_performance"
+      ],
+      "business": "pharmacy_medplus"
+    },
+    {
+      "id": "pharmacy_q09",
+      "difficulty": 9,
+      "requires_import": [
+        "primary_sales"
+      ],
+      "requires_files": [
+        "doctor_referrals.csv"
+      ],
+      "question": "What total revenue is linked to doctor referrals in Q1 2026 (Jan-Mar)?",
+      "answer_type": "currency",
+      "tolerance": 0.02,
+      "tags": [
+        "cross_file",
+        "doctor_ref"
+      ],
+      "business": "pharmacy_medplus"
+    },
+    {
+      "id": "pharmacy_q10",
+      "difficulty": 10,
+      "requires_import": [
+        "primary_sales"
+      ],
+      "requires_files": [
+        "returns_substitutions.csv"
+      ],
+      "question": "What is the return rate by refund amount as a percentage of total revenue in June 2026?",
+      "answer_type": "percent",
+      "tolerance": 0.05,
+      "tags": [
+        "returns",
+        "anomaly"
+      ],
+      "business": "pharmacy_medplus"
+    }
+  ]
+}

@@ -3,6 +3,12 @@ import logging
 import re
 from dataclasses import dataclass
 
+from app.services.copilot.channel_queries import (
+    match_channel_count_plan,
+    match_channel_revenue_plan,
+    match_repeat_customer_plan,
+    product_group_filter_sql,
+)
 from app.services.copilot.date_range import parse_result_limit
 from app.services.copilot.fallback_queries import (
     sales_by_location_sql,
@@ -12,6 +18,7 @@ from app.services.copilot.fallback_queries import (
 from app.services.copilot.pii_redactor import redact
 from app.services.llm.manager import LLMManager
 from app.services.schema.columns import (
+    COMPANION_DATA_TABLE,
     DEFAULT_RESULT_LIMIT,
     MAX_RESULT_LIMIT,
     SALES_DATA_TABLE,
@@ -40,10 +47,18 @@ Output ONLY valid JSON in this exact format:
 Rules:
 - Always filter by tenant_id = :tenant_id (parameterized, never hardcoded UUIDs)
 - Always filter by invoice_date using :start_date and :end_date from the provided date range
-- Only use table: {SALES_DATA_TABLE}
+- Only use tables listed in schema context: {SALES_DATA_TABLE} and optionally {COMPANION_DATA_TABLE}
 - Maximum 3 SQL steps
 - Parse LIMIT from the user's question when they say "top N"; otherwise omit LIMIT or use a reasonable default
 - For greetings or chitchat with no data question, return "steps": []
+- sales_data is LINE-ITEM level (one row per product/service line). For orders/bills/jobs/visits use COUNT(DISTINCT invoice_number), NOT COUNT(*)
+- Filter order channels (dine-in, swiggy, zomato, OTC, insurance, etc.) on route — NOT product_category unless categories are populated
+- For repeat customers/patients: GROUP BY party_name, count DISTINCT invoice_number (or DISTINCT invoice_date for visit frequency)
+- Average discount %: SUM(discount_amount) / NULLIF(SUM(gross_amount), 0) * 100
+- Only reference columns listed in schema context; extra POS fields may be in raw_data JSONB (e.g. raw_data->>'cashier')
+- Do NOT invent columns (e.g. final_bill, order_type) — use mapped columns from schema context
+- Cross-file metrics: query {COMPANION_DATA_TABLE} filtered by dataset_type and record_date
+- Invoice mismatch detection: GROUP BY invoice_number, compare SUM(total_amount) consistently (line-level exports)
 """
 
 _ANALYTICS_KEYWORDS = (
@@ -196,6 +211,47 @@ class Planner:
         """Deterministic SQL templates when the LLM plan cannot be parsed."""
         q = question.lower()
         limit = parse_result_limit(question, DEFAULT_RESULT_LIMIT, MAX_RESULT_LIMIT)
+
+        channel_sql = match_channel_count_plan(question)
+        if channel_sql:
+            return Plan(
+                intent="channel order count",
+                steps=[PlanStep(step_id=1, description="Count distinct orders by channel", sql=channel_sql)],
+                requires_context=[],
+                response_format="summary",
+            )
+
+        revenue_sql = match_channel_revenue_plan(question)
+        if revenue_sql:
+            return Plan(
+                intent="channel revenue",
+                steps=[PlanStep(step_id=1, description="Channel revenue", sql=revenue_sql)],
+                requires_context=[],
+                response_format="summary",
+            )
+
+        repeat_sql = match_repeat_customer_plan(question)
+        if repeat_sql:
+            return Plan(
+                intent="repeat customers",
+                steps=[PlanStep(step_id=1, description="Repeat customer count", sql=repeat_sql)],
+                requires_context=[],
+                response_format="summary",
+            )
+
+        if "spare part" in q or ("parts" in q and "top" in q):
+            return Plan(
+                intent="top spare parts",
+                steps=[
+                    PlanStep(
+                        step_id=1,
+                        description="Top spare parts by revenue",
+                        sql=product_group_filter_sql("part", limit),
+                    )
+                ],
+                requires_context=[],
+                response_format="table",
+            )
 
         if any(w in q for w in ("top", "best", "selling", "product")):
             return Plan(
