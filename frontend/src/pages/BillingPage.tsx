@@ -9,6 +9,7 @@ import {
   fetchBillingDetails,
   fetchInvoices,
   fetchSubscription,
+  syncSubscription,
   cancelSubscription,
   getUsagePct,
   updateBillingDetails,
@@ -69,7 +70,27 @@ export function BillingPage() {
     if (sessionSuccess || upgradedSuccess) {
       refetch();
       fetchInvoices().then(setInvoices).catch(() => {});
-      fetchSubscription().then(setSubscription).catch(() => {});
+
+      let attempts = 0;
+      const maxAttempts = 12;
+      const poll = async () => {
+        try {
+          const synced = await syncSubscription();
+          setSubscription(synced);
+          await refetch();
+          if (synced.synced || (synced.plan !== "free" && synced.plan_status === "active")) {
+            return;
+          }
+        } catch {
+          fetchSubscription().then(setSubscription).catch(() => {});
+        }
+        attempts += 1;
+        if (attempts < maxAttempts) {
+          setTimeout(poll, 2500);
+        }
+      };
+      void poll();
+
       const t = setTimeout(() => {
         params.delete("session_id");
         params.delete("upgraded");

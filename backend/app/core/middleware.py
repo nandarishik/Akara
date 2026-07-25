@@ -27,20 +27,30 @@ class RequestIDMiddleware(BaseHTTPMiddleware):
         request.state.request_id = request_id
 
         start = time.perf_counter()
+        status_code: int | str = "ERR"
         try:
             response = await call_next(request)
+            status_code = response.status_code
         except Exception:
-            raise
-        finally:
             elapsed_ms = round((time.perf_counter() - start) * 1000)
             logger.info(
                 "%s %s %s %dms rid=%s",
                 request.method,
                 request.url.path,
-                getattr(response, "status_code", "ERR"),
+                status_code,
                 elapsed_ms,
                 request_id,
             )
-
-        response.headers["X-Request-ID"] = request_id
-        return response
+            raise
+        else:
+            elapsed_ms = round((time.perf_counter() - start) * 1000)
+            logger.info(
+                "%s %s %s %dms rid=%s",
+                request.method,
+                request.url.path,
+                status_code,
+                elapsed_ms,
+                request_id,
+            )
+            response.headers["X-Request-ID"] = request_id
+            return response

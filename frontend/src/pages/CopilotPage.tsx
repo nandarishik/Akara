@@ -11,6 +11,7 @@ import {
   AlertCircle,
   Wifi,
   WifiOff,
+  Menu,
 } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { useCopilot } from "@/hooks/useCopilot";
@@ -26,6 +27,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { toast } from "@/components/ui/toast";
 import { supabase } from "@/lib/supabase";
 import { cn } from "@/lib/utils";
+import { MobileHistoryDrawer } from "@/components/copilot/MobileHistoryDrawer";
+import { ChatMarkdown } from "@/components/copilot/ChatMarkdown";
+import { useMobileNav } from "@/contexts/MobileNavContext";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL as string;
 
@@ -59,6 +63,8 @@ export function CopilotPage() {
   const [connectionStatus, setConnectionStatus] = useState<
     "connected" | "disconnected" | "reconnecting"
   >("connected");
+  const [showHistory, setShowHistory] = useState(false);
+  const openMobileNav = useMobileNav();
   const bottomRef = useRef<HTMLDivElement>(null);
 
   const quotaLevel = usage
@@ -162,20 +168,38 @@ export function CopilotPage() {
     <div className="flex flex-col h-full min-h-0 bg-surface-canvas">
       {/* Compact header — quota lives here, not in global shell banner */}
       <div className="px-4 lg:px-6 py-3 border-b border-surface-border bg-surface-card shrink-0">
-        <div className="flex items-center justify-between gap-4">
-          <div className="flex items-center gap-3 min-w-0">
+        <div className="flex items-center justify-between gap-2 sm:gap-4">
+          <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
+            {openMobileNav && (
+              <button
+                type="button"
+                onClick={openMobileNav}
+                className="md:hidden p-2 -ml-1 rounded-lg text-text-muted hover:text-text-primary min-h-[44px] min-w-[44px] flex items-center justify-center shrink-0"
+                aria-label="Open navigation"
+              >
+                <Menu className="h-5 w-5" />
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={() => setShowHistory(true)}
+              className="md:hidden p-2 rounded-lg text-text-muted hover:text-text-primary min-h-[44px] min-w-[44px] flex items-center justify-center shrink-0"
+              aria-label="Open chat history"
+            >
+              <MessageSquare className="h-5 w-5" />
+            </button>
             <div className="w-9 h-9 rounded-lg flex items-center justify-center bg-accent text-white shrink-0">
               <Bot className="h-4 w-4" />
             </div>
             <div className="min-w-0">
-              <h1 className="text-h2 text-base">AKARA Copilot</h1>
-              <div className="flex items-center gap-2 text-caption">
+              <h1 className="text-h2 text-base truncate">AKARA Copilot</h1>
+              <div className="flex items-center gap-2 text-caption min-w-0">
                 {connectionStatus === "connected" ? (
-                  <Wifi className="h-3 w-3 text-green-600" />
+                  <Wifi className="h-3 w-3 text-green-600 shrink-0" />
                 ) : (
-                  <WifiOff className="h-3 w-3 text-red-500" />
+                  <WifiOff className="h-3 w-3 text-red-500 shrink-0" />
                 )}
-                <span>
+                <span className="truncate hidden sm:inline">
                   {debriefReportId
                     ? "Discussing your weekly debrief"
                     : "Ask anything about your sales data"}
@@ -183,9 +207,14 @@ export function CopilotPage() {
               </div>
             </div>
           </div>
-          <AkaraButton size="sm" onClick={handleNewChat} className="shrink-0">
-            <Plus className="h-4 w-4 mr-1" />
-            New chat
+          <AkaraButton
+            size="sm"
+            onClick={handleNewChat}
+            className="shrink-0 min-h-[44px]"
+            aria-label="New chat"
+          >
+            <Plus className="h-4 w-4 sm:mr-1" />
+            <span className="hidden sm:inline">New chat</span>
           </AkaraButton>
         </div>
 
@@ -226,9 +255,18 @@ export function CopilotPage() {
         )}
       </div>
 
+      <MobileHistoryDrawer
+        open={showHistory}
+        onClose={() => setShowHistory(false)}
+        conversations={conversations}
+        loading={conversationsLoading}
+        conversationId={conversationId}
+        onSelect={handleSelectConversation}
+      />
+
       <div className="flex flex-1 min-h-0">
-        {/* Conversation sidebar — ChatGPT-style history */}
-        <div className="w-64 lg:w-72 border-r border-surface-border bg-surface-card flex flex-col shrink-0">
+        {/* Conversation sidebar — desktop only */}
+        <div className="hidden md:flex w-64 lg:w-72 border-r border-surface-border bg-surface-card flex-col shrink-0">
           <div className="px-4 py-3 border-b border-surface-border">
             <div className="flex items-center gap-2 text-sm font-medium text-text-secondary">
               <MessageSquare className="h-4 w-4 text-accent" />
@@ -327,7 +365,18 @@ export function CopilotPage() {
                         m.error && "border-red-200 bg-red-50"
                       )}
                     >
-                      {m.content || (m.streaming ? "…" : "")}
+                      {m.role === "user" ? (
+                        <p className="whitespace-pre-wrap">{m.content || ""}</p>
+                      ) : m.content ? (
+                        <>
+                          <ChatMarkdown content={m.content} />
+                          {m.streaming && (
+                            <span className="inline-block w-1 h-4 bg-accent ml-0.5 animate-pulse align-middle" />
+                          )}
+                        </>
+                      ) : m.streaming ? (
+                        <span className="text-text-muted">…</span>
+                      ) : null}
                       {m.role === "assistant" && !m.streaming && m.content && (
                         <div className="mt-3 pt-2 border-t border-surface-border flex gap-2">
                           <button
@@ -386,7 +435,7 @@ export function CopilotPage() {
             </div>
           )}
 
-          <div className="px-4 lg:px-8 py-4 border-t border-surface-border bg-surface-card shrink-0">
+          <div className="px-4 lg:px-8 py-4 pb-[max(1rem,env(safe-area-inset-bottom))] border-t border-surface-border bg-surface-card shrink-0">
             <div className="max-w-3xl mx-auto flex gap-2 items-end">
               <Textarea
                 value={input}

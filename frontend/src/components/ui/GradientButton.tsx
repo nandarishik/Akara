@@ -80,7 +80,7 @@ export function SecondaryButton(props: Omit<ButtonProps, "variant">) {
 }
 
 export function GhostButton(props: Omit<ButtonProps, "variant">) {
-  return <AkaraButton variant="ghost" {...props} />;
+  return <AkaraButton variant="ghost" type="button" {...props} />;
 }
 
 /** @deprecated Use AkaraButton */

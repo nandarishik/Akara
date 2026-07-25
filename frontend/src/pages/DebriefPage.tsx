@@ -141,7 +141,7 @@ export function DebriefPage() {
 
   if (loading && !detail) {
     return (
-      <div className="p-8 max-w-4xl mx-auto space-y-6">
+      <div className="p-4 sm:p-6 lg:p-8 max-w-4xl mx-auto space-y-6">
         <ShimmerSkeleton className="h-8 w-48" />
         <ShimmerSkeleton className="h-32 w-full rounded-xl" />
         <div className="grid md:grid-cols-2 gap-4">
@@ -154,7 +154,7 @@ export function DebriefPage() {
 
   if (lifetimeExhausted) {
     return (
-      <div className="p-8 max-w-3xl mx-auto">
+      <div className="p-4 sm:p-6 lg:p-8 max-w-3xl mx-auto">
         <SurfaceCard className="text-center space-y-4">
           <BarChart3 className="h-10 w-10 mx-auto text-text-muted" />
           <h1 className="text-xl font-bold">Free debrief used</h1>
@@ -171,7 +171,7 @@ export function DebriefPage() {
 
   if (error && !detail) {
     return (
-      <div className="p-8 max-w-3xl mx-auto">
+      <div className="p-4 sm:p-6 lg:p-8 max-w-3xl mx-auto">
         <SurfaceCard className="text-center space-y-4">
           <BarChart3 className="h-10 w-10 mx-auto text-text-muted" />
           <h1 className="text-xl font-bold">No weekly debrief yet</h1>
@@ -196,7 +196,7 @@ export function DebriefPage() {
   if (!meta) return null;
 
   return (
-    <div className="p-8 max-w-4xl mx-auto space-y-6 bg-surface-canvas min-h-full">
+    <div className="p-4 sm:p-6 lg:p-8 max-w-4xl mx-auto space-y-6 bg-surface-canvas min-h-full">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-text-primary flex items-center gap-2">

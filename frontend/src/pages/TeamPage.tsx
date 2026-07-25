@@ -271,7 +271,7 @@ export function TeamPage({ embedded = false }: TeamPageProps) {
 
   return (
     <PlanGate feature="team_invites" requiredPlan="pro" title="Team management">
-      <div className="p-8 max-w-3xl mx-auto space-y-6">{content}</div>
+      <div className="p-4 sm:p-6 lg:p-8 max-w-3xl mx-auto space-y-6">{content}</div>
     </PlanGate>
   );
 }

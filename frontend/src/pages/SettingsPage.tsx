@@ -212,7 +212,7 @@ export function SettingsPage() {
   const whatsappLocked = !channels?.whatsapp_enabled;
 
   return (
-    <div className="p-8 max-w-3xl mx-auto space-y-6 bg-surface-canvas min-h-full">
+    <div className="p-4 sm:p-6 lg:p-8 max-w-3xl mx-auto space-y-6 bg-surface-canvas min-h-full">
       <div>
         <h1 className="text-2xl font-bold text-text-primary">Settings</h1>
         <p className="text-sm text-text-secondary mt-1">
@@ -220,14 +220,14 @@ export function SettingsPage() {
         </p>
       </div>
 
-      <div className="flex flex-wrap gap-1 border-b border-surface-border pb-1">
+      <div className="flex gap-1 border-b border-surface-border pb-1 overflow-x-auto flex-nowrap -mx-1 px-1">
         {TABS.map((t) => (
           <button
             key={t.id}
             type="button"
             onClick={() => setTab(t.id)}
             className={cn(
-              "px-3 py-2 text-sm rounded-t-lg transition-colors",
+              "px-3 py-2.5 text-sm rounded-t-lg transition-colors shrink-0 min-h-[44px]",
               tab === t.id
                 ? "bg-surface-raised text-accent font-medium"
                 : "text-text-muted hover:text-text-primary"

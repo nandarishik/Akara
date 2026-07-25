@@ -159,13 +159,20 @@ export interface SubscriptionInfo {
   plan: string;
   plan_status: string;
   razorpay_status: string | null;
+  razorpay_plan?: string | null;
   current_end: number | null;
   cancel_at_cycle_end: boolean;
   trial_ends_at: string | null;
+  synced?: boolean;
+  reason?: string | null;
 }
 
 export async function fetchSubscription(): Promise<SubscriptionInfo> {
   return apiFetch<SubscriptionInfo>("/billing/subscription");
+}
+
+export async function syncSubscription(): Promise<SubscriptionInfo> {
+  return apiFetch<SubscriptionInfo>("/billing/sync-subscription", { method: "POST" });
 }
 
 export async function cancelSubscription(): Promise<{ status: string; at_cycle_end: boolean }> {

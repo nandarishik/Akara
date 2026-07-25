@@ -6,12 +6,13 @@ import logging
 from datetime import UTC, datetime, timedelta
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from pydantic import BaseModel, Field
 
 from app.api.routes.admin.tenants import _require_superadmin
+from app.core.rate_limit import ADMIN_READ_LIMIT, ADMIN_WRITE_LIMIT, limiter
 from app.core.tenant import TenantContext, get_supabase_service_client
-from app.services.billing.checkout import fetch_subscription_status
+from app.services.billing.checkout import fetch_subscription_status, sync_subscription_from_razorpay
 from app.services.billing.email import send_payment_success_email
 
 logger = logging.getLogger(__name__)
@@ -100,7 +101,9 @@ def _log_billing_action(action: str, tenant_id: str, actor_id: str, details: dic
 
 
 @router.get("/webhooks/status", response_model=WebhookStatusResponse)
+@limiter.limit(ADMIN_READ_LIMIT)
 def webhook_status(
+    request: Request,
     _admin: TenantContext = Depends(_require_superadmin),
 ) -> WebhookStatusResponse:
     supa = get_supabase_service_client()
@@ -125,7 +128,9 @@ def webhook_status(
 
 
 @router.get("/timeline/{tenant_id}", response_model=TimelineResponse)
+@limiter.limit(ADMIN_READ_LIMIT)
 def payment_timeline(
+    request: Request,
     tenant_id: str,
     _admin: TenantContext = Depends(_require_superadmin),
 ) -> TimelineResponse:
@@ -156,7 +161,9 @@ def payment_timeline(
 
 
 @router.post("/resend-invoice/{tenant_id}")
+@limiter.limit(ADMIN_WRITE_LIMIT)
 def resend_invoice(
+    request: Request,
     tenant_id: str,
     _admin: TenantContext = Depends(_require_superadmin),
 ) -> dict[str, str]:
@@ -206,7 +213,9 @@ def resend_invoice(
 
 
 @router.post("/manual-upgrade/{tenant_id}", response_model=ManualUpgradeResponse)
+@limiter.limit(ADMIN_WRITE_LIMIT)
 def manual_upgrade(
+    request: Request,
     tenant_id: str,
     body: ManualUpgradeRequest,
     admin: TenantContext = Depends(_require_superadmin),
@@ -239,7 +248,9 @@ def manual_upgrade(
 
 
 @router.post("/extend-trial/{tenant_id}", response_model=ExtendTrialResponse)
+@limiter.limit(ADMIN_WRITE_LIMIT)
 def extend_trial(
+    request: Request,
     tenant_id: str,
     body: ExtendTrialRequest,
     admin: TenantContext = Depends(_require_superadmin),
@@ -281,7 +292,9 @@ def extend_trial(
 
 
 @router.post("/reconcile/{tenant_id}", response_model=ReconcileResponse)
+@limiter.limit(ADMIN_WRITE_LIMIT)
 def reconcile_tenant_billing(
+    request: Request,
     tenant_id: str,
     body: ReconcileRequest,
     admin: TenantContext = Depends(_require_superadmin),
@@ -298,6 +311,7 @@ def reconcile_tenant_billing(
     mismatches: list[str] = []
 
     rz_status = razorpay_snapshot.get("razorpay_status")
+    rz_plan = razorpay_snapshot.get("razorpay_plan")
     if row.get("razorpay_subscription_id") and not rz_status:
         mismatches.append("Razorpay subscription could not be fetched")
     if rz_status in ("active", "authenticated") and db_snapshot["plan_status"] == "past_due":
@@ -305,32 +319,50 @@ def reconcile_tenant_billing(
     if rz_status in ("halted", "pending") and db_snapshot["plan_status"] == "active":
         mismatches.append("Razorpay halted/pending but DB plan_status is active")
     if (
-        razorpay_snapshot.get("plan")
-        and razorpay_snapshot["plan"] != db_snapshot["plan"]
-        and db_snapshot["plan"] != "free"
+        rz_status in ("active", "authenticated")
+        and db_snapshot["plan"] == "free"
+        and rz_plan in ("pro", "business")
+    ):
+        mismatches.append(f"Razorpay active ({rz_plan}) but DB plan is still free")
+    if (
+        rz_plan
+        and db_snapshot["plan"] not in ("free",)
+        and rz_plan != db_snapshot["plan"]
     ):
         mismatches.append(
-            f"plan mismatch: DB={db_snapshot['plan']} vs notes={razorpay_snapshot['plan']}"
+            f"plan mismatch: DB={db_snapshot['plan']} vs Razorpay={rz_plan}"
         )
 
     applied = False
     if body.apply and mismatches and rz_status in ("active", "authenticated"):
-        plan = razorpay_snapshot.get("plan") or db_snapshot["plan"]
-        if plan in VALID_PLANS:
-            get_supabase_service_client().table("tenants").update({
-                "plan": plan,
-                "plan_status": "active",
-                "past_due_since": None,
-            }).eq("id", tenant_id).execute()
+        sync_result = sync_subscription_from_razorpay(UUID(tenant_id))
+        if sync_result.get("synced"):
             applied = True
-            db_snapshot["plan"] = plan
-            db_snapshot["plan_status"] = "active"
+            db_snapshot["plan"] = sync_result["plan"]
+            db_snapshot["plan_status"] = sync_result["plan_status"]
             _log_billing_action(
                 "billing.reconcile_apply",
                 tenant_id,
                 str(admin.user_id),
                 {"mismatches": mismatches, "razorpay_status": rz_status},
             )
+        else:
+            plan = rz_plan or db_snapshot["plan"]
+            if plan in VALID_PLANS and plan != "free":
+                get_supabase_service_client().table("tenants").update({
+                    "plan": plan,
+                    "plan_status": "active",
+                    "past_due_since": None,
+                }).eq("id", tenant_id).execute()
+                applied = True
+                db_snapshot["plan"] = plan
+                db_snapshot["plan_status"] = "active"
+                _log_billing_action(
+                    "billing.reconcile_apply",
+                    tenant_id,
+                    str(admin.user_id),
+                    {"mismatches": mismatches, "razorpay_status": rz_status},
+                )
 
     return ReconcileResponse(
         tenant_id=tenant_id,
@@ -339,6 +371,7 @@ def reconcile_tenant_billing(
             "has_subscription": razorpay_snapshot.get("has_subscription"),
             "razorpay_status": rz_status,
             "plan": razorpay_snapshot.get("plan"),
+            "razorpay_plan": rz_plan,
             "current_end": razorpay_snapshot.get("current_end"),
         },
         mismatches=mismatches,

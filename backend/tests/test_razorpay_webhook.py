@@ -2,9 +2,9 @@
 
 from __future__ import annotations
 
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
-from app.services.billing.webhook_handler import dispatch_razorpay_event
+from app.services.billing.webhook_handler import _already_processed, dispatch_razorpay_event
 
 
 @patch("app.services.billing.webhook_handler._already_processed")
@@ -19,6 +19,14 @@ def test_webhook_skips_duplicate(mock_handle, mock_mark, mock_dup):
     dispatch_razorpay_event(body, "evt_test")
     mock_handle.assert_not_called()
     mock_mark.assert_not_called()
+
+
+@patch("app.services.billing.webhook_handler._supa")
+def test_already_processed_handles_empty_maybe_single(mock_supa):
+    chain = MagicMock()
+    chain.select.return_value.eq.return_value.maybe_single.return_value.execute.return_value = None
+    mock_supa.return_value.table.return_value = chain
+    assert _already_processed("evt_new") is False
 
 
 @patch("app.services.billing.webhook_handler._already_processed", return_value=False)

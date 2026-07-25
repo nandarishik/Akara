@@ -4,7 +4,7 @@
  * Mandatory 3-step wizard: business details → file upload → success.
  */
 
-import { useRef, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import type { ChangeEvent } from "react"
 import { useNavigate } from "react-router-dom"
 import { useAuth } from "@/contexts/AuthContext"
@@ -16,6 +16,14 @@ import SurfaceCard from "@/components/ui/SurfaceCard"
 import { cn } from "@/lib/utils"
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL ?? ""
+const ONBOARDING_STEP_KEY = "akara_onboarding_step"
+
+function readStoredStep(): 1 | 2 | 3 {
+  const raw = sessionStorage.getItem(ONBOARDING_STEP_KEY)
+  if (raw === "2") return 2
+  if (raw === "3") return 3
+  return 1
+}
 
 const SELECT_CLASS =
   "flex h-10 w-full rounded-md border border-surface-border bg-surface-card px-3 py-2 text-sm text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-2"
@@ -38,12 +46,41 @@ function ProgressDots({ step }: { step: 1 | 2 | 3 }) {
 }
 
 export function OnboardingPage() {
-  const { session } = useAuth()
+  const { session, refreshProfile } = useAuth()
   const navigate = useNavigate()
 
-  const [step, setStep] = useState<1 | 2 | 3>(1)
+  const [step, setStepState] = useState<1 | 2 | 3>(() => readStoredStep())
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
+
+  function setStep(next: 1 | 2 | 3) {
+    setStepState(next)
+    sessionStorage.setItem(ONBOARDING_STEP_KEY, String(next))
+  }
+
+  useEffect(() => {
+    void (async () => {
+      const token = session?.access_token
+      if (!token) return
+      await refreshProfile()
+      const stored = readStoredStep()
+      if (stored < 2) return
+      try {
+        const res = await fetch(`${API_BASE}/auth/me`, {
+          headers: { Authorization: `Bearer ${token}` },
+        })
+        if (!res.ok) return
+        const data = await res.json()
+        if (data.tenant_id) {
+          setStepState(stored)
+        } else {
+          sessionStorage.removeItem(ONBOARDING_STEP_KEY)
+        }
+      } catch {
+        // ignore — user stays on default step
+      }
+    })()
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps -- restore once on mount
 
   const companyDefault = (session?.user?.user_metadata?.company_name as string | undefined) ?? ""
   const [companyName, setCompanyName] = useState(companyDefault)
@@ -89,6 +126,7 @@ export function OnboardingPage() {
         const body = await res.json().catch(() => ({}))
         throw new Error(body?.detail?.message ?? `Setup failed: ${res.status}`)
       }
+      await refreshProfile()
       setStep(2)
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Something went wrong. Please try again.")
@@ -155,12 +193,16 @@ export function OnboardingPage() {
         method: "POST",
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       })
+      await refreshProfile()
+      sessionStorage.removeItem(ONBOARDING_STEP_KEY)
+      navigate("/dashboard", { replace: true })
     } catch {
-      // Non-fatal — navigate anyway
+      await refreshProfile()
+      sessionStorage.removeItem(ONBOARDING_STEP_KEY)
+      navigate("/dashboard", { replace: true })
     } finally {
       setLoading(false)
     }
-    navigate("/dashboard", { replace: true })
   }
 
   return (
@@ -170,8 +212,9 @@ export function OnboardingPage() {
         <>
           {step > 1 && step < 3 && (
             <button
+              type="button"
               className="mb-4 text-text-muted hover:text-accent text-sm font-medium"
-              onClick={() => setStep((s) => (s - 1) as 1 | 2 | 3)}
+              onClick={() => setStep((step - 1) as 1 | 2 | 3)}
             >
               ← Back
             </button>
@@ -357,7 +400,7 @@ export function OnboardingPage() {
           )}
 
           <div className="mt-6 text-center">
-            <GhostButton onClick={handleSkip} className="text-sm">
+            <GhostButton type="button" onClick={handleSkip} className="text-sm">
               Skip for now — explore with sample data
             </GhostButton>
           </div>
@@ -373,7 +416,7 @@ export function OnboardingPage() {
           <h1 className="text-2xl font-extrabold text-text-primary text-center mb-2">You&apos;re all set!</h1>
           <p className="text-text-muted text-center mb-8 text-sm">Your dashboard is live. Here&apos;s what you can do:</p>
 
-          <div className="grid grid-cols-3 gap-3 mb-8">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-8">
             {[
               { icon: "📊", title: "Ask anything", desc: "Type any question about your sales" },
               { icon: "📱", title: "WhatsApp brief", desc: "Add your number in Settings" },

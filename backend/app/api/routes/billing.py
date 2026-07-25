@@ -22,6 +22,7 @@ from app.services.billing.checkout import (
     cancel_subscription,
     create_checkout_session,
     fetch_subscription_status,
+    sync_subscription_from_razorpay,
 )
 from app.services.billing.idempotency_store import get_cached_response, store_response
 from app.services.billing.webhook_handler import dispatch_razorpay_event, verify_webhook_signature
@@ -74,9 +75,12 @@ class SubscriptionResponse(BaseModel):
     plan: str
     plan_status: str
     razorpay_status: str | None = None
+    razorpay_plan: str | None = None
     current_end: int | None = None
     cancel_at_cycle_end: bool = False
     trial_ends_at: str | None = None
+    synced: bool | None = None
+    reason: str | None = None
 
 
 class CancelSubscriptionResponse(BaseModel):
@@ -196,6 +200,13 @@ def create_checkout(
 @router.get("/subscription", response_model=SubscriptionResponse)
 def get_subscription(tenant: TenantCtx) -> SubscriptionResponse:
     data = fetch_subscription_status(tenant.tenant_id)
+    return SubscriptionResponse(**data)
+
+
+@router.post("/sync-subscription", response_model=SubscriptionResponse)
+def sync_subscription(tenant: TenantCtx) -> SubscriptionResponse:
+    """Pull Razorpay subscription state and apply plan upgrade if payment is active."""
+    data = sync_subscription_from_razorpay(tenant.tenant_id)
     return SubscriptionResponse(**data)
 
 

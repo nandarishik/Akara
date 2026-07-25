@@ -13,6 +13,7 @@ import razorpay
 
 from app.core.config import settings
 from app.core.tenant import get_supabase_service_client
+from app.services.billing.checkout import resolve_plan_from_subscription
 from app.services.billing.email import send_payment_failed_email, send_payment_success_email
 from app.services.billing.gst_invoice import generate_and_store_invoice
 
@@ -35,7 +36,9 @@ def _already_processed(event_id: str) -> bool:
         .maybe_single()
         .execute()
     )
-    return bool(result.data and result.data.get("processed_at"))
+    if result is None or not result.data:
+        return False
+    return bool(result.data.get("processed_at"))
 
 
 def _mark_processed(
@@ -65,6 +68,8 @@ def _tenant_by_customer(customer_id: str) -> dict | None:
         .maybe_single()
         .execute()
     )
+    if result is None or not result.data:
+        return None
     return result.data
 
 
@@ -79,6 +84,24 @@ def _tenant_by_id(tenant_id: str) -> dict | None:
         .maybe_single()
         .execute()
     )
+    if result is None or not result.data:
+        return None
+    return result.data
+
+
+def _tenant_by_subscription_id(subscription_id: str) -> dict | None:
+    if not subscription_id:
+        return None
+    result = (
+        _supa()
+        .table("tenants")
+        .select("id, plan, billing_details")
+        .eq("razorpay_subscription_id", subscription_id)
+        .maybe_single()
+        .execute()
+    )
+    if result is None or not result.data:
+        return None
     return result.data
 
 
@@ -89,7 +112,10 @@ def _tenant_from_subscription(sub: dict[str, Any]) -> dict | None:
         tenant = _tenant_by_id(str(tenant_id))
         if tenant:
             return tenant
-    return _tenant_by_customer(sub.get("customer_id", ""))
+    tenant = _tenant_by_customer(sub.get("customer_id", ""))
+    if tenant:
+        return tenant
+    return _tenant_by_subscription_id(sub.get("id", ""))
 
 
 def _admin_email(tenant_id: str) -> str | None:
@@ -112,19 +138,21 @@ def _admin_email(tenant_id: str) -> str | None:
         return None
 
 
-def _plan_from_notes(notes: dict | None, fallback: str = "pro") -> str:
-    if notes and notes.get("plan") in ("pro", "business"):
-        return notes["plan"]
-    return fallback
+def _plan_from_subscription(sub: dict[str, Any], fallback: str = "pro") -> str:
+    return resolve_plan_from_subscription(sub, fallback)
 
 
-def handle_subscription_activated(sub: dict[str, Any]) -> None:
+def handle_subscription_activated(sub: dict[str, Any]) -> bool:
     tenant = _tenant_from_subscription(sub)
     if not tenant:
-        return
+        logger.warning(
+            "Razorpay subscription activated: tenant not found (sub=%s customer=%s)",
+            sub.get("id"),
+            sub.get("customer_id"),
+        )
+        return False
 
-    notes = sub.get("notes") or {}
-    plan = _plan_from_notes(notes, tenant.get("plan", "pro"))
+    plan = _plan_from_subscription(sub, tenant.get("plan", "pro"))
 
     _supa().table("tenants").update({
         "plan": plan,
@@ -133,12 +161,19 @@ def handle_subscription_activated(sub: dict[str, Any]) -> None:
         "razorpay_subscription_id": sub.get("id"),
         "past_due_since": None,
     }).eq("id", tenant["id"]).execute()
+    logger.info("Upgraded tenant %s to plan=%s via subscription.activated", tenant["id"], plan)
+    return True
 
 
-def handle_subscription_halted_or_pending(sub: dict[str, Any]) -> None:
+def handle_subscription_halted_or_pending(sub: dict[str, Any]) -> bool:
     tenant = _tenant_from_subscription(sub)
     if not tenant:
-        return
+        logger.warning(
+            "Razorpay subscription halted/pending: tenant not found (sub=%s customer=%s)",
+            sub.get("id"),
+            sub.get("customer_id"),
+        )
+        return False
 
     now = datetime.now(UTC).isoformat()
     _supa().table("tenants").update({
@@ -158,17 +193,24 @@ def handle_subscription_halted_or_pending(sub: dict[str, Any]) -> None:
             "status": "sent",
             "sent_at": now,
         }).execute()
+    return True
 
 
-def handle_subscription_cancelled(sub: dict[str, Any]) -> None:
+def handle_subscription_cancelled(sub: dict[str, Any]) -> bool:
     tenant = _tenant_from_subscription(sub)
     if not tenant:
-        return
+        logger.warning(
+            "Razorpay subscription cancelled: tenant not found (sub=%s customer=%s)",
+            sub.get("id"),
+            sub.get("customer_id"),
+        )
+        return False
 
     _supa().table("tenants").update({
         "plan_status": "cancelled",
         "trial_ends_at": (datetime.now(UTC) + timedelta(days=GRACE_DAYS)).isoformat(),
     }).eq("id", tenant["id"]).execute()
+    return True
 
 
 def _dunning_sent(tenant_id: str, day_offset: int) -> bool:
@@ -185,17 +227,30 @@ def _dunning_sent(tenant_id: str, day_offset: int) -> bool:
     return bool(result.data)
 
 
-def handle_payment_succeeded(payment: dict[str, Any], subscription: dict[str, Any] | None) -> None:
+def handle_payment_succeeded(payment: dict[str, Any], subscription: dict[str, Any] | None) -> bool:
     tenant = None
     if subscription:
         tenant = _tenant_from_subscription(subscription)
     if not tenant and payment.get("customer_id"):
         tenant = _tenant_by_customer(payment["customer_id"])
+    if not tenant and payment.get("subscription_id"):
+        tenant = _tenant_by_subscription_id(payment["subscription_id"])
     if not tenant:
-        return
+        logger.warning(
+            "Razorpay payment succeeded: tenant not found (payment=%s customer=%s sub=%s)",
+            payment.get("id"),
+            payment.get("customer_id"),
+            payment.get("subscription_id"),
+        )
+        return False
 
-    notes = (subscription or {}).get("notes") or payment.get("notes") or {}
-    plan = _plan_from_notes(notes, tenant.get("plan", "pro"))
+    if subscription:
+        plan = _plan_from_subscription(subscription, tenant.get("plan", "pro"))
+    else:
+        plan = resolve_plan_from_subscription(
+            {"notes": payment.get("notes") or {}},
+            tenant.get("plan", "pro"),
+        )
 
     _supa().table("tenants").update({
         "plan": plan,
@@ -203,10 +258,11 @@ def handle_payment_succeeded(payment: dict[str, Any], subscription: dict[str, An
         "past_due_since": None,
         "razorpay_subscription_id": (subscription or {}).get("id") or payment.get("subscription_id"),
     }).eq("id", tenant["id"]).execute()
+    logger.info("Upgraded tenant %s to plan=%s via payment webhook", tenant["id"], plan)
 
     payment_id = payment.get("id")
     if not payment_id:
-        return
+        return True
 
     existing = (
         _supa()
@@ -216,8 +272,8 @@ def handle_payment_succeeded(payment: dict[str, Any], subscription: dict[str, An
         .maybe_single()
         .execute()
     )
-    if existing.data:
-        return
+    if existing is None or not existing.data:
+        return True
 
     amount = payment.get("amount") or payment.get("base_amount") or 0
     record = generate_and_store_invoice(
@@ -240,6 +296,7 @@ def handle_payment_succeeded(payment: dict[str, Any], subscription: dict[str, An
             _supa().table("invoices").update({
                 "emailed_at": datetime.now(UTC).isoformat(),
             }).eq("id", record["id"]).execute()
+    return True
 
 
 def _extract_entity(payload: dict[str, Any], key: str) -> dict[str, Any]:
@@ -260,29 +317,52 @@ def dispatch_razorpay_event(body: dict[str, Any], event_id: str) -> None:
 
     subscription = _extract_entity(payload, "subscription")
     payment = _extract_entity(payload, "payment")
+    handled = True
 
     try:
         if event_type in ("subscription.authenticated", "subscription.activated", "subscription.resumed"):
             if subscription:
-                handle_subscription_activated(subscription)
+                handled = handle_subscription_activated(subscription)
+            else:
+                handled = False
         elif event_type in ("subscription.halted", "subscription.pending"):
             if subscription:
-                handle_subscription_halted_or_pending(subscription)
+                handled = handle_subscription_halted_or_pending(subscription)
+            else:
+                handled = False
         elif event_type in ("subscription.cancelled", "subscription.completed"):
             if subscription:
-                handle_subscription_cancelled(subscription)
+                handled = handle_subscription_cancelled(subscription)
+            else:
+                handled = False
         elif event_type in ("subscription.charged", "payment.captured"):
             if payment:
-                handle_payment_succeeded(payment, subscription or None)
+                handled = handle_payment_succeeded(payment, subscription or None)
+            else:
+                handled = False
         elif event_type == "payment.failed":
             if subscription:
-                handle_subscription_halted_or_pending(subscription)
+                handled = handle_subscription_halted_or_pending(subscription)
             elif payment.get("customer_id"):
                 tenant = _tenant_by_customer(payment["customer_id"])
                 if tenant:
-                    handle_subscription_halted_or_pending({"customer_id": payment["customer_id"], "notes": {}})
+                    handled = handle_subscription_halted_or_pending({
+                        "customer_id": payment["customer_id"],
+                        "notes": {},
+                    })
+                else:
+                    handled = False
+            else:
+                handled = False
 
-        _mark_processed(event_id, event_type, payload_hash)
+        if handled:
+            _mark_processed(event_id, event_type, payload_hash)
+        else:
+            logger.warning(
+                "Razorpay webhook %s (%s) not marked processed — handler could not apply",
+                event_id,
+                event_type,
+            )
     except Exception as exc:
         logger.exception("Razorpay webhook handler failed for %s: %s", event_id, exc)
         _mark_processed(event_id, event_type, payload_hash, error=str(exc))

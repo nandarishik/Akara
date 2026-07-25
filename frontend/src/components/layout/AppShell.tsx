@@ -26,6 +26,7 @@ import {
   Lock,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { MobileNavProvider } from "@/contexts/MobileNavContext";
 
 const NAV_ITEMS = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard, shortLabel: "Home", feature: null as string | null },
@@ -219,8 +220,8 @@ export function AppShell() {
         </div>
       </aside>
 
-      <div className="fixed bottom-0 inset-x-0 z-30 lg:hidden">
-        <nav className="mx-3 mb-3 rounded-2xl bg-white border border-surface-border shadow-card">
+      <div className={cn("fixed bottom-0 inset-x-0 z-30 lg:hidden", isCopilot && "hidden")}>
+        <nav className="mx-3 mb-3 rounded-2xl bg-white border border-surface-border shadow-card pb-[env(safe-area-inset-bottom)]">
           <div className="flex items-center justify-around py-2">
             {NAV_ITEMS.slice(0, 5).map(({ to, shortLabel, icon: Icon }) => {
               const isActive = location.pathname.startsWith(to);
@@ -243,7 +244,10 @@ export function AppShell() {
       </div>
 
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
-        <header className="lg:hidden flex items-center gap-3 px-4 py-3 bg-white border-b border-surface-border shrink-0">
+        <header className={cn(
+          "lg:hidden flex items-center gap-3 px-4 py-3 bg-white border-b border-surface-border shrink-0",
+          isCopilot && "hidden"
+        )}>
           <button
             onClick={() => setSidebarOpen(true)}
             className="p-1.5 rounded-lg text-text-muted hover:text-text-primary"
@@ -266,11 +270,13 @@ export function AppShell() {
           className={cn(
             "flex-1 relative bg-surface-canvas",
             isCopilot ? "overflow-hidden" : "overflow-auto",
-            "mb-16 lg:mb-0"
+            isCopilot ? "mb-0" : "mb-16 lg:mb-0"
           )}
         >
           <ErrorBoundary>
-            <Outlet />
+            <MobileNavProvider openNav={() => setSidebarOpen(true)}>
+              <Outlet />
+            </MobileNavProvider>
           </ErrorBoundary>
         </main>
       </div>

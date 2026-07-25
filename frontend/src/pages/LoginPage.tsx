@@ -15,6 +15,8 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { AkaraButton } from "@/components/ui/GradientButton"
 
+const API_BASE = import.meta.env.VITE_API_BASE_URL ?? ""
+
 export function LoginPage() {
   const { signIn } = useAuth()
   const navigate = useNavigate()
@@ -35,7 +37,19 @@ export function LoginPage() {
 
     try {
       await signIn(email, password)
-      navigate("/dashboard")
+      const { data } = await supabase.auth.getSession()
+      const token = data.session?.access_token
+      if (token) {
+        const res = await fetch(`${API_BASE}/auth/me`, {
+          headers: { Authorization: `Bearer ${token}` },
+        })
+        if (res.ok) {
+          const profile = await res.json()
+          navigate(profile.tenant_id ? "/dashboard" : "/onboarding", { replace: true })
+          return
+        }
+      }
+      navigate("/dashboard", { replace: true })
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Login failed"
       const lower = msg.toLowerCase()

@@ -33,6 +33,8 @@ TOTAL_COUNT: dict[str, int] = {"month": 120, "year": 10}
 CHECKOUT_EXPIRE_SECONDS = 30 * 24 * 60 * 60
 
 PENDING_SUB_STATUSES = frozenset({"created", "authenticated"})
+ACTIVE_SUB_STATUSES = frozenset({"active", "authenticated"})
+VALID_PLANS = frozenset({"pro", "business"})
 
 
 class CheckoutResult(TypedDict):
@@ -101,6 +103,26 @@ def _cancel_stale_subscription(client: razorpay.Client, sub_id: str) -> None:
             client.subscription.cancel(sub_id)
     except Exception as exc:
         logger.warning("Could not cancel stale subscription %s: %s", sub_id, exc)
+
+
+def resolve_plan_from_subscription(sub: dict, fallback: str = "pro") -> str:
+    """Map Razorpay subscription notes or plan_id to internal plan name."""
+    notes = sub.get("notes") or {}
+    note_plan = notes.get("plan")
+    if note_plan in VALID_PLANS:
+        return note_plan
+
+    plan_id = sub.get("plan_id")
+    if plan_id:
+        for plan_name, intervals in PLAN_ID_MAP.items():
+            for interval in ("month", "year"):
+                attr = intervals[interval]
+                if getattr(settings, attr, "") == plan_id:
+                    return plan_name
+
+    if fallback in VALID_PLANS:
+        return fallback
+    return "pro"
 
 
 def _checkout_url_from_subscription(subscription: dict) -> str | None:
@@ -189,33 +211,105 @@ def fetch_subscription_status(tenant_id: UUID) -> dict:
     supa = get_supabase_service_client()
     tenant = (
         supa.table("tenants")
-        .select("razorpay_subscription_id, plan, plan_status, trial_ends_at")
+        .select("razorpay_subscription_id, razorpay_customer_id, plan, plan_status, trial_ends_at")
         .eq("id", str(tenant_id))
         .single()
         .execute()
     )
     data = tenant.data or {}
     sub_id = data.get("razorpay_subscription_id")
+    db_plan = data.get("plan", "free")
     result = {
         "has_subscription": bool(sub_id),
-        "plan": data.get("plan", "free"),
+        "plan": db_plan,
         "plan_status": data.get("plan_status", "active"),
         "razorpay_status": None,
+        "razorpay_plan": None,
         "current_end": None,
         "cancel_at_cycle_end": False,
         "trial_ends_at": data.get("trial_ends_at"),
+        "synced": False,
     }
     if not sub_id:
         return result
 
     try:
         sub = _client().subscription.fetch(sub_id)
-        result["razorpay_status"] = sub.get("status")
+        rz_status = sub.get("status")
+        rz_plan = resolve_plan_from_subscription(sub, db_plan if db_plan in VALID_PLANS else "pro")
+        result["razorpay_status"] = rz_status
+        result["razorpay_plan"] = rz_plan
         result["current_end"] = sub.get("current_end")
-        result["cancel_at_cycle_end"] = bool(sub.get("remaining_count") == 0 and sub.get("status") == "active")
+        result["cancel_at_cycle_end"] = bool(
+            sub.get("remaining_count") == 0 and rz_status == "active"
+        )
     except Exception as exc:
         logger.warning("Could not fetch Razorpay subscription %s: %s", sub_id, exc)
 
+    return result
+
+
+def sync_subscription_from_razorpay(tenant_id: UUID) -> dict:
+    """Pull active Razorpay subscription and upgrade tenant plan if payment landed."""
+    supa = get_supabase_service_client()
+    tenant = (
+        supa.table("tenants")
+        .select("razorpay_subscription_id, plan, plan_status")
+        .eq("id", str(tenant_id))
+        .single()
+        .execute()
+    )
+    data = tenant.data or {}
+    sub_id = data.get("razorpay_subscription_id")
+    result = fetch_subscription_status(tenant_id)
+
+    if not sub_id:
+        result["synced"] = False
+        result["reason"] = "no_subscription"
+        return result
+
+    rz_status = result.get("razorpay_status")
+    rz_plan = result.get("razorpay_plan")
+    if rz_status not in ACTIVE_SUB_STATUSES:
+        result["synced"] = False
+        result["reason"] = f"subscription_{rz_status or 'unknown'}"
+        return result
+
+    if not rz_plan or rz_plan not in VALID_PLANS:
+        result["synced"] = False
+        result["reason"] = "plan_unknown"
+        return result
+
+    db_plan = data.get("plan", "free")
+    db_status = data.get("plan_status", "active")
+    needs_update = db_plan == "free" or db_plan != rz_plan or db_status != "active"
+
+    if not needs_update:
+        result["synced"] = False
+        result["reason"] = "already_synced"
+        return result
+
+    try:
+        sub = _client().subscription.fetch(sub_id)
+    except Exception as exc:
+        logger.warning("Could not fetch Razorpay subscription %s during sync: %s", sub_id, exc)
+        result["synced"] = False
+        result["reason"] = "fetch_failed"
+        return result
+
+    supa.table("tenants").update({
+        "plan": rz_plan,
+        "plan_status": "active",
+        "past_due_since": None,
+        "razorpay_customer_id": sub.get("customer_id"),
+        "razorpay_subscription_id": sub.get("id"),
+    }).eq("id", str(tenant_id)).execute()
+
+    result["plan"] = rz_plan
+    result["plan_status"] = "active"
+    result["synced"] = True
+    result["reason"] = None
+    logger.info("Synced tenant %s to plan=%s from Razorpay sub=%s", tenant_id, rz_plan, sub_id)
     return result
 
 
