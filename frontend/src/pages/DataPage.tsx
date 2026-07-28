@@ -685,16 +685,17 @@ export function DataPage() {
         />
         </PlanGate>
 
-        {/* Slot G — upgrade nudge */}
-        <SurfaceCard padding="sm" className="mt-4">
-          <p className="text-sm text-body">
-            Unlock secondary sales and scheme data —{" "}
-            <span className="text-caption">From ₹7,999/month</span>
-          </p>
-          <Link to="/upgrade" className="text-sm font-semibold text-accent hover:underline mt-1 inline-block">
-            View plans →
-          </Link>
-        </SurfaceCard>
+        {billing && !billing.features.secondary_sales && (
+          <SurfaceCard padding="sm" className="xl:col-span-3">
+            <p className="text-sm text-body">
+              Unlock secondary sales and scheme data —{" "}
+              <span className="text-caption">From ₹7,999/month</span>
+            </p>
+            <Link to="/upgrade" className="text-sm font-semibold text-accent hover:underline mt-1 inline-block">
+              View plans →
+            </Link>
+          </SurfaceCard>
+        )}
       </div>
 
       {/* Import History Table */}

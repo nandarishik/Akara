@@ -134,6 +134,8 @@ class RevenueProjector:
         baseline: BaselineMetrics,
         growth_rate_pct: float,
         discount_change_pct: float,
+        market_expansion_pct: float = 0.0,
+        customer_retention_pct: float = 0.0,
     ) -> ProjectionScenario:
         """Apply growth and discount scenario to baseline, return projection with real CI."""
         if baseline.data_days == 0:
@@ -153,8 +155,11 @@ class RevenueProjector:
 
         baseline_rev = baseline.total_revenue_30d
 
+        # Business-plan sliders compound on top of volume growth.
+        effective_growth = growth_rate_pct + market_expansion_pct + (customer_retention_pct * 0.5)
+
         # Apply growth factor
-        growth_factor = 1 + (growth_rate_pct / 100)
+        growth_factor = 1 + (effective_growth / 100)
         projected = baseline_rev * growth_factor
 
         # Apply discount elasticity: increasing discount by X% → revenue change of X% × elasticity

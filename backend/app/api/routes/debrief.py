@@ -12,6 +12,7 @@ from pydantic import BaseModel
 from app.core.auth import CurrentUser
 from app.core.tenant import TenantCtx, get_supabase_service_client
 from app.services.debrief.pdf import render_debrief_pdf
+from app.services.debrief.service import WeeklyDebriefService
 
 logger = logging.getLogger(__name__)
 
@@ -33,6 +34,43 @@ class DebriefDetail(BaseModel):
     title: str
     metadata: dict
     created_at: datetime
+
+
+class DebriefGenerateResponse(BaseModel):
+    status: str
+    message: str | None = None
+    report_id: str | None = None
+
+
+DEBRIEF_SKIP_MESSAGES: dict[str, str] = {
+    "already_generated": "Debrief already exists for this week — no action taken.",
+    "lifetime_limit_reached": "Lifetime debrief limit reached.",
+    "Fewer than 7 days of data": "Need at least 7 days of sales data.",
+}
+
+
+@router.post("/generate", response_model=DebriefGenerateResponse)
+async def generate_debrief(user: CurrentUser, tenant: TenantCtx) -> DebriefGenerateResponse:
+    """Generate this week's debrief if missing. No-op when one already exists."""
+    if tenant.role not in ("admin", "superadmin"):
+        raise HTTPException(status.HTTP_403_FORBIDDEN, detail="Admin access required")
+
+    service = WeeklyDebriefService(supabase=get_supabase_service_client())
+    result = await service.generate_for_tenant(
+        tenant.tenant_id,
+        force_regenerate=False,
+        manual=True,
+    )
+    friendly = DEBRIEF_SKIP_MESSAGES.get(result.message or "", result.message)
+    if result.status == "ok":
+        friendly = "Weekly debrief generated."
+    elif result.status == "skipped_insufficient_data":
+        friendly = DEBRIEF_SKIP_MESSAGES["Fewer than 7 days of data"]
+    return DebriefGenerateResponse(
+        status=result.status,
+        message=friendly,
+        report_id=result.report_id,
+    )
 
 
 @router.get("/latest", response_model=DebriefDetail)

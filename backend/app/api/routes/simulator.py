@@ -34,6 +34,8 @@ class BaselineResponse(BaseModel):
 class SimulatorRequest(BaseModel):
     growth_rate_pct: float = Field(default=0.0, ge=-50, le=100)
     discount_change_pct: float = Field(default=0.0, ge=-50, le=50)
+    market_expansion_pct: float = Field(default=0.0, ge=0, le=50)
+    customer_retention_pct: float = Field(default=0.0, ge=-10, le=25)
 
 
 class SimulatorResponse(BaseModel):
@@ -98,6 +100,8 @@ def run_simulation(
         baseline=baseline,
         growth_rate_pct=body.growth_rate_pct,
         discount_change_pct=body.discount_change_pct,
+        market_expansion_pct=body.market_expansion_pct,
+        customer_retention_pct=body.customer_retention_pct,
     )
 
     return SimulatorResponse(

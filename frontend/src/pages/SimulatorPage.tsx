@@ -31,6 +31,31 @@ interface BaselineResponse {
   data_days: number;
 }
 
+function parseApiError(err: Error): string {
+  const match = err.message.match(/^API (\d+): (.+)$/s);
+  if (!match) return err.message;
+  const status = match[1];
+  const body = match[2];
+  try {
+    const parsed = JSON.parse(body) as { detail?: string | { message?: string; error?: string } };
+    const detail = parsed.detail;
+    if (typeof detail === "string") return detail;
+    if (detail && typeof detail === "object" && detail.message) return detail.message;
+  } catch {
+    /* use raw body */
+  }
+  if (status === "403") return "Simulator requires Pro or Business — upgrade in Billing.";
+  if (status === "402") return "Plan limit reached — check Billing.";
+  return body || err.message;
+}
+
+interface SimParams {
+  growth_rate_pct: number;
+  discount_change_pct: number;
+  market_expansion_pct?: number;
+  customer_retention_pct?: number;
+}
+
 interface SimResult {
   baseline_revenue: number;
   projected_revenue: number;
@@ -144,27 +169,32 @@ export function SimulatorPage() {
     data: result,
     isPending,
     error: runError,
-  } = useMutation<SimResult, Error, void>({
-    mutationFn: () =>
+    reset: resetRun,
+  } = useMutation<SimResult, Error, SimParams>({
+    mutationFn: (params) =>
       apiFetch<SimResult>("/simulator/run", {
         method: "POST",
-        body: JSON.stringify({
-          growth_rate_pct: growthRate,
-          discount_change_pct: discountChange,
-          market_expansion_pct: marketExpansion,
-          customer_retention_pct: customerRetention,
-        }),
+        body: JSON.stringify(params),
       }),
   });
 
-  const hasEnoughData = baseline && baseline.data_days >= 7;
+  const dataDays = baseline?.data_days ?? 0;
+  const canRun = Boolean(baseline && baseline.total_revenue_30d > 0);
+  const lowConfidence = canRun && dataDays < 7;
   const isPositive = result && result.revenue_delta >= 0;
 
   const handleRunSimulation = () => {
-    runSimulation(undefined, {
-      onError: (err) => {
-        console.error("Simulation failed:", err);
-      },
+    if (!canRun) return;
+    resetRun();
+    runSimulation({
+      growth_rate_pct: growthRate,
+      discount_change_pct: discountChange,
+      ...(userPlan === "business"
+        ? {
+            market_expansion_pct: marketExpansion,
+            customer_retention_pct: customerRetention,
+          }
+        : {}),
     });
   };
 
@@ -200,7 +230,22 @@ export function SimulatorPage() {
           </div>
         </div>
 
-        {!baselineLoading && baseline && !hasEnoughData && (
+        {!baselineLoading && baseline && lowConfidence && (
+          <SurfaceCard padding="sm" className="border-amber-200 bg-amber-50">
+            <div className="flex items-start gap-3">
+              <AlertCircle className="h-5 w-5 text-amber-500 mt-0.5 shrink-0" />
+              <div>
+                <p className="text-amber-800 font-medium">Limited data — projections may be noisy</p>
+                <p className="text-amber-700 text-sm mt-1">
+                  Found {dataDays} distinct day{dataDays !== 1 ? "s" : ""} of sales in the last 30 days.
+                  Import more days for tighter confidence ranges (7+ recommended).
+                </p>
+              </div>
+            </div>
+          </SurfaceCard>
+        )}
+
+        {!baselineLoading && baseline && !canRun && (
           <SurfaceCard padding="sm" className="border-amber-200 bg-amber-50">
             <div className="flex items-start gap-3">
               <AlertCircle className="h-5 w-5 text-amber-500 mt-0.5 shrink-0" />
@@ -351,8 +396,9 @@ export function SimulatorPage() {
               )}
 
               <AkaraButton
+                type="button"
                 onClick={handleRunSimulation}
-                disabled={isPending || !hasEnoughData}
+                disabled={isPending || !canRun}
                 className="w-full"
               >
                 {isPending ? (
@@ -360,6 +406,8 @@ export function SimulatorPage() {
                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
                     Calculating...
                   </>
+                ) : !canRun ? (
+                  "Import sales data to run"
                 ) : (
                   <>
                     <Play className="h-4 w-4 mr-2" />
@@ -368,12 +416,16 @@ export function SimulatorPage() {
                 )}
               </AkaraButton>
 
+              {!canRun && baseline && (
+                <p className="text-xs text-caption text-center">
+                  No revenue in the last 30 days — upload data first.
+                </p>
+              )}
+
               {runError && (
                 <SurfaceCard padding="sm" className="border-red-200 bg-red-50">
-                  <p className="text-xs text-red-600 text-center">
-                    {runError.message.includes("403")
-                      ? "Simulation blocked — check billing status or plan."
-                      : "Projection failed. Please try again."}
+                  <p className="text-xs text-red-700 text-center font-medium">
+                    {parseApiError(runError)}
                   </p>
                 </SurfaceCard>
               )}
@@ -387,7 +439,15 @@ export function SimulatorPage() {
             </div>
 
             <div className="h-64 flex flex-col items-center justify-center">
-              {!result && !isPending ? (
+              {runError && !isPending && !result ? (
+                <div className="text-center px-4">
+                  <AlertCircle className="h-10 w-10 text-red-500 mx-auto mb-3" />
+                  <p className="text-sm text-red-700 font-medium">{parseApiError(runError)}</p>
+                  <AkaraButton type="button" size="sm" className="mt-4" onClick={handleRunSimulation}>
+                    Try again
+                  </AkaraButton>
+                </div>
+              ) : !result && !isPending ? (
                 <div className="text-center">
                   <div className="w-16 h-16 mx-auto mb-4 rounded-2xl flex items-center justify-center bg-accent-soft text-accent opacity-70">
                     <TrendingUp className="h-8 w-8" />

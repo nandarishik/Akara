@@ -24,7 +24,29 @@ type SecuritySummary = {
   recent_deliveries?: DeliveryLogRow[];
 };
 
+type DebriefGenerateResult = {
+  status: string;
+  message?: string;
+  report_id?: string;
+};
+
 type TenantOption = { id: string; name: string };
+
+const DEBRIEF_TRIGGER_MESSAGES: Record<string, string> = {
+  ok: "Weekly debrief generated.",
+  skipped: "Debrief already exists for this week — no action taken.",
+  skipped_insufficient_data: "Need at least 7 days of sales data.",
+  already_generated: "Debrief already exists for this week — no action taken.",
+  lifetime_limit_reached: "Lifetime debrief limit reached.",
+};
+
+function debriefTriggerMessage(res: DebriefGenerateResult): string {
+  if (res.message && DEBRIEF_TRIGGER_MESSAGES[res.message]) {
+    return DEBRIEF_TRIGGER_MESSAGES[res.message];
+  }
+  if (res.message) return res.message;
+  return DEBRIEF_TRIGGER_MESSAGES[res.status] ?? `Status: ${res.status}`;
+}
 
 export function SecurityOpsPage() {
   const [data, setData] = useState<SecuritySummary | null>(null);
@@ -73,14 +95,17 @@ export function SecurityOpsPage() {
     if (!selectedTenant) return;
     setTriggerMsg("");
     try {
-      await superadminFetch(`/superadmin/reports/weekly-debrief/${selectedTenant}`, {
-        method: "POST",
-        body: JSON.stringify({
-          force_regenerate: forceRegenerate,
-          reason: "Superadmin manual weekly debrief trigger from Security Ops",
-        }),
-      });
-      setTriggerMsg("Weekly debrief triggered.");
+      const res = await superadminFetch<DebriefGenerateResult>(
+        `/superadmin/reports/weekly-debrief/${selectedTenant}`,
+        {
+          method: "POST",
+          body: JSON.stringify({
+            force_regenerate: forceRegenerate,
+            reason: "Superadmin manual weekly debrief trigger from Security Ops",
+          }),
+        },
+      );
+      setTriggerMsg(debriefTriggerMessage(res));
     } catch (e) {
       setTriggerMsg(e instanceof Error ? e.message : "Trigger failed");
     }

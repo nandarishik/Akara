@@ -198,7 +198,20 @@ export function SettingsPage() {
       await apiFetch("/account/preferences/test-email", { method: "POST" });
       setTestEmailMsg("Test email sent — check your inbox.");
     } catch (e) {
-      setTestEmailMsg(e instanceof Error ? e.message : "Send failed");
+      const raw = e instanceof Error ? e.message : "Send failed";
+      const match = raw.match(/^API \d+: (.+)$/);
+      if (match) {
+        try {
+          const body = JSON.parse(match[1]) as { detail?: string };
+          if (typeof body.detail === "string") {
+            setTestEmailMsg(body.detail);
+            return;
+          }
+        } catch {
+          /* use raw message */
+        }
+      }
+      setTestEmailMsg(raw);
     }
   }
 

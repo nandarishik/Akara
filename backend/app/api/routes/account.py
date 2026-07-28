@@ -198,7 +198,15 @@ def send_test_email(
         user_id=user.user_id,
     )
     if not ok:
-        raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, detail="Email send failed")
+        if not settings.sendgrid_api_key:
+            raise HTTPException(
+                status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail="Email delivery is not configured (SENDGRID_API_KEY missing on server)",
+            )
+        raise HTTPException(
+            status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Email send failed — check SendGrid config or spam suppressions",
+        )
     return {"status": "ok"}
 
 

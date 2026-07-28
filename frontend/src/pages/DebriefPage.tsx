@@ -4,6 +4,7 @@ import { BarChart3, Download, MessageSquare, RefreshCw } from "lucide-react";
 
 import { apiFetch } from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
+import { isAdmin } from "@/lib/auth-utils";
 import SurfaceCard from "@/components/ui/SurfaceCard";
 import { AkaraButton } from "@/components/ui/GradientButton";
 import { Badge } from "@/components/ui/badge";
@@ -67,7 +68,7 @@ function formatInr(n: number) {
 
 export function DebriefPage() {
   const navigate = useNavigate();
-  const { session } = useAuth();
+  const { session, user } = useAuth();
   const { data: usage } = useBilling();
   const [detail, setDetail] = useState<DebriefDetail | null>(null);
   const [archive, setArchive] = useState<DebriefSummary[]>([]);
@@ -77,6 +78,8 @@ export function DebriefPage() {
   const [dataDays, setDataDays] = useState<number | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [pdfLoading, setPdfLoading] = useState(false);
+  const [generating, setGenerating] = useState(false);
+  const [generateMsg, setGenerateMsg] = useState("");
 
   async function loadReport(id?: string) {
     setLoading(true);
@@ -126,6 +129,27 @@ export function DebriefPage() {
       .catch(() => setDataDays(null));
   }, [errorCode]);
 
+  async function generateDebrief() {
+    setGenerating(true);
+    setGenerateMsg("");
+    try {
+      const res = await apiFetch<{ status: string; message?: string; report_id?: string }>(
+        "/debrief/generate",
+        { method: "POST" },
+      );
+      setGenerateMsg(res.message || (res.status === "ok" ? "Weekly debrief generated." : res.status));
+      if (res.status === "ok" && res.report_id) {
+        await loadReport(res.report_id);
+        const list = await apiFetch<DebriefSummary[]>("/debrief");
+        setArchive(list);
+      }
+    } catch (e) {
+      setGenerateMsg(e instanceof Error ? e.message : "Generate failed");
+    } finally {
+      setGenerating(false);
+    }
+  }
+
   async function downloadPdf() {
     if (!detail || !session?.access_token) return;
     setPdfLoading(true);
@@ -151,6 +175,7 @@ export function DebriefPage() {
 
   const meta = detail?.metadata;
   const canAskCopilot = usage?.features.ask_copilot_debrief;
+  const adminCanGenerate = isAdmin(user, session) && dataDays !== null && dataDays >= 7;
   const lifetimeExhausted =
     usage?.plan === "free" &&
     usage.debrief_lifetime_limit > 0 &&
@@ -223,15 +248,22 @@ export function DebriefPage() {
               </p>
             </>
           )}
-          <div className="flex gap-2 justify-center">
+          <div className="flex flex-wrap gap-2 justify-center">
             <Link to="/data">
               <AkaraButton variant="secondary" size="sm">Go to Data →</AkaraButton>
             </Link>
+            {adminCanGenerate && (
+              <AkaraButton size="sm" onClick={() => void generateDebrief()} disabled={generating}>
+                <RefreshCw className={`h-4 w-4 mr-1 ${generating ? "animate-spin" : ""}`} />
+                {generating ? "Generating…" : "Generate debrief now"}
+              </AkaraButton>
+            )}
             <AkaraButton variant="secondary" size="sm" onClick={() => loadReport()}>
               <RefreshCw className="h-4 w-4 mr-1" />
               Retry
             </AkaraButton>
           </div>
+          {generateMsg && <p className="text-sm text-text-secondary">{generateMsg}</p>}
         </SurfaceCard>
       </div>
     );
