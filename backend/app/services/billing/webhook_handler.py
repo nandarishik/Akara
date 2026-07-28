@@ -16,6 +16,7 @@ from app.core.tenant import get_supabase_service_client
 from app.services.billing.checkout import resolve_plan_from_subscription
 from app.services.billing.email import send_payment_failed_email, send_payment_success_email
 from app.services.billing.gst_invoice import generate_and_store_invoice
+from app.services.billing.plan_downgrade import apply_plan_downgrade
 
 logger = logging.getLogger(__name__)
 
@@ -206,10 +207,38 @@ def handle_subscription_cancelled(sub: dict[str, Any]) -> bool:
         )
         return False
 
+    apply_plan_downgrade(
+        tenant["id"],
+        "free",
+        revoke_sessions=False,
+        reason="subscription_cancelled",
+    )
     _supa().table("tenants").update({
-        "plan_status": "cancelled",
         "trial_ends_at": (datetime.now(UTC) + timedelta(days=GRACE_DAYS)).isoformat(),
     }).eq("id", tenant["id"]).execute()
+    return True
+
+
+def handle_payment_refunded(payment: dict[str, Any]) -> bool:
+    tenant = None
+    if payment.get("customer_id"):
+        tenant = _tenant_by_customer(payment["customer_id"])
+    if not tenant and payment.get("subscription_id"):
+        tenant = _tenant_by_subscription_id(payment["subscription_id"])
+    if not tenant:
+        logger.warning(
+            "Razorpay payment refunded: tenant not found (payment=%s)",
+            payment.get("id"),
+        )
+        return False
+
+    apply_plan_downgrade(
+        tenant["id"],
+        "free",
+        revoke_sessions=False,
+        reason="payment_refunded",
+    )
+    logger.info("Downgraded tenant %s after refund webhook", tenant["id"])
     return True
 
 
@@ -317,6 +346,7 @@ def dispatch_razorpay_event(body: dict[str, Any], event_id: str) -> None:
 
     subscription = _extract_entity(payload, "subscription")
     payment = _extract_entity(payload, "payment")
+    refund = _extract_entity(payload, "refund")
     handled = True
 
     try:
@@ -352,6 +382,12 @@ def dispatch_razorpay_event(body: dict[str, Any], event_id: str) -> None:
                     })
                 else:
                     handled = False
+            else:
+                handled = False
+        elif event_type in ("payment.refunded", "refund.processed", "refund.created"):
+            refund_payment = payment or refund
+            if refund_payment:
+                handled = handle_payment_refunded(refund_payment)
             else:
                 handled = False
 

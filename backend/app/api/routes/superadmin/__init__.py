@@ -1,0 +1,35 @@
+"""Superadmin API — mounts all Day 8 sub-routers at /superadmin."""
+
+from fastapi import APIRouter
+
+from app.api.routes.superadmin import (
+    audit,
+    billing,
+    conversations,
+    data,
+    impersonate,
+    plan,
+    quota,
+    reports,
+    security,
+    sudo,
+    system,
+    tenants,
+    users,
+)
+
+router = APIRouter(prefix="/superadmin", tags=["superadmin"])
+
+router.include_router(sudo.router)
+router.include_router(tenants.router)
+router.include_router(quota.router)
+router.include_router(plan.router)
+router.include_router(users.router)
+router.include_router(data.router)
+router.include_router(conversations.router)
+router.include_router(billing.router)
+router.include_router(reports.router)
+router.include_router(security.router)
+router.include_router(impersonate.router)
+router.include_router(audit.router)
+router.include_router(system.router)

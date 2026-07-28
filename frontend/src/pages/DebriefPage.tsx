@@ -9,6 +9,7 @@ import { AkaraButton } from "@/components/ui/GradientButton";
 import { Badge } from "@/components/ui/badge";
 import { useBilling } from "@/hooks/useBilling";
 import ShimmerSkeleton from "@/components/ui/ShimmerSkeleton";
+import { daysSinceIso } from "@/lib/dataFreshness";
 
 type DebriefItem = {
   title: string;
@@ -64,13 +65,6 @@ function formatInr(n: number) {
   return `₹${n.toLocaleString("en-IN")}`;
 }
 
-function daysSince(iso?: string) {
-  if (!iso) return 0;
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return 0;
-  return Math.floor((Date.now() - d.getTime()) / (1000 * 60 * 60 * 24));
-}
-
 export function DebriefPage() {
   const navigate = useNavigate();
   const { session } = useAuth();
@@ -79,12 +73,15 @@ export function DebriefPage() {
   const [archive, setArchive] = useState<DebriefSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [errorCode, setErrorCode] = useState("");
+  const [dataDays, setDataDays] = useState<number | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [pdfLoading, setPdfLoading] = useState(false);
 
   async function loadReport(id?: string) {
     setLoading(true);
     setError("");
+    setErrorCode("");
     try {
       const path = id ? `/debrief/${id}` : "/debrief/latest";
       const data = await apiFetch<DebriefDetail>(path);
@@ -92,7 +89,14 @@ export function DebriefPage() {
       setSelectedId(data.id);
     } catch (e) {
       setDetail(null);
-      setError(e instanceof Error ? e.message : "Could not load debrief");
+      const msg = e instanceof Error ? e.message : "Could not load debrief";
+      setError(msg);
+      try {
+        const parsed = JSON.parse(msg.replace(/^API \d+: /, ""));
+        if (parsed?.detail?.code) setErrorCode(parsed.detail.code);
+      } catch {
+        if (msg.includes("no_debrief_yet")) setErrorCode("no_debrief_yet");
+      }
     } finally {
       setLoading(false);
     }
@@ -104,6 +108,23 @@ export function DebriefPage() {
       .then(setArchive)
       .catch(() => setArchive([]));
   }, []);
+
+  useEffect(() => {
+    if (errorCode !== "no_debrief_yet") return;
+    apiFetch<{ start?: string; end?: string }>("/kpi/data-bounds")
+      .then((bounds) => {
+        if (!bounds.start || !bounds.end) {
+          setDataDays(0);
+          return;
+        }
+        const start = new Date(bounds.start);
+        const end = new Date(bounds.end);
+        const days =
+          Math.floor((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+        setDataDays(days);
+      })
+      .catch(() => setDataDays(null));
+  }, [errorCode]);
 
   async function downloadPdf() {
     if (!detail || !session?.access_token) return;
@@ -136,8 +157,8 @@ export function DebriefPage() {
     usage.debrief_count_used >= usage.debrief_lifetime_limit &&
     archive.length === 0;
 
-  const staleDays = meta?.data_freshness ? daysSince(meta.data_freshness) : 0;
-  const isStale = staleDays > 7;
+  const staleDays = meta?.data_freshness ? daysSinceIso(meta.data_freshness) : null;
+  const isStale = staleDays !== null && staleDays > 7;
 
   if (loading && !detail) {
     return (
@@ -170,15 +191,38 @@ export function DebriefPage() {
   }
 
   if (error && !detail) {
+    const underSeven = dataDays !== null && dataDays > 0 && dataDays < 7;
+    const waitingForMonday = dataDays !== null && dataDays >= 7;
+
     return (
       <div className="p-4 sm:p-6 lg:p-8 max-w-3xl mx-auto">
         <SurfaceCard className="text-center space-y-4">
           <BarChart3 className="h-10 w-10 mx-auto text-text-muted" />
-          <h1 className="text-xl font-bold">No weekly debrief yet</h1>
-          <p className="text-sm text-text-secondary">
-            Upload at least 7 days of sales data. Your first debrief generates next Monday at 7:00 AM IST,
-            or when an admin triggers one.
-          </p>
+          {underSeven ? (
+            <>
+              <h1 className="text-xl font-bold">Almost ready for your first debrief</h1>
+              <p className="text-sm text-text-secondary">
+                You have {dataDays} day{dataDays === 1 ? "" : "s"} of sales data. Upload at least 7 days
+                to unlock your first weekly debrief — it generates next Monday at 7:00 AM IST.
+              </p>
+            </>
+          ) : waitingForMonday ? (
+            <>
+              <h1 className="text-xl font-bold">First debrief coming Monday</h1>
+              <p className="text-sm text-text-secondary">
+                Your data looks good ({dataDays} days). Your first weekly debrief will generate next
+                Monday at 7:00 AM IST, or when an admin triggers one manually.
+              </p>
+            </>
+          ) : (
+            <>
+              <h1 className="text-xl font-bold">No weekly debrief yet</h1>
+              <p className="text-sm text-text-secondary">
+                Upload at least 7 days of sales data. Your first debrief generates next Monday at 7:00 AM IST,
+                or when an admin triggers one.
+              </p>
+            </>
+          )}
           <div className="flex gap-2 justify-center">
             <Link to="/data">
               <AkaraButton variant="secondary" size="sm">Go to Data →</AkaraButton>

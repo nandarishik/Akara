@@ -9,6 +9,7 @@ from datetime import UTC, datetime
 from app.core.cron_ping import ping_cron_health
 from app.core.tenant import get_supabase_service_client
 from app.services.billing.email import send_dunning_reminder_email, send_downgrade_email
+from app.services.billing.plan_downgrade import apply_plan_downgrade
 
 logger = logging.getLogger(__name__)
 
@@ -82,11 +83,7 @@ async def run_dunning_cycle() -> None:
                 }).execute()
 
         if days >= 14 and tenant.get("plan") != "free":
-            supa.table("tenants").update({
-                "plan": "free",
-                "plan_status": "cancelled",
-                "razorpay_subscription_id": None,
-            }).eq("id", tenant["id"]).execute()
+            apply_plan_downgrade(tenant["id"], "free", reason="dunning_day_14")
             if not _dunning_already_sent(supa, tenant["id"], 14):
                 send_downgrade_email(email)
                 supa.table("dunning_events").insert({

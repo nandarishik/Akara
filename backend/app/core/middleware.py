@@ -53,4 +53,6 @@ class RequestIDMiddleware(BaseHTTPMiddleware):
                 request_id,
             )
             response.headers["X-Request-ID"] = request_id
+            if request.url.path.startswith("/superadmin"):
+                response.headers["X-Robots-Tag"] = "noindex, nofollow"
             return response

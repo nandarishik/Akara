@@ -87,6 +87,11 @@ export function TeamPage({ embedded = false }: TeamPageProps) {
     }
   }
 
+  async function resendInvite(id: string) {
+    await apiFetch(`/team/invites/${id}/resend`, { method: "POST" });
+    await refresh();
+  }
+
   async function cancelInvite(id: string) {
     await apiFetch(`/team/invites/${id}`, { method: "DELETE" });
     await refresh();
@@ -212,13 +217,18 @@ export function TeamPage({ embedded = false }: TeamPageProps) {
                 {invites.map((inv) => (
                   <li key={inv.id} className="flex justify-between items-center text-sm py-2">
                     <span>{inv.email_normalized}</span>
-                    <button
+                    <div className="flex gap-2">
+                      <button type="button" className="text-accent text-xs hover:underline" onClick={() => void resendInvite(inv.id)}>
+                        Resend
+                      </button>
+                      <button
                       type="button"
                       className="text-red-600 text-xs hover:underline"
                       onClick={() => cancelInvite(inv.id)}
                     >
                       Cancel
                     </button>
+                    </div>
                   </li>
                 ))}
               </ul>

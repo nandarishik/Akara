@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { Link, useLocation, Outlet } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
-import { isAdmin } from "@/lib/auth-utils";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { ImpersonationBanner } from "@/components/layout/ImpersonationBanner";
+import { MaintenanceOverlay, SystemBanner } from "@/components/layout/SystemBanner";
 import { useBilling } from "@/hooks/useBilling";
 import { UsageBanner, PastDueBanner, TrialWarning } from "@/components/billing";
 import { AkaraButton } from "@/components/ui/GradientButton";
@@ -17,8 +18,6 @@ import {
   TrendingUp,
   Menu,
   X,
-  Building2,
-  Users,
   AlertTriangle,
   Bell,
   Settings,
@@ -26,6 +25,8 @@ import {
   Lock,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { isSuperadmin } from "@/lib/auth-utils";
+import { Shield } from "lucide-react";
 import { MobileNavProvider } from "@/contexts/MobileNavContext";
 
 const NAV_ITEMS = [
@@ -36,11 +37,6 @@ const NAV_ITEMS = [
   { to: "/debrief", label: "Debrief", icon: BarChart3, shortLabel: "Debrief", feature: null },
   { to: "/alerts", label: "Alerts", icon: Bell, shortLabel: "Alerts", feature: "alerts" },
   { to: "/simulator", label: "Simulator", icon: TrendingUp, shortLabel: "Sim", feature: "simulator" },
-];
-
-const ADMIN_NAV_ITEMS = [
-  { to: "/admin/tenants", label: "Tenants", icon: Building2 },
-  { to: "/admin/users", label: "Users", icon: Users },
 ];
 
 const PLAN_BADGE: Record<string, string> = {
@@ -84,7 +80,7 @@ function NavLink({
 }
 
 export function AppShell() {
-  const { user, session, signOut } = useAuth();
+  const { user, signOut } = useAuth();
   const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const { data: usage } = useBilling();
@@ -100,7 +96,6 @@ export function AppShell() {
     setSidebarOpen(false);
   }
 
-  const isAdminUser = isAdmin(user, session);
   const isCopilot = location.pathname.startsWith("/copilot");
 
   return (
@@ -181,25 +176,17 @@ export function AppShell() {
               isActive={location.pathname.startsWith("/settings")}
               onClick={closeSidebar}
             />
+            {isSuperadmin(user) && (
+              <NavLink
+                to="/superadmin"
+                label="Superadmin"
+                icon={Shield}
+                isActive={location.pathname.startsWith("/superadmin")}
+                onClick={closeSidebar}
+              />
+            )}
           </div>
 
-          {isAdminUser && (
-            <>
-              <div className="pt-5 pb-1.5 px-3">
-                <p className="text-[10px] font-semibold text-text-muted uppercase tracking-wider">Admin</p>
-              </div>
-              {ADMIN_NAV_ITEMS.map(({ to, label, icon }) => (
-                <NavLink
-                  key={to}
-                  to={to}
-                  label={label}
-                  icon={icon}
-                  isActive={location.pathname.startsWith(to)}
-                  onClick={closeSidebar}
-                />
-              ))}
-            </>
-          )}
         </nav>
 
         <div className="px-3 py-4 border-t border-surface-border space-y-2">
@@ -257,6 +244,10 @@ export function AppShell() {
           </button>
           <span className="text-lg font-bold font-display text-text-primary">AKARA</span>
         </header>
+
+        {!isCopilot && <SystemBanner />}
+        {!isCopilot && <ImpersonationBanner />}
+        {!isCopilot && <MaintenanceOverlay />}
 
         {usage && !isCopilot && (
           <>

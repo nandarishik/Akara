@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/lib/supabase";
 import { apiFetch } from "@/lib/api";
@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { CheckCircle, AlertCircle, Trash2, Download, KeyRound } from "lucide-react";
 import { roleLabel } from "@/lib/auth-utils";
 import { PlanGate } from "@/components/billing/PlanGate";
+import { useBilling } from "@/hooks/useBilling";
 import { TeamPage } from "@/pages/TeamPage";
 import { cn } from "@/lib/utils";
 
@@ -96,6 +97,7 @@ function Toggle({
 
 export function SettingsPage() {
   const { user, session } = useAuth();
+  const [searchParams] = useSearchParams();
   const [tab, setTab] = useState<TabId>("profile");
   const [displayName, setDisplayName] = useState(user?.displayName || "");
   const [phone, setPhone] = useState("");
@@ -108,7 +110,23 @@ export function SettingsPage() {
   const [password, setPassword] = useState("");
   const [passwordMsg, setPasswordMsg] = useState("");
   const [testEmailMsg, setTestEmailMsg] = useState("");
+  const [testWhatsAppMsg, setTestWhatsAppMsg] = useState("");
+  const [unsubMsg, setUnsubMsg] = useState("");
   const [tenantMeta, setTenantMeta] = useState<{ company?: string; industry?: string; language?: string }>({});
+
+  useEffect(() => {
+    if (searchParams.get("focus") === "whatsapp") {
+      setTab("notifications");
+    }
+    if (searchParams.get("unsubscribe") === "morning-brief" && user) {
+      apiFetch("/account/preferences/unsubscribe", {
+        method: "POST",
+        body: JSON.stringify({ channel: "email", category: "morning_brief" }),
+      })
+        .then(() => setUnsubMsg("You are unsubscribed from morning brief emails."))
+        .catch(() => setUnsubMsg("Could not process unsubscribe."));
+    }
+  }, [searchParams, user]);
 
   useEffect(() => {
     apiFetch<Channels>("/account/channels").then(setChannels).catch(() => null);
@@ -184,6 +202,16 @@ export function SettingsPage() {
     }
   }
 
+  async function handleTestWhatsApp() {
+    setTestWhatsAppMsg("");
+    try {
+      const res = await apiFetch<{ status: string; message?: string }>("/account/preferences/test-whatsapp", { method: "POST" });
+      setTestWhatsAppMsg(res.message || (res.status === "skipped" ? "WhatsApp not live yet — logged as skipped." : "Test WhatsApp sent."));
+    } catch (e) {
+      setTestWhatsAppMsg(e instanceof Error ? e.message : "Send failed");
+    }
+  }
+
   async function handleExport() {
     const token = session?.access_token;
     const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/account/export`, {
@@ -209,6 +237,7 @@ export function SettingsPage() {
   }
 
   const role = roleLabel(user, session);
+  const { data: usage } = useBilling();
   const whatsappLocked = !channels?.whatsapp_enabled;
 
   return (
@@ -256,7 +285,7 @@ export function SettingsPage() {
           </div>
           <div className="space-y-2">
             <Label htmlFor="phone">Phone (+91 for WhatsApp)</Label>
-            <Input id="phone" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+919876543210" className="max-w-sm" />
+            <Input id="whatsapp-phone" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+919876543210" className="max-w-sm" />
             <p className="text-xs text-text-muted">WhatsApp delivery activates when Meta templates are approved.</p>
           </div>
           {(tenantMeta.company || tenantMeta.industry || tenantMeta.language) && (
@@ -292,6 +321,16 @@ export function SettingsPage() {
       {tab === "notifications" && (
         <SurfaceCard className="space-y-2">
           <h2 className="text-base font-semibold mb-2">Notifications</h2>
+          {unsubMsg && <p className="text-sm text-emerald-700 bg-emerald-50 rounded px-3 py-2">{unsubMsg}</p>}
+          {usage?.plan === "free" && !localStorage.getItem("akara_slot_K_dismissed") && (
+            <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900 flex justify-between gap-2">
+              <span>Pro plans get WhatsApp morning briefs on your phone.</span>
+              <div className="flex gap-2 shrink-0">
+                <Link to="/upgrade" className="text-accent font-medium underline">Upgrade</Link>
+                <button type="button" className="text-xs text-amber-800" onClick={() => localStorage.setItem("akara_slot_K_dismissed", "1")}>Dismiss</button>
+              </div>
+            </div>
+          )}
           <PlanGate feature="morning_brief" requiredPlan="pro" mode="hide">
             <Toggle
               checked={prefs.morning_brief_enabled}
@@ -316,6 +355,10 @@ export function SettingsPage() {
                 Send test brief
               </AkaraButton>
               {testEmailMsg && <p className="text-xs text-text-secondary mt-2">{testEmailMsg}</p>}
+              <AkaraButton variant="secondary" size="sm" className="ml-2" onClick={handleTestWhatsApp}>
+                Send test WhatsApp
+              </AkaraButton>
+              {testWhatsAppMsg && <p className="text-xs text-text-secondary mt-2">{testWhatsAppMsg}</p>}
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-4 border-t border-surface-border">
               <div className="space-y-1">

@@ -49,23 +49,36 @@ def run(dry_run: bool = False) -> None:
         dry_run: If True, count rows to be deleted but do NOT delete.
                  Useful for pre-flight checks and monitoring.
     """
+    from app.core.cron_ping import ping_cron_health
     from app.core.tenant import get_supabase_service_client
 
     supa = get_supabase_service_client()
+    status = "ok"
+    errors = 0
 
     mode = "DRY-RUN" if dry_run else "LIVE"
     logger.info("Retention cleanup START [%s] at %s", mode, datetime.utcnow().isoformat())
 
     # Fetch all active tenants (skip cancelled — data already expired or held)
-    tenants_result = (
-        supa.table("tenants")
-        .select("id, plan, plan_status, legal_hold_until")
-        .in_("plan_status", ["active", "trialing", "past_due"])
-        .execute()
-    )
+    try:
+        tenants_result = (
+            supa.table("tenants")
+            .select("id, plan, plan_status, legal_hold_until")
+            .in_("plan_status", ["active", "trialing", "past_due"])
+            .execute()
+        )
+    except Exception as exc:
+        logger.exception("Retention cleanup failed to list tenants: %s", exc)
+        ping_cron_health("retention_cleanup", status="failed", details={"error": str(exc)})
+        return
 
     if not tenants_result.data:
         logger.info("No active tenants found — nothing to clean.")
+        ping_cron_health(
+            "retention_cleanup",
+            status="ok",
+            details={"total_rows": 0, "skipped_legal_hold": 0, "dry_run": dry_run},
+        )
         return
 
     total_deleted = 0
@@ -135,10 +148,23 @@ def run(dry_run: bool = False) -> None:
                 logger.error(
                     "Failed to clean tenant %s: %s", tenant_id, exc, exc_info=True
                 )
+                errors += 1
 
     logger.info(
-        "Retention cleanup DONE [%s]: total_rows=%d skipped_legal_hold=%d",
-        mode, total_deleted, skipped_legal_hold,
+        "Retention cleanup DONE [%s]: total_rows=%d skipped_legal_hold=%d errors=%d",
+        mode, total_deleted, skipped_legal_hold, errors,
+    )
+    if errors > 0:
+        status = "partial" if total_deleted > 0 else "failed"
+    ping_cron_health(
+        "retention_cleanup",
+        status=status,
+        details={
+            "total_rows": total_deleted,
+            "skipped_legal_hold": skipped_legal_hold,
+            "errors": errors,
+            "dry_run": dry_run,
+        },
     )
 
 

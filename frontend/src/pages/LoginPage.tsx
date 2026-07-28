@@ -4,7 +4,7 @@
  * Error states: wrong password, account locked, email not verified + resend.
  */
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import type { FormEvent } from "react"
 import { Link, useNavigate } from "react-router-dom"
 import { Eye, EyeOff } from "lucide-react"
@@ -14,6 +14,8 @@ import { AuthLayout } from "@/components/layout/AuthLayout"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { AkaraButton } from "@/components/ui/GradientButton"
+
+import { acceptPendingInvite, persistInviteTokenFromSearch } from "@/lib/teamInvite"
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL ?? ""
 
@@ -28,6 +30,10 @@ export function LoginPage() {
   const [loading, setLoading] = useState(false)
   const [notVerified, setNotVerified] = useState(false)
   const [resendStatus, setResendStatus] = useState<"idle" | "sending" | "sent">("idle")
+
+  useEffect(() => {
+    persistInviteTokenFromSearch(window.location.search)
+  }, [])
 
   async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault()
@@ -45,7 +51,12 @@ export function LoginPage() {
         })
         if (res.ok) {
           const profile = await res.json()
-          navigate(profile.tenant_id ? "/dashboard" : "/onboarding", { replace: true })
+          const invite = await acceptPendingInvite()
+          if (invite.ok || profile.tenant_id) {
+            navigate("/dashboard", { replace: true })
+          } else {
+            navigate("/onboarding", { replace: true })
+          }
           return
         }
       }

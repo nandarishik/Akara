@@ -6,7 +6,7 @@
 
 import { useEffect, useState } from "react"
 import type { ComponentType, FormEvent } from "react"
-import { Link, useNavigate } from "react-router-dom"
+import { Link, useNavigate, useSearchParams } from "react-router-dom"
 import { Eye, EyeOff } from "lucide-react"
 import { useAuth } from "@/contexts/AuthContext"
 import { AuthLayout } from "@/components/layout/AuthLayout"
@@ -15,6 +15,10 @@ import { Label } from "@/components/ui/label"
 import { AkaraButton } from "@/components/ui/GradientButton"
 import { formatAuthError } from "@/lib/formatAuthError"
 import { cn } from "@/lib/utils"
+
+import { persistInviteTokenFromSearch } from "@/lib/teamInvite"
+
+const BASE = import.meta.env.VITE_API_BASE_URL as string
 
 const TURNSTILE_SITE_KEY =
   import.meta.env.VITE_CF_TURNSTILE_SITE_KEY ||
@@ -125,6 +129,22 @@ function PasswordStrengthBar({ strength }: { strength: Strength }) {
 export function SignUpPage() {
   const { signUp } = useAuth()
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
+
+  useEffect(() => {
+    persistInviteTokenFromSearch(searchParams.toString())
+  }, [searchParams])
+
+  useEffect(() => {
+    fetch(`${BASE}/system/settings`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (data && data.signup_open === false) {
+          navigate("/signup-closed", { replace: true })
+        }
+      })
+      .catch(() => undefined)
+  }, [navigate])
 
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")

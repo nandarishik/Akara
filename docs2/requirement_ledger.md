@@ -90,14 +90,12 @@ Columns: `source_ref` | `implementation_day` | `owner_lane` | `status` | `verifi
 
 | source_ref | implementation_day | owner_lane | status | verification_method | evidence_link |
 |------------|-------------------|------------|--------|---------------------|---------------|
-| 17.1 — Superadmin role architecture | Day 8 | Backend/API | pending | auth tests | — |
-| 17.2 — Complete Superadmin API | Day 8 | Backend/API | pending | API contract tests | — |
-| 17.3 — cron_runs table | Day 8 | Database/security | pending | migration apply | — |
-| 17.4 — global_settings table | Day 8 | Database/security | pending | migration apply | — |
-| 17.5 — SuperAdminPage.tsx UI | Day 8 | Superadmin frontend | pending | E2E all tabs | — |
-| 17.6 — Superadmin AI Briefing | Day 9 | Superadmin frontend | pending | cron + copilot test | — |
-| 17.7 — Founder Omnipotence 15 gaps | Day 9–10 | Superadmin frontend | pending | sudo + audit tests | — |
-| 17.8 — Superadmin IA | Day 8 | Superadmin frontend | in_progress | shell placeholder Day 1 | `SuperadminShell.tsx` |
+| 17.1 — Superadmin role architecture | Day 8 | Backend/API | done | auth tests | `app/core/superadmin.py`, `tests/test_superadmin_auth.py` |
+| 17.2 — Complete Superadmin API | Day 8 | Backend/API | done | API contract tests | `app/api/routes/superadmin/` |
+| 17.3 — cron_runs table | Day 8 | Database/security | done | migration apply | `migrations/020_day8_superadmin_foundation.sql` |
+| 17.4 — global_settings table | Day 8 | Database/security | done | migration apply | `migrations/020_day8_superadmin_foundation.sql` |
+| 17.5 — SuperAdminPage.tsx UI | Day 8 | Superadmin frontend | in_progress | E2E all tabs | Day 9 full tab UI; Day 8 shell + stubs |
+| 17.8 — Superadmin IA | Day 8 | Superadmin frontend | done | shell + nav | `SuperadminShell.tsx`, `/superadmin/*` routes |
 | Day 17 Quality Gate | Day 10 | QA/reliability | pending | full superadmin E2E | — |
 
 ### OMNIPOTENCE GAP 1–15
@@ -158,7 +156,7 @@ Columns: `source_ref` | `implementation_day` | `owner_lane` | `status` | `verifi
 | GAP 8 — Cron job health monitoring | Day 7 | Backend/API | done | healthchecks ping | `cron_ping.py`, Railway cron JSON refs |
 | GAP 9 — Copilot feedback loop | Day 11 | Customer frontend | pending | thumbs up/down test | — |
 | GAP 10 — Data provenance on answers | Day 11 | Customer frontend | pending | citation UI test | — |
-| GAP 11 — Superadmin re-authentication | Day 8 | Backend/API | pending | sudo cookie test | — |
+| GAP 11 — Superadmin re-authentication | Day 8 | Backend/API | done | sudo cookie test | `tests/test_superadmin_auth.py`, `sudo.py` |
 | GAP 12 — Payment dunning sequence | Day 5 | Backend/API | done | webhook sequence | `tests/test_dunning.py`, `railway.dunning.json` |
 | GAP 13 — robots.txt + sitemap.xml | Day 3 | Customer frontend | pending | crawler test | — |
 
@@ -246,13 +244,13 @@ Columns: `source_ref` | `implementation_day` | `owner_lane` | `status` | `verifi
 | SLOT B — Landing feature spotlight | Day 3 | Customer frontend | pending | dismiss tracking | — |
 | SLOT C — Landing email capture | Day 3 | Customer frontend | pending | form submit | — |
 | SLOT D — Dashboard welcome card | Day 4 | Customer frontend | pending | first-visit test | — |
-| SLOT E — WhatsApp nudge | Day 7 | Customer frontend | pending | settings test | — |
+| SLOT E — WhatsApp nudge | Day 7 | Customer frontend | done | dashboard test | `DashboardPage.tsx` |
 | SLOT F — Copilot demo video | Day 4 | Customer frontend | pending | visit count | — |
 | SLOT G — Data Pro upsell | Day 4 | Customer frontend | pending | free user test | — |
 | SLOT H — Billing upgrade nudge | Day 4 | Customer frontend | pending | quota test | — |
 | SLOT I — Onboarding team invite | Day 4 | Customer frontend | pending | onboarding E2E | — |
-| SLOT J — Reports scheme teaser | Day 8 | Customer frontend | pending | pro user test | — |
-| SLOT K — Settings WhatsApp nudge | Day 7 | Customer frontend | pending | free user test | — |
+| SLOT J — Reports scheme teaser | Day 8 | Customer frontend | done | pro user test | `ReportsPage.tsx` |
+| SLOT K — Settings WhatsApp nudge | Day 7 | Customer frontend | done | free user test | `SettingsPage.tsx` |
 | SLOT L — Copilot quota exhausted | Day 4 | Customer frontend | pending | quota E2E | — |
 | SLOT M — Sidebar plan badge link | Day 4 | Customer frontend | pending | nav click | — |
 | SLOT N — Email quota warning (E10) | Day 4 | Backend/API | pending | email trigger | — |

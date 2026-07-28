@@ -1,3 +1,4 @@
+from datetime import UTC, datetime
 from uuid import UUID
 
 from fastapi import APIRouter, HTTPException, Request, status
@@ -15,6 +16,44 @@ class MeResponse(BaseModel):
     email: str | None
     tenant_id: UUID | None
     role: str
+    impersonating_tenant_id: UUID | None = None
+    impersonating_tenant_name: str | None = None
+    impersonation_session_id: UUID | None = None
+
+
+def _active_impersonation(user_id: UUID) -> dict | None:
+    supa = get_supabase_service_client()
+    now = datetime.now(UTC).isoformat()
+    row = (
+        supa.table("impersonation_sessions")
+        .select("id, tenant_id, expires_at")
+        .eq("target_user_id", str(user_id))
+        .is_("ended_at", "null")
+        .gt("expires_at", now)
+        .order("created_at", desc=True)
+        .limit(1)
+        .execute()
+    )
+    if not row.data:
+        return None
+    session = row.data[0]
+    tenant_name = None
+    tid = session.get("tenant_id")
+    if tid:
+        tenant = (
+            supa.table("tenants")
+            .select("name")
+            .eq("id", tid)
+            .maybe_single()
+            .execute()
+        )
+        if tenant.data:
+            tenant_name = tenant.data.get("name")
+    return {
+        "session_id": session.get("id"),
+        "tenant_id": tid,
+        "tenant_name": tenant_name,
+    }
 
 
 @router.get("/me", response_model=MeResponse)
@@ -50,9 +89,22 @@ async def me(request: Request, user: CurrentUser) -> MeResponse:
     raw_tenant_id = profile_result.data.get("tenant_id")
     tenant_id = UUID(raw_tenant_id) if raw_tenant_id else None
 
+    impersonation = _active_impersonation(user.user_id)
+    imp_tid = imp_sid = None
+    imp_name = None
+    if impersonation:
+        if impersonation.get("tenant_id"):
+            imp_tid = UUID(str(impersonation["tenant_id"]))
+        if impersonation.get("session_id"):
+            imp_sid = UUID(str(impersonation["session_id"]))
+        imp_name = impersonation.get("tenant_name")
+
     return MeResponse(
         user_id=user.user_id,
         email=user.email,
         tenant_id=tenant_id,
         role=profile_result.data.get("role") or "user",
+        impersonating_tenant_id=imp_tid,
+        impersonating_tenant_name=imp_name,
+        impersonation_session_id=imp_sid,
     )

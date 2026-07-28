@@ -37,12 +37,14 @@ function userFromSession(supabaseUser: SupabaseUser): User {
   const meta = supabaseUser.user_metadata ?? {};
   const tenantId = (meta.tenant_id as string | undefined) ?? null;
   const role = (meta.role as string | undefined) ?? (tenantId ? "user" : "admin");
+  const normalizedRole =
+    role === "superadmin" ? "superadmin" : role === "admin" ? "admin" : "user";
 
   return {
     id: supabaseUser.id,
     email: supabaseUser.email ?? "",
     tenantId,
-    role: role === "admin" ? "admin" : "user",
+    role: normalizedRole,
     displayName: meta.display_name as string | undefined,
   };
 }
@@ -65,6 +67,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         email: data.email,
         tenantId: data.tenant_id ?? null,
         role: data.role,
+        impersonatingTenantId: data.impersonating_tenant_id ?? null,
+        impersonatingTenantName: data.impersonating_tenant_name ?? null,
+        impersonationSessionId: data.impersonation_session_id ?? null,
       });
     } catch (err) {
       console.warn("fetchProfile failed, using session metadata fallback:", err);

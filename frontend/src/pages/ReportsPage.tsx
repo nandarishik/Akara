@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { 
   Download, 
   FileSpreadsheet, 
@@ -14,6 +15,8 @@ import {
   ArrowUpRight
 } from "lucide-react";
 import { useReports, useSchemeLeakage } from "@/hooks/useReports";
+import { useBilling } from "@/hooks/useBilling";
+import { useKPIs } from "@/hooks/useKPIs";
 import { supabase } from "@/lib/supabase";
 import SurfaceCard from "@/components/ui/SurfaceCard";
 import { AkaraButton, SecondaryButton } from "@/components/ui/GradientButton";
@@ -23,6 +26,7 @@ import AnimatedNumber from "@/components/ui/AnimatedNumber";
 import { PlanGate } from "@/components/billing/PlanGate";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "@/components/ui/toast";
+import { Link } from "react-router-dom";
 
 const BASE = import.meta.env.VITE_API_BASE_URL as string;
 
@@ -80,15 +84,41 @@ export function ReportsPage() {
     refetch,
   } = useReports();
 
+  const { data: usage } = useBilling();
+  const end = new Date().toISOString().slice(0, 10);
+  const start = new Date(Date.now() - 30 * 86400000).toISOString().slice(0, 10);
+  const { data: kpiData } = useKPIs(start, end);
   const { data: leakageRows, isLoading: leakageLoading } = useSchemeLeakage();
+  const [slotJDismissed, setSlotJDismissed] = useState(
+    () => localStorage.getItem("akara_slot_J_dismissed") === "1",
+  );
+  const showSlotJ =
+    usage?.plan === "pro" &&
+    !usage.features.scheme_leakage &&
+    !slotJDismissed;
 
   const totalLeakage = (leakageRows || []).reduce(
     (sum, r) => sum + r.leakage_amount,
     0
   );
 
-  const maxRevenue = Math.max(...mockRoutePerformance.map(r => r.revenue));
   const hasLeakage = leakageRows && leakageRows.length > 0;
+  const zoneRows = (kpiData?.zone_breakdown ?? []).filter((z) => Number(z.revenue) > 0);
+  const hasRealZones = zoneRows.length > 0;
+  const routeRows = hasRealZones
+    ? zoneRows
+        .slice()
+        .sort((a, b) => Number(b.revenue) - Number(a.revenue))
+        .slice(0, 6)
+        .map((z) => ({
+          route: z.zone,
+          orders: z.order_count,
+          revenue: Number(z.revenue),
+          growth: 0,
+          efficiency: Math.round(Number(z.revenue_pct)),
+        }))
+    : mockRoutePerformance.slice(0, 6);
+  const routeMaxRevenue = Math.max(...routeRows.map((r) => r.revenue), 1);
 
   return (
     <div className="p-6 lg:p-8 space-y-6 max-w-7xl mx-auto bg-surface-canvas">
@@ -117,7 +147,9 @@ export function ReportsPage() {
           <div className="flex items-center gap-3">
             <BarChart3 className="h-5 w-5 text-accent" />
             <h2 className="text-h2">Route Performance Analytics</h2>
-            <Badge variant="outline" className="text-caption">Sample data</Badge>
+            <Badge variant="outline" className="text-caption">
+              {hasRealZones ? "Your data" : "Sample data"}
+            </Badge>
           </div>
           <SecondaryButton size="sm">
             <ExternalLink className="h-4 w-4 mr-2" />
@@ -130,11 +162,13 @@ export function ReportsPage() {
             <h3 className="text-text-secondary font-medium mb-4 flex items-center gap-2">
               <TrendingUp className="h-4 w-4" />
               Revenue Performance
-              <span className="text-caption text-xs font-normal">(Sample data)</span>
+              <span className="text-caption text-xs font-normal">
+                ({hasRealZones ? "Your data" : "Sample data"})
+              </span>
             </h3>
             <div className="space-y-4">
-              {mockRoutePerformance.slice(0, 6).map((route, i) => {
-                const percentage = (route.revenue / maxRevenue) * 100;
+              {routeRows.map((route, i) => {
+                const percentage = (route.revenue / routeMaxRevenue) * 100;
                 return (
                   <div 
                     key={route.route} 
@@ -175,7 +209,9 @@ export function ReportsPage() {
             <h3 className="text-text-secondary font-medium mb-4 flex items-center gap-2">
               <BarChart3 className="h-4 w-4" />
               Key Metrics
-              <span className="text-caption text-xs font-normal">(Sample data)</span>
+              <span className="text-caption text-xs font-normal">
+                ({hasRealZones ? "Your data" : "Sample data"})
+              </span>
             </h3>
             <div className="space-y-4">
               <SurfaceCard hover={false} padding="sm" className="border-emerald-200 bg-emerald-50">
@@ -242,6 +278,40 @@ export function ReportsPage() {
           </div>
         </div>
       </SurfaceCard>
+
+      {showSlotJ && (
+        <SurfaceCard
+          padding="md"
+          className="border-violet-200 bg-gradient-to-r from-violet-50/80 to-amber-50/60 animate-fadeInUp"
+        >
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <p className="font-semibold text-text-primary">
+                Detect scheme leakage before payout day
+              </p>
+              <p className="text-sm text-text-secondary mt-1">
+                See exactly how much scheme money was claimed without matching secondary sales.
+                Business plan unlocks full leakage analytics.
+              </p>
+            </div>
+            <div className="flex items-center gap-3 shrink-0">
+              <Link to="/billing">
+                <AkaraButton size="sm">Upgrade to Business →</AkaraButton>
+              </Link>
+              <button
+                type="button"
+                className="text-xs text-text-muted hover:underline"
+                onClick={() => {
+                  localStorage.setItem("akara_slot_J_dismissed", "1");
+                  setSlotJDismissed(true);
+                }}
+              >
+                Dismiss
+              </button>
+            </div>
+          </div>
+        </SurfaceCard>
+      )}
 
       <PlanGate
         feature="scheme_leakage"

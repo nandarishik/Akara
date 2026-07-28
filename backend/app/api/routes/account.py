@@ -59,6 +59,11 @@ class DeleteAccountRequest(BaseModel):
     confirm_email: str
 
 
+class UnsubscribeRequest(BaseModel):
+    channel: str = "email"
+    category: str = "morning_brief"
+
+
 class ChannelsResponse(BaseModel):
     whatsapp_enabled: bool
     whatsapp_reason: str
@@ -194,6 +199,75 @@ def send_test_email(
     )
     if not ok:
         raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, detail="Email send failed")
+    return {"status": "ok"}
+
+
+@router.post("/preferences/unsubscribe")
+def unsubscribe_preferences(
+    body: UnsubscribeRequest,
+    user: CurrentUser,
+) -> dict[str, str]:
+    """Record email suppression (morning brief unsubscribe)."""
+    email = user.email or ""
+    if not email:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, detail="No email on account")
+
+    normalized = email.strip().lower()
+    reason = f"{body.category}_unsubscribe"
+    supa = get_supabase_service_client()
+    supa.table("email_suppressions").upsert({
+        "email_normalized": normalized,
+        "reason": reason,
+    }).execute()
+
+    profile = (
+        supa.table("profiles")
+        .select("preferences")
+        .eq("id", str(user.user_id))
+        .maybe_single()
+        .execute()
+    )
+    prefs = {**DEFAULT_PREFERENCES, **((profile.data or {}).get("preferences") or {})}
+    if body.category == "morning_brief":
+        prefs["email_morning_brief_enabled"] = False
+        prefs["morning_brief_enabled"] = False
+    supa.table("profiles").update({"preferences": prefs}).eq("id", str(user.user_id)).execute()
+
+    return {"status": "ok", "message": "You have been unsubscribed from morning brief emails."}
+
+
+@router.post("/preferences/test-whatsapp")
+async def send_test_whatsapp(
+    user: CurrentUser,
+    tenant: TenantContext = Depends(get_tenant_context),
+    _: None = Depends(require_feature("morning_brief")),
+) -> dict[str, str]:
+    """Send a test WhatsApp message when BSP is enabled."""
+    from app.services.notifications.whatsapp import send_whatsapp_template
+
+    supa = get_supabase_service_client()
+    profile = (
+        supa.table("profiles")
+        .select("phone_number")
+        .eq("id", str(user.user_id))
+        .maybe_single()
+        .execute()
+    )
+    phone = (profile.data or {}).get("phone_number") if profile else None
+    if not phone:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, detail="Add a phone number in Settings first")
+
+    ok = await send_whatsapp_template(
+        to_phone=phone,
+        template_name="test_message",
+        variables=["AKARA"],
+        tenant_id=tenant.tenant_id,
+        user_id=user.user_id,
+    )
+    if not ok and not settings.whatsapp_sends_enabled:
+        return {"status": "skipped", "message": "WhatsApp sends disabled until templates are approved"}
+    if not ok:
+        raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, detail="WhatsApp send failed")
     return {"status": "ok"}
 
 

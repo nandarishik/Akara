@@ -28,6 +28,7 @@ import { NotFoundPage } from "@/pages/NotFoundPage"
 // ─── Lazy — public / auth / onboarding pages ──────────────────────────────────
 const LandingPage             = React.lazy(() => import("@/pages/LandingPage").then(m => ({ default: m.LandingPage })))
 const SignUpPage               = React.lazy(() => import("@/pages/SignUpPage").then(m => ({ default: m.SignUpPage })))
+const SignUpClosedPage         = React.lazy(() => import("@/pages/SignUpClosedPage").then(m => ({ default: m.SignUpClosedPage })))
 const EmailVerificationPending = React.lazy(() => import("@/pages/EmailVerificationPending").then(m => ({ default: m.EmailVerificationPending })))
 const OnboardingPage           = React.lazy(() => import("@/pages/OnboardingPage").then(m => ({ default: m.OnboardingPage })))
 const ForgotPasswordPage       = React.lazy(() => import("@/pages/ForgotPasswordPage").then(m => ({ default: m.ForgotPasswordPage })))
@@ -48,16 +49,19 @@ const AlertsPage     = React.lazy(() => import("@/pages/AlertsPage").then(m => (
 const PrivacyPage    = React.lazy(() => import("@/pages/PrivacyPage").then(m => ({ default: m.PrivacyPage })))
 const TermsPage      = React.lazy(() => import("@/pages/TermsPage").then(m => ({ default: m.TermsPage })))
 
-// ─── Lazy — legacy admin (will be replaced by superadmin panel on Day 8) ─────
-const TenantsPage    = React.lazy(() => import("@/pages/admin/TenantsPage").then(m => ({ default: m.TenantsPage })))
-const UsersPage      = React.lazy(() => import("@/pages/admin/UsersPage").then(m => ({ default: m.UsersPage })))
-
 // ─── Lazy — superadmin ────────────────────────────────────────────────────────
 const SATenantsPage    = React.lazy(() => import("@/pages/admin/TenantsPage").then(m => ({ default: m.TenantsPage })))
 const SAUsersPage      = React.lazy(() => import("@/pages/admin/UsersPage").then(m => ({ default: m.UsersPage })))
 const CostDiagnostics  = React.lazy(() => import("@/pages/admin/CostDiagnostics"))
 const BillingOpsPage   = React.lazy(() => import("@/pages/superadmin/BillingOpsPage").then(m => ({ default: m.BillingOpsPage })))
 const SecurityOpsPage  = React.lazy(() => import("@/pages/superadmin/SecurityOpsPage").then(m => ({ default: m.SecurityOpsPage })))
+const SuperadminDataPage = React.lazy(() => import("@/pages/superadmin/DataPage").then(m => ({ default: m.SuperadminDataPage })))
+const SuperadminAuditPage = React.lazy(() => import("@/pages/superadmin/AuditPage").then(m => ({ default: m.SuperadminAuditPage })))
+const SuperadminOpsPage = React.lazy(() => import("@/pages/superadmin/OpsPage").then(m => ({ default: m.SuperadminOpsPage })))
+const SuperadminCommsPage = React.lazy(() => import("@/pages/superadmin/CommsPage").then(m => ({ default: m.SuperadminCommsPage })))
+const SuperadminAnalyticsPage = React.lazy(() => import("@/pages/superadmin/AnalyticsPage").then(m => ({ default: m.SuperadminAnalyticsPage })))
+const SuperadminSettingsPage = React.lazy(() => import("@/pages/superadmin/SettingsPage").then(m => ({ default: m.SuperadminSettingsPage })))
+const SuperadminAiPage = React.lazy(() => import("@/pages/superadmin/AiPage").then(m => ({ default: m.SuperadminAiPage })))
 
 // ─── Dev-only component gallery ───────────────────────────────────────────────
 const ComponentGallery = React.lazy(() => import("@/pages/gallery/ComponentGallery"))
@@ -104,6 +108,7 @@ export default function App() {
                 {/* ── Public — landing, auth, onboarding ──────────── */}
                 <Route path="/" element={<LandingPage />} />
                 <Route path="/signup" element={<SignUpPage />} />
+                <Route path="/signup-closed" element={<SignUpClosedPage />} />
                 <Route path="/verify-email" element={<EmailVerificationPending />} />
                 <Route path="/forgot-password" element={<ForgotPasswordPage />} />
                 <Route path="/reset-password" element={<ResetPasswordPage />} />
@@ -130,9 +135,8 @@ export default function App() {
                     <Route path="/settings/team" element={<SettingsTeamPage />} />
                     <Route path="/billing"    element={<BillingPage />} />
                     <Route path="/alerts"    element={<AlertsPage />} />
-                    {/* Legacy admin — deprecated in Day 8 */}
-                    <Route path="/admin/tenants" element={<TenantsPage />} />
-                    <Route path="/admin/users"   element={<UsersPage />} />
+                    <Route path="/admin/tenants" element={<Navigate to="/superadmin/tenants" replace />} />
+                    <Route path="/admin/users" element={<Navigate to="/superadmin/users" replace />} />
                   </Route>
                 </Route>
 
@@ -145,11 +149,13 @@ export default function App() {
                     <Route path="costs"     element={<CostDiagnostics />} />
                     <Route path="billing"   element={<BillingOpsPage />} />
                     <Route path="security" element={<SecurityOpsPage />} />
-                    <Route path="*" element={
-                      <div className="text-sa-muted text-sm p-8">
-                        This superadmin section is coming in Day 8.
-                      </div>
-                    } />
+                    <Route path="data"      element={<SuperadminDataPage />} />
+                    <Route path="audit"     element={<SuperadminAuditPage />} />
+                    <Route path="ops"       element={<SuperadminOpsPage />} />
+                    <Route path="comms"     element={<SuperadminCommsPage />} />
+                    <Route path="analytics" element={<SuperadminAnalyticsPage />} />
+                    <Route path="settings"  element={<SuperadminSettingsPage />} />
+                    <Route path="ai"        element={<SuperadminAiPage />} />
                   </Route>
                 </Route>
 

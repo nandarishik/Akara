@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Loader2, RefreshCw, Send } from "lucide-react";
 
-import { apiFetch } from "@/lib/api";
+import { superadminFetch } from "@/lib/api/superadmin";
 
 interface WebhookStatus {
   last_24h_total: number;
@@ -49,13 +49,14 @@ export function BillingOpsPage() {
   const [trialLoading, setTrialLoading] = useState(false);
   const [reconcileLoading, setReconcileLoading] = useState(false);
   const [reconcileResult, setReconcileResult] = useState<string>("");
+  const reconcileReason = "Billing reconcile check from superadmin ops panel";
   const [opsMessage, setOpsMessage] = useState("");
 
   async function load() {
     setLoading(true);
     setError("");
     try {
-      const data = await apiFetch<WebhookStatus>("/admin/billing/webhooks/status");
+      const data = await superadminFetch<WebhookStatus>("/superadmin/billing/webhooks/status");
       setStatus(data);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to load");
@@ -69,8 +70,8 @@ export function BillingOpsPage() {
     setTimelineLoading(true);
     setResendMessage("");
     try {
-      const data = await apiFetch<TimelineResponse>(
-        `/admin/billing/timeline/${encodeURIComponent(tenantId.trim())}`
+      const data = await superadminFetch<TimelineResponse>(
+        `/superadmin/billing/timeline/${encodeURIComponent(tenantId.trim())}`
       );
       setTimeline(data);
     } catch (e) {
@@ -86,9 +87,14 @@ export function BillingOpsPage() {
     setResendLoading(true);
     setResendMessage("");
     try {
-      const result = await apiFetch<{ status: string; invoice_number: string }>(
-        `/admin/billing/resend-invoice/${encodeURIComponent(tenantId.trim())}`,
-        { method: "POST" }
+      const result = await superadminFetch<{ status: string; invoice_number: string }>(
+        `/superadmin/billing/resend-invoice/${encodeURIComponent(tenantId.trim())}`,
+        {
+          method: "POST",
+          body: JSON.stringify({
+            reason: "Superadmin resend latest invoice from billing ops panel",
+          }),
+        },
       );
       setResendMessage(`Sent invoice ${result.invoice_number} to tenant admin`);
       await loadTimeline();
@@ -104,8 +110,8 @@ export function BillingOpsPage() {
     setManualLoading(true);
     setOpsMessage("");
     try {
-      const result = await apiFetch<{ plan: string; plan_status: string }>(
-        `/admin/billing/manual-upgrade/${encodeURIComponent(tenantId.trim())}`,
+      const result = await superadminFetch<{ plan: string; plan_status: string }>(
+        `/superadmin/billing/manual-upgrade/${encodeURIComponent(tenantId.trim())}`,
         {
           method: "POST",
           body: JSON.stringify({
@@ -129,8 +135,8 @@ export function BillingOpsPage() {
     setTrialLoading(true);
     setOpsMessage("");
     try {
-      const result = await apiFetch<{ trial_ends_at: string }>(
-        `/admin/billing/extend-trial/${encodeURIComponent(tenantId.trim())}`,
+      const result = await superadminFetch<{ trial_ends_at: string }>(
+        `/superadmin/billing/extend-trial/${encodeURIComponent(tenantId.trim())}`,
         {
           method: "POST",
           body: JSON.stringify({ days: trialDays, reason: trialReason.trim() }),
@@ -146,19 +152,22 @@ export function BillingOpsPage() {
   }
 
   async function handleReconcile(apply: boolean) {
-    if (!tenantId.trim()) return;
+    if (!tenantId.trim() || reconcileReason.trim().length < 10) return;
     setReconcileLoading(true);
     setReconcileResult("");
     setOpsMessage("");
     try {
-      const result = await apiFetch<{
+      const result = await superadminFetch<{
         mismatches: string[];
         applied: boolean;
         db: Record<string, unknown>;
         razorpay: Record<string, unknown>;
       }>(
-        `/admin/billing/reconcile/${encodeURIComponent(tenantId.trim())}`,
-        { method: "POST", body: JSON.stringify({ apply }) }
+        `/superadmin/billing/reconcile/${encodeURIComponent(tenantId.trim())}`,
+        {
+          method: "POST",
+          body: JSON.stringify({ apply, reason: reconcileReason.trim() }),
+        },
       );
       if (result.mismatches.length === 0) {
         setReconcileResult("No mismatches — DB and Razorpay are in sync.");

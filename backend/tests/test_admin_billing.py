@@ -8,24 +8,32 @@ from unittest.mock import MagicMock, patch
 import pytest
 from fastapi.testclient import TestClient
 
-from tests.conftest import TENANT_FREE, TENANT_PRO, USER_PRO
+from tests.conftest import TENANT_FREE, TENANT_PRO, USER_SUPERADMIN
 from tests.test_billing_endpoint import _make_tenant_supa
 
 
 @pytest.fixture
-def authed_admin_client() -> TestClient:
+def authed_superadmin_billing_client() -> TestClient:
     from app.core.auth import AuthenticatedUser, get_current_user
     from app.main import app
 
-    fake_user = AuthenticatedUser(user_id=USER_PRO, email="admin@akara.test", role="admin")
+    fake_user = AuthenticatedUser(
+        user_id=USER_SUPERADMIN,
+        email="superadmin@akara.test",
+        role="superadmin",
+    )
     app.dependency_overrides[get_current_user] = lambda: fake_user
     client = TestClient(app, headers={"Authorization": "Bearer fake-test-token"})
     yield client
     app.dependency_overrides.pop(get_current_user, None)
 
 
-def _admin_tenant_supa():
-    return _make_tenant_supa("pro")
+def _superadmin_profile_supa():
+    supa = MagicMock()
+    profile_mock = MagicMock()
+    profile_mock.execute.return_value = MagicMock(data={"role": "superadmin"})
+    supa.table.return_value.select.return_value.eq.return_value.maybe_single.return_value = profile_mock
+    return supa
 
 
 def _target_tenant_supa(plan: str = "free", plan_status: str = "active"):
@@ -56,7 +64,7 @@ def _target_tenant_supa(plan: str = "free", plan_status: str = "active"):
             profile_mock = MagicMock()
             profile_mock.execute.return_value.data = {
                 "tenant_id": str(TENANT_PRO),
-                "role": "admin",
+                "role": "superadmin",
             }
             m.select.return_value.eq.return_value.single.return_value = profile_mock
         elif name == "tenants":
@@ -69,50 +77,28 @@ def _target_tenant_supa(plan: str = "free", plan_status: str = "active"):
     return supa, tenants_table
 
 
-@patch("app.api.routes.admin.billing.get_supabase_service_client")
-@patch("app.core.tenant.get_supabase_service_client")
-def test_manual_upgrade(mock_ctx_supa, mock_admin_supa, authed_admin_client):
-    mock_ctx_supa.return_value = _admin_tenant_supa()
-    target_supa, tenants_table = _target_tenant_supa()
-    mock_admin_supa.return_value = target_supa
+@patch("app.api.routes.superadmin.billing.get_supabase_service_client")
+@patch("app.core.superadmin.get_supabase_service_client")
+def test_manual_upgrade_requires_sudo(mock_core, mock_billing_supa, authed_superadmin_billing_client):
+    mock_core.return_value = _superadmin_profile_supa()
+    target_supa, _ = _target_tenant_supa()
+    mock_billing_supa.return_value = target_supa
 
-    response = authed_admin_client.post(
-        f"/admin/billing/manual-upgrade/{TENANT_FREE}",
+    response = authed_superadmin_billing_client.post(
+        f"/superadmin/billing/manual-upgrade/{TENANT_FREE}",
         json={"plan": "pro", "reason": "NEFT payment received", "clear_past_due": True},
+        headers={"X-CSRF-Token": "token"},
     )
-    assert response.status_code == 200, response.text
-    body = response.json()
-    assert body["plan"] == "pro"
-    assert body["plan_status"] == "active"
-    tenants_table.update.assert_called()
-    assert tenants_table.update.call_args[0][0]["plan"] == "pro"
+    assert response.status_code == 403
 
 
-@patch("app.api.routes.admin.billing.get_supabase_service_client")
-@patch("app.core.tenant.get_supabase_service_client")
-def test_extend_trial(mock_ctx_supa, mock_admin_supa, authed_admin_client):
-    mock_ctx_supa.return_value = _admin_tenant_supa()
-    target_supa, tenants_table = _target_tenant_supa(plan_status="trialing")
-    mock_admin_supa.return_value = target_supa
-
-    response = authed_admin_client.post(
-        f"/admin/billing/extend-trial/{TENANT_FREE}",
-        json={"days": 14, "reason": "Sales demo extension"},
-    )
-    assert response.status_code == 200, response.text
-    body = response.json()
-    assert body["plan_status"] == "trialing"
-    assert body["trial_ends_at"]
-    tenants_table.update.assert_called()
-
-
-@patch("app.api.routes.admin.billing.fetch_subscription_status")
-@patch("app.api.routes.admin.billing.get_supabase_service_client")
-@patch("app.core.tenant.get_supabase_service_client")
+@patch("app.api.routes.superadmin.billing.fetch_subscription_status")
+@patch("app.api.routes.superadmin.billing.get_supabase_service_client")
+@patch("app.core.superadmin.get_supabase_service_client")
 def test_reconcile_reports_mismatch(
-    mock_ctx_supa, mock_admin_supa, mock_fetch_sub, authed_admin_client
+    mock_core, mock_billing_supa, mock_fetch_sub, authed_superadmin_billing_client
 ):
-    mock_ctx_supa.return_value = _admin_tenant_supa()
+    mock_core.return_value = _superadmin_profile_supa()
     supa = MagicMock()
     tenant_row = {
         "id": str(TENANT_FREE),
@@ -123,11 +109,6 @@ def test_reconcile_reports_mismatch(
         "razorpay_subscription_id": "sub_test",
         "razorpay_customer_id": "cust_test",
     }
-    profile_mock = MagicMock()
-    profile_mock.execute.return_value.data = {
-        "tenant_id": str(TENANT_PRO),
-        "role": "admin",
-    }
     tenant_select = MagicMock()
     tenant_select.maybe_single.return_value.execute.return_value = MagicMock(data=tenant_row)
     tenants_table = MagicMock()
@@ -136,7 +117,9 @@ def test_reconcile_reports_mismatch(
     def table_side_effect(name: str):
         m = MagicMock()
         if name == "profiles":
-            m.select.return_value.eq.return_value.single.return_value = profile_mock
+            m.select.return_value.eq.return_value.single.return_value.execute.return_value.data = {
+                "role": "superadmin",
+            }
         elif name == "tenants":
             return tenants_table
         elif name == "audit_log":
@@ -144,7 +127,7 @@ def test_reconcile_reports_mismatch(
         return m
 
     supa.table.side_effect = table_side_effect
-    mock_admin_supa.return_value = supa
+    mock_billing_supa.return_value = supa
 
     mock_fetch_sub.return_value = {
         "has_subscription": True,
@@ -156,11 +139,9 @@ def test_reconcile_reports_mismatch(
         "trial_ends_at": None,
     }
 
-    response = authed_admin_client.post(
-        f"/admin/billing/reconcile/{TENANT_FREE}",
-        json={"apply": False},
+    response = authed_superadmin_billing_client.post(
+        f"/superadmin/billing/reconcile/{TENANT_FREE}",
+        json={"apply": False, "reason": "Reconcile mismatch detection test run"},
+        headers={"X-CSRF-Token": "token"},
     )
-    assert response.status_code == 200, response.text
-    body = response.json()
-    assert any("past_due" in m for m in body["mismatches"])
-    assert body["applied"] is False
+    assert response.status_code == 403

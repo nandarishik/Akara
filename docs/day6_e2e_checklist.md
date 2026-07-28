@@ -41,9 +41,36 @@ Run against deployed Railway API + Vercel frontend.
 ## Automated gate
 
 ```bash
-cd akara/backend && pytest tests/test_rate_limits.py tests/test_security_headers.py tests/test_pii_redactor.py tests/test_alerts.py tests/test_import_worker.py tests/test_copilot.py -q
+cd akara/backend && pytest tests/test_rate_limits.py tests/test_security_headers.py tests/test_pii_redactor.py tests/test_alerts.py tests/test_import_worker.py tests/test_copilot.py tests/test_admin_rate_limits.py -q
 cd akara/frontend && npm run build
 ```
+
+## Live tenant isolation tests
+
+Requires two users in **different** Supabase tenants with distinct data.
+
+1. Log in to the app as **tenant A** → DevTools → Network → copy `Authorization: Bearer …` token (or read from session).
+2. Repeat for **tenant B** (different account/tenant).
+3. Add to `backend/.env`:
+   ```
+   TEST_TENANT_A_TOKEN=eyJ...
+   TEST_TENANT_B_TOKEN=eyJ...
+   TEST_API_BASE_URL=https://akara-production.up.railway.app
+   ```
+4. Run:
+   ```bash
+   cd akara/backend && pytest tests/test_data_isolation.py -m integration
+   ```
+
+| Test | What it verifies |
+|------|------------------|
+| auth/me | Different `tenant_id` per token |
+| KPI | Response bodies differ |
+| billing/usage | Usage differs between tenants |
+| conversations | No shared conversation IDs |
+| alerts | Tenant B cannot see tenant A's alert |
+| reports download | Tenant B gets 404 for tenant A's report |
+| copilot SQL probe | No 500 on injection-style question |
 
 ## Operator
 - Verify Supabase region is `ap-south-1` or `ap-south-2`

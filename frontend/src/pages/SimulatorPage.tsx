@@ -129,7 +129,6 @@ export function SimulatorPage() {
   const [discountChange, setDiscountChange] = useState(0);
   const [marketExpansion, setMarketExpansion] = useState(0);
   const [customerRetention, setCustomerRetention] = useState(0);
-  const [isRunningSimulation, setIsRunningSimulation] = useState(false);
 
   const {
     data: baseline,
@@ -144,7 +143,7 @@ export function SimulatorPage() {
     mutate: runSimulation,
     data: result,
     isPending,
-    isError: runError,
+    error: runError,
   } = useMutation<SimResult, Error, void>({
     mutationFn: () =>
       apiFetch<SimResult>("/simulator/run", {
@@ -162,11 +161,11 @@ export function SimulatorPage() {
   const isPositive = result && result.revenue_delta >= 0;
 
   const handleRunSimulation = () => {
-    setIsRunningSimulation(true);
-    setTimeout(() => {
-      runSimulation();
-      setIsRunningSimulation(false);
-    }, 2000);
+    runSimulation(undefined, {
+      onError: (err) => {
+        console.error("Simulation failed:", err);
+      },
+    });
   };
 
   return (
@@ -353,10 +352,10 @@ export function SimulatorPage() {
 
               <AkaraButton
                 onClick={handleRunSimulation}
-                disabled={isPending || !hasEnoughData || isRunningSimulation}
+                disabled={isPending || !hasEnoughData}
                 className="w-full"
               >
-                {isRunningSimulation || isPending ? (
+                {isPending ? (
                   <>
                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
                     Calculating...
@@ -372,7 +371,9 @@ export function SimulatorPage() {
               {runError && (
                 <SurfaceCard padding="sm" className="border-red-200 bg-red-50">
                   <p className="text-xs text-red-600 text-center">
-                    Projection failed. Please try again.
+                    {runError.message.includes("403")
+                      ? "Simulation blocked — check billing status or plan."
+                      : "Projection failed. Please try again."}
                   </p>
                 </SurfaceCard>
               )}
@@ -386,19 +387,19 @@ export function SimulatorPage() {
             </div>
 
             <div className="h-64 flex flex-col items-center justify-center">
-              {!result && !isRunningSimulation ? (
+              {!result && !isPending ? (
                 <div className="text-center">
                   <div className="w-16 h-16 mx-auto mb-4 rounded-2xl flex items-center justify-center bg-accent-soft text-accent opacity-70">
                     <TrendingUp className="h-8 w-8" />
                   </div>
                   <p className="text-body text-sm">Adjust parameters and run simulation</p>
                 </div>
-              ) : isRunningSimulation ? (
+              ) : isPending ? (
                 <div className="text-center animate-pulse">
                   <div className="w-20 h-20 mx-auto mb-4 rounded-2xl flex items-center justify-center bg-accent text-white">
                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white" />
                   </div>
-                  <p className="text-accent font-medium animate-pulse">Running Monte Carlo simulation...</p>
+                  <p className="text-accent font-medium animate-pulse">Running projection...</p>
                   <p className="text-body text-sm mt-1">Processing {baseline?.data_days || 30} days of data</p>
                 </div>
               ) : (

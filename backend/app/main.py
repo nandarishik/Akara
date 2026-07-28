@@ -30,12 +30,8 @@ from app.api.routes import onboarding as onboarding_router
 from app.api.routes import reports as reports_router
 from app.api.routes import simulator as simulator_router
 from app.api.routes import team as team_router
-from app.api.routes.admin import billing as admin_billing_router
-from app.api.routes.admin import logs as admin_logs_router
-from app.api.routes.admin import reports as admin_reports_router
-from app.api.routes.admin import security as admin_security_router
-from app.api.routes.admin import tenants as admin_tenants_router
-from app.api.routes.admin import users as admin_users_router
+from app.api.routes import system as system_router
+from app.api.routes.superadmin import router as superadmin_router
 from app.core.config import settings
 from app.core.errors import AkaraHTTPException, akara_exception_handler
 from app.core.middleware import RequestIDMiddleware
@@ -146,9 +142,5 @@ app.include_router(debrief_router.router)
 app.include_router(team_router.router)
 app.include_router(account_router.router)
 app.include_router(simulator_router.router)
-app.include_router(admin_tenants_router.router)
-app.include_router(admin_billing_router.router)
-app.include_router(admin_users_router.router)
-app.include_router(admin_security_router.router)
-app.include_router(admin_logs_router.router)
-app.include_router(admin_reports_router.router)
+app.include_router(system_router.router)
+app.include_router(superadmin_router)

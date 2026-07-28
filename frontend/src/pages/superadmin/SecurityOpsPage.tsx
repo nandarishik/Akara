@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Loader2, Shield, Play } from "lucide-react";
 
-import { apiFetch } from "@/lib/api";
+import { superadminFetch } from "@/lib/api/superadmin";
 
 type DeliveryLogRow = {
   id: string;
@@ -32,21 +32,19 @@ export function SecurityOpsPage() {
   const [selectedTenant, setSelectedTenant] = useState("");
   const [recipientEmail, setRecipientEmail] = useState("");
   const [triggerMsg, setTriggerMsg] = useState("");
+  const [forceRegenerate, setForceRegenerate] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
   useEffect(() => {
-    apiFetch<SecuritySummary>("/admin/security/communications")
+    superadminFetch<SecuritySummary>("/superadmin/security/communications")
       .then(setData)
-      .catch(() =>
-        apiFetch<SecuritySummary>("/admin/security/summary")
-          .then(setData)
-          .catch((e) => setError(e instanceof Error ? e.message : "Failed to load"))
-      )
+      .catch((e) => setError(e instanceof Error ? e.message : "Failed to load"))
       .finally(() => setLoading(false));
 
-    apiFetch<TenantOption[]>("/admin/tenants/")
-      .then((list) => {
+    superadminFetch<{ items: TenantOption[] }>("/superadmin/tenants?limit=200")
+      .then((page) => {
+        const list = page.items || [];
         setTenants(list);
         if (list[0]) setSelectedTenant(list[0].id);
       })
@@ -54,14 +52,15 @@ export function SecurityOpsPage() {
   }, []);
 
   async function triggerMorningBrief() {
-    if (!selectedTenant || !recipientEmail) return;
+    if (!selectedTenant) return;
     setTriggerMsg("");
     try {
-      await apiFetch("/admin/reports/morning-brief", {
+      await superadminFetch(`/superadmin/reports/morning-brief/${selectedTenant}`, {
         method: "POST",
         body: JSON.stringify({
-          tenant_id: selectedTenant,
-          recipient_email: recipientEmail,
+          channel: "email",
+          recipient_email: recipientEmail || undefined,
+          reason: "Superadmin manual morning brief trigger from Security Ops",
         }),
       });
       setTriggerMsg("Morning brief triggered.");
@@ -74,9 +73,12 @@ export function SecurityOpsPage() {
     if (!selectedTenant) return;
     setTriggerMsg("");
     try {
-      await apiFetch(`/admin/reports/weekly-debrief/${selectedTenant}`, {
+      await superadminFetch(`/superadmin/reports/weekly-debrief/${selectedTenant}`, {
         method: "POST",
-        body: JSON.stringify({ reason: "Superadmin manual trigger from Security Ops" }),
+        body: JSON.stringify({
+          force_regenerate: forceRegenerate,
+          reason: "Superadmin manual weekly debrief trigger from Security Ops",
+        }),
       });
       setTriggerMsg("Weekly debrief triggered.");
     } catch (e) {
@@ -106,27 +108,11 @@ export function SecurityOpsPage() {
             <div className="rounded-lg border border-sa-border bg-sa-raised p-4">
               <p className="text-xs uppercase text-sa-muted">Alert triggers (24h)</p>
               <p className="text-2xl font-semibold text-sa-text mt-1">{data.alert_triggers_24h}</p>
-              <p className="text-xs text-sa-muted mt-2">
-                Last: {data.last_alert_trigger_at ? new Date(data.last_alert_trigger_at).toLocaleString() : "—"}
-              </p>
             </div>
             <div className="rounded-lg border border-sa-border bg-sa-raised p-4">
               <p className="text-xs uppercase text-sa-muted">Delivery logs (24h)</p>
               <p className="text-2xl font-semibold text-sa-text mt-1">{data.delivery_logs_24h ?? "—"}</p>
-              <p className="text-xs text-sa-muted mt-2">
-                WhatsApp skipped: {data.whatsapp_skipped_24h ?? 0}
-              </p>
-            </div>
-            <div className="rounded-lg border border-sa-border bg-sa-raised p-4">
-              <p className="text-xs uppercase text-sa-muted">Activation pending</p>
-              <p className="text-sm text-sa-text mt-2">
-                Day 1 (no import): {data.activation_pending_day1 ?? "—"}<br />
-                Day 3 (no copilot): {data.activation_pending_day3 ?? "—"}
-              </p>
-            </div>
-            <div className="rounded-lg border border-sa-border bg-sa-raised p-4">
-              <p className="text-xs uppercase text-sa-muted">Data residency</p>
-              <p className="text-sm text-sa-text mt-2">{data.residency_note}</p>
+              <p className="text-xs text-sa-muted mt-2">WhatsApp skipped: {data.whatsapp_skipped_24h ?? 0}</p>
             </div>
           </div>
 
@@ -148,54 +134,20 @@ export function SecurityOpsPage() {
               value={recipientEmail}
               onChange={(e) => setRecipientEmail(e.target.value)}
             />
+            <label className="flex items-center gap-2 text-xs text-sa-muted">
+              <input type="checkbox" checked={forceRegenerate} onChange={(e) => setForceRegenerate(e.target.checked)} />
+              Force regenerate weekly debrief (may replace existing report)
+            </label>
             <div className="flex flex-wrap gap-2">
-              <button
-                type="button"
-                onClick={triggerMorningBrief}
-                className="inline-flex items-center gap-1 text-xs px-3 py-1.5 rounded bg-sa-accent text-white"
-              >
+              <button type="button" onClick={() => void triggerMorningBrief()} className="inline-flex items-center gap-1 text-xs px-3 py-1.5 rounded bg-sa-accent text-white">
                 <Play className="h-3 w-3" /> Trigger morning brief
               </button>
-              <button
-                type="button"
-                onClick={triggerWeeklyDebrief}
-                className="inline-flex items-center gap-1 text-xs px-3 py-1.5 rounded border border-sa-border text-sa-text"
-              >
+              <button type="button" onClick={() => void triggerWeeklyDebrief()} className="inline-flex items-center gap-1 text-xs px-3 py-1.5 rounded border border-sa-border text-sa-text">
                 <Play className="h-3 w-3" /> Trigger weekly debrief
               </button>
             </div>
             {triggerMsg && <p className="text-xs text-sa-muted">{triggerMsg}</p>}
           </div>
-
-          {(data.recent_deliveries?.length ?? 0) > 0 && (
-            <div className="rounded-lg border border-sa-border bg-sa-raised overflow-hidden">
-              <div className="px-4 py-3 border-b border-sa-border">
-                <h2 className="text-sm font-semibold text-sa-text">Recent delivery logs</h2>
-              </div>
-              <div className="overflow-x-auto">
-                <table className="w-full text-xs text-sa-text">
-                  <thead>
-                    <tr className="text-sa-muted border-b border-sa-border">
-                      <th className="text-left p-2">Time</th>
-                      <th className="text-left p-2">Channel</th>
-                      <th className="text-left p-2">Template</th>
-                      <th className="text-left p-2">Status</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {data.recent_deliveries!.map((row) => (
-                      <tr key={row.id} className="border-b border-sa-border/50">
-                        <td className="p-2">{new Date(row.created_at).toLocaleString()}</td>
-                        <td className="p-2">{row.channel}</td>
-                        <td className="p-2">{row.template}</td>
-                        <td className="p-2">{row.status}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          )}
         </>
       )}
     </div>

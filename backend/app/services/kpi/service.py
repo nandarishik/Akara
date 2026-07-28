@@ -146,6 +146,36 @@ class KPIService:
             for day in sorted(by_date_rev)
         ]
 
+    def get_last_import_at(self, tenant_id: UUID) -> str | None:
+        try:
+            result = (
+                self._supabase.table("import_jobs")
+                .select("created_at")
+                .eq("tenant_id", str(tenant_id))
+                .order("created_at", desc=True)
+                .limit(1)
+                .execute()
+            )
+            if result.data:
+                return str(result.data[0]["created_at"])
+        except APIError as exc:
+            logger.warning("get_last_import_at failed: %s", exc)
+
+        try:
+            result = (
+                self._supabase.table("sales_data")
+                .select("invoice_date")
+                .eq("tenant_id", str(tenant_id))
+                .order("invoice_date", desc=True)
+                .limit(1)
+                .execute()
+            )
+            if result.data:
+                return str(result.data[0]["invoice_date"])
+        except APIError as exc:
+            logger.warning("get_last_import_at sales_data fallback failed: %s", exc)
+        return None
+
     def get_all(
         self, tenant_id: UUID, start_date: str, end_date: str
     ) -> KPIResponse:
@@ -156,4 +186,5 @@ class KPIService:
             revenue_trend=self.get_revenue_trend(tenant_id, start_date, end_date),
             date_range_start=start_date,
             date_range_end=end_date,
+            last_import=self.get_last_import_at(tenant_id),
         )

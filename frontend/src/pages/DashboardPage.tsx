@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   IndianRupee,
   ShoppingCart,
@@ -24,8 +24,10 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Link } from "react-router-dom";
+import { supabase } from "@/lib/supabase";
 import SurfaceCard from "@/components/ui/SurfaceCard";
 import { DashboardEmptyState } from "@/components/ui/EmptyState";
+import { salesDataAgeDays } from "@/lib/dataFreshness";
 
 function getDateRange(period: string): [string, string] {
   const end = new Date();
@@ -42,13 +44,42 @@ function getDateRange(period: string): [string, string] {
 
 const formatINR = fmtINR;
 
+const SLOT_E_VIEWS_KEY = "akara_slot_E_views";
+const SLOT_E_DISMISSED_KEY = "akara_slot_E_dismissed";
+
 export function DashboardPage() {
   const [period, setPeriod] = useState("30d");
+  const [showWhatsAppNudge, setShowWhatsAppNudge] = useState(false);
   const [start, end] = getDateRange(period);
   const { data, isLoading, error } = useKPIs(start, end);
 
-  const dataAge = data ? Math.floor((Date.now() - new Date(data.last_import || 0).getTime()) / (1000 * 60 * 60 * 24)) : 0;
-  const isStale = dataAge > 7;
+  useEffect(() => {
+    if (localStorage.getItem(SLOT_E_DISMISSED_KEY)) return;
+    if (!data?.last_import) return;
+
+    const views = Number(localStorage.getItem(SLOT_E_VIEWS_KEY) || "0") + 1;
+    localStorage.setItem(SLOT_E_VIEWS_KEY, String(views));
+    if (views > 3) {
+      localStorage.setItem(SLOT_E_DISMISSED_KEY, "1");
+      return;
+    }
+
+    supabase
+      .from("profiles")
+      .select("phone_number")
+      .maybeSingle()
+      .then(({ data: profile }) => {
+        if (!profile?.phone_number) setShowWhatsAppNudge(true);
+      });
+  }, [data?.last_import]);
+
+  function dismissSlotE() {
+    localStorage.setItem(SLOT_E_DISMISSED_KEY, "1");
+    setShowWhatsAppNudge(false);
+  }
+
+  const dataAge = data ? salesDataAgeDays(data.last_import, data.date_range_end) : null;
+  const isStale = dataAge !== null && dataAge > 7;
 
   if (!isLoading && !data) {
     return (
@@ -148,6 +179,37 @@ export function DashboardPage() {
           </>
         )}
       </div>
+
+      {showWhatsAppNudge && !isLoading && (
+        <SurfaceCard className="border-amber-200 bg-amber-50/50 animate-fadeInUp">
+          <div className="flex items-center justify-between gap-4">
+            <div>
+              <p className="text-amber-900 font-medium text-sm">
+                Get this dashboard delivered to your WhatsApp every Monday
+              </p>
+              <p className="text-amber-700 text-xs mt-0.5">
+                Add your WhatsApp number to receive weekly briefs automatically.
+              </p>
+            </div>
+            <div className="flex items-center gap-3 shrink-0">
+              <Link
+                to="/settings?focus=whatsapp"
+                className="text-sm font-semibold text-accent hover:underline"
+              >
+                Add WhatsApp number →
+              </Link>
+              <button
+                type="button"
+                onClick={dismissSlotE}
+                className="text-xs text-amber-700 hover:underline"
+                aria-label="Dismiss WhatsApp nudge"
+              >
+                Dismiss
+              </button>
+            </div>
+          </div>
+        </SurfaceCard>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
         <SurfaceCard className="lg:col-span-2">

@@ -10,11 +10,12 @@ import logging
 from datetime import datetime
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, Response, status
+from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from pydantic import BaseModel
 
 from app.core.auth import CurrentUser
 from app.core.plan_guard import require_feature
+from app.core.rate_limit import EXPORT_LIMIT, limiter
 from app.core.tenant import TenantCtx, get_supabase_service_client
 
 logger = logging.getLogger(__name__)
@@ -88,7 +89,9 @@ def list_reports(
 
 
 @router.get("/{report_id}/download")
+@limiter.limit(EXPORT_LIMIT)
 def download_report(
+    request: Request,
     report_id: UUID,
     user: CurrentUser,
     tenant: TenantCtx,

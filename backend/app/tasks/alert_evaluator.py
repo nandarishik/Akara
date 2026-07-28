@@ -96,7 +96,43 @@ def evaluate_alerts() -> dict[str, int]:
                     current,
                     threshold,
                     alert["condition"],
+                    tenant_id=__import__("uuid").UUID(str(tenant_id)),
                 )
+
+            delivery = alert.get("delivery") or ["email"]
+            if "whatsapp" in delivery:
+                admin_profile = (
+                    supa.table("profiles")
+                    .select("id, phone_number, preferences")
+                    .eq("tenant_id", tenant_id)
+                    .eq("role", "admin")
+                    .limit(1)
+                    .execute()
+                )
+                if admin_profile.data:
+                    prof = admin_profile.data[0]
+                    prefs = prof.get("preferences") or {}
+                    phone = prof.get("phone_number")
+                    if phone and prefs.get("whatsapp_alerts_enabled", True):
+                        import asyncio
+                        from app.services.notifications.whatsapp import send_alert_whatsapp
+
+                        try:
+                            loop = asyncio.get_event_loop()
+                        except RuntimeError:
+                            loop = asyncio.new_event_loop()
+                            asyncio.set_event_loop(loop)
+                        loop.run_until_complete(
+                            send_alert_whatsapp(
+                                phone=phone,
+                                alert_name=alert["name"],
+                                metric=alert["metric"],
+                                current=str(current),
+                                threshold=str(threshold),
+                                tenant_id=__import__("uuid").UUID(str(tenant_id)),
+                                user_id=__import__("uuid").UUID(prof["id"]),
+                            )
+                        )
 
             supa.table("tenant_alerts").update({
                 "last_triggered": datetime.now(UTC).isoformat(),

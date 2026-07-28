@@ -108,12 +108,14 @@ async def test_dunning_downgrades_on_day14():
     with patch.object(dunning_module, "get_supabase_service_client", return_value=mock_supa):
         with patch.object(dunning_module, "send_dunning_reminder_email", return_value=True):
             with patch.object(dunning_module, "send_downgrade_email", return_value=True):
-                await dunning_module.run_dunning_cycle()
+                with patch.object(
+                    dunning_module,
+                    "apply_plan_downgrade",
+                    return_value={"status": "ok", "target_plan": "free"},
+                ) as mock_downgrade:
+                    await dunning_module.run_dunning_cycle()
 
-    tenants_table.update.assert_called()
-    call_args = tenants_table.update.call_args[0][0]
-    assert call_args["plan"] == "free"
-    assert call_args["plan_status"] == "cancelled"
+    mock_downgrade.assert_called_once_with(tenant_id, "free", reason="dunning_day_14")
 
 
 @pytest.mark.asyncio

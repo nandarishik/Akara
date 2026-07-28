@@ -1,6 +1,11 @@
 """Tests for PII redaction before LLM calls."""
 
+from unittest.mock import AsyncMock, MagicMock
+
+import pytest
+
 from app.services.copilot.pii_redactor import redact, redact_row
+from app.services.copilot.planner import Planner
 
 
 def test_redact_gst_number():
@@ -27,3 +32,25 @@ def test_redact_row_sensitive_columns():
     out = redact_row(row)
     assert out["party_name"] == "Sharma Traders"
     assert out["contact_number"] == "[REDACTED]"
+
+
+@pytest.mark.asyncio
+async def test_planner_redacts_pii_before_llm_call():
+    gst = "27AABCU9603R1ZM"
+    llm = MagicMock()
+    llm.complete = AsyncMock(
+        return_value='{"intent":"test","steps":[],"requires_context":[],"response_format":"summary"}'
+    )
+    planner = Planner(llm)
+    question = f"What did party with GST {gst} buy?"
+    schema = f"Sample row gst_number={gst}"
+
+    await planner.plan(
+        question=question,
+        schema_context=schema,
+        date_range=("2024-01-01", "2024-01-31"),
+    )
+
+    prompt = llm.complete.call_args.kwargs["prompt"]
+    assert gst not in prompt
+    assert "[GST_REDACTED]" in prompt

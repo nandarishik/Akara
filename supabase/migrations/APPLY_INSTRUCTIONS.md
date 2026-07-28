@@ -13,6 +13,21 @@ The Supabase CLI is not required. Apply each migration manually:
    - `007_conversations.sql` — conversations table for chat history
    - `008_user_preferences.sql` — preferences JSONB column on profiles
    - `009_scheme_leakage_fn.sql` — scheme leakage analytics function
+   - `020_day8_superadmin_foundation.sql` — superadmin role, cron_runs, global_settings, sudo/impersonation sessions, audit extensions
+
+After applying `020_day8_superadmin_foundation.sql`, promote one operator account:
+
+```sql
+UPDATE public.profiles SET role = 'superadmin' WHERE id = '<your-auth-user-uuid>';
+```
+
+Verify Day 8 tables:
+
+```sql
+SELECT tablename FROM pg_tables
+WHERE schemaname = 'public'
+  AND tablename IN ('cron_runs', 'global_settings', 'sudo_sessions', 'impersonation_sessions');
+```
 
 Run them **one at a time**, in order. Each should complete with no errors.
 
