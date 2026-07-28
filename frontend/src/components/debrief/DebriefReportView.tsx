@@ -33,6 +33,7 @@ import {
   enrichDebriefMetrics,
   formatInrDisplay,
   impactFromItem,
+  sanitizeDebriefNarrative,
 } from "@/lib/debriefMetrics";
 
 export type DebriefItem = {
@@ -307,29 +308,30 @@ export function DebriefReportView({
   meta: DebriefMetadata;
   headerActions?: ReactNode;
 }) {
-  const metrics = enrichDebriefMetrics(meta);
+  const safeMeta = sanitizeDebriefNarrative(meta);
+  const metrics = enrichDebriefMetrics(safeMeta);
   const { wowPct, wowUp, wowDown } = metrics;
 
   const monthFmt =
-    meta.momentum?.projected_month_fmt ??
-    (meta.momentum?.projected_month != null
-      ? formatInrDisplay(meta.momentum.projected_month)
+    safeMeta.momentum?.projected_month_fmt ??
+    (safeMeta.momentum?.projected_month != null
+      ? formatInrDisplay(safeMeta.momentum.projected_month)
       : null);
 
-  const weekdayPulse = meta.insights?.weekday_pulse ?? [];
-  const movers = meta.insights?.product_movers ?? [];
-  const churn = meta.insights?.churn_watch ?? [];
-  const winback = meta.insights?.win_back ?? [];
-  const outstanding = meta.insights?.outstanding ?? [];
-  const parties = meta.insights?.week_metrics;
+  const weekdayPulse = safeMeta.insights?.weekday_pulse ?? [];
+  const movers = safeMeta.insights?.product_movers ?? [];
+  const churn = safeMeta.insights?.churn_watch ?? [];
+  const winback = safeMeta.insights?.win_back ?? [];
+  const outstanding = safeMeta.insights?.outstanding ?? [];
+  const parties = safeMeta.insights?.week_metrics;
 
   const maxPositiveImpact = Math.max(
     0,
-    ...meta.went_right.map((i) => impactFromItem(i.detail, i.impact_inr))
+    ...safeMeta.went_right.map((i) => impactFromItem(i.detail, i.impact_inr))
   );
   const maxNegativeImpact = Math.max(
     0,
-    ...meta.went_wrong.map((i) => impactFromItem(i.detail, i.impact_inr))
+    ...safeMeta.went_wrong.map((i) => impactFromItem(i.detail, i.impact_inr))
   );
 
   const moverChartData = movers.slice(0, 5).map((m) => ({
@@ -343,7 +345,7 @@ export function DebriefReportView({
       <AnimatedNumber value={metrics.thisWeekRevenue} formatter={formatInrDisplay} />
     ) : metrics.thisWeekRevenueDisplay ? (
       metrics.thisWeekRevenueDisplay
-    ) : metrics.revenueKnown || meta.momentum?.this_week_revenue === 0 ? (
+    ) : metrics.revenueKnown || safeMeta.momentum?.this_week_revenue === 0 ? (
       formatInrDisplay(metrics.thisWeekRevenue)
     ) : (
       "—"
@@ -374,14 +376,14 @@ export function DebriefReportView({
               </p>
               <p className="text-sm text-text-muted mt-1.5 flex items-center gap-1.5">
                 <Calendar className="h-3.5 w-3.5" />
-                {meta.week_start} – {meta.week_end}
+                {safeMeta.week_start} – {safeMeta.week_end}
               </p>
             </div>
             <div className="flex flex-wrap items-center gap-2">{headerActions}</div>
           </div>
 
           <h2 className="text-xl sm:text-2xl lg:text-[1.65rem] font-bold text-text-primary mt-4 leading-snug max-w-3xl">
-            {meta.headline}
+            {safeMeta.headline}
           </h2>
 
           <div className="mt-6 grid grid-cols-2 lg:grid-cols-4 gap-3">
@@ -436,15 +438,15 @@ export function DebriefReportView({
             <KpiTile
               label="Month pace"
               value={monthFmt ?? "—"}
-              sub={meta.momentum?.projection_note ?? "At this week's run-rate"}
+              sub={safeMeta.momentum?.projection_note ?? "At this week's run-rate"}
               icon={<Target className="h-4 w-4" />}
             />
           </div>
 
           <div className="mt-5 pt-4 border-t border-surface-border/80 flex flex-wrap gap-2">
-            <TrendChip label="30d" trend={meta.momentum?.trend_30d} />
-            <TrendChip label="60d" trend={meta.momentum?.trend_60d} />
-            <TrendChip label="90d" trend={meta.momentum?.trend_90d} />
+            <TrendChip label="30d" trend={safeMeta.momentum?.trend_30d} />
+            <TrendChip label="60d" trend={safeMeta.momentum?.trend_60d} />
+            <TrendChip label="90d" trend={safeMeta.momentum?.trend_90d} />
           </div>
         </div>
       </div>
@@ -614,11 +616,11 @@ export function DebriefReportView({
             <TrendingUp className="h-4 w-4" />
             Went right
             <span className="ml-auto text-xs font-normal bg-emerald-100 text-emerald-800 rounded-full px-2 py-0.5">
-              {meta.went_right.length}
+              {safeMeta.went_right.length}
             </span>
           </h3>
           <div className="space-y-3">
-            {meta.went_right?.map((item, i) => (
+            {safeMeta.went_right?.map((item, i) => (
               <InsightCard
                 key={i}
                 item={item}
@@ -635,11 +637,11 @@ export function DebriefReportView({
             <TrendingDown className="h-4 w-4" />
             Went wrong
             <span className="ml-auto text-xs font-normal bg-red-100 text-red-800 rounded-full px-2 py-0.5">
-              {meta.went_wrong.length}
+              {safeMeta.went_wrong.length}
             </span>
           </h3>
           <div className="space-y-3">
-            {meta.went_wrong?.map((item, i) => (
+            {safeMeta.went_wrong?.map((item, i) => (
               <InsightCard
                 key={i}
                 item={item}
@@ -652,14 +654,14 @@ export function DebriefReportView({
         </SurfaceCard>
       </div>
 
-      {meta.actions?.length > 0 && (
+      {safeMeta.actions?.length > 0 && (
         <SurfaceCard padding="md" accent="blue" hover={false}>
           <h3 className="text-sm font-semibold text-text-primary mb-5 flex items-center gap-2">
             <ListChecks className="h-4 w-4 text-accent" />
             Do these three this week
           </h3>
           <div className="grid sm:grid-cols-3 gap-3">
-            {meta.actions.map((action, i) => {
+            {safeMeta.actions.map((action, i) => {
               const style = URGENCY_STYLE[action.urgency ?? "medium"] ?? URGENCY_STYLE.medium;
               return (
                 <div
@@ -713,10 +715,10 @@ export function DebriefReportView({
         </SurfaceCard>
       )}
 
-      {meta.insights?.next_hook && (
+      {safeMeta.insights?.next_hook && (
         <div className="rounded-xl border border-accent/25 bg-gradient-to-r from-accent-soft/60 to-indigo-50/50 px-5 py-4">
           <p className="text-sm text-text-primary leading-relaxed font-medium">
-            {meta.insights.next_hook}
+            {safeMeta.insights.next_hook}
           </p>
         </div>
       )}

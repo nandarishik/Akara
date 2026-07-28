@@ -9,6 +9,8 @@ from uuid import UUID
 from supabase import Client
 
 from app.services.debrief.engine import WeeklyDebriefEngine, format_inr
+from app.services.debrief.models import DebriefData
+from app.services.debrief.narrative_reconcile import reconcile_narrative
 from app.services.debrief.synthesizer import _fallback_metadata
 
 
@@ -33,43 +35,45 @@ def _apply_week_metrics(momentum: dict, wm: dict) -> None:
     momentum["wow_direction"] = "up" if rev >= prior else "down"
 
 
+def _load_debrief_data(
+    supabase: Client,
+    tenant_id: UUID,
+    week_end: str,
+) -> DebriefData | None:
+    try:
+        ref = date.fromisoformat(str(week_end)[:10])
+    except ValueError:
+        return None
+    return WeeklyDebriefEngine(supabase).compute(tenant_id, reference=ref)
+
+
 def enrich_debrief_metadata(
     metadata: dict,
     *,
     tenant_id: UUID | None = None,
     supabase: Client | None = None,
 ) -> dict:
-    """Ensure momentum KPIs exist for UI — from insights, engine recompute, or leave as-is."""
+    """Ensure momentum KPIs exist and narrative matches computed week metrics."""
     meta = copy.deepcopy(metadata)
     momentum = meta.setdefault("momentum", {})
     insights = meta.setdefault("insights", {})
     wm = insights.get("week_metrics")
+    data: DebriefData | None = None
 
     if wm and _momentum_incomplete(momentum):
         _apply_week_metrics(momentum, wm)
-        return meta
 
-    if not _momentum_incomplete(momentum):
-        return meta
+    elif _momentum_incomplete(momentum) and tenant_id and supabase and meta.get("week_end"):
+        data = _load_debrief_data(supabase, tenant_id, meta["week_end"])
+        if data and data.days_of_data >= 7:
+            fb = _fallback_metadata(data)
+            meta["momentum"] = {**momentum, **fb["momentum"]}
+            if not insights.get("week_metrics"):
+                meta["insights"] = {**insights, **(fb.get("insights") or {})}
 
-    if tenant_id is None or supabase is None:
-        return meta
+    elif tenant_id and supabase and meta.get("week_end"):
+        loaded = _load_debrief_data(supabase, tenant_id, meta["week_end"])
+        if loaded and loaded.days_of_data >= 7:
+            data = loaded
 
-    week_end = meta.get("week_end")
-    if not week_end:
-        return meta
-
-    try:
-        ref = date.fromisoformat(str(week_end)[:10])
-    except ValueError:
-        return meta
-
-    data = WeeklyDebriefEngine(supabase).compute(tenant_id, reference=ref)
-    if data.days_of_data < 7:
-        return meta
-
-    fb = _fallback_metadata(data)
-    meta["momentum"] = {**momentum, **fb["momentum"]}
-    if not insights.get("week_metrics"):
-        meta["insights"] = {**insights, **(fb.get("insights") or {})}
-    return meta
+    return reconcile_narrative(meta, data)

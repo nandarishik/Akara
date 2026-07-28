@@ -209,3 +209,46 @@ export function formatInrDisplay(n: number): string {
   if (n >= 1_000) return `₹${(n / 1_000).toFixed(1)}K`;
   return `₹${n.toLocaleString("en-IN")}`;
 }
+
+const REVENUE_HINT = /\brevenue\b|₹|inr/i;
+const DECLINE_WORDS = /\b(declin\w*|drop\w*|fell|fallen|down|decrease\w*|slipped|lost|below)\b/i;
+const GROWTH_WORDS = /\b(grew|growth|gain\w*|up|increase\w*|rose|ris\w*|higher|beat)\b/i;
+
+function itemClaimsRevenueDecline(item: DebriefLike["went_wrong"][number]): boolean {
+  const text = `${item.title} ${item.detail} ${item.hypothesis ?? ""}`;
+  return REVENUE_HINT.test(text) && DECLINE_WORDS.test(text);
+}
+
+function itemClaimsRevenueGrowth(item: DebriefLike["went_right"][number]): boolean {
+  const text = `${item.title} ${item.detail} ${item.hypothesis ?? ""}`;
+  return REVENUE_HINT.test(text) && GROWTH_WORDS.test(text);
+}
+
+/** Drop narrative bullets that disagree with structured week metrics (stale LLM copy). */
+export function sanitizeDebriefNarrative<T extends DebriefLike>(meta: T): T {
+  const rev = meta.momentum?.this_week_revenue ?? meta.insights?.week_metrics?.revenue;
+  const prior = meta.momentum?.prior_week_revenue ?? meta.insights?.week_metrics?.prior_revenue;
+  if (rev == null || prior == null) return meta;
+
+  const revenueUp = rev >= prior;
+  const badHeadline =
+    REVENUE_HINT.test(meta.headline) &&
+    (revenueUp ? DECLINE_WORDS : GROWTH_WORDS).test(meta.headline);
+
+  if (revenueUp) {
+    return {
+      ...meta,
+      headline: badHeadline
+        ? `Revenue grew ${formatInrDisplay(rev - prior)} vs last week.`
+        : meta.headline,
+      went_wrong: meta.went_wrong.filter((item) => !itemClaimsRevenueDecline(item)),
+    };
+  }
+  return {
+    ...meta,
+    headline: badHeadline
+      ? `Revenue fell ${formatInrDisplay(prior - rev)} vs last week.`
+      : meta.headline,
+    went_right: meta.went_right.filter((item) => !itemClaimsRevenueGrowth(item)),
+  };
+}

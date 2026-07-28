@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { enrichDebriefMetrics } from "./debriefMetrics";
+import { enrichDebriefMetrics, sanitizeDebriefNarrative } from "./debriefMetrics";
 
 const sampleMeta = {
   headline: "Weekly Business Debrief",
@@ -55,5 +55,18 @@ describe("enrichDebriefMetrics", () => {
     });
     expect(m.thisWeekRevenue).toBe(120_000);
     expect(m.priorWeekRevenue).toBe(140_000);
+  });
+
+  it("drops revenue-decline bullets when structured metrics show growth", () => {
+    const cleaned = sanitizeDebriefNarrative({
+      ...sampleMeta,
+      momentum: {
+        this_week_revenue: 140_000,
+        prior_week_revenue: 130_000,
+        wow_change_pct: 7.4,
+      },
+    });
+    expect(cleaned.went_wrong.some((i) => /decline/i.test(i.title))).toBe(false);
+    expect(cleaned.went_wrong.length).toBe(0);
   });
 });

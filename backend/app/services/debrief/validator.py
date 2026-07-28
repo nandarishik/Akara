@@ -6,6 +6,7 @@ import re
 from typing import Any
 
 from app.services.debrief.models import DebriefData
+from app.services.debrief.narrative_reconcile import narrative_contradicts_data
 
 
 def _extract_numbers(text: str) -> set[str]:
@@ -57,5 +58,8 @@ def validate_metadata(metadata: dict[str, Any], data: DebriefData) -> bool:
         for item in metadata.get(section, []):
             if not isinstance(item, dict) or "title" not in item:
                 return False
+
+    if narrative_contradicts_data(metadata, data):
+        return False
 
     return True
