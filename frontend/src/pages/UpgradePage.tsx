@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useSearchParams } from "react-router-dom";
 
 import AkaraButton from "@/components/ui/GradientButton";
-import SurfaceCard from "@/components/ui/SurfaceCard";
+import GlowSurfaceCard from "@/components/ui/GlowSurfaceCard";
 import { PlanCard } from "@/components/ui/card";
 import { createCheckoutSession, BillingApiError } from "@/lib/api/billing";
 import { openRazorpaySubscriptionCheckout } from "@/lib/razorpayCheckout";
@@ -145,7 +145,7 @@ export function UpgradePage() {
         </div>
 
         <div className="grid md:grid-cols-3 gap-6">
-          <SurfaceCard padding="lg">
+          <GlowSurfaceCard padding="lg">
             <PlanCard
               name="Free"
               price="₹0"
@@ -164,9 +164,9 @@ export function UpgradePage() {
               }
               className="border-0 bg-transparent shadow-none p-0"
             />
-          </SurfaceCard>
+          </GlowSurfaceCard>
 
-          <SurfaceCard
+          <GlowSurfaceCard
             padding="lg"
             className="border-2 border-accent ring-1 ring-accent/20 shadow-card-hover"
           >
@@ -207,9 +207,9 @@ export function UpgradePage() {
               }
               className="border-0 bg-transparent shadow-none p-0"
             />
-          </SurfaceCard>
+          </GlowSurfaceCard>
 
-          <SurfaceCard padding="lg">
+          <GlowSurfaceCard padding="lg">
             <PlanCard
               name="Business"
               price={interval === "month" ? "₹13,999" : "₹1,39,999"}
@@ -245,10 +245,10 @@ export function UpgradePage() {
               }
               className="border-0 bg-transparent shadow-none p-0"
             />
-          </SurfaceCard>
+          </GlowSurfaceCard>
         </div>
 
-        <SurfaceCard className="mt-12 text-center" padding="lg">
+        <GlowSurfaceCard className="mt-12 text-center" padding="lg">
           <p className="text-text-secondary text-sm">
             Pay via bank transfer / NEFT? Email{" "}
             <a href="mailto:billing@akara.ai" className="text-accent hover:text-accent-hover underline">
@@ -256,17 +256,17 @@ export function UpgradePage() {
             </a>{" "}
             with your company GSTIN and plan choice.
           </p>
-        </SurfaceCard>
+        </GlowSurfaceCard>
 
         <div className="mt-16 max-w-2xl mx-auto space-y-4">
           <h2 className="text-lg font-semibold text-center text-text-primary">FAQ</h2>
           {FAQ.map(({ q, a }) => (
-            <SurfaceCard key={q} padding="sm">
+            <GlowSurfaceCard key={q} padding="sm">
               <details>
                 <summary className="cursor-pointer font-medium text-sm text-text-primary">{q}</summary>
                 <p className="mt-2 text-sm text-text-secondary">{a}</p>
               </details>
-            </SurfaceCard>
+            </GlowSurfaceCard>
           ))}
         </div>
       </div>

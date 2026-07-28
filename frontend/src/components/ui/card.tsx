@@ -1,5 +1,6 @@
 import * as React from "react"
 import { Lock } from "lucide-react"
+import { GlassIcon } from "@/components/effects/GlassIcon"
 import { Link } from "react-router-dom"
 
 import { cn } from "@/lib/utils"
@@ -238,7 +239,13 @@ function LockedCard({
           )}
         </div>
         <div className="absolute inset-0 flex flex-col items-center justify-center bg-white/80 backdrop-blur-sm p-6 text-center">
-          <Lock className="mb-3 h-8 w-8 text-text-muted" aria-hidden="true" />
+          <GlassIcon
+            decorative
+            size="lg"
+            color="red"
+            icon={<Lock className="h-6 w-6" />}
+            label={title}
+          />
           <p className="font-semibold text-text-primary">{title}</p>
           {description && (
             <p className="mt-1 text-sm text-text-secondary">{description}</p>

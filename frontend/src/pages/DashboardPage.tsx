@@ -25,7 +25,10 @@ import {
 } from "@/components/ui/select";
 import { Link } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
-import SurfaceCard from "@/components/ui/SurfaceCard";
+import GlowSurfaceCard from "@/components/ui/GlowSurfaceCard";
+import { GlassIcon } from "@/components/effects/GlassIcon";
+import type { GlassIconColor } from "@/components/effects/GlassIcons";
+import { DASHBOARD_KPI_GLASS } from "@/lib/glassIconMap";
 import { DashboardEmptyState } from "@/components/ui/EmptyState";
 import { salesDataAgeDays } from "@/lib/dataFreshness";
 
@@ -113,7 +116,7 @@ export function DashboardPage() {
       </div>
 
       {error && (
-        <SurfaceCard className="border-red-200 bg-red-50/50">
+        <GlowSurfaceCard className="border-red-200 bg-red-50/50">
           <div className="flex items-center gap-3">
             <AlertTriangle className="h-5 w-5 text-red-500 shrink-0" />
             <div>
@@ -121,11 +124,11 @@ export function DashboardPage() {
               <p className="text-red-600 text-xs mt-0.5">{error.message}</p>
             </div>
           </div>
-        </SurfaceCard>
+        </GlowSurfaceCard>
       )}
 
       {isStale && !isLoading && (
-        <SurfaceCard className="border-amber-200 bg-amber-50/50">
+        <GlowSurfaceCard className="border-amber-200 bg-amber-50/50">
           <div className="flex items-center justify-between gap-4">
             <div className="flex items-center gap-3">
               <AlertTriangle className="h-5 w-5 text-amber-500 shrink-0" />
@@ -138,17 +141,17 @@ export function DashboardPage() {
               Import →
             </Link>
           </div>
-        </SurfaceCard>
+        </GlowSurfaceCard>
       )}
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {isLoading ? (
           Array.from({ length: 4 }).map((_, i) => (
-            <SurfaceCard key={i}>
+            <GlowSurfaceCard key={i}>
               <div className="skeleton h-3 w-20 mb-3" />
               <div className="skeleton h-8 w-24 mb-2" />
               <div className="skeleton h-3 w-16" />
-            </SurfaceCard>
+            </GlowSurfaceCard>
           ))
         ) : (
           <>
@@ -156,32 +159,36 @@ export function DashboardPage() {
               title="Total Revenue"
               value={formatINR(data?.summary.total_revenue || 0)}
               change={data?.summary.revenue_change_pct}
-              icon={<IndianRupee className="h-4 w-4" />}
+              icon={IndianRupee}
+              glassColor={DASHBOARD_KPI_GLASS.revenue}
             />
             <KPICard
               title="Total Orders"
               value={(data?.summary.total_orders || 0).toLocaleString("en-IN")}
               change={data?.summary.orders_change_pct}
-              icon={<ShoppingCart className="h-4 w-4" />}
+              icon={ShoppingCart}
+              glassColor={DASHBOARD_KPI_GLASS.orders}
             />
             <KPICard
               title="Unique Parties"
               value={(data?.summary.unique_parties || 0).toLocaleString("en-IN")}
               change={data?.summary.parties_change_pct}
-              icon={<Users className="h-4 w-4" />}
+              icon={Users}
+              glassColor={DASHBOARD_KPI_GLASS.parties}
             />
             <KPICard
               title="Avg Order Value"
               value={formatINR(data?.summary.avg_order_value || 0)}
               change={data?.summary.aov_change_pct}
-              icon={<TrendingUp className="h-4 w-4" />}
+              icon={TrendingUp}
+              glassColor={DASHBOARD_KPI_GLASS.growth}
             />
           </>
         )}
       </div>
 
       {showWhatsAppNudge && !isLoading && (
-        <SurfaceCard className="border-amber-200 bg-amber-50/50 animate-fadeInUp">
+        <GlowSurfaceCard className="border-amber-200 bg-amber-50/50 animate-fadeInUp">
           <div className="flex items-center justify-between gap-4">
             <div>
               <p className="text-amber-900 font-medium text-sm">
@@ -208,13 +215,19 @@ export function DashboardPage() {
               </button>
             </div>
           </div>
-        </SurfaceCard>
+        </GlowSurfaceCard>
       )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
-        <SurfaceCard className="lg:col-span-2">
+        <GlowSurfaceCard className="lg:col-span-2">
           <div className="flex items-center gap-2 mb-5">
-            <BarChart3 className="h-4 w-4 text-accent" />
+            <GlassIcon
+              decorative
+              size="sm"
+              color="green"
+              icon={<BarChart3 className="h-3.5 w-3.5" />}
+              label="Revenue Trend"
+            />
             <h2 className="text-h2">Revenue Trend</h2>
           </div>
           {isLoading ? (
@@ -224,9 +237,9 @@ export function DashboardPage() {
           ) : (
             <div className="flex items-center justify-center h-64 text-text-muted text-sm">No data</div>
           )}
-        </SurfaceCard>
+        </GlowSurfaceCard>
 
-        <SurfaceCard>
+        <GlowSurfaceCard>
           <div className="flex items-center gap-2 mb-5">
             <Package className="h-4 w-4 text-accent" />
             <h2 className="text-h2">Revenue by Zone</h2>
@@ -238,10 +251,10 @@ export function DashboardPage() {
           ) : (
             <div className="flex items-center justify-center h-48 text-text-muted text-sm">No data</div>
           )}
-        </SurfaceCard>
+        </GlowSurfaceCard>
       </div>
 
-      <SurfaceCard>
+      <GlowSurfaceCard>
         <div className="flex items-center gap-2 mb-5">
           <Package className="h-4 w-4 text-accent" />
           <h2 className="text-h2">Top Products</h2>
@@ -269,10 +282,10 @@ export function DashboardPage() {
         ) : (
           <div className="flex items-center justify-center h-32 text-text-muted text-sm">No product data</div>
         )}
-      </SurfaceCard>
+      </GlowSurfaceCard>
 
       {(data?.route_performance?.length ?? 0) > 0 && (
-        <SurfaceCard>
+        <GlowSurfaceCard>
           <div className="flex items-center gap-2 mb-5">
             <ExternalLink className="h-4 w-4 text-accent" />
             <h2 className="text-h2">Route Performance</h2>
@@ -300,11 +313,11 @@ export function DashboardPage() {
               );
             })}
           </div>
-        </SurfaceCard>
+        </GlowSurfaceCard>
       )}
 
       {(data?.outstanding_parties?.length ?? 0) > 0 && (
-        <SurfaceCard className="border-amber-200">
+        <GlowSurfaceCard className="border-amber-200">
           <div className="flex items-center gap-2 mb-5">
             <AlertTriangle className="h-4 w-4 text-amber-500" />
             <h2 className="text-h2">Credit Exposure</h2>
@@ -320,7 +333,7 @@ export function DashboardPage() {
           <p className="text-xs text-amber-700 font-medium mt-4 pt-3 border-t border-amber-100">
             Total: ₹{data!.outstanding_parties.reduce((s, p) => s + toNum(p.outstanding_amount), 0).toLocaleString()} across {data!.outstanding_parties.length} parties
           </p>
-        </SurfaceCard>
+        </GlowSurfaceCard>
       )}
     </div>
   );
@@ -330,30 +343,36 @@ function KPICard({
   title,
   value,
   change,
-  icon,
+  icon: Icon,
+  glassColor,
 }: {
   title: string;
   value: string;
   change?: number;
-  icon: React.ReactNode;
+  icon: React.ComponentType<{ className?: string }>;
+  glassColor: GlassIconColor;
 }) {
   const isPositive = (change ?? 0) >= 0;
   return (
-    <SurfaceCard accent="blue" hover>
+    <GlowSurfaceCard accent="blue" hover>
       <div className="flex items-center justify-between mb-3">
         <span className="text-caption uppercase tracking-wide">{title}</span>
-        <div className="w-7 h-7 rounded-lg bg-accent-soft flex items-center justify-center text-accent">
-          {icon}
-        </div>
+        <GlassIcon
+          decorative
+          size="md"
+          color={glassColor}
+          icon={<Icon className="h-4 w-4" />}
+          label={title}
+        />
       </div>
       <p className="kpi-value text-2xl mb-1">{value}</p>
       {change != null && (
-        <div className={`flex items-center gap-1 text-xs font-medium ${isPositive ? "text-green-700" : "text-red-600"}`}>
+        <div className={`flex items-center gap-1 text-xs font-medium ${isPositive ? "text-emerald-400" : "text-red-400"}`}>
           {isPositive ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />}
           <span>{Math.abs(change).toFixed(1)}%</span>
-          <span className="text-text-muted font-normal ml-1">vs last period</span>
+          <span className="text-white/50 font-normal ml-1">vs last period</span>
         </div>
       )}
-    </SurfaceCard>
+    </GlowSurfaceCard>
   );
 }

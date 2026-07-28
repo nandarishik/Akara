@@ -1,6 +1,8 @@
 import type { ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { cn } from "@/lib/utils";
+import { GlassIcon } from "@/components/effects/GlassIcon";
+import type { GlassIconColor } from "@/components/effects/GlassIcons";
 import { AkaraButton, SecondaryButton } from "./GradientButton";
 
 interface EmptyStateProps {
@@ -19,6 +21,7 @@ interface EmptyStateProps {
   };
   children?: ReactNode;
   className?: string;
+  iconColor?: GlassIconColor;
 }
 
 function ActionButton({
@@ -47,6 +50,7 @@ export default function EmptyState({
   secondaryAction,
   children,
   className,
+  iconColor = "blue",
 }: EmptyStateProps) {
   return (
     <div
@@ -56,9 +60,13 @@ export default function EmptyState({
       )}
     >
       <div className="max-w-md mx-auto space-y-6">
-        <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-accent-soft text-accent">
-          {icon}
-        </div>
+        <GlassIcon
+          decorative
+          size="lg"
+          color={iconColor}
+          icon={<span className="glass-icon-slot-inner [&_svg]:h-7 [&_svg]:w-7">{icon}</span>}
+          label={title}
+        />
         <div className="space-y-2">
           <h3 className="text-h2">{title}</h3>
           {description && <p className="text-body">{description}</p>}

@@ -1,7 +1,9 @@
 import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
-import SurfaceCard from "./SurfaceCard";
+import GlowSurfaceCard from "@/components/ui/GlowSurfaceCard";
 import AnimatedNumber from "./AnimatedNumber";
+import { GlassIcon } from "@/components/effects/GlassIcon";
+import type { GlassIconColor } from "@/components/effects/GlassIcons";
 import { createStagger } from "@/lib/springs";
 
 interface GlowKPICardProps {
@@ -13,6 +15,7 @@ interface GlowKPICardProps {
     period?: string;
   };
   icon?: ReactNode;
+  iconColor?: GlassIconColor;
   format?: {
     style?: "decimal" | "currency" | "percent";
     currency?: string;
@@ -63,6 +66,7 @@ export default function GlowKPICard({
   value,
   change,
   icon,
+  iconColor = "blue",
   format,
   formatter,
   loading = false,
@@ -72,18 +76,18 @@ export default function GlowKPICard({
 }: GlowKPICardProps) {
   if (loading) {
     return (
-      <SurfaceCard accent="blue" className={className}>
+      <GlowSurfaceCard accent="blue" className={className}>
         <div className="space-y-3">
           <div className="skeleton h-4 w-24" />
           <div className="skeleton h-8 w-32" />
           <div className="skeleton h-5 w-16" />
         </div>
-      </SurfaceCard>
+      </GlowSurfaceCard>
     );
   }
 
   return (
-    <SurfaceCard
+    <GlowSurfaceCard
       accent="blue"
       hover={!!onClick}
       className={cn(onClick && "cursor-pointer", className)}
@@ -92,7 +96,15 @@ export default function GlowKPICard({
     >
       <div className="flex items-start justify-between gap-2">
         <p className="text-caption uppercase tracking-wide">{title}</p>
-        {icon && <div className="text-accent shrink-0">{icon}</div>}
+        {icon && (
+          <GlassIcon
+            decorative
+            size="md"
+            color={iconColor}
+            icon={<span className="glass-icon-slot-inner">{icon}</span>}
+            label={title}
+          />
+        )}
       </div>
       <div className="mt-3 space-y-2">
         <AnimatedNumber
@@ -104,7 +116,7 @@ export default function GlowKPICard({
         />
         {change && <DeltaBadge change={change} />}
       </div>
-    </SurfaceCard>
+    </GlowSurfaceCard>
   );
 }
 

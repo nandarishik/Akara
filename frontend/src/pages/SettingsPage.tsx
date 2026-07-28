@@ -6,7 +6,7 @@ import { apiFetch } from "@/lib/api";
 import AkaraButton from "@/components/ui/GradientButton";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import SurfaceCard from "@/components/ui/SurfaceCard";
+import GlowSurfaceCard from "@/components/ui/GlowSurfaceCard";
 import { Badge } from "@/components/ui/badge";
 import { CheckCircle, AlertCircle, Trash2, Download, KeyRound } from "lucide-react";
 import { roleLabel } from "@/lib/auth-utils";
@@ -281,7 +281,7 @@ export function SettingsPage() {
       </div>
 
       {tab === "profile" && (
-        <SurfaceCard className="space-y-5">
+        <GlowSurfaceCard className="space-y-5">
           <h2 className="text-base font-semibold">Profile</h2>
           <div className="flex items-center gap-4">
             <div className="w-12 h-12 rounded-full bg-accent text-white flex items-center justify-center text-lg font-bold">
@@ -328,11 +328,11 @@ export function SettingsPage() {
           <AkaraButton onClick={handleSaveProfile} disabled={saving} size="sm">
             {saving ? "Saving…" : "Save profile"}
           </AkaraButton>
-        </SurfaceCard>
+        </GlowSurfaceCard>
       )}
 
       {tab === "notifications" && (
-        <SurfaceCard className="space-y-2">
+        <GlowSurfaceCard className="space-y-2">
           <h2 className="text-base font-semibold mb-2">Notifications</h2>
           {unsubMsg && <p className="text-sm text-emerald-700 bg-emerald-50 rounded px-3 py-2">{unsubMsg}</p>}
           {usage?.plan === "free" && !localStorage.getItem("akara_slot_K_dismissed") && (
@@ -437,21 +437,21 @@ export function SettingsPage() {
             onChange={(v) => patchPrefs({ usage_warnings_enabled: v })}
             label="Usage & quota warnings"
           />
-        </SurfaceCard>
+        </GlowSurfaceCard>
       )}
 
       {tab === "billing" && (
-        <SurfaceCard>
+        <GlowSurfaceCard>
           <h2 className="text-base font-semibold">Billing</h2>
           <p className="text-sm text-text-secondary mt-2">Manage plan, invoices, and payment methods.</p>
           <Link to="/billing" className="inline-block mt-4">
             <AkaraButton variant="secondary" size="sm">Open Billing & Usage →</AkaraButton>
           </Link>
-        </SurfaceCard>
+        </GlowSurfaceCard>
       )}
 
       {tab === "security" && (
-        <SurfaceCard className="space-y-4">
+        <GlowSurfaceCard className="space-y-4">
           <h2 className="text-base font-semibold">Security</h2>
           <p className="text-sm text-text-secondary">Active sessions: 1 device (current)</p>
           <div className="space-y-2">
@@ -462,25 +462,25 @@ export function SettingsPage() {
             Update password
           </AkaraButton>
           {passwordMsg && <p className="text-sm text-text-secondary">{passwordMsg}</p>}
-        </SurfaceCard>
+        </GlowSurfaceCard>
       )}
 
       {tab === "team" && (
-        <SurfaceCard>
+        <GlowSurfaceCard>
           <TeamPage embedded />
-        </SurfaceCard>
+        </GlowSurfaceCard>
       )}
 
       {tab === "api" && (
-        <SurfaceCard className="text-center py-8 space-y-3">
+        <GlowSurfaceCard className="text-center py-8 space-y-3">
           <KeyRound className="h-8 w-8 mx-auto text-text-muted" />
           <h2 className="font-semibold">API Keys</h2>
           <p className="text-sm text-text-secondary">Coming soon — Day 13</p>
-        </SurfaceCard>
+        </GlowSurfaceCard>
       )}
 
       {tab === "danger" && (
-        <SurfaceCard className="space-y-4 border-red-200">
+        <GlowSurfaceCard className="space-y-4 border-red-200">
           <h2 className="text-base font-semibold text-red-700 flex items-center gap-2">
             <Trash2 className="h-4 w-4" /> Danger Zone
           </h2>
@@ -495,7 +495,7 @@ export function SettingsPage() {
               Delete account permanently
             </AkaraButton>
           </div>
-        </SurfaceCard>
+        </GlowSurfaceCard>
       )}
     </div>
   );

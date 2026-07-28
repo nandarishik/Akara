@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import SurfaceCard from "@/components/ui/SurfaceCard";
+import GlowSurfaceCard from "@/components/ui/GlowSurfaceCard";
 import { Badge } from "@/components/ui/badge";
 import { superadminFetch } from "@/lib/api/superadmin";
 import {
@@ -87,7 +87,7 @@ export function TenantsPage() {
         <span className="text-sm text-text-muted">{data?.total ?? tenants.length} total</span>
       </div>
 
-      <SurfaceCard padding="none" className="overflow-hidden">
+      <GlowSurfaceCard padding="none" className="overflow-hidden">
         <Table>
           <TableHeader>
             <TableRow>
@@ -127,7 +127,7 @@ export function TenantsPage() {
             ))}
           </TableBody>
         </Table>
-      </SurfaceCard>
+      </GlowSurfaceCard>
 
       {selected && (
         <div className="fixed inset-0 z-50 flex justify-end bg-black/30">
@@ -168,7 +168,7 @@ export function TenantsPage() {
                 </div>
               </div>
 
-              <SurfaceCard padding="sm" className="space-y-2">
+              <GlowSurfaceCard padding="sm" className="space-y-2">
                 <h3 className="font-semibold text-sm">Weekly debrief</h3>
                 {debriefStatus ? (
                   <dl className="text-sm space-y-1">
@@ -196,15 +196,15 @@ export function TenantsPage() {
                 ) : (
                   <p className="text-sm text-text-muted">Loading debrief status…</p>
                 )}
-              </SurfaceCard>
+              </GlowSurfaceCard>
 
               {selected.internal_notes && (
-                <SurfaceCard padding="sm">
+                <GlowSurfaceCard padding="sm">
                   <h3 className="font-semibold text-sm mb-1">Internal notes</h3>
                   <p className="text-sm text-text-secondary whitespace-pre-wrap">
                     {selected.internal_notes}
                   </p>
-                </SurfaceCard>
+                </GlowSurfaceCard>
               )}
             </div>
           </div>

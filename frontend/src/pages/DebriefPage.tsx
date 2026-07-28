@@ -5,7 +5,7 @@ import { BarChart3, Download, MessageSquare, RefreshCw } from "lucide-react";
 import { apiFetch } from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
 import { isAdmin } from "@/lib/auth-utils";
-import SurfaceCard from "@/components/ui/SurfaceCard";
+import GlowSurfaceCard from "@/components/ui/GlowSurfaceCard";
 import { AkaraButton } from "@/components/ui/GradientButton";
 import { useBilling } from "@/hooks/useBilling";
 import ShimmerSkeleton from "@/components/ui/ShimmerSkeleton";
@@ -171,7 +171,7 @@ export function DebriefPage() {
   if (lifetimeExhausted) {
     return (
       <div className="p-4 sm:p-6 lg:p-8 max-w-3xl mx-auto">
-        <SurfaceCard className="text-center space-y-4">
+        <GlowSurfaceCard className="text-center space-y-4">
           <BarChart3 className="h-10 w-10 mx-auto text-text-muted" />
           <h1 className="text-xl font-bold">Free debrief used</h1>
           <p className="text-sm text-text-secondary">
@@ -180,7 +180,7 @@ export function DebriefPage() {
           <Link to="/billing">
             <AkaraButton size="sm">Upgrade to Pro →</AkaraButton>
           </Link>
-        </SurfaceCard>
+        </GlowSurfaceCard>
       </div>
     );
   }
@@ -191,7 +191,7 @@ export function DebriefPage() {
 
     return (
       <div className="p-4 sm:p-6 lg:p-8 max-w-3xl mx-auto">
-        <SurfaceCard className="text-center space-y-4">
+        <GlowSurfaceCard className="text-center space-y-4">
           <BarChart3 className="h-10 w-10 mx-auto text-text-muted" />
           {underSeven ? (
             <>
@@ -234,7 +234,7 @@ export function DebriefPage() {
             </AkaraButton>
           </div>
           {generateMsg && <p className="text-sm text-text-secondary">{generateMsg}</p>}
-        </SurfaceCard>
+        </GlowSurfaceCard>
       </div>
     );
   }
@@ -296,7 +296,7 @@ export function DebriefPage() {
         />
 
         {archive.length > 1 && (
-          <SurfaceCard padding="md" hover={false}>
+          <GlowSurfaceCard padding="md" hover={false}>
             <h2 className="text-sm font-semibold text-text-muted uppercase tracking-wide mb-3">
               Past weeks
             </h2>
@@ -317,7 +317,7 @@ export function DebriefPage() {
                 </button>
               ))}
             </div>
-          </SurfaceCard>
+          </GlowSurfaceCard>
         )}
       </div>
     </div>

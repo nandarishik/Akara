@@ -8,44 +8,66 @@ import { useAuth } from "@/contexts/AuthContext";
 import { checkSuperadminAccess } from "@/lib/api/superadmin";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import {
+  Building2,
+  Users,
+  Wallet,
+  LineChart,
+  Database,
+  Shield,
+  Bot,
+  LogOut,
+  Coins,
+  Mail,
+  Cog,
+  ClipboardList,
+  Wrench,
+} from "lucide-react";
+import { GlassIcon } from "@/components/effects/GlassIcon";
+import type { GlassIconColor } from "@/components/effects/GlassIcons";
 
-export type NavItem = { href: string; label: string; icon: string };
+export type NavItem = {
+  href: string;
+  label: string;
+  icon: React.ComponentType<{ className?: string }>;
+  color: GlassIconColor;
+};
 
 const NAV_GROUPS: { label: string; items: NavItem[] }[] = [
   {
     label: "Customers",
     items: [
-      { href: "/superadmin/tenants", label: "Tenants", icon: "🏢" },
-      { href: "/superadmin/users", label: "Users", icon: "👥" },
+      { href: "/superadmin/tenants", label: "Tenants", icon: Building2, color: "blue" },
+      { href: "/superadmin/users", label: "Users", icon: Users, color: "purple" },
     ],
   },
   {
     label: "Commercial",
     items: [
-      { href: "/superadmin/billing", label: "Billing", icon: "💳" },
-      { href: "/superadmin/costs", label: "Costs", icon: "💰" },
-      { href: "/superadmin/analytics", label: "Analytics", icon: "📊" },
+      { href: "/superadmin/billing", label: "Billing", icon: Wallet, color: "green" },
+      { href: "/superadmin/costs", label: "Costs", icon: Coins, color: "orange" },
+      { href: "/superadmin/analytics", label: "Analytics", icon: LineChart, color: "green" },
     ],
   },
   {
     label: "Operations",
     items: [
-      { href: "/superadmin/data", label: "Data", icon: "🗄️" },
-      { href: "/superadmin/security", label: "Security", icon: "🛡️" },
-      { href: "/superadmin/ops", label: "Ops / Jobs", icon: "⚙️" },
-      { href: "/superadmin/comms", label: "Comms", icon: "📨" },
+      { href: "/superadmin/data", label: "Data", icon: Database, color: "indigo" },
+      { href: "/superadmin/security", label: "Security", icon: Shield, color: "red" },
+      { href: "/superadmin/ops", label: "Ops / Jobs", icon: Cog, color: "blue" },
+      { href: "/superadmin/comms", label: "Comms", icon: Mail, color: "orange" },
     ],
   },
   {
     label: "Governance",
     items: [
-      { href: "/superadmin/audit", label: "Audit Log", icon: "📋" },
-      { href: "/superadmin/settings", label: "Settings", icon: "🔧" },
+      { href: "/superadmin/audit", label: "Audit Log", icon: ClipboardList, color: "red" },
+      { href: "/superadmin/settings", label: "Settings", icon: Wrench, color: "indigo" },
     ],
   },
   {
     label: "Product",
-    items: [{ href: "/superadmin/ai", label: "AI / LLM", icon: "🤖" }],
+    items: [{ href: "/superadmin/ai", label: "AI / LLM", icon: Bot, color: "purple" }],
   },
 ];
 
@@ -94,19 +116,25 @@ export function SuperadminShell() {
         <nav className="flex flex-1 flex-col items-center gap-1 overflow-y-auto py-2">
           {NAV_ITEMS.map((item) => {
             const active = location.pathname.startsWith(item.href);
+            const Icon = item.icon;
             return (
               <Link
                 key={item.href}
                 to={item.href}
                 title={item.label}
                 className={cn(
-                  "flex h-10 w-10 items-center justify-center rounded-lg text-base transition-colors",
-                  active
-                    ? "bg-sa-accent/20 text-sa-accent"
-                    : "text-sa-muted hover:bg-sa-raised hover:text-sa-text",
+                  "flex h-11 w-11 items-center justify-center rounded-lg transition-colors",
+                  active ? "bg-sa-accent/20" : "hover:bg-sa-raised"
                 )}
               >
-                <span aria-hidden="true">{item.icon}</span>
+                <GlassIcon
+                  decorative
+                  size="sm"
+                  color={item.color}
+                  icon={<Icon className="h-3.5 w-3.5 text-white" />}
+                  label={item.label}
+                  active={active}
+                />
                 <span className="sr-only">{item.label}</span>
               </Link>
             );
@@ -120,7 +148,7 @@ export function SuperadminShell() {
             onClick={() => void signOut()}
             title="Sign out"
           >
-            ↩
+            <LogOut className="h-4 w-4" />
           </Button>
         </div>
       </aside>

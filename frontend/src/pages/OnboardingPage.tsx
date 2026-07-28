@@ -12,7 +12,7 @@ import { AuthLayout } from "@/components/layout/AuthLayout"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { AkaraButton, GhostButton } from "@/components/ui/GradientButton"
-import SurfaceCard from "@/components/ui/SurfaceCard"
+import GlowSurfaceCard from "@/components/ui/GlowSurfaceCard"
 import { cn } from "@/lib/utils"
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL ?? ""
@@ -422,16 +422,16 @@ export function OnboardingPage() {
               { icon: "📱", title: "WhatsApp brief", desc: "Add your number in Settings" },
               { icon: "🔔", title: "Set alerts", desc: "Get notified when KPIs drop (Pro)" },
             ].map((card) => (
-              <SurfaceCard key={card.title} padding="sm" className="text-center">
+              <GlowSurfaceCard key={card.title} padding="sm" className="text-center">
                 <p className="text-2xl mb-2">{card.icon}</p>
                 <p className="text-xs font-bold text-text-primary">{card.title}</p>
                 <p className="text-xs text-text-muted mt-1">{card.desc}</p>
-              </SurfaceCard>
+              </GlowSurfaceCard>
             ))}
           </div>
 
           {!slotIDismissed && (
-            <SurfaceCard accent="blue" padding="sm" className="mb-6">
+            <GlowSurfaceCard accent="blue" padding="sm" className="mb-6">
               <div className="flex items-start justify-between gap-3">
                 <div>
                   <p className="font-semibold text-text-primary text-sm">👥 Invite your team</p>
@@ -445,7 +445,7 @@ export function OnboardingPage() {
                   ✕
                 </button>
               </div>
-            </SurfaceCard>
+            </GlowSurfaceCard>
           )}
 
           <AkaraButton onClick={handleComplete} loading={loading} size="lg" className="w-full">

@@ -29,6 +29,7 @@ import { supabase } from "@/lib/supabase";
 import { cn } from "@/lib/utils";
 import { MobileHistoryDrawer } from "@/components/copilot/MobileHistoryDrawer";
 import { ChatMarkdown } from "@/components/copilot/ChatMarkdown";
+import { GlassIcon } from "@/components/effects/GlassIcon";
 import { useMobileNav } from "@/contexts/MobileNavContext";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL as string;
@@ -342,20 +343,19 @@ export function CopilotPage() {
                       m.role === "user" && "flex-row-reverse"
                     )}
                   >
-                    <div
-                      className={cn(
-                        "w-8 h-8 rounded-lg shrink-0 flex items-center justify-center",
-                        m.role === "user"
-                          ? "bg-accent text-white"
-                          : "bg-surface-raised border border-surface-border text-accent"
-                      )}
-                    >
-                      {m.role === "user" ? (
-                        <User className="h-4 w-4" />
-                      ) : (
-                        <Bot className="h-4 w-4" />
-                      )}
-                    </div>
+                    <GlassIcon
+                      decorative
+                      size="sm"
+                      color={m.role === "user" ? "blue" : "purple"}
+                      icon={
+                        m.role === "user" ? (
+                          <User className="h-3.5 w-3.5" />
+                        ) : (
+                          <Bot className="h-3.5 w-3.5" />
+                        )
+                      }
+                      label={m.role === "user" ? "You" : "AKARA"}
+                    />
                     <div
                       className={cn(
                         "rounded-xl px-4 py-3 text-sm leading-relaxed max-w-[85%]",
@@ -412,9 +412,13 @@ export function CopilotPage() {
                 ))}
                 {isStreaming && (
                   <div className="flex gap-3">
-                    <div className="w-8 h-8 rounded-lg bg-surface-raised border border-surface-border flex items-center justify-center text-accent">
-                      <Bot className="h-4 w-4" />
-                    </div>
+                    <GlassIcon
+                      decorative
+                      size="sm"
+                      color="purple"
+                      icon={<Bot className="h-3.5 w-3.5" />}
+                      label="AKARA"
+                    />
                     <div className="rounded-xl px-4 py-3 bg-surface-card border border-surface-border text-text-muted text-sm flex items-center gap-2">
                       <Sparkles className="h-4 w-4 animate-pulse" />
                       Thinking…

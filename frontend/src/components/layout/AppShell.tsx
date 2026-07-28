@@ -7,6 +7,8 @@ import { MaintenanceOverlay, SystemBanner } from "@/components/layout/SystemBann
 import { useBilling } from "@/hooks/useBilling";
 import { UsageBanner, PastDueBanner, TrialWarning } from "@/components/billing";
 import { AkaraButton } from "@/components/ui/GradientButton";
+import { GlassIcon } from "@/components/effects/GlassIcon";
+import { APP_NAV_GLASS } from "@/lib/glassIconMap";
 import { getQuotaLevel } from "@/lib/api/billing";
 import {
   LayoutDashboard,
@@ -60,19 +62,29 @@ function NavLink({
   isLocked?: boolean;
   onClick?: () => void;
 }) {
+  const glass = APP_NAV_GLASS[to] ?? { color: "blue" as const, icon: Icon };
+  const NavIcon = glass.icon;
+
   return (
     <Link
       to={to}
       onClick={onClick}
       className={cn(
-        "flex items-center gap-3 px-3 py-2 text-[13px] font-medium transition-colors",
+        "flex items-center gap-3 px-3 py-2 text-[13px] font-medium transition-colors rounded-lg",
         isActive
-          ? "bg-accent-soft text-accent rounded-full"
-          : "text-text-secondary hover:text-text-primary hover:bg-surface-raised rounded-lg",
+          ? "bg-accent-soft/80 text-accent"
+          : "text-text-secondary hover:text-text-primary hover:bg-surface-raised",
         isLocked && "opacity-70"
       )}
     >
-      <Icon className="h-4 w-4 shrink-0" />
+      <GlassIcon
+        decorative
+        size="sm"
+        color={glass.color}
+        icon={<NavIcon className="h-3.5 w-3.5" />}
+        label={label}
+        active={isActive}
+      />
       <span className="flex-1">{label}</span>
       {isLocked && <Lock className="h-3 w-3 text-text-muted" aria-label="Locked" />}
     </Link>
@@ -212,16 +224,25 @@ export function AppShell() {
           <div className="flex items-center justify-around py-2">
             {NAV_ITEMS.slice(0, 5).map(({ to, shortLabel, icon: Icon }) => {
               const isActive = location.pathname.startsWith(to);
+              const glass = APP_NAV_GLASS[to] ?? { color: "blue" as const, icon: Icon };
+              const NavIcon = glass.icon;
               return (
                 <Link
                   key={to}
                   to={to}
                   className={cn(
-                    "flex flex-col items-center gap-0.5 p-2 rounded-full min-w-0 transition-colors",
-                    isActive ? "text-accent bg-accent-soft" : "text-text-muted"
+                    "flex flex-col items-center gap-0.5 p-1.5 rounded-xl min-w-0 transition-colors",
+                    isActive ? "text-accent" : "text-text-muted"
                   )}
                 >
-                  <Icon className="h-5 w-5 shrink-0" />
+                  <GlassIcon
+                    decorative
+                    size="sm"
+                    color={glass.color}
+                    icon={<NavIcon className="h-3.5 w-3.5" />}
+                    label={shortLabel}
+                    active={isActive}
+                  />
                   <span className="text-[10px] font-medium">{shortLabel}</span>
                 </Link>
               );

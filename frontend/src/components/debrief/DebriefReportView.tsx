@@ -26,7 +26,10 @@ import {
 } from "recharts";
 
 import AnimatedNumber from "@/components/ui/AnimatedNumber";
-import SurfaceCard from "@/components/ui/SurfaceCard";
+import GlowSurfaceCard from "@/components/ui/GlowSurfaceCard";
+import { GlassIcon } from "@/components/effects/GlassIcon";
+import type { GlassIconColor } from "@/components/effects/GlassIcons";
+import { DEBRIEF_METRIC_GLASS } from "@/lib/glassIconMap";
 import { cn } from "@/lib/utils";
 import { formatINRCompact } from "@/lib/format";
 import {
@@ -125,35 +128,41 @@ function KpiTile({
   value,
   sub,
   icon,
+  glassColor = "blue",
   tone = "neutral",
 }: {
   label: string;
   value: ReactNode;
   sub?: ReactNode;
   icon: ReactNode;
+  glassColor?: GlassIconColor;
   tone?: "up" | "down" | "neutral";
 }) {
   return (
     <div
       className={cn(
-        "rounded-xl border p-4 bg-white/80 backdrop-blur-sm",
-        tone === "up" && "border-emerald-100",
-        tone === "down" && "border-red-100",
-        tone === "neutral" && "border-surface-border"
+        "rounded-xl border p-4 bg-[#120F17]/40 backdrop-blur-sm",
+        tone === "up" && "border-emerald-500/30",
+        tone === "down" && "border-red-500/30",
+        tone === "neutral" && "border-white/10"
       )}
     >
       <div className="flex items-center justify-between mb-2">
-        <span className="text-[11px] font-semibold uppercase tracking-wider text-text-muted">
+        <span className="text-[11px] font-semibold uppercase tracking-wider text-white/50">
           {label}
         </span>
-        <div className="w-8 h-8 rounded-lg bg-accent-soft flex items-center justify-center text-accent">
-          {icon}
-        </div>
+        <GlassIcon
+          decorative
+          size="md"
+          color={glassColor}
+          icon={<span className="glass-icon-slot-inner text-white">{icon}</span>}
+          label={label}
+        />
       </div>
-      <p className="text-2xl sm:text-3xl font-bold text-text-primary tabular-nums leading-none">
+      <p className="text-2xl sm:text-3xl font-bold text-white tabular-nums leading-none">
         {value}
       </p>
-      {sub && <div className="mt-2 text-xs text-text-secondary">{sub}</div>}
+      {sub && <div className="mt-2 text-xs text-white/60">{sub}</div>}
     </div>
   );
 }
@@ -396,12 +405,13 @@ export function DebriefReportView({
                   : undefined
               }
               icon={<IndianRupee className="h-4 w-4" />}
+              glassColor={DEBRIEF_METRIC_GLASS.revenue}
               tone={wowUp ? "up" : wowDown ? "down" : "neutral"}
             />
             <KpiTile
               label="Week on week"
               value={
-                <span className={cn(wowUp && "text-emerald-600", wowDown && "text-red-600")}>
+                <span className={cn(wowUp && "text-emerald-400", wowDown && "text-red-400")}>
                   {wowUp ? "+" : ""}
                   {wowPct}%
                 </span>
@@ -416,6 +426,7 @@ export function DebriefReportView({
                   <Minus className="h-4 w-4" />
                 )
               }
+              glassColor={DEBRIEF_METRIC_GLASS.wow}
               tone={wowUp ? "up" : wowDown ? "down" : "neutral"}
             />
             <KpiTile
@@ -427,6 +438,7 @@ export function DebriefReportView({
                   : undefined
               }
               icon={<ShoppingCart className="h-4 w-4" />}
+              glassColor={DEBRIEF_METRIC_GLASS.orders}
               tone={
                 metrics.hasOrdersCompare && metrics.orders >= metrics.priorOrders
                   ? "up"
@@ -440,6 +452,7 @@ export function DebriefReportView({
               value={monthFmt ?? "—"}
               sub={safeMeta.momentum?.projection_note ?? "At this week's run-rate"}
               icon={<Target className="h-4 w-4" />}
+              glassColor={DEBRIEF_METRIC_GLASS.month}
             />
           </div>
 
@@ -455,7 +468,7 @@ export function DebriefReportView({
       {showWeekSnapshot && (
         <div className="grid lg:grid-cols-2 gap-4">
           {(metrics.hasRevenueCompare || metrics.hasOrdersCompare) && (
-            <SurfaceCard padding="md" hover={false}>
+            <GlowSurfaceCard padding="md" hover={false}>
               <h3 className="text-sm font-semibold text-text-primary mb-5">Week vs week</h3>
               <div className="space-y-6">
                 {metrics.hasRevenueCompare && (
@@ -483,18 +496,18 @@ export function DebriefReportView({
                   />
                 )}
               </div>
-            </SurfaceCard>
+            </GlowSurfaceCard>
           )}
 
           {weekdayPulse.length > 0 ? (
-            <SurfaceCard padding="md" hover={false}>
+            <GlowSurfaceCard padding="md" hover={false}>
               <h3 className="text-sm font-semibold text-text-primary">Daily pulse</h3>
               <p className="text-xs text-text-muted mt-1 mb-4">
                 Green = beat your usual weekday
               </p>
               <ResponsiveContainer width="100%" height={200}>
                 <BarChart data={weekdayPulse} margin={{ top: 4, right: 4, left: 0, bottom: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
+                  <CartesianGrid strokeDasharray="3 3" stroke="#334155" vertical={false} />
                   <XAxis dataKey="day" tick={{ fontSize: 11, fill: "#94a3b8" }} />
                   <YAxis
                     tick={{ fontSize: 10, fill: "#94a3b8" }}
@@ -518,9 +531,9 @@ export function DebriefReportView({
                   <Bar dataKey="trailing_avg" fill="#e2e8f0" radius={[4, 4, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
-            </SurfaceCard>
+            </GlowSurfaceCard>
           ) : metrics.hasRevenueCompare ? (
-            <SurfaceCard padding="md" hover={false} className="flex flex-col justify-center">
+            <GlowSurfaceCard padding="md" hover={false} className="flex flex-col justify-center">
               <h3 className="text-sm font-semibold text-text-primary mb-4">Revenue shift</h3>
               <div className="flex items-end justify-center gap-6 h-40 px-4">
                 <div className="flex flex-col items-center gap-2 flex-1 max-w-[120px]">
@@ -548,13 +561,13 @@ export function DebriefReportView({
                   </span>
                 </div>
               </div>
-            </SurfaceCard>
+            </GlowSurfaceCard>
           ) : null}
         </div>
       )}
 
       {moverChartData.length >= 1 && (
-        <SurfaceCard padding="md" hover={false}>
+        <GlowSurfaceCard padding="md" hover={false}>
           <h3 className="text-sm font-semibold text-text-primary flex items-center gap-2 mb-4">
             <Package className="h-4 w-4 text-accent" />
             Product shifts
@@ -570,7 +583,7 @@ export function DebriefReportView({
                 type="category"
                 dataKey="name"
                 width={100}
-                tick={{ fontSize: 11, fill: "#64748b" }}
+                tick={{ fontSize: 11, fill: "#cbd5e1" }}
               />
               <Tooltip formatter={(v: number) => [formatINRCompact(Math.abs(v)), "WoW change"]} />
               <Bar dataKey="change" radius={[0, 4, 4, 0]}>
@@ -580,11 +593,11 @@ export function DebriefReportView({
               </Bar>
             </BarChart>
           </ResponsiveContainer>
-        </SurfaceCard>
+        </GlowSurfaceCard>
       )}
 
       {(churn.length > 0 || winback.length > 0) && (
-        <SurfaceCard padding="md" hover={false}>
+        <GlowSurfaceCard padding="md" hover={false}>
           <h3 className="text-sm font-semibold text-text-primary mb-3">Customer signals</h3>
           <div className="flex flex-wrap gap-2">
             {churn.map((c) => (
@@ -606,12 +619,12 @@ export function DebriefReportView({
               </span>
             ))}
           </div>
-        </SurfaceCard>
+        </GlowSurfaceCard>
       )}
 
       {/* Narrative */}
       <div className="grid md:grid-cols-2 gap-4">
-        <SurfaceCard padding="md" accent="green" hover={false}>
+        <GlowSurfaceCard padding="md" accent="green" hover={false}>
           <h3 className="text-sm font-semibold text-emerald-800 mb-4 flex items-center gap-2">
             <TrendingUp className="h-4 w-4" />
             Went right
@@ -630,9 +643,9 @@ export function DebriefReportView({
               />
             ))}
           </div>
-        </SurfaceCard>
+        </GlowSurfaceCard>
 
-        <SurfaceCard padding="md" accent="red" hover={false}>
+        <GlowSurfaceCard padding="md" accent="red" hover={false}>
           <h3 className="text-sm font-semibold text-red-800 mb-4 flex items-center gap-2">
             <TrendingDown className="h-4 w-4" />
             Went wrong
@@ -651,11 +664,11 @@ export function DebriefReportView({
               />
             ))}
           </div>
-        </SurfaceCard>
+        </GlowSurfaceCard>
       </div>
 
       {safeMeta.actions?.length > 0 && (
-        <SurfaceCard padding="md" accent="blue" hover={false}>
+        <GlowSurfaceCard padding="md" accent="blue" hover={false}>
           <h3 className="text-sm font-semibold text-text-primary mb-5 flex items-center gap-2">
             <ListChecks className="h-4 w-4 text-accent" />
             Do these three this week
@@ -695,11 +708,11 @@ export function DebriefReportView({
               );
             })}
           </div>
-        </SurfaceCard>
+        </GlowSurfaceCard>
       )}
 
       {outstanding.length > 0 && (
-        <SurfaceCard padding="md" hover={false}>
+        <GlowSurfaceCard padding="md" hover={false}>
           <h3 className="text-sm font-semibold text-text-primary mb-3 flex items-center gap-2">
             <Wallet className="h-4 w-4 text-amber-600" />
             Outstanding to collect
@@ -712,7 +725,7 @@ export function DebriefReportView({
               </li>
             ))}
           </ul>
-        </SurfaceCard>
+        </GlowSurfaceCard>
       )}
 
       {safeMeta.insights?.next_hook && (

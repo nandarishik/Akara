@@ -42,7 +42,9 @@ export function CommandPalette() {
           className="w-full border-b border-sa-border bg-transparent px-4 py-3 text-sm text-sa-text outline-none"
         />
         <ul className="max-h-64 overflow-y-auto py-2">
-          {matches.map((item) => (
+          {matches.map((item) => {
+            const Icon = item.icon;
+            return (
             <li key={item.href}>
               <button
                 type="button"
@@ -53,11 +55,12 @@ export function CommandPalette() {
                   setQuery("");
                 }}
               >
-                <span>{item.icon}</span>
+                <Icon className="h-4 w-4 shrink-0" />
                 {item.label}
               </button>
             </li>
-          ))}
+            );
+          })}
           {matches.length === 0 && (
             <li className="px-4 py-3 text-sm text-sa-muted">No matches</li>
           )}

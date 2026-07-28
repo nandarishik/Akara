@@ -1,19 +1,39 @@
 /**
- * LandingPage — AKARA Blue (FireAI light)
+ * LandingPage — AKARA marketing
  *
- * Sticky light nav, light hero with CTAs, SurfaceCard/PlanCard pricing,
- * dark footer band only at bottom. Token colors + AkaraButton CTAs.
+ * Hyperspeed hero, DecryptedText, MagicBento dashboard preview, PlanReflectiveCard pricing.
  */
 
-import { useEffect, useRef, useState, type FormEvent } from "react"
+import { lazy, Suspense, useEffect, useRef, useState, type FormEvent } from "react"
 import { Link, useNavigate } from "react-router-dom"
-import { Menu, X, ChevronDown } from "lucide-react"
+import {
+  Menu,
+  X,
+  ChevronDown,
+  FileSpreadsheet,
+  MessageSquare,
+  Bell,
+  AlertTriangle,
+} from "lucide-react"
 import { useAuth } from "@/contexts/AuthContext"
 import { useTypewriter } from "@/hooks/useTypewriter"
-import { AkaraButton, SecondaryButton } from "@/components/ui/GradientButton"
-import { PlanCard } from "@/components/ui/card"
-import SurfaceCard from "@/components/ui/SurfaceCard"
+import { SecondaryButton } from "@/components/ui/GradientButton"
+import GlowCTAButton, { GlowCTALink } from "@/components/ui/GlowCTAButton"
+import GlowSurfaceCard from "@/components/ui/GlowSurfaceCard"
 import { Input } from "@/components/ui/input"
+import { HyperspeedBackground, HyperspeedHeroOverlay } from "@/components/effects/HyperspeedBackground"
+import DecryptedText from "@/components/effects/DecryptedText"
+import { GlassIcon } from "@/components/effects/GlassIcon"
+import type { GlassIconColor } from "@/components/effects/GlassIcons"
+import BorderGlow from "@/components/effects/BorderGlow"
+import PlanReflectiveCard, { PLAN_REFLECTIVE_META } from "@/components/effects/PlanReflectiveCard"
+import PrismLazy from "@/components/effects/PrismLazy"
+import { BORDER_GLOW_DEFAULTS } from "@/components/effects/presets"
+import { cn } from "@/lib/utils"
+
+const DashboardPreviewBento = lazy(
+  () => import("@/components/landing/DashboardPreviewBento")
+)
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL ?? ""
 
@@ -56,6 +76,43 @@ const PLANS = [
   },
 ]
 
+const PAIN_CARDS: {
+  title: string
+  desc: string
+  icon: typeof FileSpreadsheet
+  color: GlassIconColor
+  label: string
+}[] = [
+  {
+    title: "Excel overload",
+    desc: "Hours copy-pasting Tally exports into 12 different Excel sheets every Monday.",
+    icon: FileSpreadsheet,
+    color: "blue",
+    label: "Excel overload",
+  },
+  {
+    title: "No quick answers",
+    desc: "\"Which zone is underperforming?\" takes 2 hours. It should take 2 seconds.",
+    icon: MessageSquare,
+    color: "purple",
+    label: "Quick answers",
+  },
+  {
+    title: "WhatsApp chaos",
+    desc: "Updates buried in 200+ unread messages. No single source of truth.",
+    icon: Bell,
+    color: "indigo",
+    label: "Weekly brief",
+  },
+  {
+    title: "Scheme leakage",
+    desc: "Trade schemes paid out but revenue not reflecting. You find out months later.",
+    icon: AlertTriangle,
+    color: "red",
+    label: "Scheme leakage",
+  },
+]
+
 export function LandingPage() {
   const { session } = useAuth()
   const navigate = useNavigate()
@@ -92,6 +149,7 @@ export function LandingPage() {
       const pricingTop = pricingRef.current?.getBoundingClientRect().top ?? 9999
       setShowStickyBar(heroBottom < 0 && pricingTop > 0)
     }
+    onScroll()
     window.addEventListener("scroll", onScroll)
     return () => window.removeEventListener("scroll", onScroll)
   }, [])
@@ -117,6 +175,10 @@ export function LandingPage() {
   }
 
   const [demoTab, setDemoTab] = useState<"dashboard" | "ask" | "brief">("ask")
+  const [dashboardMounted, setDashboardMounted] = useState(false)
+  useEffect(() => {
+    if (demoTab === "dashboard") setDashboardMounted(true)
+  }, [demoTab])
   const typewriterText = useTypewriter(
     demoTab === "ask" ? "पिछले महीने किस zone की revenue सबसे कम रही?" : "",
     55
@@ -129,22 +191,23 @@ export function LandingPage() {
   )
 
   return (
-    <div className="min-h-screen overflow-x-hidden bg-surface-bg">
-      {/* Sticky nav */}
-      <header className="sticky top-0 z-40 bg-surface-card/95 backdrop-blur border-b border-surface-border">
+    <div className="min-h-screen overflow-x-hidden bg-[#120F17] text-white">
+      <header className="sticky top-0 z-40 backdrop-blur border-b bg-[#120F17]/80 border-white/10 -mt-0">
         <nav className="max-w-6xl mx-auto px-5 sm:px-8 h-16 flex items-center justify-between">
-          <a href="/" className="text-xl font-bold tracking-tight text-text-primary font-display">
+          <a href="/" className="text-xl font-bold tracking-tight font-display text-white">
             AKARA
           </a>
-          <div className="hidden md:flex items-center gap-8 text-[13px] font-medium text-text-secondary">
-            <a href="#features" className="hover:text-accent transition-colors">Features</a>
-            <a href="#pricing" className="hover:text-accent transition-colors">Pricing</a>
-            <Link to="/login" className="hover:text-accent transition-colors">Sign in</Link>
-            <Link to="/signup">
-              <AkaraButton size="sm">Start free →</AkaraButton>
-            </Link>
+          <div className="hidden md:flex items-center gap-8 text-[13px] font-medium text-white/80">
+            <a href="#features" className="hover:text-[#03B3C3] transition-colors">Features</a>
+            <a href="#pricing" className="hover:text-[#03B3C3] transition-colors">Pricing</a>
+            <Link to="/login" className="hover:text-white transition-colors">Sign in</Link>
+            <GlowCTALink to="/signup" size="sm">Start free →</GlowCTALink>
           </div>
-          <button className="md:hidden p-2 text-text-secondary" onClick={() => setNavOpen(true)} aria-label="Open menu">
+          <button
+            className="md:hidden p-2 text-white/80"
+            onClick={() => setNavOpen(true)}
+            aria-label="Open menu"
+          >
             <Menu className="w-5 h-5" />
           </button>
         </nav>
@@ -152,71 +215,105 @@ export function LandingPage() {
 
       {navOpen && (
         <div className="fixed inset-0 z-50">
-          <div className="absolute inset-0 bg-black/40" onClick={() => setNavOpen(false)} />
-          <div className="absolute right-0 top-0 h-full w-72 bg-surface-card shadow-card flex flex-col p-6 gap-6">
+          <div className="absolute inset-0 bg-black/60" onClick={() => setNavOpen(false)} />
+          <div className="absolute right-0 top-0 h-full w-72 bg-[#120F17] border-l border-white/10 shadow-2xl flex flex-col p-6 gap-6">
             <div className="flex justify-between items-center">
-              <span className="text-lg font-bold text-text-primary font-display">AKARA</span>
-              <button onClick={() => setNavOpen(false)} aria-label="Close"><X className="w-5 h-5 text-text-muted" /></button>
+              <span className="text-lg font-bold text-white font-display">AKARA</span>
+              <button onClick={() => setNavOpen(false)} aria-label="Close"><X className="w-5 h-5 text-white/60" /></button>
             </div>
-            <nav className="flex flex-col gap-4 text-sm font-medium text-text-secondary">
+            <nav className="flex flex-col gap-4 text-sm font-medium text-white/70">
               <a href="#features" onClick={() => setNavOpen(false)}>Features</a>
               <a href="#pricing" onClick={() => setNavOpen(false)}>Pricing</a>
               <Link to="/login" onClick={() => setNavOpen(false)}>Sign in</Link>
-              <Link to="/signup" onClick={() => setNavOpen(false)}>
-                <AkaraButton className="w-full">Start free →</AkaraButton>
-              </Link>
+              <GlowCTALink to="/signup" onClick={() => setNavOpen(false)} className="w-full">
+                Start free →
+              </GlowCTALink>
             </nav>
           </div>
         </div>
       )}
 
-      {/* Hero — light */}
-      <section ref={heroRef} className="pt-12 pb-20 sm:pt-16 sm:pb-28 px-5 sm:px-8 bg-surface-bg">
-        <div className="max-w-6xl mx-auto grid md:grid-cols-2 gap-12 items-center">
-          <div>
-            <p className="text-[13px] font-semibold tracking-widest uppercase mb-4 text-accent">
+      {/* Hero — Hyperspeed + DecryptedText */}
+      <section
+        ref={heroRef}
+        className="relative min-h-[min(92vh,880px)] overflow-hidden bg-black -mt-16 pt-16"
+      >
+        <HyperspeedBackground />
+        <HyperspeedHeroOverlay />
+
+        <div className="relative z-10 w-full max-w-7xl mx-auto px-5 sm:px-8 lg:px-10 pt-12 pb-20 sm:pt-16 sm:pb-28 grid md:grid-cols-[minmax(0,28rem)_1fr] gap-8 lg:gap-20 xl:gap-28 items-center min-h-[min(84vh,800px)]">
+          <div className="md:-ml-2 lg:-ml-8 xl:-ml-12">
+            <p className="text-[13px] font-semibold tracking-widest uppercase mb-4 text-[#03B3C3]">
               AI Analytics for FMCG Distributors
             </p>
-            <h1 className="text-4xl sm:text-5xl lg:text-[56px] font-extrabold leading-[1.08] tracking-tight text-text-primary mb-6">
-              Know your business
+            <h1 className="text-4xl sm:text-5xl lg:text-[56px] font-extrabold leading-[1.08] tracking-tight mb-6">
+              <DecryptedText
+                text="Know your business"
+                animateOn="view"
+                sequential
+                revealDirection="center"
+                speed={45}
+                maxIterations={12}
+                className="text-white"
+                encryptedClassName="text-white/30"
+                parentClassName="block"
+              />
               <br />
-              <span className="text-accent">in 30 seconds.</span>
+              <DecryptedText
+                text="in 30 seconds."
+                animateOn="view"
+                sequential
+                revealDirection="center"
+                speed={45}
+                maxIterations={12}
+                delayMs={900}
+                className="text-transparent bg-clip-text bg-gradient-to-r from-[#D856BF] via-[#03B3C3] to-[#0E5EA5]"
+                encryptedClassName="text-white/25"
+                parentClassName="block"
+              />
             </h1>
-            <p className="text-base sm:text-lg leading-relaxed mb-8 max-w-md text-text-secondary">
+            <p className="text-base sm:text-lg leading-relaxed mb-8 max-w-md text-white/75">
               Ask in Hindi or English. Get a weekly brief on WhatsApp. Free to start.
             </p>
             <div className="flex flex-col sm:flex-row gap-3 mb-8">
-              <Link to="/signup">
-                <AkaraButton size="lg">Start free — no credit card →</AkaraButton>
-              </Link>
-              <SecondaryButton size="lg" onClick={() => setDemoOpen(true)}>
+              <GlowCTALink to="/signup" size="lg">
+                Start free — no credit card →
+              </GlowCTALink>
+              <SecondaryButton
+                size="lg"
+                onClick={() => setDemoOpen(true)}
+                className="border-white/25 text-white hover:bg-white/10 hover:text-white"
+              >
                 See a 60-second demo
               </SecondaryButton>
             </div>
-            <p className="text-xs text-text-muted">
+            <p className="text-xs text-white/45">
               ₹18 Cr revenue analysed · 284 questions answered · 12 distributors
+            </p>
+            <p className="text-[11px] text-white/35 mt-3 hidden sm:block">
+              Hold click or touch the background to speed up
             </p>
           </div>
 
-          <div className="hidden md:flex justify-center">
-            <SurfaceCard padding="lg" className="w-72 space-y-3">
+          <div className="hidden md:flex justify-end md:pr-2 lg:pr-0">
+            <div className="w-72 space-y-3 rounded-2xl border border-white/10 bg-black/40 backdrop-blur-md p-5 shadow-2xl">
               <div className="flex items-center gap-2 mb-3">
-                <div className="w-2 h-2 rounded-full bg-emerald-500" />
-                <span className="text-[11px] font-medium text-text-muted">Monday brief · WhatsApp</span>
+                <div className="w-2 h-2 rounded-full bg-emerald-400" />
+                <span className="text-[11px] font-medium text-white/50">Monday brief · WhatsApp</span>
               </div>
-              <SurfaceCard padding="sm" accent="blue" className="text-xs leading-relaxed">
-                <p className="font-semibold text-accent mb-1.5">Weekly Summary</p>
+              <div className="rounded-xl border border-[#03B3C3]/30 bg-[#03B3C3]/10 p-3 text-xs leading-relaxed text-white/90">
+                <p className="font-semibold text-[#03B3C3] mb-1.5">Weekly Summary</p>
                 Revenue ↑ 8% vs last week<br />
                 Top SKU: Maggi 70g (₹3.2L)<br />
                 Watch: South zone −12%
-              </SurfaceCard>
-              <div className="rounded-lg border border-surface-border bg-surface-raised p-3 text-xs text-text-secondary">
+              </div>
+              <div className="rounded-lg border border-white/10 bg-white/5 p-3 text-xs text-white/70">
                 Outstanding: ₹2.4L across 7 parties
               </div>
-              <div className="rounded-lg border border-surface-border bg-surface-raised p-3 text-xs text-text-muted">
+              <div className="rounded-lg border border-white/10 bg-white/5 p-3 text-xs text-white/45">
                 Next brief: Monday, 8:00 AM
               </div>
-            </SurfaceCard>
+            </div>
           </div>
         </div>
       </section>
@@ -226,7 +323,7 @@ export function LandingPage() {
         className="w-[90vw] max-w-4xl rounded-2xl p-0 shadow-card backdrop:bg-black/70"
         onClose={() => setDemoOpen(false)}
       >
-        <div className="relative bg-band-dark rounded-2xl overflow-hidden">
+        <div className="relative bg-[#0a0a0f] rounded-2xl overflow-hidden">
           <button
             onClick={() => setDemoOpen(false)}
             className="absolute top-3 right-3 z-10 bg-white/10 hover:bg-white/20 text-white rounded-full p-1.5"
@@ -237,16 +334,16 @@ export function LandingPage() {
           {demoOpen && (
             <iframe src="https://www.loom.com/embed/demo?autoplay=1" className="w-full aspect-video" allow="autoplay" title="AKARA demo video" />
           )}
-          <div className="px-6 py-4 flex justify-center bg-band-dark border-t border-white/10">
-            <Link to="/signup" onClick={() => setDemoOpen(false)}>
-              <AkaraButton>Start free →</AkaraButton>
-            </Link>
+          <div className="px-6 py-4 flex justify-center bg-[#0a0a0f] border-t border-white/10">
+            <GlowCTALink to="/signup" onClick={() => setDemoOpen(false)}>
+              Start free →
+            </GlowCTALink>
           </div>
         </div>
       </dialog>
 
       {/* Social proof */}
-      <section className="py-14 bg-surface-card border-b border-surface-border">
+      <section className="py-14 border-b border-white/10 bg-[#0a0a0f]/50">
         <div className="max-w-4xl mx-auto px-5 grid grid-cols-3 gap-6 text-center">
           {[
             ["₹18 Cr+", "Revenue analysed"],
@@ -254,54 +351,61 @@ export function LandingPage() {
             ["12", "Active distributors"],
           ].map(([val, label]) => (
             <div key={label}>
-              <p className="text-2xl sm:text-3xl font-bold text-text-primary">{val}</p>
-              <p className="text-sm text-text-muted mt-1">{label}</p>
+              <p className="text-2xl sm:text-3xl font-bold text-white">{val}</p>
+              <p className="text-sm text-white/50 mt-1">{label}</p>
             </div>
           ))}
         </div>
       </section>
 
       {slotAVisible && (
-        <div className="bg-accent-soft border-b border-surface-border text-accent-hover py-2.5 px-4 flex items-center justify-between gap-4">
+        <div className="bg-[#03B3C3]/10 border-b border-[#03B3C3]/20 text-[#03B3C3] py-2.5 px-4 flex items-center justify-between gap-4">
           <p className="text-sm font-medium flex-1 text-center">
             🚀 Launching WhatsApp weekly briefs — get your data every Monday.{" "}
             <Link to="/signup" className="underline font-semibold">Be the first →</Link>
           </p>
-          <button onClick={dismissSlotA} className="text-accent/60 hover:text-accent" aria-label="Dismiss">
+          <button onClick={dismissSlotA} className="text-[#03B3C3]/60 hover:text-[#03B3C3]" aria-label="Dismiss">
             <X className="w-4 h-4" />
           </button>
         </div>
       )}
 
       {/* Pain cards */}
-      <section id="features" className="py-20 px-5 sm:px-8 bg-surface-bg">
+      <section id="features" className="py-20 px-5 sm:px-8">
         <div className="max-w-6xl mx-auto">
-          <h2 className="text-3xl sm:text-4xl font-bold text-text-primary text-center mb-3 tracking-tight">
+          <h2 className="text-3xl sm:text-4xl font-bold text-white text-center mb-3 tracking-tight">
             Sound familiar?
           </h2>
-          <p className="text-text-muted text-center mb-14 max-w-md mx-auto">
+          <p className="text-white/60 text-center mb-12 max-w-md mx-auto">
             These are the problems AKARA solves — today, without a 3-month implementation.
           </p>
-          <div className="grid sm:grid-cols-2 gap-4 max-w-3xl mx-auto">
-            {[
-              { title: "Excel overload", desc: "Hours copy-pasting Tally exports into 12 different Excel sheets every Monday." },
-              { title: "No quick answers", desc: "\"Which zone is underperforming?\" takes 2 hours. It should take 2 seconds." },
-              { title: "WhatsApp chaos", desc: "Updates buried in 200+ unread messages. No single source of truth." },
-              { title: "Scheme leakage", desc: "Trade schemes paid out but revenue not reflecting. You find out months later." },
-            ].map((card) => (
-              <SurfaceCard key={card.title} accent="blue" hover>
-                <h3 className="font-semibold text-text-primary mb-2">{card.title}</h3>
-                <p className="text-sm text-text-secondary leading-relaxed">{card.desc}</p>
-              </SurfaceCard>
-            ))}
+          <div className="grid sm:grid-cols-2 gap-6 max-w-4xl mx-auto">
+            {PAIN_CARDS.map((card) => {
+              const Icon = card.icon
+              return (
+                <GlowSurfaceCard key={card.title} accent="blue" hover>
+                  <div className="flex flex-col gap-3">
+                    <GlassIcon
+                      icon={<Icon className="h-6 w-6 text-white" />}
+                      color={card.color}
+                      label={card.label}
+                      size="md"
+                      decorative
+                    />
+                    <h3 className="font-semibold text-white mb-0">{card.title}</h3>
+                    <p className="text-sm text-white/70 leading-relaxed">{card.desc}</p>
+                  </div>
+                </GlowSurfaceCard>
+              )
+            })}
           </div>
         </div>
       </section>
 
       {/* Product demo */}
-      <section className="py-20 px-5 sm:px-8 bg-surface-card">
+      <section className="py-20 px-5 sm:px-8 bg-[#0a0a0f]/40 border-y border-white/5">
         <div className="max-w-4xl mx-auto">
-          <h2 className="text-3xl sm:text-4xl font-bold text-text-primary text-center mb-10 tracking-tight">
+          <h2 className="text-3xl sm:text-4xl font-bold text-white text-center mb-10 tracking-tight">
             See it in action
           </h2>
           <div className="flex gap-1.5 justify-center mb-8">
@@ -309,11 +413,12 @@ export function LandingPage() {
               <button
                 key={tab}
                 onClick={() => setDemoTab(tab)}
-                className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
+                className={cn(
+                  "px-4 py-2 rounded-full text-sm font-medium transition-colors",
                   demoTab === tab
-                    ? "bg-text-primary text-white"
-                    : "text-text-muted hover:text-text-primary hover:bg-surface-raised"
-                }`}
+                    ? "bg-white text-[#120F17]"
+                    : "text-white/50 hover:text-white hover:bg-white/10"
+                )}
               >
                 {tab === "ask" ? "Ask anything" : tab === "dashboard" ? "Dashboard" : "Weekly brief"}
               </button>
@@ -321,38 +426,45 @@ export function LandingPage() {
           </div>
 
           {demoTab === "ask" && (
-            <div className="bg-band-dark rounded-2xl p-6">
+            <div className="rounded-2xl border border-white/10 bg-[#120F17] p-6">
               <div className="rounded-xl p-4 mb-3 bg-white/5">
-                <p className="text-[11px] uppercase tracking-wide text-text-muted mb-1.5">You asked</p>
-                <p className="text-white font-medium">{typewriterText}<span className="animate-pulse text-accent">|</span></p>
+                <p className="text-[11px] uppercase tracking-wide text-white/40 mb-1.5">You asked</p>
+                <p className="text-white font-medium">{typewriterText}<span className="animate-pulse text-[#03B3C3]">|</span></p>
               </div>
               {aiResponse && (
-                <div className="rounded-xl p-4 bg-accent/15 border border-accent/20">
-                  <p className="text-[11px] uppercase tracking-wide mb-1.5 text-accent">AKARA</p>
+                <div className="rounded-xl p-4 bg-[#03B3C3]/15 border border-[#03B3C3]/20">
+                  <p className="text-[11px] uppercase tracking-wide mb-1.5 text-[#03B3C3]">AKARA</p>
                   <p className="text-white/90 leading-relaxed">{aiResponse}</p>
                 </div>
               )}
             </div>
           )}
           {demoTab === "dashboard" && (
-            <SurfaceCard className="p-10 text-center text-text-muted">
-              Dashboard preview — coming soon
-            </SurfaceCard>
+            <div className="rounded-2xl border border-white/10 bg-[#120F17] p-4 sm:p-6 overflow-hidden min-h-[420px]">
+              {dashboardMounted && (
+                <Suspense fallback={<div className="h-[400px] animate-pulse bg-white/5 rounded-xl" />}>
+                  <DashboardPreviewBento />
+                </Suspense>
+              )}
+              <p className="text-center text-xs text-white/40 mt-4">
+                Interactive preview — hover tiles to explore
+              </p>
+            </div>
           )}
           {demoTab === "brief" && (
             <div className="flex justify-center">
-              <SurfaceCard className="w-48 h-80 flex items-center justify-center text-text-muted text-sm p-4 text-center">
+              <GlowSurfaceCard className="w-48 h-80 flex items-center justify-center text-white/50 text-sm p-4 text-center">
                 WhatsApp brief preview
-              </SurfaceCard>
+              </GlowSurfaceCard>
             </div>
           )}
         </div>
       </section>
 
       {/* How it works */}
-      <section className="py-20 px-5 sm:px-8 bg-surface-raised/50">
+      <section className="py-20 px-5 sm:px-8">
         <div className="max-w-5xl mx-auto">
-          <h2 className="text-3xl sm:text-4xl font-bold text-text-primary text-center mb-14 tracking-tight">
+          <h2 className="text-3xl sm:text-4xl font-bold text-white text-center mb-14 tracking-tight">
             How it works
           </h2>
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -363,11 +475,11 @@ export function LandingPage() {
               { n: "4", title: "Get weekly brief", desc: "Every Monday on WhatsApp — key metrics, no login." },
             ].map((step) => (
               <div key={step.n} className="text-center">
-                <div className="w-10 h-10 rounded-full bg-accent text-white text-sm font-bold flex items-center justify-center mx-auto mb-4">
+                <div className="w-10 h-10 rounded-full bg-[#03B3C3] text-[#120F17] text-sm font-bold flex items-center justify-center mx-auto mb-4">
                   {step.n}
                 </div>
-                <h3 className="font-semibold text-text-primary mb-2">{step.title}</h3>
-                <p className="text-sm text-text-secondary leading-relaxed">{step.desc}</p>
+                <h3 className="font-semibold text-white mb-2">{step.title}</h3>
+                <p className="text-sm text-white/60 leading-relaxed">{step.desc}</p>
               </div>
             ))}
           </div>
@@ -375,77 +487,92 @@ export function LandingPage() {
       </section>
 
       {/* Pricing */}
-      <section ref={pricingRef} id="pricing" className="py-20 px-5 sm:px-8 bg-surface-card">
+      <section ref={pricingRef} id="pricing" className="py-20 px-5 sm:px-8 bg-[#0a0a0f]/40">
         <div className="max-w-5xl mx-auto">
-          <h2 className="text-3xl sm:text-4xl font-bold text-text-primary text-center mb-3 tracking-tight">
+          <h2 className="text-3xl sm:text-4xl font-bold text-white text-center mb-3 tracking-tight">
             Simple, honest pricing
           </h2>
-          <p className="text-text-muted text-center mb-14">Start free. Upgrade when you&apos;re ready.</p>
+          <p className="text-white/60 text-center mb-10">Start free. Upgrade when you&apos;re ready.</p>
 
-          <div className="grid md:grid-cols-3 gap-5 mb-12">
-            {PLANS.map((plan) => (
-              <PlanCard
-                key={plan.name}
-                name={plan.name}
-                price={plan.price}
-                period={plan.period}
-                features={plan.features}
-                popular={plan.popular}
-                cta={
-                  plan.popular ? (
-                    <Link to={plan.ctaLink}>
-                      <AkaraButton className="w-full" size="sm">{plan.cta}</AkaraButton>
-                    </Link>
-                  ) : (
-                    <Link to={plan.ctaLink}>
-                      <SecondaryButton className="w-full" size="sm">{plan.cta}</SecondaryButton>
-                    </Link>
-                  )
-                }
-              />
-            ))}
+          <div className="relative mb-12 min-h-[620px]">
+            <PrismLazy
+              className="absolute inset-0 opacity-50 pointer-events-none rounded-2xl"
+              animationType="rotate"
+              timeScale={0.35}
+              glow={0.85}
+              noise={0.35}
+              scale={2.8}
+              hueShift={0.5}
+              suspendWhenOffscreen
+            />
+            <div className="relative z-10 grid md:grid-cols-3 gap-6 items-start">
+              {PLANS.map((plan) => {
+                const meta = PLAN_REFLECTIVE_META[plan.name]
+                return (
+                  <BorderGlow
+                    key={plan.name}
+                    {...BORDER_GLOW_DEFAULTS}
+                    borderRadius={20}
+                    glowRadius={28}
+                    animated={plan.popular}
+                    className="h-full overflow-visible"
+                  >
+                    <div className="p-2">
+                      <PlanReflectiveCard
+                        plan={{
+                          ...plan,
+                          badgeText: meta.badgeText,
+                          planId: meta.planId,
+                          ctaLink: meta.ctaLink,
+                        }}
+                      />
+                    </div>
+                  </BorderGlow>
+                )
+              })}
+            </div>
           </div>
 
-          <SurfaceCard accent="blue" className="text-center">
-            <p className="font-bold text-lg text-text-primary mb-1">
+          <GlowSurfaceCard accent="blue" className="text-center">
+            <p className="font-bold text-lg text-white mb-1">
               Founders deal: First 50 customers get Business tier at Pro price — forever
             </p>
-            <p className="text-text-muted text-sm mb-4">43 / 50 spots taken</p>
-            <Link to="/signup?plan=business&deal=founders">
-              <AkaraButton>Claim your spot →</AkaraButton>
-            </Link>
-          </SurfaceCard>
+            <p className="text-white/50 text-sm mb-4">43 / 50 spots taken</p>
+            <GlowCTALink to="/signup?plan=business&deal=founders">
+              Claim your spot →
+            </GlowCTALink>
+          </GlowSurfaceCard>
         </div>
       </section>
 
       {/* FAQ */}
-      <section className="py-20 px-5 sm:px-8 bg-surface-raised/50">
+      <section className="py-20 px-5 sm:px-8">
         <div className="max-w-2xl mx-auto">
-          <h2 className="text-3xl sm:text-4xl font-bold text-text-primary text-center mb-12 tracking-tight">
+          <h2 className="text-3xl sm:text-4xl font-bold text-white text-center mb-12 tracking-tight">
             Frequently asked questions
           </h2>
           <div className="space-y-2">
             {FAQS.map((faq, i) => (
-              <SurfaceCard key={i} padding="none" className="overflow-hidden">
+              <GlowSurfaceCard key={i} padding="none" className="overflow-hidden">
                 <button
-                  className="w-full flex items-center justify-between px-5 py-4 text-left font-medium text-text-primary hover:bg-surface-raised/50 transition-colors"
+                  className="w-full flex items-center justify-between px-5 py-4 text-left font-medium text-white hover:bg-white/5 transition-colors"
                   onClick={() => setOpenFaq(openFaq === i ? null : i)}
                   aria-expanded={openFaq === i}
                 >
                   <span>{faq.q}</span>
-                  <ChevronDown className={`w-4 h-4 text-text-muted flex-shrink-0 ml-4 transition-transform ${openFaq === i ? "rotate-180" : ""}`} />
+                  <ChevronDown className={cn("w-4 h-4 text-white/50 flex-shrink-0 ml-4 transition-transform", openFaq === i && "rotate-180")} />
                 </button>
                 {openFaq === i && (
-                  <div className="px-5 pb-4 text-sm text-text-secondary leading-relaxed">{faq.a}</div>
+                  <div className="px-5 pb-4 text-sm text-white/70 leading-relaxed">{faq.a}</div>
                 )}
-              </SurfaceCard>
+              </GlowSurfaceCard>
             ))}
           </div>
         </div>
       </section>
 
-      {/* Dark footer band */}
-      <footer className="bg-band-dark text-text-inverse py-16 px-5 sm:px-8">
+      {/* Footer */}
+      <footer className="bg-[#0a0a0f] text-white py-16 px-5 sm:px-8 border-t border-white/10">
         <div className="max-w-6xl mx-auto">
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-10 mb-12">
             <div>
@@ -493,9 +620,9 @@ export function LandingPage() {
                     onChange={(e) => setCaptureEmail(e.target.value)}
                     className="bg-white/5 border-white/10 text-white placeholder:text-white/40"
                   />
-                  <AkaraButton type="submit" loading={captureStatus === "loading"} size="sm" className="w-full">
+                  <GlowCTAButton type="submit" loading={captureStatus === "loading"} size="sm" className="w-full">
                     Get updates →
-                  </AkaraButton>
+                  </GlowCTAButton>
                 </form>
               )}
             </div>
@@ -509,10 +636,10 @@ export function LandingPage() {
       </footer>
 
       {showStickyBar && (
-        <div className="fixed bottom-0 left-0 right-0 z-40 bg-surface-card/95 backdrop-blur border-t border-surface-border px-4 py-3 md:hidden">
-          <Link to="/signup" className="block">
-            <AkaraButton className="w-full">Start free →</AkaraButton>
-          </Link>
+        <div className="fixed bottom-0 left-0 right-0 z-40 bg-[#120F17]/95 backdrop-blur border-t border-white/10 px-4 py-3 md:hidden">
+          <GlowCTALink to="/signup" className="block w-full">
+            Start free →
+          </GlowCTALink>
         </div>
       )}
     </div>

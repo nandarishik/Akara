@@ -8,7 +8,7 @@ import { Link } from "react-router-dom";
 import { useBilling } from "@/hooks/useBilling";
 import type { UsageResponse } from "@/lib/api/billing";
 import { AkaraButton } from "@/components/ui/GradientButton";
-import SurfaceCard from "@/components/ui/SurfaceCard";
+import GlowSurfaceCard from "@/components/ui/GlowSurfaceCard";
 import { cn } from "@/lib/utils";
 
 type FeatureKey = keyof UsageResponse["features"];
@@ -63,7 +63,7 @@ export function PlanGate({
         {children}
       </div>
       <div className="absolute inset-0 flex items-center justify-center p-6">
-        <SurfaceCard className="max-w-md w-full text-center shadow-card-hover">
+        <GlowSurfaceCard className="max-w-md w-full text-center shadow-card-hover">
           <Lock className="h-10 w-10 text-text-muted mx-auto mb-4" aria-hidden />
           <h3 className="text-h2">{displayTitle}</h3>
           <p className="mt-2 text-body text-sm">{displayDesc}</p>
@@ -71,7 +71,7 @@ export function PlanGate({
           <Link to="/upgrade" className="inline-block mt-6">
             <AkaraButton>Upgrade to {PLAN_LABELS[requiredPlan]} →</AkaraButton>
           </Link>
-        </SurfaceCard>
+        </GlowSurfaceCard>
       </div>
     </div>
   );

@@ -1,5 +1,5 @@
 import { Component, type ReactNode } from "react";
-import SurfaceCard from "@/components/ui/SurfaceCard";
+import GlowSurfaceCard from "@/components/ui/GlowSurfaceCard";
 import { AkaraButton } from "@/components/ui/GradientButton";
 
 interface Props {
@@ -29,7 +29,7 @@ export class ErrorBoundary extends Component<Props, State> {
     if (this.state.hasError) {
       return (
         <div className="flex flex-col items-center justify-center h-full min-h-[400px] p-8 bg-surface-canvas">
-          <SurfaceCard className="max-w-md w-full text-center">
+          <GlowSurfaceCard className="max-w-md w-full text-center">
             <p className="text-4xl mb-4" aria-hidden>
               ⚠️
             </p>
@@ -40,7 +40,7 @@ export class ErrorBoundary extends Component<Props, State> {
             <AkaraButton className="mt-6" onClick={() => window.location.reload()}>
               Reload page
             </AkaraButton>
-          </SurfaceCard>
+          </GlowSurfaceCard>
         </div>
       );
     }

@@ -4,7 +4,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import SurfaceCard from "@/components/ui/SurfaceCard";
+import GlowSurfaceCard from "@/components/ui/GlowSurfaceCard";
 import {
   Table,
   TableBody,
@@ -92,7 +92,7 @@ export function UsersPage() {
         <p className="text-caption mt-1">Cross-tenant user management (superadmin)</p>
       </div>
 
-      <SurfaceCard className="grid gap-4 md:grid-cols-3">
+      <GlowSurfaceCard className="grid gap-4 md:grid-cols-3">
         <div>
           <Label className="text-xs text-text-muted">Filter by tenant</Label>
           <Select value={tenantFilter || "all"} onValueChange={(v) => setTenantFilter(v === "all" ? "" : v)}>
@@ -115,7 +115,7 @@ export function UsersPage() {
           <Label className="text-xs text-text-muted">Audit reason (min 10 chars)</Label>
           <Input className="mt-1" value={reason} onChange={(e) => setReason(e.target.value)} />
         </div>
-      </SurfaceCard>
+      </GlowSurfaceCard>
 
       {error && (
         <p className="text-sm text-red-600">{error instanceof Error ? error.message : "Failed to load users"}</p>
@@ -128,11 +128,11 @@ export function UsersPage() {
           ))}
         </div>
       ) : users.length === 0 ? (
-        <SurfaceCard className="text-center py-16">
+        <GlowSurfaceCard className="text-center py-16">
           <p className="font-medium text-text-primary">No users found</p>
-        </SurfaceCard>
+        </GlowSurfaceCard>
       ) : (
-        <SurfaceCard padding="none" className="overflow-hidden">
+        <GlowSurfaceCard padding="none" className="overflow-hidden">
           <Table>
             <TableHeader>
               <TableRow>
@@ -179,7 +179,7 @@ export function UsersPage() {
               ))}
             </TableBody>
           </Table>
-        </SurfaceCard>
+        </GlowSurfaceCard>
       )}
     </div>
   );

@@ -15,7 +15,7 @@ import {
 } from "lucide-react";
 import { apiFetch } from "@/lib/api";
 import { useBilling } from "@/hooks/useBilling";
-import SurfaceCard from "@/components/ui/SurfaceCard";
+import GlowSurfaceCard from "@/components/ui/GlowSurfaceCard";
 import { AkaraButton, SecondaryButton } from "@/components/ui/GradientButton";
 import { SimulatorPlanGate } from "@/components/billing/PlanGate";
 import AnimatedNumber from "@/components/ui/AnimatedNumber";
@@ -108,7 +108,7 @@ function ScenarioSlider({
   }, [value]);
 
   return (
-    <SurfaceCard 
+    <GlowSurfaceCard 
       hover={false}
       padding="sm"
       className="animate-fadeInUp"
@@ -142,7 +142,7 @@ function ScenarioSlider({
         <span>{formatLabel(min)}</span>
         <span>{formatLabel(max)}</span>
       </div>
-    </SurfaceCard>
+    </GlowSurfaceCard>
   );
 }
 
@@ -231,7 +231,7 @@ export function SimulatorPage() {
         </div>
 
         {!baselineLoading && baseline && lowConfidence && (
-          <SurfaceCard padding="sm" className="border-amber-200 bg-amber-50">
+          <GlowSurfaceCard padding="sm" className="border-amber-200 bg-amber-50">
             <div className="flex items-start gap-3">
               <AlertCircle className="h-5 w-5 text-amber-500 mt-0.5 shrink-0" />
               <div>
@@ -242,11 +242,11 @@ export function SimulatorPage() {
                 </p>
               </div>
             </div>
-          </SurfaceCard>
+          </GlowSurfaceCard>
         )}
 
         {!baselineLoading && baseline && !canRun && (
-          <SurfaceCard padding="sm" className="border-amber-200 bg-amber-50">
+          <GlowSurfaceCard padding="sm" className="border-amber-200 bg-amber-50">
             <div className="flex items-start gap-3">
               <AlertCircle className="h-5 w-5 text-amber-500 mt-0.5 shrink-0" />
               <div>
@@ -257,11 +257,11 @@ export function SimulatorPage() {
                 </p>
               </div>
             </div>
-          </SurfaceCard>
+          </GlowSurfaceCard>
         )}
 
         {baselineError && (
-          <SurfaceCard padding="sm" className="border-red-200 bg-red-50">
+          <GlowSurfaceCard padding="sm" className="border-red-200 bg-red-50">
             <div className="flex items-start gap-3">
               <AlertCircle className="h-5 w-5 text-red-500 mt-0.5 shrink-0" />
               <div>
@@ -269,7 +269,7 @@ export function SimulatorPage() {
                 <p className="text-red-600 text-sm mt-1">Please refresh and try again.</p>
               </div>
             </div>
-          </SurfaceCard>
+          </GlowSurfaceCard>
         )}
 
         {baseline ? (
@@ -300,7 +300,7 @@ export function SimulatorPage() {
                 icon: <Sparkles className="h-4 w-4" />,
               },
             ].map(({ label, value, sub, icon }, i) => (
-              <SurfaceCard 
+              <GlowSurfaceCard 
                 key={label}
                 hover={false}
                 padding="sm"
@@ -315,7 +315,7 @@ export function SimulatorPage() {
                   <AnimatedNumber value={value} />
                 </div>
                 <p className="text-xs text-caption">{sub}</p>
-              </SurfaceCard>
+              </GlowSurfaceCard>
             ))}
           </div>
         ) : baselineLoading ? (
@@ -327,7 +327,7 @@ export function SimulatorPage() {
         ) : null}
 
         <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-          <SurfaceCard padding="md">
+          <GlowSurfaceCard padding="md">
             <div className="flex items-center gap-3 mb-6">
               <Zap className="h-5 w-5 text-accent" />
               <h2 className="text-h2">Scenario Builder</h2>
@@ -383,7 +383,7 @@ export function SimulatorPage() {
               )}
 
               {discountChange !== 0 && (
-                <SurfaceCard hover={false} padding="sm" className="border-accent/20 bg-accent-soft">
+                <GlowSurfaceCard hover={false} padding="sm" className="border-accent/20 bg-accent-soft">
                   <div className="flex items-start gap-2">
                     <Info className="h-4 w-4 text-accent mt-0.5 shrink-0" />
                     <p className="text-xs text-body">
@@ -392,7 +392,7 @@ export function SimulatorPage() {
                       = ~{(discountChange * -0.3).toFixed(1)}% revenue impact.
                     </p>
                   </div>
-                </SurfaceCard>
+                </GlowSurfaceCard>
               )}
 
               <AkaraButton
@@ -423,16 +423,16 @@ export function SimulatorPage() {
               )}
 
               {runError && (
-                <SurfaceCard padding="sm" className="border-red-200 bg-red-50">
+                <GlowSurfaceCard padding="sm" className="border-red-200 bg-red-50">
                   <p className="text-xs text-red-700 text-center font-medium">
                     {parseApiError(runError)}
                   </p>
-                </SurfaceCard>
+                </GlowSurfaceCard>
               )}
             </div>
-          </SurfaceCard>
+          </GlowSurfaceCard>
 
-          <SurfaceCard padding="md">
+          <GlowSurfaceCard padding="md">
             <div className="flex items-center gap-3 mb-6">
               <BarChart3 className="h-5 w-5 text-accent" />
               <h2 className="text-h2">Live Projection</h2>
@@ -502,9 +502,9 @@ export function SimulatorPage() {
                 </div>
               )}
             </div>
-          </SurfaceCard>
+          </GlowSurfaceCard>
 
-          <SurfaceCard padding="md">
+          <GlowSurfaceCard padding="md">
             <div className="flex items-center gap-3 mb-6">
               <Target className="h-5 w-5 text-accent" />
               <h2 className="text-h2">Impact Analysis</h2>
@@ -540,14 +540,14 @@ export function SimulatorPage() {
                   ))}
                 </div>
 
-                <SurfaceCard hover={false} padding="sm" className="border-accent/20 bg-accent-soft">
+                <GlowSurfaceCard hover={false} padding="sm" className="border-accent/20 bg-accent-soft">
                   <div className="text-center">
                     <p className="text-caption text-xs mb-1">95% Confidence Range</p>
                     <div className="text-text-primary font-medium text-sm">
                       {formatINR(result.confidence_interval_lower)} – {formatINR(result.confidence_interval_upper)}
                     </div>
                   </div>
-                </SurfaceCard>
+                </GlowSurfaceCard>
 
                 <div>
                   <p className="text-caption text-xs mb-2 uppercase tracking-wide">Risk Assessment</p>
@@ -576,7 +576,7 @@ export function SimulatorPage() {
                 </p>
               </div>
             )}
-          </SurfaceCard>
+          </GlowSurfaceCard>
         </div>
       </div>
     </SimulatorPlanGate>

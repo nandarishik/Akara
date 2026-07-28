@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { CheckCircle, Loader2 } from "lucide-react";
 
-import SurfaceCard from "@/components/ui/SurfaceCard";
+import GlowSurfaceCard from "@/components/ui/GlowSurfaceCard";
 import AkaraButton from "@/components/ui/GradientButton";
 import { useBilling } from "@/hooks/useBilling";
 import {
@@ -179,7 +179,7 @@ export function BillingPage() {
           </div>
         )}
 
-        <SurfaceCard className="space-y-4">
+        <GlowSurfaceCard className="space-y-4">
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div>
               <div className="flex items-center gap-2">
@@ -245,9 +245,9 @@ export function BillingPage() {
               Subscription cancelled — access continues until your grace period ends.
             </p>
           )}
-        </SurfaceCard>
+        </GlowSurfaceCard>
 
-        <SurfaceCard className="space-y-4">
+        <GlowSurfaceCard className="space-y-4">
           <h2 className="text-sm font-semibold text-text-secondary uppercase tracking-wide">
             Usage this month
           </h2>
@@ -273,9 +273,9 @@ export function BillingPage() {
               Undos today: {usage.undos_today}/{usage.undos_per_day}
             </span>
           </div>
-        </SurfaceCard>
+        </GlowSurfaceCard>
 
-        <SurfaceCard>
+        <GlowSurfaceCard>
           <h2 className="text-sm font-semibold text-text-secondary uppercase tracking-wide mb-4">
             GST billing details
           </h2>
@@ -318,10 +318,10 @@ export function BillingPage() {
               {saving ? "Saving…" : saved ? "Saved ✓" : "Save GST details"}
             </AkaraButton>
           </form>
-        </SurfaceCard>
+        </GlowSurfaceCard>
 
         {invoices.length > 0 && (
-          <SurfaceCard>
+          <GlowSurfaceCard>
             <h2 className="text-sm font-semibold text-text-secondary uppercase tracking-wide mb-4">
               Invoice history
             </h2>
@@ -347,7 +347,7 @@ export function BillingPage() {
                 </div>
               ))}
             </div>
-          </SurfaceCard>
+          </GlowSurfaceCard>
         )}
       </div>
     </div>

@@ -1,0 +1,38 @@
+.dark-mesh-bg {
+  position: absolute;
+  inset: 0;
+  background-color: #120f17;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.dark-mesh-bg__gradients {
+  position: absolute;
+  inset: 0;
+  opacity: 0.55;
+}
+
+.dark-mesh-bg__gradients::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(at 80% 55%, #c084fc 0px, transparent 50%),
+    radial-gradient(at 69% 34%, #f472b6 0px, transparent 50%),
+    radial-gradient(at 8% 6%, #38bdf8 0px, transparent 50%),
+    radial-gradient(at 41% 38%, #c084fc 0px, transparent 50%),
+    radial-gradient(at 86% 85%, #f472b6 0px, transparent 50%),
+    radial-gradient(at 82% 18%, #38bdf8 0px, transparent 50%),
+    radial-gradient(at 51% 4%, #f472b6 0px, transparent 50%);
+}
+
+.dark-mesh-bg__vignette {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to bottom,
+    rgba(0, 0, 0, 0.15) 0%,
+    rgba(0, 0, 0, 0.35) 55%,
+    rgba(18, 15, 23, 0.95) 100%
+  );
+}

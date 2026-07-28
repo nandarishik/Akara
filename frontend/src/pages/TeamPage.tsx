@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Loader2, Users } from "lucide-react";
 
 import { apiFetch } from "@/lib/api";
-import SurfaceCard from "@/components/ui/SurfaceCard";
+import GlowSurfaceCard from "@/components/ui/GlowSurfaceCard";
 import { AkaraButton } from "@/components/ui/GradientButton";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -145,7 +145,7 @@ export function TeamPage({ embedded = false }: TeamPageProps) {
         </div>
       ) : (
         <>
-          <SurfaceCard className="space-y-4">
+          <GlowSurfaceCard className="space-y-4">
             <div className="flex justify-between items-center">
               <h2 className="font-semibold">Invite teammate</h2>
               {seatLimit < activeMembers.length && (
@@ -174,9 +174,9 @@ export function TeamPage({ embedded = false }: TeamPageProps) {
               <p className="text-xs text-amber-700">Seat limit reached — cancel a pending invite or upgrade.</p>
             )}
             {error && <p className="text-sm text-red-600">{error}</p>}
-          </SurfaceCard>
+          </GlowSurfaceCard>
 
-          <SurfaceCard>
+          <GlowSurfaceCard>
             <h2 className="font-semibold mb-3">Members</h2>
             <ul className="divide-y divide-surface-border">
               {members.map((m) => (
@@ -208,10 +208,10 @@ export function TeamPage({ embedded = false }: TeamPageProps) {
                 </li>
               ))}
             </ul>
-          </SurfaceCard>
+          </GlowSurfaceCard>
 
           {invites.length > 0 && (
-            <SurfaceCard>
+            <GlowSurfaceCard>
               <h2 className="font-semibold mb-3">Pending invites</h2>
               <ul className="space-y-2">
                 {invites.map((inv) => (
@@ -232,14 +232,14 @@ export function TeamPage({ embedded = false }: TeamPageProps) {
                   </li>
                 ))}
               </ul>
-            </SurfaceCard>
+            </GlowSurfaceCard>
           )}
         </>
       )}
 
       {showDowngradeModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-          <SurfaceCard className="max-w-md w-full space-y-4">
+          <GlowSurfaceCard className="max-w-md w-full space-y-4">
             <h3 className="font-semibold">Choose members to keep active</h3>
             <p className="text-sm text-text-secondary">
               Your plan allows {seatLimit} seat{seatLimit === 1 ? "" : "s"}. Select who stays active.
@@ -269,7 +269,7 @@ export function TeamPage({ embedded = false }: TeamPageProps) {
                 Confirm
               </AkaraButton>
             </div>
-          </SurfaceCard>
+          </GlowSurfaceCard>
         </div>
       )}
     </>

@@ -17,7 +17,7 @@ import { useQueryClient } from "@tanstack/react-query";
 
 import { useAuth } from "@/contexts/AuthContext";
 import { isAdmin } from "@/lib/auth-utils";
-import SurfaceCard from "@/components/ui/SurfaceCard";
+import GlowSurfaceCard from "@/components/ui/GlowSurfaceCard";
 import { AkaraButton, SecondaryButton } from "@/components/ui/GradientButton";
 import { TableSkeleton } from "@/components/ui/ShimmerSkeleton";
 import { NoDataEmptyState } from "@/components/ui/EmptyState";
@@ -381,7 +381,7 @@ export function DataPage() {
         </div>
 
         {/* Upload area — single panel */}
-        <SurfaceCard padding="lg" hover={false} className="shadow-card">
+        <GlowSurfaceCard padding="lg" hover={false} className="shadow-card">
           {activeLocked ? (
             <div className="text-center py-12 px-4">
               <div className="mx-auto w-14 h-14 rounded-2xl bg-accent-soft flex items-center justify-center mb-4">
@@ -408,10 +408,10 @@ export function DataPage() {
               onComplete={() => void refetchBilling()}
             />
           )}
-        </SurfaceCard>
+        </GlowSurfaceCard>
 
         {/* Import history */}
-        <SurfaceCard padding="md" hover={false}>
+        <GlowSurfaceCard padding="md" hover={false}>
           <div className="flex items-center justify-between mb-5">
             <div className="flex items-center gap-2">
               <Clock className="h-5 w-5 text-accent" />
@@ -479,7 +479,7 @@ export function DataPage() {
               ))}
             </ul>
           )}
-        </SurfaceCard>
+        </GlowSurfaceCard>
       </div>
     </div>
   );

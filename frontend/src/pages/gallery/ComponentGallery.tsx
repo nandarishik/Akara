@@ -1,16 +1,28 @@
 import { useState } from "react";
-import { BarChart3 } from "lucide-react";
+import { BarChart3, MessageSquare, Bell } from "lucide-react";
 
 import { UsageBanner, PastDueBanner, TrialWarning } from "@/components/billing";
 import { PlanGate } from "@/components/billing/PlanGate";
 import { AkaraButton, SecondaryButton, GhostButton } from "@/components/ui/GradientButton";
-import SurfaceCard from "@/components/ui/SurfaceCard";
+import GlowSurfaceCard from "@/components/ui/GlowSurfaceCard";
 import GlowKPICard, { KPIGrid } from "@/components/ui/GlowKPICard";
 import EmptyState from "@/components/ui/EmptyState";
 import { PageSkeleton } from "@/components/ui/ShimmerSkeleton";
 import { Button } from "@/components/ui/button";
 import { Badge, PlanBadge } from "@/components/ui/badge";
 import { KPICard, PlanCard } from "@/components/ui/card";
+import GlassIcons from "@/components/effects/GlassIcons";
+import { GlassIcon } from "@/components/effects/GlassIcon";
+import BorderGlow from "@/components/effects/BorderGlow";
+import DarkMeshBackground from "@/components/effects/DarkMeshBackground";
+import DecryptedText from "@/components/effects/DecryptedText";
+import SpecularButton from "@/components/effects/SpecularButton";
+import GlowCTAButton from "@/components/ui/GlowCTAButton";
+import ReflectiveCard from "@/components/effects/ReflectiveCard";
+import PlanReflectiveCard, { PLAN_REFLECTIVE_META } from "@/components/effects/PlanReflectiveCard";
+import DashboardPreviewBento from "@/components/landing/DashboardPreviewBento";
+import PrismLazy from "@/components/effects/PrismLazy";
+import { BORDER_GLOW_DEFAULTS } from "@/components/effects/presets";
 import type { UsageResponse } from "@/lib/api/billing";
 
 const DEMO_USAGE: UsageResponse = {
@@ -85,16 +97,96 @@ export default function ComponentGallery() {
         </section>
 
         <section className="space-y-4">
-          <h2 className="text-h2">SurfaceCard</h2>
+          <h2 className="text-h2">GlassIcons + BorderGlow (React Bits)</h2>
+          <GlassIcons
+            className="icon-btns--compact max-w-2xl"
+            columns={3}
+            items={[
+              { icon: <BarChart3 className="h-6 w-6 text-white" />, color: "blue", label: "Dashboard" },
+              { icon: <MessageSquare className="h-6 w-6 text-white" />, color: "purple", label: "Copilot" },
+              { icon: <Bell className="h-6 w-6 text-white" />, color: "red", label: "Alerts" },
+            ]}
+          />
+          <div className="flex flex-wrap gap-6 items-end">
+            <GlassIcon size="sm" color="blue" icon={<BarChart3 className="h-3.5 w-3.5" />} label="Small nav" />
+            <GlassIcon size="md" color="green" icon={<BarChart3 className="h-4 w-4" />} label="KPI md" />
+            <GlassIcon size="lg" color="purple" icon={<BarChart3 className="h-6 w-6" />} label="Empty lg" />
+          </div>
+          <BorderGlow {...BORDER_GLOW_DEFAULTS} borderRadius={16} className="max-w-md">
+            <div className="p-6 text-white/90">
+              <p className="font-semibold">BorderGlow card</p>
+              <p className="text-sm text-white/60 mt-1">Hover near edges for mesh glow (spec defaults).</p>
+            </div>
+          </BorderGlow>
+        </section>
+
+        <section className="space-y-4">
+          <h2 className="text-h2">Landing effects (React Bits)</h2>
+          <div className="relative h-48 rounded-xl overflow-hidden border border-surface-border">
+            <DarkMeshBackground />
+            <div className="relative z-10 p-6 text-white">
+              <DecryptedText
+                text="Know your business"
+                animateOn="view"
+                sequential
+                revealDirection="center"
+                className="text-white font-bold text-xl"
+                encryptedClassName="text-white/30"
+              />
+            </div>
+          </div>
+          <div className="flex flex-wrap gap-3 items-center">
+            <GlowCTAButton size="sm">Glow CTA</GlowCTAButton>
+            <SpecularButton size="md" onClick={() => undefined}>Specular only</SpecularButton>
+          </div>
+          <div className="relative min-h-[420px] flex items-center justify-center rounded-xl border border-surface-border overflow-hidden bg-[#120F17]">
+            <PrismLazy
+              className="absolute inset-0 opacity-40 pointer-events-none"
+              animationType="rotate"
+              timeScale={0.35}
+              suspendWhenOffscreen
+            />
+            <ReflectiveCard className="relative z-10" />
+          </div>
+          <div className="space-y-3">
+            <p className="text-body text-text-secondary">PlanReflectiveCard (pricing tier)</p>
+            <BorderGlow {...BORDER_GLOW_DEFAULTS} borderRadius={20} glowRadius={28} animated className="max-w-sm overflow-visible">
+              <div className="p-2">
+                <PlanReflectiveCard
+                  plan={{
+                    name: "Pro",
+                    price: "₹7,999",
+                    period: "/month",
+                    cta: "Upgrade to Pro →",
+                    popular: true,
+                    features: ["Unlimited copilot", "Morning brief", "Scheme leakage"],
+                    badgeText: PLAN_REFLECTIVE_META.Pro.badgeText,
+                    planId: PLAN_REFLECTIVE_META.Pro.planId,
+                    ctaLink: PLAN_REFLECTIVE_META.Pro.ctaLink,
+                  }}
+                />
+              </div>
+            </BorderGlow>
+          </div>
+          <div className="space-y-3">
+            <p className="text-body text-text-secondary">Dashboard preview (MagicBento)</p>
+            <div className="rounded-xl border border-surface-border bg-[#120F17] p-4 min-h-[420px] overflow-hidden">
+              <DashboardPreviewBento />
+            </div>
+          </div>
+        </section>
+
+        <section className="space-y-4">
+          <h2 className="text-h2">GlowSurfaceCard</h2>
           <div className="grid md:grid-cols-2 gap-4">
-            <SurfaceCard>
+            <GlowSurfaceCard>
               <p className="text-h2">Default card</p>
               <p className="text-body mt-2">White surface, soft border, shadow.</p>
-            </SurfaceCard>
-            <SurfaceCard accent="blue" hover>
+            </GlowSurfaceCard>
+            <GlowSurfaceCard accent="blue" hover>
               <p className="text-h2">Accent bar + hover</p>
               <p className="text-body mt-2">KPI-style left accent.</p>
-            </SurfaceCard>
+            </GlowSurfaceCard>
           </div>
         </section>
 
@@ -134,22 +226,22 @@ export default function ComponentGallery() {
         <section className="space-y-4">
           <h2 className="text-h2">PlanGate</h2>
           <PlanGate feature="simulator" requiredPlan="pro" title="Simulator">
-            <SurfaceCard className="h-32 flex items-center justify-center text-text-muted">
+            <GlowSurfaceCard className="h-32 flex items-center justify-center text-text-muted">
               Hidden feature content
-            </SurfaceCard>
+            </GlowSurfaceCard>
           </PlanGate>
         </section>
 
         <section className="space-y-4">
           <h2 className="text-h2">EmptyState</h2>
-          <SurfaceCard padding="none">
+          <GlowSurfaceCard padding="none">
             <EmptyState
               icon={<BarChart3 className="h-8 w-8" />}
               title="No data yet"
               description="Import your first file to get started."
               primaryAction={{ label: "Import data", href: "/data" }}
             />
-          </SurfaceCard>
+          </GlowSurfaceCard>
         </section>
 
         <section className="space-y-4">

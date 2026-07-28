@@ -18,7 +18,7 @@ import { useReports, useSchemeLeakage } from "@/hooks/useReports";
 import { useBilling } from "@/hooks/useBilling";
 import { useKPIs } from "@/hooks/useKPIs";
 import { supabase } from "@/lib/supabase";
-import SurfaceCard from "@/components/ui/SurfaceCard";
+import GlowSurfaceCard from "@/components/ui/GlowSurfaceCard";
 import { AkaraButton, SecondaryButton } from "@/components/ui/GradientButton";
 import { TableSkeleton, ChartSkeleton } from "@/components/ui/ShimmerSkeleton";
 import { NoDataEmptyState } from "@/components/ui/EmptyState";
@@ -142,7 +142,7 @@ export function ReportsPage() {
         </div>
       </div>
 
-      <SurfaceCard padding="md">
+      <GlowSurfaceCard padding="md">
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-3">
             <BarChart3 className="h-5 w-5 text-accent" />
@@ -214,7 +214,7 @@ export function ReportsPage() {
               </span>
             </h3>
             <div className="space-y-4">
-              <SurfaceCard hover={false} padding="sm" className="border-emerald-200 bg-emerald-50">
+              <GlowSurfaceCard hover={false} padding="sm" className="border-emerald-200 bg-emerald-50">
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-emerald-700 font-medium">Top Performer</p>
@@ -225,9 +225,9 @@ export function ReportsPage() {
                     <div className="text-xs text-emerald-600">growth</div>
                   </div>
                 </div>
-              </SurfaceCard>
+              </GlowSurfaceCard>
 
-              <SurfaceCard hover={false} padding="sm">
+              <GlowSurfaceCard hover={false} padding="sm">
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-text-primary font-medium">Total Routes</p>
@@ -240,9 +240,9 @@ export function ReportsPage() {
                     <div className="text-xs text-text-secondary">routes</div>
                   </div>
                 </div>
-              </SurfaceCard>
+              </GlowSurfaceCard>
 
-              <SurfaceCard hover={false} padding="sm">
+              <GlowSurfaceCard hover={false} padding="sm">
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-text-primary font-medium">Avg Efficiency</p>
@@ -258,9 +258,9 @@ export function ReportsPage() {
                     <div className="text-xs text-text-secondary">efficiency</div>
                   </div>
                 </div>
-              </SurfaceCard>
+              </GlowSurfaceCard>
 
-              <SurfaceCard hover={false} padding="sm">
+              <GlowSurfaceCard hover={false} padding="sm">
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-text-primary font-medium">Total Revenue</p>
@@ -273,14 +273,14 @@ export function ReportsPage() {
                     <div className="text-xs text-text-secondary">this month</div>
                   </div>
                 </div>
-              </SurfaceCard>
+              </GlowSurfaceCard>
             </div>
           </div>
         </div>
-      </SurfaceCard>
+      </GlowSurfaceCard>
 
       {showSlotJ && (
-        <SurfaceCard
+        <GlowSurfaceCard
           padding="md"
           className="border-violet-200 bg-gradient-to-r from-violet-50/80 to-amber-50/60 animate-fadeInUp"
         >
@@ -310,7 +310,7 @@ export function ReportsPage() {
               </button>
             </div>
           </div>
-        </SurfaceCard>
+        </GlowSurfaceCard>
       )}
 
       <PlanGate
@@ -321,7 +321,7 @@ export function ReportsPage() {
         priceHint="From ₹13,999/month"
       >
       {hasLeakage && (
-        <SurfaceCard padding="md" className="border-red-200 bg-red-50 relative overflow-hidden">
+        <GlowSurfaceCard padding="md" className="border-red-200 bg-red-50 relative overflow-hidden">
           <div className="relative">
             <div className="flex items-center justify-between mb-6">
               <div className="flex items-center gap-3">
@@ -348,7 +348,7 @@ export function ReportsPage() {
               <ChartSkeleton height="h-[200px]" />
             ) : (
               <div className="space-y-4">
-                <SurfaceCard hover={false} padding="sm" className="border-red-300 bg-red-100/50">
+                <GlowSurfaceCard hover={false} padding="sm" className="border-red-300 bg-red-100/50">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
                       <Shield className="h-5 w-5 text-red-600" />
@@ -361,7 +361,7 @@ export function ReportsPage() {
                       {formatINR(totalLeakage)}
                     </div>
                   </div>
-                </SurfaceCard>
+                </GlowSurfaceCard>
 
                 <div className="space-y-3">
                   {leakageRows?.slice(0, 5).map((row, i) => (
@@ -420,11 +420,11 @@ export function ReportsPage() {
               </div>
             )}
           </div>
-        </SurfaceCard>
+        </GlowSurfaceCard>
       )}
       </PlanGate>
 
-      <SurfaceCard padding="md">
+      <GlowSurfaceCard padding="md">
         <div className="flex items-center gap-3 mb-6">
           <FileSpreadsheet className="h-5 w-5 text-accent" />
           <h2 className="text-h2">Generated Reports</h2>
@@ -441,7 +441,7 @@ export function ReportsPage() {
         ) : (
           <div className="space-y-3">
             {reports.map((r, i) => (
-              <SurfaceCard
+              <GlowSurfaceCard
                 key={r.id}
                 hover
                 padding="sm"
@@ -486,13 +486,13 @@ export function ReportsPage() {
                     Download
                   </AkaraButton>
                 </div>
-              </SurfaceCard>
+              </GlowSurfaceCard>
             ))}
           </div>
         )}
-      </SurfaceCard>
+      </GlowSurfaceCard>
 
-      <SurfaceCard padding="md">
+      <GlowSurfaceCard padding="md">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
             <div className="w-10 h-10 rounded-lg flex items-center justify-center bg-accent text-white">
@@ -509,7 +509,7 @@ export function ReportsPage() {
             Upgrade Analytics
           </AkaraButton>
         </div>
-      </SurfaceCard>
+      </GlowSurfaceCard>
     </div>
   );
 }
