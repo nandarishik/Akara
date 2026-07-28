@@ -175,6 +175,10 @@ COLUMN_ALIASES: dict[str, str] = {
     "menu_item_name":               "product_name",
     "drug_name":                    "product_name",   # Marg pharma
     "medicine_name":                "product_name",
+    "part_desc":                    "product_name",   # Garage / workshop exports
+    "part_description":             "product_name",
+    "parts_description":            "product_name",
+    "item_desc":                    "product_name",
 
     # ── product_group ─────────────────────────────────────────────────────────
     "product_group":                "product_group",

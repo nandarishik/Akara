@@ -7,42 +7,14 @@ import { useAuth } from "@/contexts/AuthContext";
 import { isAdmin } from "@/lib/auth-utils";
 import SurfaceCard from "@/components/ui/SurfaceCard";
 import { AkaraButton } from "@/components/ui/GradientButton";
-import { Badge } from "@/components/ui/badge";
 import { useBilling } from "@/hooks/useBilling";
 import ShimmerSkeleton from "@/components/ui/ShimmerSkeleton";
 import { daysSinceIso } from "@/lib/dataFreshness";
-
-type DebriefItem = {
-  title: string;
-  detail: string;
-  impact_inr?: number;
-  hypothesis?: string;
-  urgency?: string;
-};
-
-type DebriefMetadata = {
-  headline: string;
-  week_start: string;
-  week_end: string;
-  limited_mode: boolean;
-  went_right: DebriefItem[];
-  went_wrong: DebriefItem[];
-  actions: DebriefItem[];
-  momentum: {
-    this_week_revenue_fmt: string;
-    wow_change_pct: number;
-    wow_direction: string;
-    projected_month_fmt: string;
-    trend_30d: string;
-    trend_60d: string;
-    trend_90d: string;
-    avg_30d_daily?: number;
-    avg_60d_daily?: number;
-    avg_90d_daily?: number;
-  };
-  days_of_data: number;
-  data_freshness?: string;
-};
+import { cn } from "@/lib/utils";
+import {
+  DebriefReportView,
+  type DebriefMetadata,
+} from "@/components/debrief/DebriefReportView";
 
 type DebriefDetail = {
   id: string;
@@ -59,12 +31,6 @@ type DebriefSummary = {
   headline: string;
   limited_mode: boolean;
 };
-
-function formatInr(n: number) {
-  if (n >= 100_000) return `₹${(n / 100_000).toFixed(1)}L`;
-  if (n >= 1_000) return `₹${(n / 1_000).toFixed(1)}K`;
-  return `₹${n.toLocaleString("en-IN")}`;
-}
 
 export function DebriefPage() {
   const navigate = useNavigate();
@@ -272,152 +238,76 @@ export function DebriefPage() {
   if (!meta) return null;
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8 max-w-4xl mx-auto space-y-6 bg-surface-canvas min-h-full">
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-text-primary flex items-center gap-2">
-            <BarChart3 className="h-6 w-6 text-accent" />
-            Weekly Debrief
-          </h1>
-          <p className="text-sm text-text-secondary mt-1">
-            {meta.week_start} – {meta.week_end}
-          </p>
-        </div>
-        <div className="flex gap-2">
-          {canAskCopilot && detail && (
-            <AkaraButton
-              variant="secondary"
-              size="sm"
-              onClick={() =>
-                navigate("/copilot", { state: { debriefReportId: detail.id } })
-              }
-            >
-              <MessageSquare className="h-4 w-4 mr-1" />
-              Ask Copilot
-            </AkaraButton>
-          )}
-          {detail && (
-            <AkaraButton variant="secondary" size="sm" onClick={downloadPdf} disabled={pdfLoading}>
-              <Download className="h-4 w-4 mr-1" />
-              {pdfLoading ? "Downloading…" : "Download"}
-            </AkaraButton>
-          )}
-        </div>
-      </div>
-
-      {isStale && (
-        <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-          Data is {staleDays} days old — upload fresh sales data for sharper insights.
-        </div>
-      )}
-
-      {meta.limited_mode && (
-        <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-          Limited mode — you have {meta.days_of_data} days of data. Full week-over-week sections unlock at 14+ days.
-        </div>
-      )}
-
-      <SurfaceCard>
-        <p className="text-lg font-semibold text-text-primary">{meta.headline}</p>
-      </SurfaceCard>
-
-      <SurfaceCard>
-        <h2 className="font-semibold mb-4">Momentum</h2>
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-          <div className="rounded-lg bg-surface-raised p-3">
-            <p className="text-xs text-text-muted">This week</p>
-            <p className="font-bold">{meta.momentum?.this_week_revenue_fmt ?? "—"}</p>
+    <div className="min-h-full bg-surface-canvas">
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+        {isStale && (
+          <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+            Data is {staleDays} days old — upload fresh sales for sharper insights.
           </div>
-          <div className="rounded-lg bg-surface-raised p-3">
-            <p className="text-xs text-text-muted">WoW</p>
-            <p className="font-bold">{meta.momentum?.wow_change_pct ?? 0}%</p>
-          </div>
-          <div className="rounded-lg bg-surface-raised p-3">
-            <p className="text-xs text-text-muted">Month projection</p>
-            <p className="font-bold">{meta.momentum?.projected_month_fmt ?? "—"}</p>
-          </div>
-          <div className="rounded-lg bg-surface-raised p-3">
-            <p className="text-xs text-text-muted">30-day trend</p>
-            <p className="font-bold capitalize">{meta.momentum?.trend_30d ?? "—"}</p>
-          </div>
-          <div className="rounded-lg bg-surface-raised p-3">
-            <p className="text-xs text-text-muted">60-day trend</p>
-            <p className="font-bold capitalize">{meta.momentum?.trend_60d ?? "—"}</p>
-          </div>
-          <div className="rounded-lg bg-surface-raised p-3">
-            <p className="text-xs text-text-muted">90-day trend</p>
-            <p className="font-bold capitalize">{meta.momentum?.trend_90d ?? "—"}</p>
-          </div>
-        </div>
-      </SurfaceCard>
+        )}
 
-      <div className="grid md:grid-cols-2 gap-4">
-        <SurfaceCard>
-          <h2 className="font-semibold text-emerald-700 mb-3">Went Right</h2>
-          <ul className="space-y-3">
-            {meta.went_right?.map((item, i) => (
-              <li key={i} className="text-sm">
-                <p className="font-medium">{item.title}</p>
-                <p className="text-text-secondary mt-0.5">{item.detail}</p>
-                {item.impact_inr ? (
-                  <Badge variant="outline" className="mt-1 text-xs">{formatInr(item.impact_inr)}</Badge>
-                ) : null}
-              </li>
-            ))}
-          </ul>
-        </SurfaceCard>
-        <SurfaceCard>
-          <h2 className="font-semibold text-red-700 mb-3">Went Wrong</h2>
-          <ul className="space-y-3">
-            {meta.went_wrong?.map((item, i) => (
-              <li key={i} className="text-sm">
-                <p className="font-medium">{item.title}</p>
-                <p className="text-text-secondary mt-0.5">{item.detail}</p>
-                {item.hypothesis && (
-                  <p className="text-xs text-text-muted mt-1">{item.hypothesis}</p>
-                )}
-              </li>
-            ))}
-          </ul>
-        </SurfaceCard>
-      </div>
+        {meta.limited_mode && (
+          <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+            Limited mode ({meta.days_of_data} days of data). Full comparisons unlock at 14+ days.
+          </div>
+        )}
 
-      <SurfaceCard>
-        <h2 className="font-semibold mb-3">Actions this week</h2>
-        <ol className="list-decimal list-inside space-y-2">
-          {meta.actions?.map((action, i) => (
-            <li key={i} className="text-sm">
-              <span className="font-medium">{action.title}</span>
-              {" — "}
-              {action.detail}
-              {action.urgency && (
-                <Badge variant="outline" className="ml-2 text-xs capitalize">{action.urgency}</Badge>
+        <DebriefReportView
+          meta={meta as DebriefMetadata}
+          headerActions={
+            <>
+              {canAskCopilot && detail && (
+                <AkaraButton
+                  variant="secondary"
+                  size="sm"
+                  onClick={() =>
+                    navigate("/copilot", { state: { debriefReportId: detail.id } })
+                  }
+                >
+                  <MessageSquare className="h-4 w-4 mr-1" />
+                  Ask Copilot
+                </AkaraButton>
               )}
-            </li>
-          ))}
-        </ol>
-      </SurfaceCard>
+              {detail && (
+                <AkaraButton
+                  variant="secondary"
+                  size="sm"
+                  onClick={downloadPdf}
+                  disabled={pdfLoading}
+                >
+                  <Download className="h-4 w-4 mr-1" />
+                  {pdfLoading ? "…" : "PDF"}
+                </AkaraButton>
+              )}
+            </>
+          }
+        />
 
-      {archive.length > 1 && (
-        <SurfaceCard>
-          <h2 className="font-semibold mb-3">Past debriefs</h2>
-          <ul className="space-y-2">
-            {archive.map((item) => (
-              <li key={item.id}>
+        {archive.length > 1 && (
+          <SurfaceCard padding="md" hover={false}>
+            <h2 className="text-sm font-semibold text-text-muted uppercase tracking-wide mb-3">
+              Past weeks
+            </h2>
+            <div className="flex flex-wrap gap-2">
+              {archive.map((item) => (
                 <button
+                  key={item.id}
                   type="button"
                   onClick={() => loadReport(item.id)}
-                  className={`text-sm text-left w-full py-2 px-3 rounded-lg hover:bg-surface-raised ${
-                    selectedId === item.id ? "bg-accent-soft text-accent" : ""
-                  }`}
+                  className={cn(
+                    "text-left rounded-full px-4 py-2 text-sm transition-colors max-w-full truncate",
+                    selectedId === item.id
+                      ? "bg-accent text-white"
+                      : "bg-surface-raised text-text-secondary hover:bg-accent-soft hover:text-accent"
+                  )}
                 >
-                  {item.week_start} – {item.week_end}: {item.headline}
+                  {item.week_start.slice(5)} – {item.week_end.slice(5)}
                 </button>
-              </li>
-            ))}
-          </ul>
-        </SurfaceCard>
-      )}
+              ))}
+            </div>
+          </SurfaceCard>
+        )}
+      </div>
     </div>
   );
 }

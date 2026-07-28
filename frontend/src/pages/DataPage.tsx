@@ -1,21 +1,20 @@
-import { useState, useRef, useEffect } from "react";
-import { 
-  Upload, 
-  CheckCircle, 
-  AlertCircle, 
-  FileText, 
-  Database, 
-  Clock, 
-  Loader2, 
-  PlayCircle, 
-  PauseCircle, 
+import { useState, useEffect } from "react";
+import {
+  CheckCircle,
+  AlertCircle,
+  Clock,
+  Loader2,
   RotateCcw,
   Trash2,
-  Eye,
-  Activity,
-  BarChart3,
-  Plus
+  Database,
+  Layers,
+  FileSpreadsheet,
+  Lock,
+  Upload,
 } from "lucide-react";
+import { Link } from "react-router-dom";
+import { useQueryClient } from "@tanstack/react-query";
+
 import { useAuth } from "@/contexts/AuthContext";
 import { isAdmin } from "@/lib/auth-utils";
 import SurfaceCard from "@/components/ui/SurfaceCard";
@@ -23,20 +22,16 @@ import { AkaraButton, SecondaryButton } from "@/components/ui/GradientButton";
 import { TableSkeleton } from "@/components/ui/ShimmerSkeleton";
 import { NoDataEmptyState } from "@/components/ui/EmptyState";
 import AnimatedNumber from "@/components/ui/AnimatedNumber";
-import { PlanGate } from "@/components/billing/PlanGate";
 import { useBilling } from "@/hooks/useBilling";
-import { useQueryClient } from "@tanstack/react-query";
-import { Link } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
 import { toast } from "@/components/ui/toast";
 import { formatApiError } from "@/lib/formatApiError";
-
-interface ImportResult {
-  rows_inserted: number;
-  rows_skipped: number;
-  errors: string[];
-  warnings: string[];
-}
+import { cn } from "@/lib/utils";
+import {
+  DataUploadPanel,
+  type ImportResult,
+  type SourceType,
+} from "@/components/data/DataUploadPanel";
 
 interface ImportJob {
   id: string;
@@ -44,7 +39,7 @@ interface ImportJob {
   source_type: string;
   file_size: number;
   estimated_rows: number;
-  status: 'pending' | 'processing' | 'completed' | 'failed';
+  status: "pending" | "processing" | "completed" | "failed";
   progress_pct: number;
   rows_inserted?: number;
   rows_skipped?: number;
@@ -53,21 +48,78 @@ interface ImportJob {
   completed_at?: string;
 }
 
-interface DailyUsage {
-  date: string;
-  imports: number;
-  rows_imported: number;
-  storage_mb: number;
-}
-
-type SourceType = "primary" | "secondary" | "scheme";
-
 const BASE = import.meta.env.VITE_API_BASE_URL as string;
+
+const SOURCE_TABS: {
+  id: SourceType;
+  label: string;
+  short: string;
+  icon: typeof Database;
+  requiresPro?: boolean;
+}[] = [
+  { id: "primary", label: "Primary sales", short: "ERP / Tally", icon: Database },
+  { id: "secondary", label: "Secondary DMS", short: "Offtake", icon: Layers, requiresPro: true },
+  { id: "scheme", label: "Scheme master", short: "Claims", icon: FileSpreadsheet, requiresPro: true },
+];
+
+const SOURCE_COPY: Record<
+  SourceType,
+  { title: string; subtitle: string; columns: string[] }
+> = {
+  primary: {
+    title: "Primary sales",
+    subtitle: "Dispatch invoices from Tally or your ERP — what you shipped to distributors.",
+    columns: [
+      "invoice_date",
+      "invoice_number",
+      "party_name",
+      "party_city",
+      "party_zone",
+      "route",
+      "product_name",
+      "product_group",
+      "quantity",
+      "gross_amount",
+      "discount_amount",
+      "net_amount",
+      "tax_amount",
+      "total_amount",
+      "outstanding_amount (optional)",
+    ],
+  },
+  secondary: {
+    title: "Secondary sales",
+    subtitle: "DMS offtake from Bizom, Botree, FieldAssist — what retailers actually bought.",
+    columns: [
+      "invoice_date",
+      "party_name",
+      "party_zone",
+      "route",
+      "product_name",
+      "product_group",
+      "quantity",
+      "total_amount",
+    ],
+  },
+  scheme: {
+    title: "Scheme master",
+    subtitle: "Distributor scheme claims — used to detect leakage vs secondary offtake.",
+    columns: [
+      "scheme_name",
+      "party_name",
+      "product_name",
+      "claimed_amount",
+      "scheme_start",
+      "scheme_end",
+      "discount_pct (optional)",
+    ],
+  },
+};
 
 async function uploadFile(
   file: File,
   sourceType: SourceType,
-  useAsync: boolean = false,
+  useAsync: boolean,
   onProgress: (p: number) => void
 ): Promise<ImportResult | { job_id: string }> {
   const { data } = await supabase.auth.getSession();
@@ -76,13 +128,11 @@ async function uploadFile(
 
   const formData = new FormData();
   formData.append("file", file);
+  const endpoint =
+    useAsync || file.size > 5 * 1024 * 1024
+      ? `${BASE}/data/import/async?source_type=${sourceType}`
+      : `${BASE}/data/import?source_type=${sourceType}`;
 
-  // Choose endpoint based on file size or user preference
-  const endpoint = useAsync || file.size > 5 * 1024 * 1024 
-    ? `${BASE}/data/import/async?source_type=${sourceType}`
-    : `${BASE}/data/import?source_type=${sourceType}`;
-
-  // Simulate animated progress since fetch doesn't expose upload progress
   let simulatedProgress = 0;
   const progressInterval = setInterval(() => {
     simulatedProgress = Math.min(85, simulatedProgress + Math.random() * 12 + 3);
@@ -95,15 +145,12 @@ async function uploadFile(
       headers: { Authorization: `Bearer ${token}` },
       body: formData,
     });
-
     clearInterval(progressInterval);
     onProgress(100);
-
     if (!res.ok) {
       const errData = await res.json().catch(() => ({}));
       throw new Error(formatApiError(errData.detail, `Upload failed (${res.status})`));
     }
-
     return res.json();
   } catch (err) {
     clearInterval(progressInterval);
@@ -115,15 +162,10 @@ async function fetchImportJobs(): Promise<ImportJob[]> {
   const { data } = await supabase.auth.getSession();
   const token = data.session?.access_token;
   if (!token) throw new Error("Not authenticated");
-
   const res = await fetch(`${BASE}/data/import/jobs`, {
     headers: { Authorization: `Bearer ${token}` },
   });
-
-  if (!res.ok) {
-    throw new Error(`Failed to fetch jobs: ${res.status}`);
-  }
-
+  if (!res.ok) throw new Error(`Failed to fetch jobs: ${res.status}`);
   const data_result = await res.json();
   return data_result.jobs || [];
 }
@@ -132,309 +174,31 @@ async function undoImport(jobId: string): Promise<void> {
   const { data } = await supabase.auth.getSession();
   const token = data.session?.access_token;
   if (!token) throw new Error("Not authenticated");
-
   const res = await fetch(`${BASE}/data/imports/${jobId}`, {
     method: "DELETE",
     headers: { Authorization: `Bearer ${token}` },
   });
-
   if (!res.ok) {
     const errData = await res.json().catch(() => ({}));
     throw new Error(errData.detail || `Undo failed: ${res.status}`);
   }
 }
 
-async function fetchDailyUsage(): Promise<DailyUsage[]> {
-  const { data } = await supabase.auth.getSession();
-  const token = data.session?.access_token;
-  if (!token) return [];
-
-  // Generate mock daily usage data for the last 7 days
-  const usage: DailyUsage[] = [];
-  const today = new Date();
-  
-  for (let i = 6; i >= 0; i--) {
-    const date = new Date(today);
-    date.setDate(date.getDate() - i);
-    
-    usage.push({
-      date: date.toISOString().slice(0, 10),
-      imports: Math.floor(Math.random() * 5) + 1,
-      rows_imported: Math.floor(Math.random() * 10000) + 1000,
-      storage_mb: Math.floor(Math.random() * 100) + 10
-    });
-  }
-  
-  return usage;
-}
-
-interface UploadPanelProps {
-  title: string;
-  description: string;
-  columns: string[];
-  sourceType: SourceType;
-  isAdmin: boolean;
-  onJobCreated: () => void;
-  uploadDisabled?: boolean;
-  onUploadComplete?: () => void;
-}
-
-function UploadPanel({
-  title,
-  description,
-  columns,
-  sourceType,
-  isAdmin,
-  onJobCreated,
-  uploadDisabled = false,
-  onUploadComplete,
-}: UploadPanelProps) {
-  const [file, setFile] = useState<File | null>(null);
-  const [uploading, setUploading] = useState(false);
-  const [progress, setProgress] = useState(0);
-  const [result, setResult] = useState<ImportResult | { job_id: string } | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [useAsync, setUseAsync] = useState(false);
-  const inputRef = useRef<HTMLInputElement>(null);
-
-  async function handleUpload() {
-    if (!file || !isAdmin || uploadDisabled) return;
-    setUploading(true);
-    setProgress(0);
-    setResult(null);
-    setError(null);
-    
-    try {
-      const shouldUseAsync = useAsync || file.size > 5 * 1024 * 1024;
-      const r = await uploadFile(file, sourceType, shouldUseAsync, setProgress);
-      
-      setResult(r);
-      setFile(null);
-      if (inputRef.current) inputRef.current.value = "";
-      
-      if ('job_id' in r) {
-        toast.success('File queued for processing! Check import history below.');
-        onJobCreated();
-      } else {
-        toast.success(`${r.rows_inserted} rows imported successfully!`);
-      }
-      onUploadComplete?.();
-    } catch (err: unknown) {
-      const message =
-        err instanceof Error
-          ? err.message
-          : formatApiError(err, "Upload failed");
-      setError(message);
-      toast.error(message);
-    } finally {
-      setUploading(false);
-    }
-  }
-
-  function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const selected = e.target.files?.[0] || null;
-    setFile(selected);
-    setResult(null);
-    setError(null);
-    setProgress(0);
-    
-    // Auto-enable async for large files
-    if (selected && selected.size > 5 * 1024 * 1024) {
-      setUseAsync(true);
-    }
-  }
-
+function StatusBadge({ status }: { status: ImportJob["status"] }) {
+  const map = {
+    pending: { label: "Pending", className: "bg-amber-50 text-amber-700 ring-amber-200" },
+    processing: { label: "Processing", className: "bg-accent-soft text-accent ring-accent/20" },
+    completed: { label: "Done", className: "bg-emerald-50 text-emerald-700 ring-emerald-200" },
+    failed: { label: "Failed", className: "bg-red-50 text-red-700 ring-red-200" },
+  } as const;
+  const s = map[status];
   return (
-    <SurfaceCard padding="md">
-      {/* Header */}
-      <div className="mb-6">
-        <h3 className="text-h2 mb-2">{title}</h3>
-        <p className="text-body text-sm">{description}</p>
-      </div>
-
-      {/* Drop Zone */}
-      <div
-        onClick={() => isAdmin && inputRef.current?.click()}
-        className={`border-2 border-dashed border-surface-border rounded-xl p-8 text-center transition-all duration-300 ${
-          isAdmin
-            ? "cursor-pointer hover:border-accent hover:bg-accent-soft"
-            : "cursor-not-allowed opacity-50"
-        } ${file ? "border-accent bg-accent-soft" : ""}`}
-      >
-        <div
-          className={`w-12 h-12 mx-auto mb-3 rounded-lg flex items-center justify-center ${
-            file ? "bg-accent text-white" : "bg-surface-raised text-accent"
-          }`}
-        >
-          <Upload className="h-6 w-6" />
-        </div>
-        <p className="text-text-primary font-medium">
-          {file ? file.name : "Click to select file or drag & drop"}
-        </p>
-        <p className="text-caption text-xs mt-2">
-          {file
-            ? `${(file.size / 1024 / 1024).toFixed(2)} MB ${file.size > 5 * 1024 * 1024 ? '(Large file - will use async processing)' : ''}`
-            : ".xlsx, .xls, .csv — max 50 MB"}
-        </p>
-        <input
-          ref={inputRef}
-          type="file"
-          accept=".csv,.xlsx,.xls"
-          className="hidden"
-          onChange={handleFileChange}
-          disabled={!isAdmin}
-        />
-      </div>
-
-      {/* Async Toggle */}
-      {file && file.size <= 5 * 1024 * 1024 && (
-        <div className="mt-4 flex items-center gap-3">
-          <button
-            onClick={() => setUseAsync(!useAsync)}
-            className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-all ${
-              useAsync
-                ? "bg-accent-soft border border-accent/30 text-accent"
-                : "border border-surface-border text-text-secondary hover:bg-surface-raised"
-            }`}
-          >
-            <Activity className="h-4 w-4" />
-            Background Processing
-          </button>
-          <span className="text-xs text-caption">
-            {useAsync ? 'Will process in background' : 'Will process immediately'}
-          </span>
-        </div>
-      )}
-
-      {/* Progress Bar */}
-      {uploading && (
-        <div className="mt-4 space-y-2">
-          <div className="flex justify-between text-xs text-text-secondary">
-            <span>Importing...</span>
-            <span>{progress}%</span>
-          </div>
-          <div className="w-full bg-surface-raised rounded-full h-2">
-            <div
-              className="h-2 rounded-full bg-accent transition-all duration-300"
-              style={{ width: `${progress}%` }}
-            />
-          </div>
-        </div>
-      )}
-
-      {/* Action Button */}
-      <div className="mt-6">
-        {uploadDisabled && (
-          <p className="text-xs text-amber-600 mb-2 text-center">
-            Upload limit reached — resets tomorrow at midnight IST
-          </p>
-        )}
-        <AkaraButton
-          onClick={handleUpload}
-          disabled={!file || uploading || !isAdmin || uploadDisabled}
-          className="w-full"
-        >
-          {uploading ? (
-            <>
-              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-              {useAsync ? 'Queueing...' : 'Importing...'}
-            </>
-          ) : (
-            <>
-              <Database className="h-4 w-4 mr-2" />
-              {useAsync ? 'Queue Import' : 'Import Data'}
-            </>
-          )}
-        </AkaraButton>
-      </div>
-
-      {/* Error State */}
-      {error && (
-        <SurfaceCard padding="sm" className="mt-4 border-red-200 bg-red-50">
-          <div className="flex items-start gap-3">
-            <AlertCircle className="h-5 w-5 text-red-500 mt-0.5 shrink-0" />
-            <div>
-              <p className="text-red-700 font-medium">Import failed</p>
-              <p className="text-red-600 text-sm mt-1">{error}</p>
-            </div>
-          </div>
-        </SurfaceCard>
-      )}
-
-      {/* Success State */}
-      {result && (
-        <SurfaceCard padding="sm" className="mt-4 border-emerald-200 bg-emerald-50">
-          {'job_id' in result ? (
-            <div className="flex items-center gap-3">
-              <PlayCircle className="h-5 w-5 text-emerald-400 shrink-0" />
-              <div>
-                <p className="text-emerald-400 font-medium">Queued for processing</p>
-                <p className="text-emerald-300 text-sm mt-1">
-                  Job ID: <code className="bg-emerald-500/10 px-1 rounded text-xs">{result.job_id}</code>
-                </p>
-              </div>
-            </div>
-          ) : (
-            <div className="space-y-3">
-              <div className="flex items-center gap-3">
-                <CheckCircle className="h-5 w-5 text-emerald-400 shrink-0" />
-                <p className="text-emerald-400 font-medium">
-                  <AnimatedNumber value={result.rows_inserted} /> rows imported
-                  {result.rows_skipped > 0 && (
-                    <span className="text-emerald-300 ml-2">
-                      · {result.rows_skipped} skipped
-                    </span>
-                  )}
-                </p>
-              </div>
-              {result.errors && result.errors.length > 0 && (
-                <details className="text-xs">
-                  <summary className="cursor-pointer font-medium text-red-400">
-                    {result.errors.length} errors
-                  </summary>
-                  <ul className="mt-2 space-y-1 pl-4 list-disc text-red-300">
-                    {result.errors.slice(0, 10).map((e, i) => (
-                      <li key={i}>{e}</li>
-                    ))}
-                  </ul>
-                </details>
-              )}
-              {result.warnings && result.warnings.length > 0 && (
-                <details className="text-xs">
-                  <summary className="cursor-pointer font-medium text-amber-400">
-                    {result.warnings.length} warnings
-                  </summary>
-                  <ul className="mt-2 space-y-1 pl-4 list-disc text-amber-300">
-                    {result.warnings.slice(0, 10).map((w, i) => (
-                      <li key={i}>{w}</li>
-                    ))}
-                  </ul>
-                </details>
-              )}
-            </div>
-          )}
-        </SurfaceCard>
-      )}
-
-      {/* Expected Columns */}
-      <details className="mt-4">
-        <summary className="cursor-pointer font-medium text-text-secondary text-sm flex items-center gap-2 select-none hover:text-accent transition-colors">
-          <FileText className="h-4 w-4" /> 
-          Expected columns ({columns.length})
-        </summary>
-        <div className="mt-3 flex flex-wrap gap-2">
-          {columns.map((col, i) => (
-            <code
-              key={col}
-              className="px-2 py-1 rounded text-xs font-mono bg-accent-soft text-text-secondary animate-fadeInUp"
-              style={{ animationDelay: `${i * 30}ms` }}
-            >
-              {col}
-            </code>
-          ))}
-        </div>
-      </details>
-    </SurfaceCard>
+    <span className={cn("inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium ring-1", s.className)}>
+      {status === "processing" && <Loader2 className="h-3 w-3 animate-spin" />}
+      {status === "completed" && <CheckCircle className="h-3 w-3" />}
+      {status === "failed" && <AlertCircle className="h-3 w-3" />}
+      {s.label}
+    </span>
   );
 }
 
@@ -444,73 +208,12 @@ export function DataPage() {
   const { data: billing, refetch: refetchBilling } = useBilling();
   const queryClient = useQueryClient();
   const [importJobs, setImportJobs] = useState<ImportJob[]>([]);
-  const [dailyUsage, setDailyUsage] = useState<DailyUsage[]>([]);
   const [loadingJobs, setLoadingJobs] = useState(false);
-  const [, setLoadingUsage] = useState(false);
+  const [activeSource, setActiveSource] = useState<SourceType>("primary");
+  const [undoingJobId, setUndoingJobId] = useState<string | null>(null);
+  const [uploadKey, setUploadKey] = useState(0);
 
-  // Poll for job updates every 5 seconds
-  useEffect(() => {
-    let interval: ReturnType<typeof setInterval>;
-    
-    const loadJobs = async () => {
-      if (!isAdminUser) return;
-      setLoadingJobs(true);
-      try {
-        const jobs = await fetchImportJobs();
-        setImportJobs(jobs);
-      } catch (err) {
-        console.error('Failed to load jobs:', err);
-      } finally {
-        setLoadingJobs(false);
-      }
-    };
-
-    const loadUsage = async () => {
-      setLoadingUsage(true);
-      try {
-        const usage = await fetchDailyUsage();
-        setDailyUsage(usage);
-      } catch (err) {
-        console.error('Failed to load usage:', err);
-      } finally {
-        setLoadingUsage(false);
-      }
-    };
-
-    // Initial load
-    loadJobs();
-    loadUsage();
-
-    // Polling for active jobs
-    const hasActiveJobs = importJobs.some(job => job.status === 'pending' || job.status === 'processing');
-    if (hasActiveJobs) {
-      interval = setInterval(loadJobs, 5000);
-    }
-
-    return () => {
-      if (interval) clearInterval(interval);
-    };
-  }, [isAdminUser, importJobs.length]);
-
-  const handleJobCreated = () => {
-    // Refresh the jobs list when a new job is created
-    setTimeout(async () => {
-      try {
-        const jobs = await fetchImportJobs();
-        setImportJobs(jobs);
-      } catch (err) {
-        console.error('Failed to refresh jobs:', err);
-      }
-    }, 1000);
-    void refetchBilling();
-    queryClient.invalidateQueries({ queryKey: ["billing", "usage"] });
-  };
-
-  const handleUploadComplete = () => {
-    void refetchBilling();
-    queryClient.invalidateQueries({ queryKey: ["billing", "usage"] });
-  };
-
+  const hasSecondary = billing?.features.secondary_sales ?? false;
   const uploadsToday = billing?.uploads_today ?? 0;
   const uploadsPerDay = billing?.uploads_per_day ?? 3;
   const undosToday = billing?.undos_today ?? 0;
@@ -518,7 +221,57 @@ export function DataPage() {
   const uploadAtLimit = uploadsToday >= uploadsPerDay;
   const undoAtLimit = undosToday >= undosPerDay;
 
-  const [undoingJobId, setUndoingJobId] = useState<string | null>(null);
+  useEffect(() => {
+    if (!isAdminUser) return;
+    let interval: ReturnType<typeof setInterval>;
+
+    const loadJobs = async () => {
+      setLoadingJobs(true);
+      try {
+        setImportJobs(await fetchImportJobs());
+      } catch (err) {
+        console.error("Failed to load jobs:", err);
+      } finally {
+        setLoadingJobs(false);
+      }
+    };
+
+    loadJobs();
+    const hasActive = importJobs.some(
+      (j) => j.status === "pending" || j.status === "processing"
+    );
+    if (hasActive) interval = setInterval(loadJobs, 5000);
+
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [isAdminUser, importJobs.length]);
+
+  async function refreshJobs() {
+    try {
+      setImportJobs(await fetchImportJobs());
+    } catch (err) {
+      console.error("Failed to refresh jobs:", err);
+    }
+    void refetchBilling();
+    queryClient.invalidateQueries({ queryKey: ["billing", "usage"] });
+  }
+
+  async function handleUpload(
+    file: File,
+    sourceType: SourceType,
+    useAsync: boolean,
+    onProgress: (p: number) => void
+  ) {
+    const r = await uploadFile(file, sourceType, useAsync, onProgress);
+    if ("job_id" in r) {
+      toast.success("File queued — see import history below.");
+    } else {
+      toast.success(`${r.rows_inserted} rows imported.`);
+    }
+    await refreshJobs();
+    return r;
+  }
 
   async function handleUndoImport(jobId: string) {
     if (undoAtLimit) return;
@@ -526,10 +279,7 @@ export function DataPage() {
     try {
       await undoImport(jobId);
       toast.success("Import undone");
-      const jobs = await fetchImportJobs();
-      setImportJobs(jobs);
-      void refetchBilling();
-      queryClient.invalidateQueries({ queryKey: ["billing", "usage"] });
+      await refreshJobs();
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Undo failed");
     } finally {
@@ -537,341 +287,200 @@ export function DataPage() {
     }
   }
 
-  const totalRowsToday = dailyUsage[dailyUsage.length - 1]?.rows_imported || 0;
-  const totalImportsToday = dailyUsage[dailyUsage.length - 1]?.imports || 0;
-  const totalStorageUsed = dailyUsage.reduce((sum, day) => sum + day.storage_mb, 0);
+  const activeLocked =
+    (activeSource === "secondary" || activeSource === "scheme") && !hasSecondary;
+  const copy = SOURCE_COPY[activeSource];
 
   return (
-    <div className="p-6 lg:p-8 space-y-6 max-w-7xl mx-auto bg-surface-canvas">
-      {/* Header */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
-        <div>
-          <h1 className="text-display">Data Command Center</h1>
-          <p className="text-body mt-2">
-            Import primary sales, secondary DMS data, and scheme master with real-time processing
-          </p>
-        </div>
-
-        {/* Daily Counters */}
-        <div className="flex gap-4">
-          <SurfaceCard hover={false} padding="sm" className="text-center min-w-[100px]">
-            <div className="flex items-center gap-2 mb-1">
-              <Activity className="h-4 w-4 text-accent" />
-              <span className="text-xs text-caption">Today</span>
-            </div>
-            <div className="text-lg font-bold text-text-primary">
-              <AnimatedNumber value={totalImportsToday} />
-            </div>
-            <div className="text-xs text-caption">imports</div>
-          </SurfaceCard>
-
-          <SurfaceCard hover={false} padding="sm" className="text-center min-w-[100px]">
-            <div className="flex items-center gap-2 mb-1">
-              <BarChart3 className="h-4 w-4 text-accent" />
-              <span className="text-xs text-caption">Rows</span>
-            </div>
-            <div className="text-lg font-bold text-text-primary">
-              <AnimatedNumber value={totalRowsToday} />
-            </div>
-            <div className="text-xs text-caption">processed</div>
-          </SurfaceCard>
-
-          <SurfaceCard hover={false} padding="sm" className="text-center min-w-[100px]">
-            <div className="flex items-center gap-2 mb-1">
-              <Database className="h-4 w-4 text-accent" />
-              <span className="text-xs text-caption">Storage</span>
-            </div>
-            <div className="text-lg font-bold text-text-primary">
-              <AnimatedNumber value={totalStorageUsed} />
-            </div>
-            <div className="text-xs text-caption">MB</div>
-          </SurfaceCard>
-        </div>
-      </div>
-
-      {/* Admin Warning */}
-      {!isAdminUser && (
-        <SurfaceCard padding="sm" className="border-amber-200 bg-amber-50">
-          <div className="flex items-center gap-3">
-            <AlertCircle className="h-5 w-5 text-amber-500" />
+    <div className="min-h-full bg-surface-canvas">
+      {/* Header band */}
+      <div className="border-b border-surface-border bg-surface-card/80 backdrop-blur-sm">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-6">
             <div>
-              <p className="text-amber-800 font-medium">Admin access required</p>
-              <p className="text-amber-700 text-sm">Contact your administrator to import data files.</p>
-            </div>
-          </div>
-        </SurfaceCard>
-      )}
-
-      {/* Upload Panels */}
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-        <UploadPanel
-          title="Primary Sales (ERP / Tally)"
-          description="Dispatch invoices from Tally or your ERP. What you shipped to distributors."
-          sourceType="primary"
-          isAdmin={isAdminUser}
-          onJobCreated={handleJobCreated}
-          onUploadComplete={handleUploadComplete}
-          uploadDisabled={uploadAtLimit}
-          columns={[
-            "invoice_date",
-            "invoice_number",
-            "party_name",
-            "party_city",
-            "party_zone",
-            "route",
-            "product_name",
-            "product_group",
-            "quantity",
-            "gross_amount",
-            "discount_amount",
-            "net_amount",
-            "tax_amount",
-            "total_amount",
-            "outstanding_amount (optional)",
-          ]}
-        />
-
-        <PlanGate
-          feature="secondary_sales"
-          requiredPlan="pro"
-          title="Secondary Sales Import"
-          description="Unlock DMS offtake data and scheme master uploads."
-          priceHint="From ₹7,999/month"
-        >
-        <UploadPanel
-          title="Secondary Sales (DMS Offtake)"
-          description="What distributors actually sold to retailers. Export from Bizom, Botree, FieldAssist, or your DMS."
-          sourceType="secondary"
-          isAdmin={isAdminUser}
-          onJobCreated={handleJobCreated}
-          onUploadComplete={handleUploadComplete}
-          uploadDisabled={uploadAtLimit}
-          columns={[
-            "invoice_date",
-            "party_name",
-            "party_zone",
-            "route",
-            "product_name",
-            "product_group",
-            "quantity",
-            "total_amount",
-          ]}
-        />
-        </PlanGate>
-
-        <PlanGate
-          feature="secondary_sales"
-          requiredPlan="pro"
-          title="Scheme Master Import"
-          description="Upload scheme claims to detect leakage vs secondary offtake."
-        >
-        <UploadPanel
-          title="Scheme Master (Distributor Claims)"
-          description="Scheme claims filed by distributors. Used to detect leakage vs. actual secondary offtake."
-          sourceType="scheme"
-          isAdmin={isAdminUser}
-          onJobCreated={handleJobCreated}
-          onUploadComplete={handleUploadComplete}
-          uploadDisabled={uploadAtLimit}
-          columns={[
-            "scheme_name",
-            "party_name",
-            "product_name",
-            "claimed_amount",
-            "scheme_start",
-            "scheme_end",
-            "discount_pct (optional)",
-          ]}
-        />
-        </PlanGate>
-
-        {billing && !billing.features.secondary_sales && (
-          <SurfaceCard padding="sm" className="xl:col-span-3">
-            <p className="text-sm text-body">
-              Unlock secondary sales and scheme data —{" "}
-              <span className="text-caption">From ₹7,999/month</span>
-            </p>
-            <Link to="/upgrade" className="text-sm font-semibold text-accent hover:underline mt-1 inline-block">
-              View plans →
-            </Link>
-          </SurfaceCard>
-        )}
-      </div>
-
-      {/* Import History Table */}
-      <SurfaceCard padding="md">
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center gap-3">
-            <Clock className="h-5 w-5 text-accent" />
-            <h2 className="text-h2">Import History</h2>
-          </div>
-          <SecondaryButton size="sm" onClick={handleJobCreated}>
-            <RotateCcw className="h-4 w-4 mr-2" />
-            Refresh
-          </SecondaryButton>
-        </div>
-
-        {loadingJobs ? (
-          <TableSkeleton rows={5} />
-        ) : importJobs.length === 0 ? (
-          <NoDataEmptyState 
-            title="No imports yet"
-            description="Upload your first data file to get started"
-            actionLabel="Upload File"
-          />
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b border-surface-border">
-                  <th className="text-left py-3 text-caption font-medium text-sm">File</th>
-                  <th className="text-left py-3 text-caption font-medium text-sm">Type</th>
-                  <th className="text-left py-3 text-caption font-medium text-sm">Status</th>
-                  <th className="text-left py-3 text-caption font-medium text-sm">Progress</th>
-                  <th className="text-left py-3 text-caption font-medium text-sm">Rows</th>
-                  <th className="text-left py-3 text-caption font-medium text-sm">Started</th>
-                  <th className="text-right py-3 text-caption font-medium text-sm">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {importJobs.slice(0, 10).map((job, i) => (
-                  <tr 
-                    key={job.id} 
-                    className="border-b border-surface-border animate-fadeInUp hover:bg-surface-raised transition-colors"
-                    style={{ animationDelay: `${i * 50}ms` }}
-                  >
-                    <td className="py-4 text-text-primary font-medium truncate max-w-[200px]">
-                      {job.filename}
-                      <div className="text-xs text-text-secondary mt-1">
-                        {(job.file_size / 1024 / 1024).toFixed(1)} MB
-                      </div>
-                    </td>
-                    <td className="py-4">
-                      <span className="inline-block px-2 py-1 rounded text-xs font-medium capitalize bg-accent-soft text-accent">
-                        {job.source_type}
-                      </span>
-                    </td>
-                    <td className="py-4">
-                      <div className="flex items-center gap-2">
-                        {job.status === 'pending' && (
-                          <>
-                            <PauseCircle className="h-4 w-4 text-amber-400" />
-                            <span className="text-amber-400 text-sm">Pending</span>
-                          </>
-                        )}
-                        {job.status === 'processing' && (
-                          <>
-                            <Loader2 className="h-4 w-4 text-accent animate-spin" />
-                            <span className="text-accent text-sm">Processing</span>
-                          </>
-                        )}
-                        {job.status === 'completed' && (
-                          <>
-                            <CheckCircle className="h-4 w-4 text-emerald-400" />
-                            <span className="text-emerald-400 text-sm">Completed</span>
-                          </>
-                        )}
-                        {job.status === 'failed' && (
-                          <>
-                            <AlertCircle className="h-4 w-4 text-red-400" />
-                            <span className="text-red-400 text-sm">Failed</span>
-                          </>
-                        )}
-                      </div>
-                    </td>
-                    <td className="py-4">
-                      <div className="w-20">
-                        <div className="w-full bg-surface-raised rounded-full h-2">
-                          <div
-                            className={`h-2 rounded-full transition-all duration-500 ${
-                              job.status === 'completed'
-                                ? 'bg-emerald-500'
-                                : job.status === 'failed'
-                                ? 'bg-red-500'
-                                : 'bg-accent'
-                            }`}
-                            style={{ width: `${job.progress_pct}%` }}
-                          />
-                        </div>
-                        <div className="text-xs text-text-secondary mt-1">{job.progress_pct}%</div>
-                      </div>
-                    </td>
-                    <td className="py-4 text-text-primary">
-                      {job.rows_inserted ? (
-                        <div>
-                          <AnimatedNumber value={job.rows_inserted} className="font-medium" />
-                          {job.rows_skipped ? (
-                            <div className="text-xs text-text-secondary">
-                              {job.rows_skipped} skipped
-                            </div>
-                          ) : null}
-                        </div>
-                      ) : (
-                        <span className="text-caption">—</span>
-                      )}
-                    </td>
-                    <td className="py-4 text-text-secondary text-sm">
-                      {new Date(job.created_at).toLocaleDateString()}
-                      <div className="text-xs text-caption">
-                        {new Date(job.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                      </div>
-                    </td>
-                    <td className="py-4 text-right">
-                      <div className="flex items-center gap-2 justify-end">
-                        <button
-                          className="p-1 text-text-muted hover:text-accent transition-colors"
-                          title="View details"
-                        >
-                          <Eye className="h-4 w-4" />
-                        </button>
-                        {job.status === 'completed' && (
-                          <button
-                            type="button"
-                            onClick={() => handleUndoImport(job.id)}
-                            disabled={undoAtLimit || undoingJobId === job.id}
-                            className="p-1 text-text-muted hover:text-red-500 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-                            title={
-                              undoAtLimit
-                                ? `${undosPerDay} undos used today. Resets tomorrow.`
-                                : "Undo import"
-                            }
-                          >
-                            {undoingJobId === job.id ? (
-                              <Loader2 className="h-4 w-4 animate-spin" />
-                            ) : (
-                              <Trash2 className="h-4 w-4" />
-                            )}
-                          </button>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </SurfaceCard>
-
-      {/* Ad Slot G - Data Enhancement */}
-      <SurfaceCard padding="md">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <div className="w-10 h-10 rounded-lg flex items-center justify-center bg-accent text-white">
-              <Plus className="h-5 w-5" />
-            </div>
-            <div>
-              <h3 className="font-semibold text-h2">Data Enhancement Services</h3>
-              <p className="text-body text-sm">
-                Let our experts clean and enrich your data for better insights
+              <div className="flex items-center gap-2 text-accent mb-2">
+                <Upload className="h-5 w-5" />
+                <span className="text-xs font-semibold uppercase tracking-widest">Data</span>
+              </div>
+              <h1 className="text-2xl sm:text-3xl font-bold text-text-primary tracking-tight">
+                Import center
+              </h1>
+              <p className="text-sm text-text-secondary mt-2 max-w-lg leading-relaxed">
+                Upload sales files — AKARA maps columns automatically and powers your dashboard,
+                copilot, and weekly debrief.
               </p>
             </div>
+
+            {billing && (
+              <div className="flex flex-wrap gap-3 sm:gap-4">
+                {[
+                  {
+                    label: "Uploads today",
+                    value: `${uploadsToday}/${uploadsPerDay}`,
+                  },
+                  {
+                    label: "Rows stored",
+                    value: billing.rows_limit === -1
+                      ? billing.rows_used.toLocaleString("en-IN")
+                      : `${(billing.rows_used / 1000).toFixed(0)}K / ${(billing.rows_limit / 1000).toFixed(0)}K`,
+                  },
+                  {
+                    label: "Undos left",
+                    value: `${undosPerDay - undosToday}`,
+                  },
+                ].map(({ label, value }) => (
+                  <div
+                    key={label}
+                    className="rounded-xl bg-surface-raised/80 px-4 py-2.5 min-w-[100px]"
+                  >
+                    <p className="text-[10px] uppercase tracking-wide text-text-muted">{label}</p>
+                    <p className="text-lg font-bold text-text-primary tabular-nums mt-0.5">{value}</p>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
-          <AkaraButton size="sm">
-            Learn More
-          </AkaraButton>
         </div>
-      </SurfaceCard>
+      </div>
+
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+        {!isAdminUser && (
+          <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900 flex items-center gap-3">
+            <AlertCircle className="h-5 w-5 shrink-0" />
+            Admin access required to import files.
+          </div>
+        )}
+
+        {/* Source tabs */}
+        <div className="flex flex-wrap gap-2 p-1 rounded-2xl bg-surface-raised/60 w-fit">
+          {SOURCE_TABS.map(({ id, label, short, icon: Icon, requiresPro }) => {
+            const locked = requiresPro && !hasSecondary;
+            const active = activeSource === id;
+            return (
+              <button
+                key={id}
+                type="button"
+                onClick={() => {
+                  setActiveSource(id);
+                  setUploadKey((k) => k + 1);
+                }}
+                className={cn(
+                  "flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium transition-all",
+                  active
+                    ? "bg-white text-text-primary shadow-sm ring-1 ring-surface-border"
+                    : "text-text-secondary hover:text-text-primary"
+                )}
+              >
+                <Icon className="h-4 w-4 shrink-0" />
+                <span className="hidden sm:inline">{label}</span>
+                <span className="sm:hidden">{short}</span>
+                {locked && <Lock className="h-3 w-3 text-text-muted" />}
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Upload area — single panel */}
+        <SurfaceCard padding="lg" hover={false} className="shadow-card">
+          {activeLocked ? (
+            <div className="text-center py-12 px-4">
+              <div className="mx-auto w-14 h-14 rounded-2xl bg-accent-soft flex items-center justify-center mb-4">
+                <Lock className="h-6 w-6 text-accent" />
+              </div>
+              <h3 className="text-lg font-semibold text-text-primary">Pro feature</h3>
+              <p className="text-sm text-text-secondary mt-2 max-w-md mx-auto">
+                Secondary DMS offtake and scheme master imports unlock on Pro and Business plans.
+              </p>
+              <Link to="/upgrade" className="inline-block mt-6">
+                <AkaraButton size="sm">View plans →</AkaraButton>
+              </Link>
+            </div>
+          ) : (
+            <DataUploadPanel
+              key={`${activeSource}-${uploadKey}`}
+              title={copy.title}
+              subtitle={copy.subtitle}
+              columns={copy.columns}
+              sourceType={activeSource}
+              isAdmin={isAdminUser}
+              uploadDisabled={uploadAtLimit}
+              onUpload={handleUpload}
+              onComplete={() => void refetchBilling()}
+            />
+          )}
+        </SurfaceCard>
+
+        {/* Import history */}
+        <SurfaceCard padding="md" hover={false}>
+          <div className="flex items-center justify-between mb-5">
+            <div className="flex items-center gap-2">
+              <Clock className="h-5 w-5 text-accent" />
+              <h2 className="text-lg font-semibold text-text-primary">Recent imports</h2>
+            </div>
+            <SecondaryButton size="sm" onClick={() => void refreshJobs()}>
+              <RotateCcw className="h-4 w-4 mr-1.5" />
+              Refresh
+            </SecondaryButton>
+          </div>
+
+          {loadingJobs && importJobs.length === 0 ? (
+            <TableSkeleton rows={3} />
+          ) : importJobs.length === 0 ? (
+            <NoDataEmptyState
+              title="No imports yet"
+              description="Your first upload will appear here with status and row counts."
+            />
+          ) : (
+            <ul className="divide-y divide-surface-border">
+              {importJobs.slice(0, 8).map((job) => (
+                <li
+                  key={job.id}
+                  className="flex flex-col sm:flex-row sm:items-center gap-3 py-4 first:pt-0 last:pb-0"
+                >
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium text-sm text-text-primary truncate">{job.filename}</p>
+                    <p className="text-xs text-text-muted mt-0.5">
+                      {new Date(job.created_at).toLocaleString("en-IN", {
+                        day: "numeric",
+                        month: "short",
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
+                      {" · "}
+                      {(job.file_size / 1024 / 1024).toFixed(1)} MB
+                      {" · "}
+                      <span className="capitalize">{job.source_type}</span>
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-4 shrink-0">
+                    <StatusBadge status={job.status} />
+                    {job.rows_inserted != null && (
+                      <span className="text-sm font-semibold tabular-nums text-text-primary">
+                        <AnimatedNumber value={job.rows_inserted} /> rows
+                      </span>
+                    )}
+                    {job.status === "completed" && isAdminUser && (
+                      <button
+                        type="button"
+                        onClick={() => void handleUndoImport(job.id)}
+                        disabled={undoAtLimit || undoingJobId === job.id}
+                        className="p-2 rounded-lg text-text-muted hover:text-red-600 hover:bg-red-50 transition-colors disabled:opacity-40"
+                        title={undoAtLimit ? "Daily undo limit reached" : "Undo import"}
+                      >
+                        {undoingJobId === job.id ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <Trash2 className="h-4 w-4" />
+                        )}
+                      </button>
+                    )}
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </SurfaceCard>
+      </div>
     </div>
   );
 }

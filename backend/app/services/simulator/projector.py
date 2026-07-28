@@ -93,17 +93,22 @@ class RevenueProjector:
 
         # Aggregate total_amount by day
         daily_totals: dict[str, Decimal] = {}
-        total_orders = 0
+        invoice_numbers: set[str] = set()
+        line_items = 0
         for row in rows:
             day = str(row.get("invoice_date", ""))[:10]
             if not day:
                 continue
             amt = Decimal(str(row.get("total_amount") or 0))
             daily_totals[day] = daily_totals.get(day, Decimal("0")) + amt
-            total_orders += 1
+            line_items += 1
+            inv = row.get("invoice_number")
+            if inv:
+                invoice_numbers.add(str(inv))
 
         data_days = len(daily_totals)
         total_revenue = float(sum(daily_totals.values()))
+        total_orders = len(invoice_numbers) if invoice_numbers else line_items
 
         if data_days == 0:
             return BaselineMetrics(
