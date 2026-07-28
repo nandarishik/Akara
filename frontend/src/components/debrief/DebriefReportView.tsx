@@ -343,9 +343,18 @@ export function DebriefReportView({
       <AnimatedNumber value={metrics.thisWeekRevenue} formatter={formatInrDisplay} />
     ) : metrics.thisWeekRevenueDisplay ? (
       metrics.thisWeekRevenueDisplay
+    ) : metrics.revenueKnown || meta.momentum?.this_week_revenue === 0 ? (
+      formatInrDisplay(metrics.thisWeekRevenue)
     ) : (
       "—"
     );
+
+  const ordersDisplay =
+    metrics.orders > 0
+      ? metrics.orders.toLocaleString("en-IN")
+      : metrics.ordersKnown
+        ? "0"
+        : "—";
 
   const showWeekSnapshot =
     metrics.hasRevenueCompare || metrics.hasOrdersCompare || weekdayPulse.length > 0;
@@ -409,9 +418,7 @@ export function DebriefReportView({
             />
             <KpiTile
               label="Orders"
-              value={
-                metrics.orders > 0 ? metrics.orders.toLocaleString("en-IN") : "—"
-              }
+              value={ordersDisplay}
               sub={
                 metrics.hasOrdersCompare
                   ? `vs ${metrics.priorOrders} last week`

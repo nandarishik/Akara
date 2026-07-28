@@ -11,6 +11,7 @@ from pydantic import BaseModel
 
 from app.core.auth import CurrentUser
 from app.core.tenant import TenantCtx, get_supabase_service_client
+from app.services.debrief.metadata_enrich import enrich_debrief_metadata
 from app.services.debrief.pdf import render_debrief_pdf
 from app.services.debrief.service import WeeklyDebriefService
 
@@ -91,10 +92,15 @@ def get_latest_debrief(user: CurrentUser, tenant: TenantCtx) -> DebriefDetail:
             detail={"code": "no_debrief_yet", "message": "No weekly debrief yet"},
         )
     row = result.data[0]
+    meta = enrich_debrief_metadata(
+        row.get("metadata") or {},
+        tenant_id=tenant.tenant_id,
+        supabase=supa,
+    )
     return DebriefDetail(
         id=UUID(row["id"]),
         title=row["title"],
-        metadata=row.get("metadata") or {},
+        metadata=meta,
         created_at=row["created_at"],
     )
 
@@ -147,10 +153,15 @@ def get_debrief(
     if not result.data:
         raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Report not found")
     row = result.data
+    meta = enrich_debrief_metadata(
+        row.get("metadata") or {},
+        tenant_id=tenant.tenant_id,
+        supabase=supa,
+    )
     return DebriefDetail(
         id=UUID(row["id"]),
         title=row["title"],
-        metadata=row.get("metadata") or {},
+        metadata=meta,
         created_at=row["created_at"],
     )
 
@@ -174,7 +185,11 @@ def download_debrief_pdf(
     if not result.data:
         raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Report not found")
 
-    meta = result.data.get("metadata") or {}
+    meta = enrich_debrief_metadata(
+        result.data.get("metadata") or {},
+        tenant_id=tenant.tenant_id,
+        supabase=supa,
+    )
     title = result.data.get("title", "weekly_debrief")
     pdf_bytes = render_debrief_pdf(meta, title)
     safe_name = "".join(c if c.isalnum() or c in " -_" else "_" for c in title)[:80]

@@ -7,6 +7,7 @@ type DebriefLike = {
     this_week_revenue?: number;
     prior_week_revenue?: number;
     this_week_revenue_fmt?: string;
+    prior_week_revenue_fmt?: string;
     wow_change_pct?: number;
   };
   insights?: {
@@ -18,6 +19,8 @@ type DebriefLike = {
     };
   };
 };
+
+const CURRENCY = String.raw`(?:₹|Rs\.?|INR\s*)?`;
 
 function parseInrToken(raw: string): number {
   const cleaned = raw.replace(/[₹,\s]/g, "");
@@ -32,6 +35,16 @@ function parseInrToken(raw: string): number {
   return Math.round(n);
 }
 
+function parseAmountString(s: string): number {
+  const trimmed = s.trim();
+  if (!trimmed || trimmed === "—" || trimmed === "₹—") return 0;
+  const symbolMatch = trimmed.match(new RegExp(`${CURRENCY}([\\d,]+(?:\\.\\d+)?)\\s*(L|K|Cr)?`, "i"));
+  if (symbolMatch) {
+    return parseInrToken(symbolMatch[1] + (symbolMatch[2] ?? ""));
+  }
+  return parseInrToken(trimmed);
+}
+
 function allNarrativeText(meta: DebriefLike): string {
   const parts = [
     meta.headline,
@@ -42,36 +55,66 @@ function allNarrativeText(meta: DebriefLike): string {
   return parts.join(" ");
 }
 
-/** Pull this/prior revenue from narrative when engine fields are empty (older debriefs). */
 function parseRevenueFromNarrative(text: string): { current: number; prior: number } {
-  const decline =
-    text.match(
-      /(?:to|at|reached?|dropped?\s+to|fell?\s+to)\s*₹([\d,]+(?:\.\d+)?(?:\s*(?:L|K|Cr))?)\s*(?:from|vs\.?|versus|compared\s+to)\s*₹([\d,]+(?:\.\d+)?(?:\s*(?:L|K|Cr))?)/i
-    ) ??
-    text.match(
-      /₹([\d,]+(?:\.\d+)?(?:\s*(?:L|K|Cr))?)\s*(?:from|vs\.?|versus|compared\s+to)\s*₹([\d,]+(?:\.\d+)?(?:\s*(?:L|K|Cr))?)/i
-    );
-  if (decline) {
+  const toFrom = text.match(
+    new RegExp(
+      `(?:to|at|reached?|dropped?\\s+to|fell?\\s+to|increased?\\s+to|rose\\s+to)\\s*${CURRENCY}([\\d,]+(?:\\.\\d+)?(?:\\s*(?:L|K|Cr))?)\\s*(?:from|vs\\.?|versus|compared\\s+to)\\s*${CURRENCY}([\\d,]+(?:\\.\\d+)?(?:\\s*(?:L|K|Cr))?)`,
+      "i"
+    )
+  );
+  if (toFrom) {
     return {
-      current: parseInrToken(decline[1].replace(/\s+/g, "")),
-      prior: parseInrToken(decline[2].replace(/\s+/g, "")),
+      current: parseAmountString(toFrom[1]),
+      prior: parseAmountString(toFrom[2]),
     };
   }
+
+  const fromTo = text.match(
+    new RegExp(
+      `(?:from|vs\\.?|versus|compared\\s+to)\\s*${CURRENCY}([\\d,]+(?:\\.\\d+)?(?:\\s*(?:L|K|Cr))?)\\s*(?:to|at|reached?)\\s*${CURRENCY}([\\d,]+(?:\\.\\d+)?(?:\\s*(?:L|K|Cr))?)`,
+      "i"
+    )
+  );
+  if (fromTo) {
+    return {
+      current: parseAmountString(fromTo[2]),
+      prior: parseAmountString(fromTo[1]),
+    };
+  }
+
+  const plain = text.match(
+    /(?:to|at|dropped?\s+to|fell?\s+to)\s*([\d,]+)\s*(?:from|vs\.?|versus|compared\s+to)\s*([\d,]+)/i
+  );
+  if (plain) {
+    return {
+      current: parseAmountString(plain[1]),
+      prior: parseAmountString(plain[2]),
+    };
+  }
+
   return { current: 0, prior: 0 };
 }
 
 function parseOrdersFromNarrative(text: string): { current: number; prior: number } {
-  const up =
-    text.match(/(?:from|increased\s+from)\s*(\d+)\s*(?:to|orders?\s+to)\s*(\d+)\s*orders?/i) ??
-    text.match(/(\d+)\s*orders?\s*(?:vs|versus|compared\s+to|from)\s*(\d+)/i);
-  if (up) {
-    const a = parseInt(up[1], 10);
-    const b = parseInt(up[2], 10);
-    if (Number.isFinite(a) && Number.isFinite(b)) {
-      return a > b ? { current: a, prior: b } : { current: b, prior: a };
+  const patterns = [
+    /(?:from|increased\s+from)\s*(\d+)\s+to\s+(\d+)/i,
+    /(\d+)\s+to\s+(\d+)\s+orders?/i,
+    /(\d+)\s*orders?\s*(?:vs|versus|compared\s+to|from)\s*(\d+)/i,
+    /(\d+)\s*orders?/i,
+  ];
+
+  for (let i = 0; i < patterns.length - 1; i++) {
+    const match = text.match(patterns[i]);
+    if (match) {
+      const a = parseInt(match[1], 10);
+      const b = parseInt(match[2], 10);
+      if (Number.isFinite(a) && Number.isFinite(b)) {
+        return a > b ? { current: a, prior: b } : { current: b, prior: a };
+      }
     }
   }
-  const single = text.match(/(\d+)\s*orders?/i);
+
+  const single = text.match(patterns[patterns.length - 1]);
   if (single) return { current: parseInt(single[1], 10), prior: 0 };
   return { current: 0, prior: 0 };
 }
@@ -87,16 +130,34 @@ export type EnrichedDebriefMetrics = {
   wowDown: boolean;
   hasRevenueCompare: boolean;
   hasOrdersCompare: boolean;
+  revenueKnown: boolean;
+  ordersKnown: boolean;
 };
 
 export function enrichDebriefMetrics(meta: DebriefLike): EnrichedDebriefMetrics {
   const m = meta.momentum;
-  let thisWeek = m?.this_week_revenue ?? meta.insights?.week_metrics?.revenue ?? 0;
-  let priorWeek = m?.prior_week_revenue ?? meta.insights?.week_metrics?.prior_revenue ?? 0;
-  let orders = meta.insights?.week_metrics?.orders ?? 0;
-  let priorOrders = meta.insights?.week_metrics?.prior_orders ?? 0;
+  let thisWeek = m?.this_week_revenue ?? meta.insights?.week_metrics?.revenue;
+  let priorWeek = m?.prior_week_revenue ?? meta.insights?.week_metrics?.prior_revenue;
+  let orders = meta.insights?.week_metrics?.orders;
+  let priorOrders = meta.insights?.week_metrics?.prior_orders;
+
+  if (thisWeek == null && m?.this_week_revenue_fmt) {
+    thisWeek = parseAmountString(m.this_week_revenue_fmt);
+  }
+  if (priorWeek == null && m?.prior_week_revenue_fmt) {
+    priorWeek = parseAmountString(m.prior_week_revenue_fmt);
+  }
+
+  thisWeek = thisWeek ?? 0;
+  priorWeek = priorWeek ?? 0;
+  orders = orders ?? 0;
+  priorOrders = priorOrders ?? 0;
 
   const narrative = allNarrativeText(meta);
+  const revenueKnown =
+    m?.this_week_revenue != null ||
+    Boolean(m?.this_week_revenue_fmt && m.this_week_revenue_fmt !== "₹—") ||
+    meta.insights?.week_metrics?.revenue != null;
 
   if (!thisWeek || !priorWeek) {
     const parsed = parseRevenueFromNarrative(narrative);
@@ -111,7 +172,7 @@ export function enrichDebriefMetrics(meta: DebriefLike): EnrichedDebriefMetrics 
   }
 
   let wowPct = m?.wow_change_pct ?? 0;
-  if (priorWeek > 0 && thisWeek > 0 && wowPct === 0) {
+  if (priorWeek > 0 && thisWeek >= 0 && (wowPct === 0 || m?.wow_change_pct == null)) {
     wowPct = Math.round(((thisWeek - priorWeek) / priorWeek) * 100);
   }
 
@@ -130,13 +191,15 @@ export function enrichDebriefMetrics(meta: DebriefLike): EnrichedDebriefMetrics 
     wowDown: wowPct < 0,
     hasRevenueCompare: thisWeek > 0 && priorWeek > 0,
     hasOrdersCompare: orders > 0 && priorOrders > 0,
+    revenueKnown: revenueKnown || thisWeek > 0 || Boolean(displayFromFmt),
+    ordersKnown: orders > 0 || meta.insights?.week_metrics?.orders != null,
   };
 }
 
 export function impactFromItem(detail: string, impact_inr?: number): number {
   if (impact_inr && impact_inr > 0) return impact_inr;
-  const amounts = [...detail.matchAll(/₹([\d,]+(?:\.\d+)?)\s*(L|K|Cr)?/gi)].map((match) =>
-    parseInrToken(match[1] + (match[2] ?? ""))
+  const amounts = [...detail.matchAll(/(?:₹|Rs\.?|INR\s*)?([\d,]+(?:\.\d+)?)\s*(L|K|Cr)?/gi)].map(
+    (match) => parseInrToken(match[1] + (match[2] ?? ""))
   );
   return amounts.length ? Math.max(...amounts) : 0;
 }

@@ -150,6 +150,10 @@ export function DebriefPage() {
 
   const staleDays = meta?.data_freshness ? daysSinceIso(meta.data_freshness) : null;
   const isStale = staleDays !== null && staleDays > 7;
+  const dataEndsBeforeDebriefWeek =
+    meta?.data_freshness &&
+    meta?.week_start &&
+    meta.data_freshness.slice(0, 10) < meta.week_start.slice(0, 10);
 
   if (loading && !detail) {
     return (
@@ -240,6 +244,14 @@ export function DebriefPage() {
   return (
     <div className="min-h-full bg-surface-canvas">
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+        {dataEndsBeforeDebriefWeek && (
+          <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+            This debrief covers {meta.week_start} – {meta.week_end}, but your latest sale is{" "}
+            {meta.data_freshness?.slice(0, 10)} — KPIs may show ₹0 until you upload recent data
+            and regenerate.
+          </div>
+        )}
+
         {isStale && (
           <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
             Data is {staleDays} days old — upload fresh sales for sharper insights.
