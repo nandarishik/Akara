@@ -14,7 +14,7 @@ import {
 } from "lucide-react";
 import { useKPIs } from "@/hooks/useKPIs";
 import { useSalesHeatmap } from "@/hooks/useSalesHeatmap";
-import { SalesHeatmapChart } from "@/components/charts/akara/SalesHeatmapChart";
+import { ProductZoneMatrix } from "@/components/charts/akara/ProductZoneMatrix";
 import { toNum, formatINR as fmtINR } from "@/lib/format";
 import { RevenueTrendChart } from "@/components/dashboard/RevenueTrendChart";
 import { ZoneChart } from "@/components/dashboard/ZoneChart";
@@ -251,7 +251,7 @@ export function DashboardPage() {
           {isLoading ? (
             <div className="h-48 skeleton rounded-lg" />
           ) : (data?.zone_breakdown?.length || 0) > 0 ? (
-            <div className="min-h-[192px]">
+            <div className="h-[192px] overflow-hidden">
               <ZoneChart data={data?.zone_breakdown || []} loading={isLoading} />
             </div>
           ) : (
@@ -265,18 +265,15 @@ export function DashboardPage() {
           <BarChart3 className="h-4 w-4 text-accent" />
           <h2 className="text-h2">Product × Zone Activity</h2>
         </div>
-        <div className="flex h-[280px] flex-col">
-          <SalesHeatmapChart
-            className="h-full min-h-0 flex-1"
-            rows={(heatmapData?.cells ?? []).map((c) => ({
-              zone: c.zone,
-              product_name: c.product_name,
-              revenue: toNum(c.revenue),
-              order_count: c.order_count,
-            }))}
-            loading={heatmapLoading}
-          />
-        </div>
+        <ProductZoneMatrix
+          rows={(heatmapData?.cells ?? []).map((c) => ({
+            zone: c.zone,
+            product_name: c.product_name,
+            revenue: toNum(c.revenue),
+            order_count: c.order_count,
+          }))}
+          loading={heatmapLoading}
+        />
       </GlowSurfaceCard>
 
       <GlowSurfaceCard>
@@ -298,9 +295,11 @@ export function DashboardPage() {
                   <span className="w-6 h-6 rounded bg-white/10 flex items-center justify-center text-xs font-bold text-white/70">
                     {i + 1}
                   </span>
-                  <span className="text-sm font-medium">{p.product_name}</span>
+                  <span className="text-sm font-medium text-white/90 truncate max-w-[220px]">
+                    {p.product_name?.trim() || "Unnamed product"}
+                  </span>
                 </div>
-                <span className="text-sm font-semibold">{formatINR(p.total_revenue)}</span>
+                <span className="text-sm font-semibold text-white">{formatINR(p.total_revenue)}</span>
               </div>
             ))}
           </div>

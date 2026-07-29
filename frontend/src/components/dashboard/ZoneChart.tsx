@@ -13,7 +13,7 @@ export function ZoneChart({ data, loading }: Props) {
       data={data}
       loading={loading}
       horizontal={false}
-      className="h-full min-h-[192px]"
+      className="h-full w-full"
       aspectRatio={null}
     />
   );

@@ -523,7 +523,9 @@ export function DebriefReportView({
               <p className="text-xs text-text-muted mt-1 mb-4">
                 Green = beat your usual weekday
               </p>
-              <WeekdayBarChart pulse={weekdayPulse} className="h-[200px] w-full" aspectRatio={null} />
+              <div className="h-[200px] overflow-hidden">
+                <WeekdayBarChart pulse={weekdayPulse} className="h-full w-full" aspectRatio={null} />
+              </div>
             </GlowSurfaceCard>
           ) : metrics.hasRevenueCompare ? (
             <GlowSurfaceCard padding="md" hover={false} className="flex flex-col justify-center">
@@ -565,8 +567,8 @@ export function DebriefReportView({
             <Package className="h-4 w-4 text-accent" />
             Product shifts
           </h3>
-          <div className="h-[200px]">
-            <ProductMoverBarChart movers={moverChartData} />
+          <div className="h-[200px] overflow-hidden">
+            <ProductMoverBarChart movers={moverChartData} className="h-full w-full" aspectRatio={null} />
           </div>
         </GlowSurfaceCard>
       )}

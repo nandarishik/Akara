@@ -49,12 +49,12 @@ export function toAreaSeries(rows: RevenueByDate[]): AreaPoint[] {
 export function toZoneBarSeries(rows: ZoneBreakdown[], limit = 5): BarRow[] {
   return rows
     .slice()
-    .sort((a, b) => toNum(b.revenue_pct) - toNum(a.revenue_pct))
+    .sort((a, b) => toNum(b.revenue) - toNum(a.revenue))
     .slice(0, limit)
     .map((z) => ({
       name: z.zone,
-      value: toNum(z.revenue_pct),
-      label: `${toNum(z.revenue_pct).toFixed(1)}%`,
+      value: toNum(z.revenue),
+      label: formatCompactINR(toNum(z.revenue)),
     }));
 }
 

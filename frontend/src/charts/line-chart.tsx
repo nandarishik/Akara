@@ -257,7 +257,7 @@ export function LineChart({
       className={cn("relative w-full", className)}
       ref={containerRef}
       style={{
-        ...(aspectRatio ? { aspectRatio } : { height: "100%" }),
+        ...(aspectRatio ? { aspectRatio } : {}),
         touchAction: "none",
         ...style,
       }}
