@@ -5,6 +5,8 @@ import { useSearchParams } from "react-router-dom";
 
 import AkaraButton from "@/components/ui/GradientButton";
 import GlowSurfaceCard from "@/components/ui/GlowSurfaceCard";
+import DarkMeshBackground from "@/components/effects/DarkMeshBackground";
+import PrismLazy from "@/components/effects/PrismLazy";
 import { PlanCard } from "@/components/ui/card";
 import { createCheckoutSession, BillingApiError } from "@/lib/api/billing";
 import { openRazorpaySubscriptionCheckout } from "@/lib/razorpayCheckout";
@@ -86,32 +88,34 @@ export function UpgradePage() {
   const currentPlan = usage?.plan ?? "free";
 
   return (
-    <div className="min-h-screen bg-surface-bg text-text-primary">
-      <div className="max-w-6xl mx-auto px-6 py-16">
+    <div className="theme-product-dark min-h-screen relative">
+      <DarkMeshBackground className="fixed inset-0 opacity-30 pointer-events-none" />
+
+      <div className="relative z-10 max-w-6xl mx-auto px-6 py-16">
         <div className="text-center mb-12">
-          <Link to="/dashboard" className="text-sm text-accent hover:text-accent-hover">
+          <Link to="/dashboard" className="text-sm text-[#03B3C3] hover:text-[#38bdf8]">
             ← Back to app
           </Link>
-          <h1 className="mt-6 text-4xl font-bold text-text-primary tracking-tight">
+          <h1 className="mt-6 text-4xl font-bold text-white tracking-tight">
             Choose your plan
           </h1>
-          <p className="mt-3 text-text-secondary">
+          <p className="mt-3 text-white/70">
             Start free, upgrade when you&apos;re ready. No long-term contracts.
           </p>
-          <p className="mt-2 text-xs text-text-muted">
+          <p className="mt-2 text-xs text-white/50">
             GST invoice included · Cancel anytime · India data residency
           </p>
         </div>
 
         {cancelled && (
-          <div className="mb-6 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-amber-800 text-sm text-center">
+          <div className="mb-6 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-amber-300 text-sm text-center">
             Checkout cancelled. You can try again anytime.
           </div>
         )}
         {alreadySubscribed && (
-          <div className="mb-6 rounded-xl border border-accent/30 bg-accent-soft px-4 py-4 text-sm text-center">
-            <p className="text-text-primary font-medium">You already have an active subscription.</p>
-            <p className="text-text-secondary mt-1">Manage your plan, payment method, or cancellation from Billing.</p>
+          <div className="mb-6 rounded-xl border border-[#03B3C3]/30 bg-[#03B3C3]/10 px-4 py-4 text-sm text-center">
+            <p className="text-white font-medium">You already have an active subscription.</p>
+            <p className="text-white/70 mt-1">Manage your plan, payment method, or cancellation from Billing.</p>
             <Link to="/billing" className="inline-block mt-3">
               <AkaraButton size="sm">
                 <CreditCard className="h-4 w-4 mr-2 inline" />
@@ -121,7 +125,7 @@ export function UpgradePage() {
           </div>
         )}
         {error && !alreadySubscribed && (
-          <div className="mb-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-red-700 text-sm text-center">
+          <div className="mb-6 rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-red-300 text-sm text-center">
             {error}
           </div>
         )}
@@ -135,8 +139,8 @@ export function UpgradePage() {
               className={cn(
                 "px-4 py-2 rounded-full text-sm font-medium transition-colors",
                 interval === iv
-                  ? "bg-accent text-white"
-                  : "bg-surface-raised text-text-secondary hover:bg-surface-border"
+                  ? "bg-[#03B3C3] text-white"
+                  : "bg-white/5 text-white/70 hover:bg-white/10"
               )}
             >
               {iv === "month" ? "Monthly" : "Annual (save ~17%)"}
@@ -144,114 +148,123 @@ export function UpgradePage() {
           ))}
         </div>
 
-        <div className="grid md:grid-cols-3 gap-6">
-          <GlowSurfaceCard padding="lg">
-            <PlanCard
-              name="Free"
-              price="₹0"
-              description="Try AKARA with your data"
-              current={currentPlan === "free"}
-              features={[
-                "10 copilot questions/month",
-                "10,000 rows storage",
-                "5 uploads/month",
-                "30-day retention",
-              ]}
-              cta={
-                <button disabled className="w-full py-2 rounded-full bg-surface-raised text-text-muted text-sm">
-                  {currentPlan === "free" ? "Current plan" : "Included"}
-                </button>
-              }
-              className="border-0 bg-transparent shadow-none p-0"
-            />
-          </GlowSurfaceCard>
+        <div className="relative mb-12 min-h-[520px]">
+          <PrismLazy
+            className="absolute inset-0 opacity-50 pointer-events-none rounded-2xl"
+            animationType="rotate"
+            timeScale={0.35}
+            glow={0.85}
+            noise={0.35}
+            scale={2.8}
+            hueShift={0.5}
+            suspendWhenOffscreen
+          />
+          <div className="relative z-10 grid md:grid-cols-3 gap-6">
+            <GlowSurfaceCard padding="lg">
+              <PlanCard
+                name="Free"
+                price="₹0"
+                description="Try AKARA with your data"
+                current={currentPlan === "free"}
+                features={[
+                  "10 copilot questions/month",
+                  "10,000 rows storage",
+                  "5 uploads/month",
+                  "30-day retention",
+                ]}
+                cta={
+                  <button disabled className="w-full py-2 rounded-full bg-white/5 text-white/40 text-sm">
+                    {currentPlan === "free" ? "Current plan" : "Included"}
+                  </button>
+                }
+                className="border-0 bg-transparent shadow-none p-0"
+              />
+            </GlowSurfaceCard>
 
-          <GlowSurfaceCard
-            padding="lg"
-            className="border-2 border-accent ring-1 ring-accent/20 shadow-card-hover"
-          >
-            <PlanCard
-              name="Pro"
-              price={interval === "month" ? "₹7,999" : "₹79,999"}
-              period={interval === "month" ? "/ month" : "/ year"}
-              description="For growing distributors"
-              popular
-              current={currentPlan === "pro"}
-              features={[
-                "400 copilot questions/month",
-                "Simulator & secondary sales",
-                "Unlimited monthly uploads",
-                "365-day retention",
-              ]}
-              cta={
-                currentPlan === "pro" ? (
-                  <Link to="/billing" className="block">
-                    <AkaraButton className="w-full" variant="secondary">
-                      <CreditCard className="h-4 w-4 mr-2 inline" />
-                      Manage subscription
+            <GlowSurfaceCard padding="lg" accent="blue" hover>
+              <PlanCard
+                name="Pro"
+                price={interval === "month" ? "₹7,999" : "₹79,999"}
+                period={interval === "month" ? "/ month" : "/ year"}
+                description="For growing distributors"
+                popular
+                current={currentPlan === "pro"}
+                features={[
+                  "400 copilot questions/month",
+                  "Simulator & secondary sales",
+                  "Unlimited monthly uploads",
+                  "365-day retention",
+                ]}
+                cta={
+                  currentPlan === "pro" ? (
+                    <Link to="/billing" className="block">
+                      <AkaraButton className="w-full" variant="secondary">
+                        <CreditCard className="h-4 w-4 mr-2 inline" />
+                        Manage subscription
+                      </AkaraButton>
+                    </Link>
+                  ) : (
+                    <AkaraButton
+                      className="w-full"
+                      onClick={() => handleUpgrade("pro")}
+                      disabled={loadingPlan !== null}
+                    >
+                      {loadingPlan === "pro" ? (
+                        <Loader2 className="h-4 w-4 animate-spin mx-auto" />
+                      ) : (
+                        "Upgrade to Pro"
+                      )}
                     </AkaraButton>
-                  </Link>
-                ) : (
-                  <AkaraButton
-                    className="w-full"
-                    onClick={() => handleUpgrade("pro")}
-                    disabled={loadingPlan !== null}
-                  >
-                    {loadingPlan === "pro" ? (
-                      <Loader2 className="h-4 w-4 animate-spin mx-auto" />
-                    ) : (
-                      "Upgrade to Pro"
-                    )}
-                  </AkaraButton>
-                )
-              }
-              className="border-0 bg-transparent shadow-none p-0"
-            />
-          </GlowSurfaceCard>
+                  )
+                }
+                className="border-0 bg-transparent shadow-none p-0"
+              />
+            </GlowSurfaceCard>
 
-          <GlowSurfaceCard padding="lg">
-            <PlanCard
-              name="Business"
-              price={interval === "month" ? "₹13,999" : "₹1,39,999"}
-              period={interval === "month" ? "/ month" : "/ year"}
-              description="Full intelligence stack"
-              current={currentPlan === "business"}
-              features={[
-                "800 copilot questions/month",
-                "Scheme leakage detection",
-                "Team invites & API keys",
-                "3-year retention",
-              ]}
-              cta={
-                currentPlan === "business" ? (
-                  <Link to="/billing" className="block">
-                    <AkaraButton className="w-full" variant="secondary">
-                      Manage subscription
+            <GlowSurfaceCard padding="lg">
+              <PlanCard
+                name="Business"
+                price={interval === "month" ? "₹13,999" : "₹1,39,999"}
+                period={interval === "month" ? "/ month" : "/ year"}
+                description="Full intelligence stack"
+                current={currentPlan === "business"}
+                features={[
+                  "800 copilot questions/month",
+                  "Scheme leakage detection",
+                  "Team invites & API keys",
+                  "3-year retention",
+                ]}
+                cta={
+                  currentPlan === "business" ? (
+                    <Link to="/billing" className="block">
+                      <AkaraButton className="w-full" variant="secondary">
+                        Manage subscription
+                      </AkaraButton>
+                    </Link>
+                  ) : (
+                    <AkaraButton
+                      className="w-full"
+                      onClick={() => handleUpgrade("business")}
+                      disabled={loadingPlan !== null}
+                    >
+                      {loadingPlan === "business" ? (
+                        <Loader2 className="h-4 w-4 animate-spin mx-auto" />
+                      ) : (
+                        "Upgrade to Business"
+                      )}
                     </AkaraButton>
-                  </Link>
-                ) : (
-                  <AkaraButton
-                    className="w-full"
-                    onClick={() => handleUpgrade("business")}
-                    disabled={loadingPlan !== null}
-                  >
-                    {loadingPlan === "business" ? (
-                      <Loader2 className="h-4 w-4 animate-spin mx-auto" />
-                    ) : (
-                      "Upgrade to Business"
-                    )}
-                  </AkaraButton>
-                )
-              }
-              className="border-0 bg-transparent shadow-none p-0"
-            />
-          </GlowSurfaceCard>
+                  )
+                }
+                className="border-0 bg-transparent shadow-none p-0"
+              />
+            </GlowSurfaceCard>
+          </div>
         </div>
 
-        <GlowSurfaceCard className="mt-12 text-center" padding="lg">
-          <p className="text-text-secondary text-sm">
+        <GlowSurfaceCard className="mt-12 text-center" padding="lg" accent="blue">
+          <p className="text-white/70 text-sm">
             Pay via bank transfer / NEFT? Email{" "}
-            <a href="mailto:billing@akara.ai" className="text-accent hover:text-accent-hover underline">
+            <a href="mailto:billing@akara.ai" className="text-[#03B3C3] hover:text-[#38bdf8] underline">
               billing@akara.ai
             </a>{" "}
             with your company GSTIN and plan choice.
@@ -259,12 +272,12 @@ export function UpgradePage() {
         </GlowSurfaceCard>
 
         <div className="mt-16 max-w-2xl mx-auto space-y-4">
-          <h2 className="text-lg font-semibold text-center text-text-primary">FAQ</h2>
+          <h2 className="text-lg font-semibold text-center text-white">FAQ</h2>
           {FAQ.map(({ q, a }) => (
             <GlowSurfaceCard key={q} padding="sm">
               <details>
-                <summary className="cursor-pointer font-medium text-sm text-text-primary">{q}</summary>
-                <p className="mt-2 text-sm text-text-secondary">{a}</p>
+                <summary className="cursor-pointer font-medium text-sm text-white">{q}</summary>
+                <p className="mt-2 text-sm text-white/70">{a}</p>
               </details>
             </GlowSurfaceCard>
           ))}

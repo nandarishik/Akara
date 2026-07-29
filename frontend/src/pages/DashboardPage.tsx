@@ -25,6 +25,7 @@ import {
 } from "@/components/ui/select";
 import { Link } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
+import ProductPageLayout from "@/components/layout/ProductPageLayout";
 import GlowSurfaceCard from "@/components/ui/GlowSurfaceCard";
 import { GlassIcon } from "@/components/effects/GlassIcon";
 import type { GlassIconColor } from "@/components/effects/GlassIcons";
@@ -86,14 +87,14 @@ export function DashboardPage() {
 
   if (!isLoading && !data) {
     return (
-      <div className="p-6 lg:p-8 bg-surface-canvas min-h-full">
+      <ProductPageLayout>
         <DashboardEmptyState />
-      </div>
+      </ProductPageLayout>
     );
   }
 
   return (
-    <div className="p-6 lg:p-8 space-y-6 max-w-7xl mx-auto bg-surface-canvas">
+    <ProductPageLayout className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-display text-2xl">Dashboard</h1>
@@ -116,25 +117,25 @@ export function DashboardPage() {
       </div>
 
       {error && (
-        <GlowSurfaceCard className="border-red-200 bg-red-50/50">
+        <GlowSurfaceCard accent="red">
           <div className="flex items-center gap-3">
-            <AlertTriangle className="h-5 w-5 text-red-500 shrink-0" />
+            <AlertTriangle className="h-5 w-5 text-red-400 shrink-0" />
             <div>
-              <p className="text-red-800 font-medium text-sm">Failed to load dashboard</p>
-              <p className="text-red-600 text-xs mt-0.5">{error.message}</p>
+              <p className="text-red-300 font-medium text-sm">Failed to load dashboard</p>
+              <p className="text-red-400/80 text-xs mt-0.5">{error.message}</p>
             </div>
           </div>
         </GlowSurfaceCard>
       )}
 
       {isStale && !isLoading && (
-        <GlowSurfaceCard className="border-amber-200 bg-amber-50/50">
+        <GlowSurfaceCard accent="amber">
           <div className="flex items-center justify-between gap-4">
             <div className="flex items-center gap-3">
-              <AlertTriangle className="h-5 w-5 text-amber-500 shrink-0" />
+              <AlertTriangle className="h-5 w-5 text-amber-400 shrink-0" />
               <div>
-                <p className="text-amber-800 font-medium text-sm">Data is {dataAge} days old</p>
-                <p className="text-amber-700 text-xs">Import fresh data for current metrics</p>
+                <p className="text-amber-200 font-medium text-sm">Data is {dataAge} days old</p>
+                <p className="text-amber-300/80 text-xs">Import fresh data for current metrics</p>
               </div>
             </div>
             <Link to="/data" className="text-sm font-semibold text-accent hover:underline shrink-0">
@@ -188,13 +189,13 @@ export function DashboardPage() {
       </div>
 
       {showWhatsAppNudge && !isLoading && (
-        <GlowSurfaceCard className="border-amber-200 bg-amber-50/50 animate-fadeInUp">
+        <GlowSurfaceCard accent="amber" className="animate-fadeInUp">
           <div className="flex items-center justify-between gap-4">
             <div>
-              <p className="text-amber-900 font-medium text-sm">
+              <p className="text-amber-200 font-medium text-sm">
                 Get this dashboard delivered to your WhatsApp every Monday
               </p>
-              <p className="text-amber-700 text-xs mt-0.5">
+              <p className="text-amber-300/80 text-xs mt-0.5">
                 Add your WhatsApp number to receive weekly briefs automatically.
               </p>
             </div>
@@ -208,7 +209,7 @@ export function DashboardPage() {
               <button
                 type="button"
                 onClick={dismissSlotE}
-                className="text-xs text-amber-700 hover:underline"
+                className="text-xs text-amber-300/80 hover:underline"
                 aria-label="Dismiss WhatsApp nudge"
               >
                 Dismiss
@@ -266,16 +267,16 @@ export function DashboardPage() {
             ))}
           </div>
         ) : (data?.top_products?.length || 0) > 0 ? (
-          <div className="divide-y divide-surface-border">
+          <div className="divide-y divide-white/10">
             {data!.top_products.slice(0, 5).map((p, i) => (
               <div key={i} className="flex items-center justify-between py-3">
                 <div className="flex items-center gap-3">
-                  <span className="w-6 h-6 rounded bg-surface-raised flex items-center justify-center text-xs font-bold text-text-secondary">
+                  <span className="w-6 h-6 rounded bg-white/10 flex items-center justify-center text-xs font-bold text-white/70">
                     {i + 1}
                   </span>
-                  <span className="text-sm font-medium text-text-primary">{p.product_name}</span>
+                  <span className="text-sm font-medium">{p.product_name}</span>
                 </div>
-                <span className="text-sm font-semibold text-text-primary">{formatINR(p.total_revenue)}</span>
+                <span className="text-sm font-semibold">{formatINR(p.total_revenue)}</span>
               </div>
             ))}
           </div>
@@ -297,13 +298,13 @@ export function DashboardPage() {
               return (
                 <div key={r.route}>
                   <div className="flex items-center justify-between mb-1.5 text-sm">
-                    <span className="font-medium text-text-primary truncate max-w-[200px]">{r.route}</span>
-                    <div className="flex items-center gap-3 text-text-secondary">
+                    <span className="font-medium truncate max-w-[200px]">{r.route}</span>
+                    <div className="flex items-center gap-3 text-white/70">
                       <span className="text-xs">{r.order_count} orders</span>
-                      <span className="font-semibold text-text-primary">{formatINR(r.revenue)}</span>
+                      <span className="font-semibold">{formatINR(r.revenue)}</span>
                     </div>
                   </div>
-                  <div className="w-full bg-surface-raised rounded-full h-1.5">
+                  <div className="w-full bg-white/10 rounded-full h-1.5">
                     <div
                       className="h-1.5 rounded-full bg-accent transition-all duration-700"
                       style={{ width: `${pct}%` }}
@@ -317,25 +318,25 @@ export function DashboardPage() {
       )}
 
       {(data?.outstanding_parties?.length ?? 0) > 0 && (
-        <GlowSurfaceCard className="border-amber-200">
+        <GlowSurfaceCard accent="amber">
           <div className="flex items-center gap-2 mb-5">
-            <AlertTriangle className="h-4 w-4 text-amber-500" />
+            <AlertTriangle className="h-4 w-4 text-amber-400" />
             <h2 className="text-h2">Credit Exposure</h2>
           </div>
-          <div className="divide-y divide-surface-border">
+          <div className="divide-y divide-white/10">
             {data!.outstanding_parties.slice(0, 5).map((p) => (
               <div key={p.party_name} className="flex items-center justify-between py-3">
-                <span className="text-sm text-text-primary">{p.party_name}</span>
-                <span className="text-sm font-semibold text-amber-700">{formatINR(p.outstanding_amount)}</span>
+                <span className="text-sm">{p.party_name}</span>
+                <span className="text-sm font-semibold text-amber-300">{formatINR(p.outstanding_amount)}</span>
               </div>
             ))}
           </div>
-          <p className="text-xs text-amber-700 font-medium mt-4 pt-3 border-t border-amber-100">
+          <p className="text-xs text-amber-300 font-medium mt-4 pt-3 border-t border-white/10">
             Total: ₹{data!.outstanding_parties.reduce((s, p) => s + toNum(p.outstanding_amount), 0).toLocaleString()} across {data!.outstanding_parties.length} parties
           </p>
         </GlowSurfaceCard>
       )}
-    </div>
+    </ProductPageLayout>
   );
 }
 

@@ -339,3 +339,4 @@ export default LineSidebar;
 3. Import the CSS file alongside the component.
 4. Import and render the component using the usage example above as a starting point.
 5. Adjust props as needed for the specific use case — refer to the props table for all available options.
+le

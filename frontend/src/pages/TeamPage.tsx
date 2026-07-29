@@ -1,8 +1,12 @@
 import { useEffect, useState } from "react";
-import { Loader2, Users } from "lucide-react";
+import { Users } from "lucide-react";
 
 import { apiFetch } from "@/lib/api";
+import ProductPageLayout from "@/components/layout/ProductPageLayout";
 import GlowSurfaceCard from "@/components/ui/GlowSurfaceCard";
+import GlowCTAButton from "@/components/ui/GlowCTAButton";
+import PageLoader from "@/components/ui/PageLoader";
+import TeamSeatVisualizer, { buildSeatSlots } from "@/components/team/TeamSeatVisualizer";
 import { AkaraButton } from "@/components/ui/GradientButton";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -127,24 +131,20 @@ export function TeamPage({ embedded = false }: TeamPageProps) {
             <Users className="h-6 w-6 text-accent" />
             Team
           </h1>
-          <p className="text-sm text-text-secondary mt-1">
-            Seats: {occupied} / {seatLimit} (includes pending invites)
-          </p>
         </div>
-      )}
-
-      {embedded && (
-        <p className="text-sm text-text-secondary">
-          Seats: {occupied} / {seatLimit}
-        </p>
       )}
 
       {loading ? (
-        <div className="flex justify-center py-8">
-          <Loader2 className="h-6 w-6 animate-spin text-accent" />
-        </div>
+        <PageLoader title="Loading team…" subtitle="" minHeight="min-h-[240px]" />
       ) : (
         <>
+          <TeamSeatVisualizer
+            slots={buildSeatSlots(members, invites, seatLimit)}
+            occupied={occupied}
+            seatLimit={seatLimit}
+            className="mx-auto"
+          />
+
           <GlowSurfaceCard className="space-y-4">
             <div className="flex justify-between items-center">
               <h2 className="font-semibold">Invite teammate</h2>
@@ -166,9 +166,9 @@ export function TeamPage({ embedded = false }: TeamPageProps) {
                   disabled={atSeatLimit}
                 />
               </div>
-              <AkaraButton onClick={handleInvite} disabled={saving || atSeatLimit} size="sm">
-                {saving ? "Sending…" : "Send invite"}
-              </AkaraButton>
+              <GlowCTAButton onClick={() => void handleInvite()} disabled={saving || atSeatLimit} size="sm" loading={saving}>
+                Send invite
+              </GlowCTAButton>
             </div>
             {atSeatLimit && (
               <p className="text-xs text-amber-700">Seat limit reached — cancel a pending invite or upgrade.</p>
@@ -178,7 +178,7 @@ export function TeamPage({ embedded = false }: TeamPageProps) {
 
           <GlowSurfaceCard>
             <h2 className="font-semibold mb-3">Members</h2>
-            <ul className="divide-y divide-surface-border">
+            <ul className="divide-y divide-white/10">
               {members.map((m) => (
                 <li key={m.id} className="py-3 flex flex-wrap justify-between gap-2 text-sm items-center">
                   <span>{m.display_name || m.email}</span>
@@ -195,7 +195,7 @@ export function TeamPage({ embedded = false }: TeamPageProps) {
                       </AkaraButton>
                     ) : (
                       <select
-                        className="text-xs border rounded px-2 py-1 bg-surface-canvas"
+                        className="text-xs border border-white/10 rounded px-2 py-1 bg-white/5"
                         value={m.role}
                         onChange={(e) => changeRole(m.id, e.target.value)}
                         disabled={m.membership_status !== "active"}
@@ -265,9 +265,9 @@ export function TeamPage({ embedded = false }: TeamPageProps) {
               <AkaraButton variant="secondary" size="sm" onClick={() => setShowDowngradeModal(false)}>
                 Cancel
               </AkaraButton>
-              <AkaraButton size="sm" onClick={submitDowngradeSelection} disabled={selectedKeep.size > seatLimit}>
+              <GlowCTAButton size="sm" onClick={submitDowngradeSelection} disabled={selectedKeep.size > seatLimit}>
                 Confirm
-              </AkaraButton>
+              </GlowCTAButton>
             </div>
           </GlowSurfaceCard>
         </div>
@@ -281,7 +281,7 @@ export function TeamPage({ embedded = false }: TeamPageProps) {
 
   return (
     <PlanGate feature="team_invites" requiredPlan="pro" title="Team management">
-      <div className="p-4 sm:p-6 lg:p-8 max-w-3xl mx-auto space-y-6">{content}</div>
+      <ProductPageLayout maxWidth="3xl" className="space-y-6">{content}</ProductPageLayout>
     </PlanGate>
   );
 }

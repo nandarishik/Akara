@@ -43,7 +43,7 @@ function InnerSpecular({
     lineColor: "#38bdf8",
     baseColor: "#525252",
     textColor: "#f5f5f5",
-    tint: "#120F17",
+    tint: "#0a0a0a",
     tintOpacity: 0.85,
     disabled: disabled || loading,
     className: "w-full font-semibold",
@@ -130,7 +130,7 @@ export function GlowCTALink({
         lineColor="#38bdf8"
         baseColor="#525252"
         textColor="#f5f5f5"
-        tint="#120F17"
+        tint="#0a0a0a"
         tintOpacity={0.85}
         to={typeof to === "string" ? to : ""}
         disabled={disabled || loading}

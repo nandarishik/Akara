@@ -24,6 +24,7 @@ import {
   Wrench,
 } from "lucide-react";
 import { GlassIcon } from "@/components/effects/GlassIcon";
+import DarkMeshBackground from "@/components/effects/DarkMeshBackground";
 import type { GlassIconColor } from "@/components/effects/GlassIcons";
 
 export type NavItem = {
@@ -105,7 +106,7 @@ export function SuperadminShell() {
     NAV_ITEMS.find((item) => location.pathname.startsWith(item.href)) ?? NAV_ITEMS[0];
 
   return (
-    <div className="superadmin-surface flex h-screen overflow-hidden">
+    <div className="theme-product-dark superadmin-surface flex h-screen overflow-hidden">
       <CommandPalette />
       <aside className="flex w-14 shrink-0 flex-col border-r border-sa-border bg-sa-surface">
         <div className="flex h-14 items-center justify-center border-b border-sa-border">
@@ -165,10 +166,13 @@ export function SuperadminShell() {
           </div>
         </header>
 
-        <main className="flex-1 overflow-auto p-6">
-          <SudoGate>
-            <Outlet />
-          </SudoGate>
+        <main className="flex-1 overflow-auto p-6 relative">
+          <DarkMeshBackground className="fixed inset-0 opacity-20 pointer-events-none" />
+          <div className="relative z-10">
+            <SudoGate>
+              <Outlet />
+            </SudoGate>
+          </div>
         </main>
       </div>
     </div>

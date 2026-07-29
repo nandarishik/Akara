@@ -1,7 +1,7 @@
 .dark-mesh-bg {
   position: absolute;
   inset: 0;
-  background-color: #120f17;
+  background-color: #0a0a0a;
   overflow: hidden;
   pointer-events: none;
 }

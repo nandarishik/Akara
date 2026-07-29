@@ -141,7 +141,7 @@ function KpiTile({
   return (
     <div
       className={cn(
-        "rounded-xl border p-4 bg-[#120F17]/40 backdrop-blur-sm",
+        "rounded-xl border p-4 bg-[#0a0a0a]/40 backdrop-blur-sm",
         tone === "up" && "border-emerald-500/30",
         tone === "down" && "border-red-500/30",
         tone === "neutral" && "border-white/10"

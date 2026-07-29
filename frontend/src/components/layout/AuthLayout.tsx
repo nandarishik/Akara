@@ -1,6 +1,8 @@
 import type { ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { cn } from "@/lib/utils";
+import DarkMeshBackground from "@/components/effects/DarkMeshBackground";
+import GlowSurfaceCard from "@/components/ui/GlowSurfaceCard";
 
 interface AuthLayoutProps {
   children: ReactNode;
@@ -20,7 +22,7 @@ const SIZE_CLASS = {
 };
 
 /**
- * AuthLayout — FireAI light auth shell (centered white card on surface-bg).
+ * AuthLayout — dark glow auth shell (mesh background + GlowSurfaceCard).
  */
 export function AuthLayout({
   children,
@@ -31,28 +33,30 @@ export function AuthLayout({
   className,
 }: AuthLayoutProps) {
   return (
-    <div className="min-h-screen bg-surface-bg flex items-center justify-center px-4 py-12">
-      <div className={cn("w-full", SIZE_CLASS[size], className)}>
+    <div className="theme-product-dark min-h-screen relative flex items-center justify-center px-4 py-12">
+      <DarkMeshBackground className="fixed inset-0 opacity-30 pointer-events-none" />
+
+      <div className={cn("relative z-10 w-full", SIZE_CLASS[size], className)}>
         {above}
 
         <div className="text-center mb-8">
           <Link
             to="/"
-            className="text-3xl font-extrabold text-text-primary font-display hover:text-accent transition-colors"
+            className="text-3xl font-extrabold text-white font-display hover:text-[#03B3C3] transition-colors"
           >
             AKARA
           </Link>
           {subtitle && (
-            <p className="text-text-secondary mt-2 text-lg font-medium">{subtitle}</p>
+            <p className="text-white/70 mt-2 text-lg font-medium">{subtitle}</p>
           )}
         </div>
 
-        <div className="bg-surface-card rounded-2xl border border-surface-border shadow-card p-8">
+        <GlowSurfaceCard padding="lg" accent="blue">
           {title && (
-            <h1 className="text-2xl font-extrabold text-text-primary mb-6">{title}</h1>
+            <h1 className="text-2xl font-extrabold text-white mb-6">{title}</h1>
           )}
           {children}
-        </div>
+        </GlowSurfaceCard>
       </div>
     </div>
   );

@@ -242,7 +242,26 @@
   padding: 4px 12px;
   border-radius: 999px;
   background: linear-gradient(135deg, #c084fc, #38bdf8);
-  color: #120f17;
+  color: #0a0a0a;
+}
+
+.reflective-card-container--auth {
+  width: 100%;
+  max-width: 480px;
+  height: auto;
+  min-height: auto;
+  margin: 0 auto;
+}
+
+.reflective-card-container--auth .reflective-content {
+  justify-content: flex-start;
+  gap: 1.5rem;
+  padding: 28px 32px 32px;
+}
+
+.reflective-auth-body {
+  width: 100%;
+  text-align: left;
 }
 
 .reflective-features {

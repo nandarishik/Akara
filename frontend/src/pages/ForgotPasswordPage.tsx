@@ -72,7 +72,7 @@ export function ForgotPasswordPage() {
                 value={email}
                 onChange={(e) => { setEmail(e.target.value); setError("") }}
                 aria-describedby={error ? "forgot-error" : undefined}
-                className={error ? "border-red-400 bg-red-50" : undefined}
+                className={error ? "border-red-500/50 bg-red-500/10" : undefined}
               />
               {error && (
                 <p id="forgot-error" className="text-xs text-red-600" role="alert">{error}</p>

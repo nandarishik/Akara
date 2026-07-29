@@ -191,8 +191,8 @@ export function LandingPage() {
   )
 
   return (
-    <div className="min-h-screen overflow-x-hidden bg-[#120F17] text-white">
-      <header className="sticky top-0 z-40 backdrop-blur border-b bg-[#120F17]/80 border-white/10 -mt-0">
+    <div className="min-h-screen overflow-x-hidden bg-[#0a0a0a] text-white">
+      <header className="sticky top-0 z-40 backdrop-blur border-b bg-[#0a0a0a]/80 border-white/10 -mt-0">
         <nav className="max-w-6xl mx-auto px-5 sm:px-8 h-16 flex items-center justify-between">
           <a href="/" className="text-xl font-bold tracking-tight font-display text-white">
             AKARA
@@ -216,7 +216,7 @@ export function LandingPage() {
       {navOpen && (
         <div className="fixed inset-0 z-50">
           <div className="absolute inset-0 bg-black/60" onClick={() => setNavOpen(false)} />
-          <div className="absolute right-0 top-0 h-full w-72 bg-[#120F17] border-l border-white/10 shadow-2xl flex flex-col p-6 gap-6">
+          <div className="absolute right-0 top-0 h-full w-72 bg-[#0a0a0a] border-l border-white/10 shadow-2xl flex flex-col p-6 gap-6">
             <div className="flex justify-between items-center">
               <span className="text-lg font-bold text-white font-display">AKARA</span>
               <button onClick={() => setNavOpen(false)} aria-label="Close"><X className="w-5 h-5 text-white/60" /></button>
@@ -323,7 +323,7 @@ export function LandingPage() {
         className="w-[90vw] max-w-4xl rounded-2xl p-0 shadow-card backdrop:bg-black/70"
         onClose={() => setDemoOpen(false)}
       >
-        <div className="relative bg-[#0a0a0f] rounded-2xl overflow-hidden">
+        <div className="relative bg-[#0a0a0a] rounded-2xl overflow-hidden">
           <button
             onClick={() => setDemoOpen(false)}
             className="absolute top-3 right-3 z-10 bg-white/10 hover:bg-white/20 text-white rounded-full p-1.5"
@@ -334,7 +334,7 @@ export function LandingPage() {
           {demoOpen && (
             <iframe src="https://www.loom.com/embed/demo?autoplay=1" className="w-full aspect-video" allow="autoplay" title="AKARA demo video" />
           )}
-          <div className="px-6 py-4 flex justify-center bg-[#0a0a0f] border-t border-white/10">
+          <div className="px-6 py-4 flex justify-center bg-[#0a0a0a] border-t border-white/10">
             <GlowCTALink to="/signup" onClick={() => setDemoOpen(false)}>
               Start free →
             </GlowCTALink>
@@ -343,7 +343,7 @@ export function LandingPage() {
       </dialog>
 
       {/* Social proof */}
-      <section className="py-14 border-b border-white/10 bg-[#0a0a0f]/50">
+      <section className="py-14 border-b border-white/10 bg-[#0a0a0a]/50">
         <div className="max-w-4xl mx-auto px-5 grid grid-cols-3 gap-6 text-center">
           {[
             ["₹18 Cr+", "Revenue analysed"],
@@ -403,7 +403,7 @@ export function LandingPage() {
       </section>
 
       {/* Product demo */}
-      <section className="py-20 px-5 sm:px-8 bg-[#0a0a0f]/40 border-y border-white/5">
+      <section className="py-20 px-5 sm:px-8 bg-[#0a0a0a]/40 border-y border-white/5">
         <div className="max-w-4xl mx-auto">
           <h2 className="text-3xl sm:text-4xl font-bold text-white text-center mb-10 tracking-tight">
             See it in action
@@ -416,7 +416,7 @@ export function LandingPage() {
                 className={cn(
                   "px-4 py-2 rounded-full text-sm font-medium transition-colors",
                   demoTab === tab
-                    ? "bg-white text-[#120F17]"
+                    ? "bg-white text-[#0a0a0a]"
                     : "text-white/50 hover:text-white hover:bg-white/10"
                 )}
               >
@@ -426,7 +426,7 @@ export function LandingPage() {
           </div>
 
           {demoTab === "ask" && (
-            <div className="rounded-2xl border border-white/10 bg-[#120F17] p-6">
+            <div className="rounded-2xl border border-white/10 bg-[#0a0a0a] p-6">
               <div className="rounded-xl p-4 mb-3 bg-white/5">
                 <p className="text-[11px] uppercase tracking-wide text-white/40 mb-1.5">You asked</p>
                 <p className="text-white font-medium">{typewriterText}<span className="animate-pulse text-[#03B3C3]">|</span></p>
@@ -440,7 +440,7 @@ export function LandingPage() {
             </div>
           )}
           {demoTab === "dashboard" && (
-            <div className="rounded-2xl border border-white/10 bg-[#120F17] p-4 sm:p-6 overflow-hidden min-h-[420px]">
+            <div className="rounded-2xl border border-white/10 bg-[#0a0a0a] p-4 sm:p-6 overflow-hidden min-h-[420px]">
               {dashboardMounted && (
                 <Suspense fallback={<div className="h-[400px] animate-pulse bg-white/5 rounded-xl" />}>
                   <DashboardPreviewBento />
@@ -475,7 +475,7 @@ export function LandingPage() {
               { n: "4", title: "Get weekly brief", desc: "Every Monday on WhatsApp — key metrics, no login." },
             ].map((step) => (
               <div key={step.n} className="text-center">
-                <div className="w-10 h-10 rounded-full bg-[#03B3C3] text-[#120F17] text-sm font-bold flex items-center justify-center mx-auto mb-4">
+                <div className="w-10 h-10 rounded-full bg-[#03B3C3] text-[#0a0a0a] text-sm font-bold flex items-center justify-center mx-auto mb-4">
                   {step.n}
                 </div>
                 <h3 className="font-semibold text-white mb-2">{step.title}</h3>
@@ -487,7 +487,7 @@ export function LandingPage() {
       </section>
 
       {/* Pricing */}
-      <section ref={pricingRef} id="pricing" className="py-20 px-5 sm:px-8 bg-[#0a0a0f]/40">
+      <section ref={pricingRef} id="pricing" className="py-20 px-5 sm:px-8 bg-[#0a0a0a]/40">
         <div className="max-w-5xl mx-auto">
           <h2 className="text-3xl sm:text-4xl font-bold text-white text-center mb-3 tracking-tight">
             Simple, honest pricing
@@ -572,7 +572,7 @@ export function LandingPage() {
       </section>
 
       {/* Footer */}
-      <footer className="bg-[#0a0a0f] text-white py-16 px-5 sm:px-8 border-t border-white/10">
+      <footer className="bg-[#0a0a0a] text-white py-16 px-5 sm:px-8 border-t border-white/10">
         <div className="max-w-6xl mx-auto">
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-10 mb-12">
             <div>
@@ -636,7 +636,7 @@ export function LandingPage() {
       </footer>
 
       {showStickyBar && (
-        <div className="fixed bottom-0 left-0 right-0 z-40 bg-[#120F17]/95 backdrop-blur border-t border-white/10 px-4 py-3 md:hidden">
+        <div className="fixed bottom-0 left-0 right-0 z-40 bg-[#0a0a0a]/95 backdrop-blur border-t border-white/10 px-4 py-3 md:hidden">
           <GlowCTALink to="/signup" className="block w-full">
             Start free →
           </GlowCTALink>

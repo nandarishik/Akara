@@ -5,7 +5,7 @@ import { parseHSL } from "@/components/effects/BorderGlow";
 
 describe("border glow presets", () => {
   it("uses React Bits spec defaults", () => {
-    expect(BORDER_GLOW_DEFAULTS.backgroundColor).toBe("#120F17");
+    expect(BORDER_GLOW_DEFAULTS.backgroundColor).toBe("#0a0a0a");
     expect(BORDER_GLOW_DEFAULTS.colors).toEqual(["#c084fc", "#f472b6", "#38bdf8"]);
     expect(BORDER_GLOW_DEFAULTS.glowColor).toBe("40 80 80");
   });

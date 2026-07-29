@@ -127,11 +127,11 @@ export function LoginPage() {
         </div>
 
         {error && (
-          <p className="text-sm text-red-600 bg-red-50 p-2 rounded-md" role="alert">{error}</p>
+          <p className="text-sm text-red-400 bg-red-500/10 border border-red-500/20 p-2 rounded-md" role="alert">{error}</p>
         )}
 
         {notVerified && (
-          <div className="text-sm text-amber-700 bg-amber-50 border border-amber-200 p-3 rounded-md" role="alert">
+          <div className="text-sm text-amber-300 bg-amber-500/10 border border-amber-500/20 p-3 rounded-md" role="alert">
             <p>Please verify your email first.</p>
             {resendStatus === "sent" ? (
               <p className="mt-1 text-emerald-600">✓ Verification email resent!</p>

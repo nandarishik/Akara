@@ -1,13 +1,11 @@
 import { useEffect, useRef, useState } from "react";
 import {
-  Send,
   Bot,
   User,
   ThumbsUp,
   ThumbsDown,
   Plus,
   MessageSquare,
-  Sparkles,
   AlertCircle,
   Wifi,
   WifiOff,
@@ -22,7 +20,10 @@ import {
   getUsagePct,
   getMonthResetDate,
 } from "@/lib/api/billing";
-import { AkaraButton } from "@/components/ui/GradientButton";
+import CopilotStrandsLoader from "@/components/copilot/CopilotStrandsLoader";
+import AITextLoading from "@/components/copilot/AITextLoading";
+import GlowCTAButton from "@/components/ui/GlowCTAButton";
+import ShimmerSkeleton from "@/components/ui/ShimmerSkeleton";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "@/components/ui/toast";
 import { supabase } from "@/lib/supabase";
@@ -166,9 +167,8 @@ export function CopilotPage() {
   }
 
   return (
-    <div className="flex flex-col h-full min-h-0 bg-surface-canvas">
-      {/* Compact header — quota lives here, not in global shell banner */}
-      <div className="px-4 lg:px-6 py-3 border-b border-surface-border bg-surface-card shrink-0">
+    <div className="flex flex-col h-full min-h-0 relative z-10">
+      <div className="px-4 lg:px-6 py-3 border-b border-white/10 bg-[#0a0a0a]/80 shrink-0">
         <div className="flex items-center justify-between gap-2 sm:gap-4">
           <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
             {openMobileNav && (
@@ -189,12 +189,12 @@ export function CopilotPage() {
             >
               <MessageSquare className="h-5 w-5" />
             </button>
-            <div className="w-9 h-9 rounded-lg flex items-center justify-center bg-accent text-white shrink-0">
+            <div className="w-9 h-9 rounded-lg flex items-center justify-center bg-[#03B3C3]/20 text-[#03B3C3] shrink-0">
               <Bot className="h-4 w-4" />
             </div>
             <div className="min-w-0">
-              <h1 className="text-h2 text-base truncate">AKARA Copilot</h1>
-              <div className="flex items-center gap-2 text-caption min-w-0">
+              <h1 className="text-base font-semibold truncate text-white">AKARA Copilot</h1>
+              <div className="flex items-center gap-2 text-xs text-white/50 min-w-0">
                 {connectionStatus === "connected" ? (
                   <Wifi className="h-3 w-3 text-green-600 shrink-0" />
                 ) : (
@@ -208,19 +208,14 @@ export function CopilotPage() {
               </div>
             </div>
           </div>
-          <AkaraButton
-            size="sm"
-            onClick={handleNewChat}
-            className="shrink-0 min-h-[44px]"
-            aria-label="New chat"
-          >
-            <Plus className="h-4 w-4 sm:mr-1" />
-            <span className="hidden sm:inline">New chat</span>
-          </AkaraButton>
+          <GlowCTAButton size="sm" onClick={handleNewChat} className="shrink-0 min-h-[44px]">
+            <Plus className="h-4 w-4 sm:mr-1 inline" />
+            New chat
+          </GlowCTAButton>
         </div>
 
         {connectionStatus === "disconnected" && (
-          <div className="mt-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
+          <div className="mt-3 rounded-lg border border-amber-400/30 bg-amber-400/10 px-3 py-2 text-xs text-amber-200">
             AI is temporarily unavailable. Your dashboard and data still work — try again in a few minutes.
           </div>
         )}
@@ -234,11 +229,11 @@ export function CopilotPage() {
                   {usage.copilot_calls_used}/{usage.copilot_calls_limit}
                 </span>
               </div>
-              <div className="h-1 rounded-full bg-surface-raised overflow-hidden">
+              <div className="h-1 rounded-full bg-white/10 overflow-hidden">
                 <div
                   className={cn(
                     "h-full rounded-full transition-all",
-                    quotaLevel === "blocked" ? "bg-red-500" : "bg-accent"
+                    quotaLevel === "blocked" ? "bg-red-500" : "bg-[#03B3C3]"
                   )}
                   style={{ width: `${quotaPct}%` }}
                 />
@@ -248,7 +243,7 @@ export function CopilotPage() {
               {questionsLeft} left · {getMonthResetDate()}
             </span>
             {quotaLevel === "critical" || quotaLevel === "blocked" ? (
-              <Link to="/upgrade" className="text-accent font-semibold shrink-0 hover:underline">
+              <Link to="/upgrade" className="text-[#03B3C3] font-semibold shrink-0 hover:underline">
                 Upgrade
               </Link>
             ) : null}
@@ -267,18 +262,22 @@ export function CopilotPage() {
 
       <div className="flex flex-1 min-h-0">
         {/* Conversation sidebar — desktop only */}
-        <div className="hidden md:flex w-64 lg:w-72 border-r border-surface-border bg-surface-card flex-col shrink-0">
-          <div className="px-4 py-3 border-b border-surface-border">
-            <div className="flex items-center gap-2 text-sm font-medium text-text-secondary">
-              <MessageSquare className="h-4 w-4 text-accent" />
+        <div className="hidden md:flex w-64 lg:w-72 border-r border-white/10 bg-[#0a0a0a]/60 flex-col shrink-0">
+          <div className="px-4 py-3 border-b border-white/10">
+            <div className="flex items-center gap-2 text-sm font-medium text-white/70">
+              <MessageSquare className="h-4 w-4 text-[#03B3C3]" />
               Chat history
             </div>
           </div>
           <div className="flex-1 overflow-y-auto p-2 space-y-1">
             {conversationsLoading ? (
-              <p className="text-caption text-center py-6">Loading…</p>
+              <div className="space-y-2 py-2">
+                {[1, 2, 3].map((i) => (
+                  <ShimmerSkeleton key={i} className="h-12 w-full rounded-lg" />
+                ))}
+              </div>
             ) : conversations.length === 0 ? (
-              <p className="text-caption text-center py-6 px-2">
+              <p className="text-xs text-center py-6 px-2 text-white/45">
                 Past chats appear here after you send a message.
               </p>
             ) : (
@@ -290,14 +289,14 @@ export function CopilotPage() {
                   className={cn(
                     "w-full text-left px-3 py-2.5 rounded-lg text-sm transition-colors",
                     conv.id === conversationId
-                      ? "bg-accent-soft text-accent font-medium"
-                      : "text-text-primary hover:bg-surface-raised"
+                      ? "bg-[#03B3C3]/15 text-[#03B3C3] font-medium"
+                      : "text-white/80 hover:bg-white/5"
                   )}
                 >
                   <p className="truncate font-medium">
                     {conv.title || "New conversation"}
                   </p>
-                  <p className="text-caption text-xs mt-0.5 truncate">
+                  <p className="text-xs mt-0.5 truncate text-white/40">
                     {new Date(conv.updated_at ?? conv.created_at).toLocaleDateString()}
                     {conv.message_count > 0 && ` · ${conv.message_count} msgs`}
                   </p>
@@ -312,11 +311,9 @@ export function CopilotPage() {
           <div className="flex-1 overflow-y-auto px-4 lg:px-8 py-6">
             {messages.length === 0 ? (
               <div className="flex flex-col items-center justify-center h-full text-center max-w-lg mx-auto">
-                <div className="w-14 h-14 rounded-2xl bg-accent-soft flex items-center justify-center text-accent mb-4">
-                  <Sparkles className="h-7 w-7" />
-                </div>
-                <h2 className="text-h2">Ask AKARA anything</h2>
-                <p className="text-body text-sm mt-2">
+                <CopilotStrandsLoader variant="hero" className="mb-6" />
+                <h2 className="text-xl font-semibold text-white">Ask AKARA anything</h2>
+                <p className="text-sm mt-2 text-white/60">
                   Type a question below or pick a suggestion to get started.
                 </p>
                 <div className="flex flex-wrap gap-2 mt-6 justify-center">
@@ -326,7 +323,7 @@ export function CopilotPage() {
                       type="button"
                       onClick={() => handleSend(prompt)}
                       disabled={isStreaming}
-                      className="px-3 py-2 text-sm rounded-full border border-surface-border bg-surface-card text-text-secondary hover:border-accent hover:text-accent transition-colors"
+                      className="px-3 py-2 text-sm rounded-full border border-white/15 bg-white/5 text-white/70 hover:border-[#03B3C3]/50 hover:text-[#03B3C3] transition-colors"
                     >
                       {prompt}
                     </button>
@@ -360,9 +357,9 @@ export function CopilotPage() {
                       className={cn(
                         "rounded-xl px-4 py-3 text-sm leading-relaxed max-w-[85%]",
                         m.role === "user"
-                          ? "bg-accent-soft text-text-primary border border-accent/20"
-                          : "bg-surface-card border border-surface-border text-text-primary",
-                        m.error && "border-red-200 bg-red-50"
+                          ? "bg-[#03B3C3]/15 text-white border border-[#03B3C3]/25"
+                          : "bg-[#0a0a0a]/80 border border-white/10 text-white/90",
+                        m.error && "border-red-400/40 bg-red-500/10"
                       )}
                     >
                       {m.role === "user" ? (
@@ -375,18 +372,18 @@ export function CopilotPage() {
                           )}
                         </>
                       ) : m.streaming ? (
-                        <span className="text-text-muted">…</span>
+                        <span className="text-white/40">…</span>
                       ) : null}
                       {m.role === "assistant" && !m.streaming && m.content && (
-                        <div className="mt-3 pt-2 border-t border-surface-border flex gap-2">
+                        <div className="mt-3 pt-2 border-t border-white/10 flex gap-2">
                           <button
                             type="button"
                             onClick={() => handleFeedback(m.id, 1)}
                             className={cn(
                               "p-1 rounded",
                               feedbackStates[m.id] === "positive"
-                                ? "text-green-600 bg-green-50"
-                                : "text-text-muted hover:text-green-600"
+                                ? "text-emerald-400 bg-emerald-400/10"
+                                : "text-white/40 hover:text-emerald-400"
                             )}
                             aria-label="Helpful"
                           >
@@ -398,8 +395,8 @@ export function CopilotPage() {
                             className={cn(
                               "p-1 rounded",
                               feedbackStates[m.id] === "negative"
-                                ? "text-red-600 bg-red-50"
-                                : "text-text-muted hover:text-red-600"
+                                ? "text-red-400 bg-red-400/10"
+                                : "text-white/40 hover:text-red-400"
                             )}
                             aria-label="Not helpful"
                           >
@@ -411,7 +408,7 @@ export function CopilotPage() {
                   </div>
                 ))}
                 {isStreaming && (
-                  <div className="flex gap-3">
+                  <div className="flex gap-3 items-center">
                     <GlassIcon
                       decorative
                       size="sm"
@@ -419,9 +416,9 @@ export function CopilotPage() {
                       icon={<Bot className="h-3.5 w-3.5" />}
                       label="AKARA"
                     />
-                    <div className="rounded-xl px-4 py-3 bg-surface-card border border-surface-border text-text-muted text-sm flex items-center gap-2">
-                      <Sparkles className="h-4 w-4 animate-pulse" />
-                      Thinking…
+                    <div className="rounded-xl px-4 py-3 bg-[#0a0a0a]/80 border border-white/10 text-white/60 text-sm flex items-center gap-3 min-w-[200px]">
+                      <CopilotStrandsLoader variant="inline" />
+                      <AITextLoading compact />
                     </div>
                   </div>
                 )}
@@ -432,14 +429,14 @@ export function CopilotPage() {
 
           {error && (
             <div className="px-4 lg:px-8 pb-2">
-              <div className="max-w-3xl mx-auto flex items-center gap-2 text-sm text-red-700 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
+              <div className="max-w-3xl mx-auto flex items-center gap-2 text-sm text-red-300 bg-red-500/10 border border-red-400/30 rounded-lg px-3 py-2">
                 <AlertCircle className="h-4 w-4 shrink-0" />
                 {error}
               </div>
             </div>
           )}
 
-          <div className="px-4 lg:px-8 py-4 pb-[max(1rem,env(safe-area-inset-bottom))] border-t border-surface-border bg-surface-card shrink-0">
+          <div className="px-4 lg:px-8 py-4 pb-[max(1rem,env(safe-area-inset-bottom))] border-t border-white/10 bg-[#0a0a0a]/90 shrink-0">
             <div className="max-w-3xl mx-auto flex gap-2 items-end">
               <Textarea
                 value={input}
@@ -447,20 +444,19 @@ export function CopilotPage() {
                 onKeyDown={handleKeyDown}
                 placeholder="Ask about your revenue, orders, customers…"
                 rows={1}
-                className="resize-none min-h-[44px] max-h-32 flex-1 bg-white border-surface-border"
+                className="resize-none min-h-[44px] max-h-32 flex-1 bg-white/5 border-white/15 text-white placeholder:text-white/35"
                 disabled={isStreaming || connectionStatus === "disconnected"}
               />
-              <AkaraButton
+              <GlowCTAButton
                 onClick={() => handleSend()}
                 disabled={!input.trim() || isStreaming}
                 size="sm"
                 className="h-11 w-11 p-0 shrink-0"
-                aria-label="Send message"
               >
-                <Send className="h-4 w-4" />
-              </AkaraButton>
+                Send
+              </GlowCTAButton>
             </div>
-            <p className="text-caption text-center mt-2 max-w-3xl mx-auto">
+            <p className="text-xs text-center mt-2 max-w-3xl mx-auto text-white/40">
               Enter to send · Shift+Enter for new line
             </p>
           </div>

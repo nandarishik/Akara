@@ -9,7 +9,8 @@ import type { ComponentType, FormEvent } from "react"
 import { Link, useNavigate, useSearchParams } from "react-router-dom"
 import { Eye, EyeOff } from "lucide-react"
 import { useAuth } from "@/contexts/AuthContext"
-import { AuthLayout } from "@/components/layout/AuthLayout"
+import { PremiumAuthLayout } from "@/components/layout/PremiumAuthLayout"
+import PageLoader from "@/components/ui/PageLoader"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { AkaraButton } from "@/components/ui/GradientButton"
@@ -218,7 +219,12 @@ export function SignUpPage() {
   }
 
   return (
-    <AuthLayout subtitle="Create your free account" size="md">
+    <PremiumAuthLayout subtitle="Create your free account">
+      {loading && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#0a0a0a]/80 backdrop-blur-sm">
+          <PageLoader title="Creating your account…" subtitle="" minHeight="min-h-0" />
+        </div>
+      )}
       <form onSubmit={handleSubmit} className="space-y-4" noValidate>
         <div className="space-y-1.5">
           <Label htmlFor="email" className="text-text-secondary">
@@ -234,7 +240,7 @@ export function SignUpPage() {
             onChange={(e) => { setEmail(e.target.value); setEmailError("") }}
             aria-describedby={emailError ? "email-error" : undefined}
             aria-required="true"
-            className={emailError ? "border-red-400 bg-red-50" : undefined}
+            className={emailError ? "border-red-500/50 bg-red-500/10" : undefined}
           />
           <p className="text-xs text-text-muted">Use your work email — we&apos;ll send the weekly brief here</p>
           {emailError && (
@@ -262,7 +268,7 @@ export function SignUpPage() {
               onChange={(e) => { setPassword(e.target.value); setPasswordError("") }}
               aria-required="true"
               aria-describedby={passwordError ? "pw-error" : undefined}
-              className={cn("pr-10", passwordError && "border-red-400 bg-red-50")}
+              className={cn("pr-10", passwordError && "border-red-500/50 bg-red-500/10")}
             />
             <button
               type="button"
@@ -370,7 +376,7 @@ export function SignUpPage() {
         </div>
 
         {formError && (
-          <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2" role="alert">
+          <p className="text-sm text-red-400 bg-red-500/10 border border-red-500/20 rounded-lg px-3 py-2" role="alert">
             {formError}
           </p>
         )}
@@ -398,9 +404,9 @@ export function SignUpPage() {
         <Link to="/login" className="text-accent font-medium hover:underline">Sign in</Link>
       </p>
 
-      <p className="text-xs text-center text-text-muted mt-6 border-t border-surface-border pt-4">
+      <p className="text-xs text-center text-text-muted mt-6 border-t border-white/10 pt-4">
         ₹18 Cr revenue analysed · 284 questions answered · 12 distributors
       </p>
-    </AuthLayout>
+    </PremiumAuthLayout>
   )
 }

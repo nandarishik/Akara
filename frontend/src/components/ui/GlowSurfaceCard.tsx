@@ -2,7 +2,7 @@ import type { HTMLAttributes, ReactNode } from "react";
 import { cn } from "@/lib/utils";
 
 import BorderGlow from "@/components/effects/BorderGlow";
-import { BORDER_GLOW_CARD } from "@/components/effects/presets";
+import { BORDER_GLOW_PRODUCT_CARD } from "@/components/effects/presets";
 
 type AccentColor = "blue" | "green" | "amber" | "red" | "none";
 
@@ -30,7 +30,7 @@ const PADDING = {
 };
 
 /**
- * Dark BorderGlow card — spec defaults (#120F17, purple/pink/cyan mesh).
+ * Dark BorderGlow card — spec defaults (#0a0a0a, purple/pink/cyan mesh).
  * Drop-in replacement for SurfaceCard across product pages.
  */
 export default function GlowSurfaceCard({
@@ -44,7 +44,7 @@ export default function GlowSurfaceCard({
 }: GlowSurfaceCardProps) {
   return (
     <BorderGlow
-      {...BORDER_GLOW_CARD}
+      {...BORDER_GLOW_PRODUCT_CARD}
       animated={animated}
       className={cn("w-full", hover && "transition-transform hover:scale-[1.005]", className)}
     >
@@ -76,7 +76,7 @@ export function GlowSurfacePanel({
   ...props
 }: HTMLAttributes<HTMLDivElement>) {
   return (
-    <BorderGlow {...BORDER_GLOW_CARD} borderRadius={12} glowRadius={24} className={cn("w-full", className)}>
+    <BorderGlow {...BORDER_GLOW_PRODUCT_CARD} borderRadius={12} glowRadius={24} className={cn("w-full", className)}>
       <div className={cn("p-4 text-white/90", className)} {...props}>
         {children}
       </div>

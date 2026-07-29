@@ -12,13 +12,13 @@ import {
   Lock,
   Upload,
 } from "lucide-react";
-import { Link } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 
 import { useAuth } from "@/contexts/AuthContext";
 import { isAdmin } from "@/lib/auth-utils";
 import GlowSurfaceCard from "@/components/ui/GlowSurfaceCard";
-import { AkaraButton, SecondaryButton } from "@/components/ui/GradientButton";
+import GlowCTAButton from "@/components/ui/GlowCTAButton";
+import { SecondaryButton } from "@/components/ui/GradientButton";
 import { TableSkeleton } from "@/components/ui/ShimmerSkeleton";
 import { NoDataEmptyState } from "@/components/ui/EmptyState";
 import AnimatedNumber from "@/components/ui/AnimatedNumber";
@@ -186,10 +186,10 @@ async function undoImport(jobId: string): Promise<void> {
 
 function StatusBadge({ status }: { status: ImportJob["status"] }) {
   const map = {
-    pending: { label: "Pending", className: "bg-amber-50 text-amber-700 ring-amber-200" },
-    processing: { label: "Processing", className: "bg-accent-soft text-accent ring-accent/20" },
-    completed: { label: "Done", className: "bg-emerald-50 text-emerald-700 ring-emerald-200" },
-    failed: { label: "Failed", className: "bg-red-50 text-red-700 ring-red-200" },
+    pending: { label: "Pending", className: "bg-amber-400/15 text-amber-300 ring-amber-400/30" },
+    processing: { label: "Processing", className: "bg-accent/15 text-accent ring-accent/30" },
+    completed: { label: "Done", className: "bg-emerald-400/15 text-emerald-300 ring-emerald-400/30" },
+    failed: { label: "Failed", className: "bg-red-400/15 text-red-300 ring-red-400/30" },
   } as const;
   const s = map[status];
   return (
@@ -292,9 +292,9 @@ export function DataPage() {
   const copy = SOURCE_COPY[activeSource];
 
   return (
-    <div className="min-h-full bg-surface-canvas">
+    <div className="relative z-10 min-h-full">
       {/* Header band */}
-      <div className="border-b border-surface-border bg-surface-card/80 backdrop-blur-sm">
+      <div className="border-b border-white/10 bg-white/5 backdrop-blur-sm">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-6">
             <div>
@@ -331,10 +331,10 @@ export function DataPage() {
                 ].map(({ label, value }) => (
                   <div
                     key={label}
-                    className="rounded-xl bg-surface-raised/80 px-4 py-2.5 min-w-[100px]"
+                    className="rounded-xl bg-white/5 px-4 py-2.5 min-w-[100px]"
                   >
                     <p className="text-[10px] uppercase tracking-wide text-text-muted">{label}</p>
-                    <p className="text-lg font-bold text-text-primary tabular-nums mt-0.5">{value}</p>
+                    <p className="text-lg font-bold tabular-nums mt-0.5">{value}</p>
                   </div>
                 ))}
               </div>
@@ -345,14 +345,16 @@ export function DataPage() {
 
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
         {!isAdminUser && (
-          <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900 flex items-center gap-3">
-            <AlertCircle className="h-5 w-5 shrink-0" />
-            Admin access required to import files.
-          </div>
+          <GlowSurfaceCard accent="amber" padding="sm" hover={false}>
+            <div className="text-sm flex items-center gap-3">
+              <AlertCircle className="h-5 w-5 shrink-0 text-amber-400" />
+              Admin access required to import files.
+            </div>
+          </GlowSurfaceCard>
         )}
 
         {/* Source tabs */}
-        <div className="flex flex-wrap gap-2 p-1 rounded-2xl bg-surface-raised/60 w-fit">
+        <div className="flex flex-wrap gap-2 p-1 rounded-2xl bg-white/5 w-fit">
           {SOURCE_TABS.map(({ id, label, short, icon: Icon, requiresPro }) => {
             const locked = requiresPro && !hasSecondary;
             const active = activeSource === id;
@@ -367,8 +369,8 @@ export function DataPage() {
                 className={cn(
                   "flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium transition-all",
                   active
-                    ? "bg-white text-text-primary shadow-sm ring-1 ring-surface-border"
-                    : "text-text-secondary hover:text-text-primary"
+                    ? "bg-white/10 text-white shadow-sm ring-1 ring-white/20"
+                    : "text-white/70 hover:text-white"
                 )}
               >
                 <Icon className="h-4 w-4 shrink-0" />
@@ -384,16 +386,16 @@ export function DataPage() {
         <GlowSurfaceCard padding="lg" hover={false} className="shadow-card">
           {activeLocked ? (
             <div className="text-center py-12 px-4">
-              <div className="mx-auto w-14 h-14 rounded-2xl bg-accent-soft flex items-center justify-center mb-4">
+              <div className="mx-auto w-14 h-14 rounded-2xl bg-white/10 flex items-center justify-center mb-4">
                 <Lock className="h-6 w-6 text-accent" />
               </div>
-              <h3 className="text-lg font-semibold text-text-primary">Pro feature</h3>
+              <h3 className="text-lg font-semibold">Pro feature</h3>
               <p className="text-sm text-text-secondary mt-2 max-w-md mx-auto">
                 Secondary DMS offtake and scheme master imports unlock on Pro and Business plans.
               </p>
-              <Link to="/upgrade" className="inline-block mt-6">
-                <AkaraButton size="sm">View plans →</AkaraButton>
-              </Link>
+              <div className="inline-block mt-6">
+                <GlowCTAButton size="sm" to="/upgrade">View plans →</GlowCTAButton>
+              </div>
             </div>
           ) : (
             <DataUploadPanel
@@ -415,7 +417,7 @@ export function DataPage() {
           <div className="flex items-center justify-between mb-5">
             <div className="flex items-center gap-2">
               <Clock className="h-5 w-5 text-accent" />
-              <h2 className="text-lg font-semibold text-text-primary">Recent imports</h2>
+              <h2 className="text-lg font-semibold">Recent imports</h2>
             </div>
             <SecondaryButton size="sm" onClick={() => void refreshJobs()}>
               <RotateCcw className="h-4 w-4 mr-1.5" />
@@ -427,18 +429,19 @@ export function DataPage() {
             <TableSkeleton rows={3} />
           ) : importJobs.length === 0 ? (
             <NoDataEmptyState
+              variant="folder"
               title="No imports yet"
               description="Your first upload will appear here with status and row counts."
             />
           ) : (
-            <ul className="divide-y divide-surface-border">
+            <ul className="divide-y divide-white/10">
               {importJobs.slice(0, 8).map((job) => (
                 <li
                   key={job.id}
                   className="flex flex-col sm:flex-row sm:items-center gap-3 py-4 first:pt-0 last:pb-0"
                 >
                   <div className="flex-1 min-w-0">
-                    <p className="font-medium text-sm text-text-primary truncate">{job.filename}</p>
+                    <p className="font-medium text-sm truncate">{job.filename}</p>
                     <p className="text-xs text-text-muted mt-0.5">
                       {new Date(job.created_at).toLocaleString("en-IN", {
                         day: "numeric",
@@ -455,7 +458,7 @@ export function DataPage() {
                   <div className="flex items-center gap-4 shrink-0">
                     <StatusBadge status={job.status} />
                     {job.rows_inserted != null && (
-                      <span className="text-sm font-semibold tabular-nums text-text-primary">
+                      <span className="text-sm font-semibold tabular-nums">
                         <AnimatedNumber value={job.rows_inserted} /> rows
                       </span>
                     )}
@@ -464,7 +467,7 @@ export function DataPage() {
                         type="button"
                         onClick={() => void handleUndoImport(job.id)}
                         disabled={undoAtLimit || undoingJobId === job.id}
-                        className="p-2 rounded-lg text-text-muted hover:text-red-600 hover:bg-red-50 transition-colors disabled:opacity-40"
+                        className="p-2 rounded-lg text-text-muted hover:text-red-400 hover:bg-red-400/10 transition-colors disabled:opacity-40"
                         title={undoAtLimit ? "Daily undo limit reached" : "Undo import"}
                       >
                         {undoingJobId === job.id ? (

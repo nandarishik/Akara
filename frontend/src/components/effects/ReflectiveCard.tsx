@@ -23,7 +23,8 @@ export type ReflectiveCardProps = {
   features?: string[];
   footer?: ReactNode;
   popular?: boolean;
-  variant?: "default" | "plan";
+  variant?: "default" | "plan" | "auth";
+  children?: ReactNode;
 };
 
 export default function ReflectiveCard({
@@ -47,6 +48,7 @@ export default function ReflectiveCard({
   footer,
   popular = false,
   variant = "default",
+  children,
 }: ReflectiveCardProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [cameraOk, setCameraOk] = useState(false);
@@ -98,7 +100,13 @@ export default function ReflectiveCard({
 
   return (
     <div
-      className={`reflective-card-container${variant === "plan" ? " reflective-card-container--plan" : ""} ${className}`}
+      className={`reflective-card-container${
+        variant === "plan"
+          ? " reflective-card-container--plan"
+          : variant === "auth"
+            ? " reflective-card-container--auth"
+            : ""
+      } ${className}`}
       style={{ ...style, ...cssVariables }}
     >
       <svg className="reflective-svg-filters" aria-hidden="true">
@@ -170,46 +178,61 @@ export default function ReflectiveCard({
         {popular && (
           <div className="reflective-popular-badge">Most popular</div>
         )}
-        <div className="card-header">
-          <div className="security-badge">
-            <Lock size={14} className="security-icon" />
-            <span>{badgeText}</span>
-          </div>
-          <Activity className="status-icon" size={20} />
-        </div>
-
-        <div className="card-body">
-          <div className="user-info">
-            <h2 className="user-name">{planName}</h2>
-            <p className="user-role">{planPrice}</p>
-          </div>
-          {features && features.length > 0 && (
-            <ul className="reflective-features">
-              {features.map((f) => (
-                <li key={f}>
-                  <span className="reflective-features__check" aria-hidden>✓</span>
-                  {f}
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
-
-        <div className="card-footer">
-          {footer ? (
-            <div className="reflective-footer-slot">{footer}</div>
-          ) : (
-            <>
-              <div className="id-section">
-                <span className="label">PLAN ID</span>
-                <span className="value">{planId}</span>
+        {variant === "auth" && children ? (
+          <>
+            <div className="card-header">
+              <div className="security-badge">
+                <Lock size={14} className="security-icon" />
+                <span>{badgeText}</span>
               </div>
-              <div className="fingerprint-section">
-                <Fingerprint size={32} className="fingerprint-icon" />
+              <Activity className="status-icon" size={20} />
+            </div>
+            <div className="reflective-auth-body">{children}</div>
+          </>
+        ) : (
+          <>
+            <div className="card-header">
+              <div className="security-badge">
+                <Lock size={14} className="security-icon" />
+                <span>{badgeText}</span>
               </div>
-            </>
-          )}
-        </div>
+              <Activity className="status-icon" size={20} />
+            </div>
+
+            <div className="card-body">
+              <div className="user-info">
+                <h2 className="user-name">{planName}</h2>
+                <p className="user-role">{planPrice}</p>
+              </div>
+              {features && features.length > 0 && (
+                <ul className="reflective-features">
+                  {features.map((f) => (
+                    <li key={f}>
+                      <span className="reflective-features__check" aria-hidden>✓</span>
+                      {f}
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+
+            <div className="card-footer">
+              {footer ? (
+                <div className="reflective-footer-slot">{footer}</div>
+              ) : (
+                <>
+                  <div className="id-section">
+                    <span className="label">PLAN ID</span>
+                    <span className="value">{planId}</span>
+                  </div>
+                  <div className="fingerprint-section">
+                    <Fingerprint size={32} className="fingerprint-icon" />
+                  </div>
+                </>
+              )}
+            </div>
+          </>
+        )}
       </div>
     </div>
   );

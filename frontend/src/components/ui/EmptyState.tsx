@@ -3,7 +3,9 @@ import { Link } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { GlassIcon } from "@/components/effects/GlassIcon";
 import type { GlassIconColor } from "@/components/effects/GlassIcons";
-import { AkaraButton, SecondaryButton } from "./GradientButton";
+import Folder from "@/components/effects/Folder";
+import GlowCTAButton from "@/components/ui/GlowCTAButton";
+import { SecondaryButton } from "./GradientButton";
 
 interface EmptyStateProps {
   icon: ReactNode;
@@ -22,6 +24,8 @@ interface EmptyStateProps {
   children?: ReactNode;
   className?: string;
   iconColor?: GlassIconColor;
+  variant?: "default" | "folder";
+  folderColor?: string;
 }
 
 function ActionButton({
@@ -31,15 +35,29 @@ function ActionButton({
   action: NonNullable<EmptyStateProps["primaryAction"]>;
   variant: "primary" | "secondary";
 }) {
-  const Btn = variant === "primary" ? AkaraButton : SecondaryButton;
+  if (variant === "primary") {
+    if (action.href) {
+      return (
+        <GlowCTAButton to={action.href} size="sm">
+          {action.label}
+        </GlowCTAButton>
+      );
+    }
+    return (
+      <GlowCTAButton size="sm" onClick={action.onClick}>
+        {action.label}
+      </GlowCTAButton>
+    );
+  }
+  const Btn = SecondaryButton;
   if (action.href) {
     return (
       <Link to={action.href}>
-        <Btn>{action.label}</Btn>
+        <Btn className="border-white/20 text-white/70 hover:bg-white/10">{action.label}</Btn>
       </Link>
     );
   }
-  return <Btn onClick={action.onClick}>{action.label}</Btn>;
+  return <Btn onClick={action.onClick} className="border-white/20 text-white/70 hover:bg-white/10">{action.label}</Btn>;
 }
 
 export default function EmptyState({
@@ -51,6 +69,8 @@ export default function EmptyState({
   children,
   className,
   iconColor = "blue",
+  variant = "default",
+  folderColor = "#03B3C3",
 }: EmptyStateProps) {
   return (
     <div
@@ -60,16 +80,22 @@ export default function EmptyState({
       )}
     >
       <div className="max-w-md mx-auto space-y-6">
-        <GlassIcon
-          decorative
-          size="lg"
-          color={iconColor}
-          icon={<span className="glass-icon-slot-inner [&_svg]:h-7 [&_svg]:w-7">{icon}</span>}
-          label={title}
-        />
+        {variant === "folder" ? (
+          <div className="flex justify-center py-4">
+            <Folder color={folderColor} size={1.4} items={[icon]} />
+          </div>
+        ) : (
+          <GlassIcon
+            decorative
+            size="lg"
+            color={iconColor}
+            icon={<span className="glass-icon-slot-inner [&_svg]:h-7 [&_svg]:w-7">{icon}</span>}
+            label={title}
+          />
+        )}
         <div className="space-y-2">
-          <h3 className="text-h2">{title}</h3>
-          {description && <p className="text-body">{description}</p>}
+          <h3 className="text-xl font-semibold text-white">{title}</h3>
+          {description && <p className="text-sm text-white/60">{description}</p>}
         </div>
         {(primaryAction || secondaryAction) && (
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
@@ -114,15 +140,20 @@ export function NoDataEmptyState({
   description = "There's nothing to show here yet.",
   actionLabel = "Refresh",
   onAction,
+  variant = "default" as "default" | "folder",
+  icon,
 }: {
   title?: string;
   description?: string;
   actionLabel?: string;
   onAction?: () => void;
+  variant?: "default" | "folder";
+  icon?: ReactNode;
 }) {
   return (
     <EmptyState
-      icon={<span className="text-2xl">📭</span>}
+      variant={variant}
+      icon={icon ?? (variant === "folder" ? <span className="text-lg">📄</span> : <span className="text-2xl">📭</span>)}
       title={title}
       description={description}
       {...(onAction && {

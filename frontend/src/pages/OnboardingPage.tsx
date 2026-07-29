@@ -13,6 +13,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { AkaraButton, GhostButton } from "@/components/ui/GradientButton"
 import GlowSurfaceCard from "@/components/ui/GlowSurfaceCard"
+import PageLoader from "@/components/ui/PageLoader"
 import { cn } from "@/lib/utils"
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL ?? ""
@@ -223,6 +224,11 @@ export function OnboardingPage() {
         </>
       }
     >
+      {loading && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#0a0a0a]/80 backdrop-blur-sm">
+          <PageLoader title="Setting up your business…" subtitle="" minHeight="min-h-0" />
+        </div>
+      )}
       {step === 1 && (
         <>
           <div className="text-center mb-6">

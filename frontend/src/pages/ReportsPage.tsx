@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { 
-  Download, 
   FileSpreadsheet, 
   RefreshCw, 
   Lock, 
@@ -18,15 +17,16 @@ import { useReports, useSchemeLeakage } from "@/hooks/useReports";
 import { useBilling } from "@/hooks/useBilling";
 import { useKPIs } from "@/hooks/useKPIs";
 import { supabase } from "@/lib/supabase";
+import ProductPageLayout from "@/components/layout/ProductPageLayout";
 import GlowSurfaceCard from "@/components/ui/GlowSurfaceCard";
-import { AkaraButton, SecondaryButton } from "@/components/ui/GradientButton";
+import GlowCTAButton from "@/components/ui/GlowCTAButton";
+import { SecondaryButton } from "@/components/ui/GradientButton";
 import { TableSkeleton, ChartSkeleton } from "@/components/ui/ShimmerSkeleton";
 import { NoDataEmptyState } from "@/components/ui/EmptyState";
 import AnimatedNumber from "@/components/ui/AnimatedNumber";
 import { PlanGate } from "@/components/billing/PlanGate";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "@/components/ui/toast";
-import { Link } from "react-router-dom";
 
 const BASE = import.meta.env.VITE_API_BASE_URL as string;
 
@@ -121,7 +121,7 @@ export function ReportsPage() {
   const routeMaxRevenue = Math.max(...routeRows.map((r) => r.revenue), 1);
 
   return (
-    <div className="p-6 lg:p-8 space-y-6 max-w-7xl mx-auto bg-surface-canvas">
+    <ProductPageLayout className="space-y-6">
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
         <div>
           <h1 className="text-display">Intelligence Center</h1>
@@ -135,10 +135,10 @@ export function ReportsPage() {
             <Filter className="h-4 w-4 mr-2" />
             Filter
           </SecondaryButton>
-          <AkaraButton size="sm" onClick={() => refetch()}>
+          <SecondaryButton size="sm" onClick={() => refetch()}>
             <RefreshCw className="h-4 w-4 mr-2" />
             Refresh
-          </AkaraButton>
+          </SecondaryButton>
         </div>
       </div>
 
@@ -176,7 +176,7 @@ export function ReportsPage() {
                     style={{ animationDelay: `${i * 100}ms` }}
                   >
                     <div className="flex items-center justify-between mb-2">
-                      <span className="font-medium text-text-primary text-sm">{route.route}</span>
+                      <span className="font-medium text-sm">{route.route}</span>
                       <div className="text-right">
                         <span className="text-accent font-semibold text-sm">
                           {formatINR(route.revenue)}
@@ -184,7 +184,7 @@ export function ReportsPage() {
                         <div className="text-xs text-text-secondary">{route.orders} orders</div>
                       </div>
                     </div>
-                    <div className="w-full bg-surface-raised rounded-full h-3">
+                    <div className="w-full bg-white/10 rounded-full h-3">
                       <div 
                         className="h-3 rounded-full bg-accent transition-all duration-1000 ease-out"
                         style={{ width: `${percentage}%` }}
@@ -214,15 +214,15 @@ export function ReportsPage() {
               </span>
             </h3>
             <div className="space-y-4">
-              <GlowSurfaceCard hover={false} padding="sm" className="border-emerald-200 bg-emerald-50">
+              <GlowSurfaceCard hover={false} padding="sm" accent="green">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-emerald-700 font-medium">Top Performer</p>
-                    <p className="text-emerald-600 text-sm">Hyderabad IT</p>
+                    <p className="text-emerald-300 font-medium">Top Performer</p>
+                    <p className="text-emerald-400/80 text-sm">Hyderabad IT</p>
                   </div>
                   <div className="text-right">
-                    <div className="text-lg font-bold text-emerald-700">21.3%</div>
-                    <div className="text-xs text-emerald-600">growth</div>
+                    <div className="text-lg font-bold text-emerald-300">21.3%</div>
+                    <div className="text-xs text-emerald-400/80">growth</div>
                   </div>
                 </div>
               </GlowSurfaceCard>
@@ -230,7 +230,7 @@ export function ReportsPage() {
               <GlowSurfaceCard hover={false} padding="sm">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-text-primary font-medium">Total Routes</p>
+                    <p className="font-medium">Total Routes</p>
                     <p className="text-body text-sm">Active this month</p>
                   </div>
                   <div className="text-right">
@@ -245,7 +245,7 @@ export function ReportsPage() {
               <GlowSurfaceCard hover={false} padding="sm">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-text-primary font-medium">Avg Efficiency</p>
+                    <p className="font-medium">Avg Efficiency</p>
                     <p className="text-body text-sm">Across all routes</p>
                   </div>
                   <div className="text-right">
@@ -263,7 +263,7 @@ export function ReportsPage() {
               <GlowSurfaceCard hover={false} padding="sm">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-text-primary font-medium">Total Revenue</p>
+                    <p className="font-medium">Total Revenue</p>
                     <p className="text-body text-sm">All routes combined</p>
                   </div>
                   <div className="text-right">
@@ -282,11 +282,11 @@ export function ReportsPage() {
       {showSlotJ && (
         <GlowSurfaceCard
           padding="md"
-          className="border-violet-200 bg-gradient-to-r from-violet-50/80 to-amber-50/60 animate-fadeInUp"
+          className="animate-fadeInUp"
         >
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
-              <p className="font-semibold text-text-primary">
+              <p className="font-semibold">
                 Detect scheme leakage before payout day
               </p>
               <p className="text-sm text-text-secondary mt-1">
@@ -295,9 +295,7 @@ export function ReportsPage() {
               </p>
             </div>
             <div className="flex items-center gap-3 shrink-0">
-              <Link to="/billing">
-                <AkaraButton size="sm">Upgrade to Business →</AkaraButton>
-              </Link>
+              <GlowCTAButton size="sm" to="/billing">Upgrade to Business →</GlowCTAButton>
               <button
                 type="button"
                 className="text-xs text-text-muted hover:underline"
@@ -321,23 +319,23 @@ export function ReportsPage() {
         priceHint="From ₹13,999/month"
       >
       {hasLeakage && (
-        <GlowSurfaceCard padding="md" className="border-red-200 bg-red-50 relative overflow-hidden">
+        <GlowSurfaceCard padding="md" accent="red" className="relative overflow-hidden">
           <div className="relative">
             <div className="flex items-center justify-between mb-6">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg flex items-center justify-center bg-red-600 text-white">
+                <div className="w-10 h-10 rounded-lg flex items-center justify-center bg-red-500/20 text-red-300">
                   <Lock className="h-5 w-5 animate-pulse" />
                 </div>
                 <div>
-                  <h2 className="text-h2 text-red-900">Scheme Leakage Detection</h2>
-                  <p className="text-red-700 text-sm">
+                  <h2 className="text-h2 text-red-200">Scheme Leakage Detection</h2>
+                  <p className="text-red-300/80 text-sm">
                     {leakageLoading ? 'Scanning for anomalies...' : `${leakageRows?.length || 0} distributors flagged`}
                   </p>
                 </div>
               </div>
               
               <div className="flex items-center gap-3">
-                <Badge className="bg-red-100 text-red-700 border-red-200">
+                <Badge className="bg-red-500/20 text-red-300 border-red-400/30">
                   Critical Alert
                 </Badge>
                 <div className="w-3 h-3 rounded-full bg-red-500 animate-pulse" />
@@ -348,16 +346,16 @@ export function ReportsPage() {
               <ChartSkeleton height="h-[200px]" />
             ) : (
               <div className="space-y-4">
-                <GlowSurfaceCard hover={false} padding="sm" className="border-red-300 bg-red-100/50">
+                <GlowSurfaceCard hover={false} padding="sm" accent="red">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                      <Shield className="h-5 w-5 text-red-600" />
+                      <Shield className="h-5 w-5 text-red-400" />
                       <div>
-                        <p className="text-red-800 font-medium">Total Potential Savings</p>
-                        <p className="text-red-700 text-sm">Deniable claims this cycle</p>
+                        <p className="text-red-200 font-medium">Total Potential Savings</p>
+                        <p className="text-red-300/80 text-sm">Deniable claims this cycle</p>
                       </div>
                     </div>
-                    <div className="text-2xl font-bold text-red-700">
+                    <div className="text-2xl font-bold text-red-300">
                       {formatINR(totalLeakage)}
                     </div>
                   </div>
@@ -367,32 +365,32 @@ export function ReportsPage() {
                   {leakageRows?.slice(0, 5).map((row, i) => (
                     <div
                       key={i}
-                      className="flex items-start justify-between p-4 rounded-lg border border-red-200 bg-white animate-fadeInUp hover:bg-red-50 transition-colors"
+                      className="flex items-start justify-between p-4 rounded-lg border border-white/10 bg-white/5 animate-fadeInUp hover:bg-white/10 transition-colors"
                       style={{ animationDelay: `${i * 100}ms` }}
                     >
                       <div className="space-y-1">
-                        <p className="font-medium text-red-900">{row.party_name}</p>
+                        <p className="font-medium text-red-200">{row.party_name}</p>
                         <div className="flex items-center gap-2 text-xs">
-                          <span className="text-red-700">{row.scheme_name}</span>
-                          <span className="text-red-500">•</span>
-                          <span className="text-red-700">{row.product_name}</span>
+                          <span className="text-red-300/80">{row.scheme_name}</span>
+                          <span className="text-red-400/60">•</span>
+                          <span className="text-red-300/80">{row.product_name}</span>
                         </div>
-                        <div className="flex items-center gap-2 text-xs text-red-600">
+                        <div className="flex items-center gap-2 text-xs text-red-400/70">
                           <Calendar className="h-3 w-3" />
                           <span>{row.scheme_start} → {row.scheme_end}</span>
                         </div>
                       </div>
                       <div className="text-right shrink-0 ml-4">
                         <div className="flex items-center gap-2 mb-1">
-                          <AlertTriangle className="h-4 w-4 text-red-600" />
-                          <span className="font-semibold text-red-700">
+                          <AlertTriangle className="h-4 w-4 text-red-400" />
+                          <span className="font-semibold text-red-300">
                             {formatINR(row.leakage_amount)}
                           </span>
                         </div>
-                        <div className="text-xs text-red-600">
+                        <div className="text-xs text-red-400/70">
                           Claimed {formatINR(row.claimed_amount)}
                         </div>
-                        <div className="text-xs text-red-700">
+                        <div className="text-xs text-red-300/80">
                           Actual {formatINR(row.actual_offtake)}
                         </div>
                       </div>
@@ -400,21 +398,18 @@ export function ReportsPage() {
                   ))}
                 </div>
 
-                <div className="flex items-center justify-between pt-4 border-t border-red-200">
-                  <div className="text-sm text-red-700">
+                <div className="flex items-center justify-between pt-4 border-t border-white/10">
+                  <div className="text-sm text-red-300/80">
                     {leakageRows && leakageRows.length > 5 && (
                       <span>+{leakageRows.length - 5} more distributors flagged</span>
                     )}
                   </div>
                   <div className="flex items-center gap-3">
-                    <SecondaryButton size="sm" className="border-red-300 text-red-700 hover:bg-red-50">
+                    <SecondaryButton size="sm" className="border-red-400/30 text-red-300 hover:bg-red-400/10">
                       <Eye className="h-4 w-4 mr-2" />
                       View All
                     </SecondaryButton>
-                    <AkaraButton size="sm">
-                      <Shield className="h-4 w-4 mr-2" />
-                      Take Action
-                    </AkaraButton>
+                    <GlowCTAButton size="sm">Take Action</GlowCTAButton>
                   </div>
                 </div>
               </div>
@@ -454,11 +449,11 @@ export function ReportsPage() {
                       <FileSpreadsheet className="h-5 w-5" />
                     </div>
                     <div>
-                      <p className="font-medium text-text-primary mb-1">
+                      <p className="font-medium mb-1">
                         {r.title}
                       </p>
                       <div className="flex items-center gap-3 text-xs">
-                        <Badge className="bg-accent-soft text-accent border-surface-border">
+                        <Badge className="bg-white/10 text-accent border-white/10">
                           {r.report_type}
                         </Badge>
                         <span className="text-text-secondary flex items-center gap-1">
@@ -477,14 +472,13 @@ export function ReportsPage() {
                       </div>
                     </div>
                   </div>
-                  <AkaraButton
+                  <GlowCTAButton
                     size="sm"
                     onClick={() => downloadReport(r.id, r.title)}
                     disabled={!r.storage_path}
                   >
-                    <Download className="h-4 w-4 mr-2" />
                     Download
-                  </AkaraButton>
+                  </GlowCTAButton>
                 </div>
               </GlowSurfaceCard>
             ))}
@@ -505,11 +499,11 @@ export function ReportsPage() {
               </p>
             </div>
           </div>
-          <AkaraButton size="sm">
+          <GlowCTAButton size="sm">
             Upgrade Analytics
-          </AkaraButton>
+          </GlowCTAButton>
         </div>
       </GlowSurfaceCard>
-    </div>
+    </ProductPageLayout>
   );
 }

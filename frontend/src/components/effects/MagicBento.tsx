@@ -10,37 +10,37 @@ const MOBILE_BREAKPOINT = 768;
 
 export const DEFAULT_BENTO_ITEMS = [
   {
-    color: '#120F17',
+    color: '#0a0a0a',
     title: 'Analytics',
     description: 'Track user behavior',
     label: 'Insights'
   },
   {
-    color: '#120F17',
+    color: '#0a0a0a',
     title: 'Dashboard',
     description: 'Centralized data view',
     label: 'Overview'
   },
   {
-    color: '#120F17',
+    color: '#0a0a0a',
     title: 'Collaboration',
     description: 'Work together seamlessly',
     label: 'Teamwork'
   },
   {
-    color: '#120F17',
+    color: '#0a0a0a',
     title: 'Automation',
     description: 'Streamline workflows',
     label: 'Efficiency'
   },
   {
-    color: '#120F17',
+    color: '#0a0a0a',
     title: 'Integration',
     description: 'Connect favorite tools',
     label: 'Connectivity'
   },
   {
-    color: '#120F17',
+    color: '#0a0a0a',
     title: 'Security',
     description: 'Enterprise-grade protection',
     label: 'Protection'

@@ -1,0 +1,342 @@
+---
+title: Heatmap Chart
+description: A contribution heatmap with animated cells, configurable level colors and patterns, and an interactive legend
+---
+
+import {
+  HeatmapCells,
+  HeatmapChart,
+  HeatmapInteractionBoundary,
+  HeatmapInteractionProvider,
+  HeatmapLegend,
+  HeatmapTooltip,
+  HeatmapXAxis,
+  HeatmapYAxis,
+  HEATMAP_DEFAULT_LEVEL_STYLES,
+} from "@bklitui/ui/charts";
+import { getHeatmapDemoData } from "@/lib/heatmap-demo-data";
+
+export const contributionData = getHeatmapDemoData();
+
+<ComponentPreview registryName="heatmap-chart">
+  <HeatmapInteractionProvider>
+    <HeatmapInteractionBoundary>
+      <div className="flex w-full flex-col items-stretch gap-3">
+        <HeatmapChart className="w-full" data={contributionData} layout="fluid">
+          <HeatmapCells inactiveOpacity={1} inactiveScale={1} />
+          <HeatmapXAxis />
+          <HeatmapYAxis />
+          <HeatmapTooltip instant />
+        </HeatmapChart>
+        <HeatmapLegend
+          inactiveOpacity={1}
+          inactiveScale={1}
+          levelStyles={HEATMAP_DEFAULT_LEVEL_STYLES}
+        />
+      </div>
+    </HeatmapInteractionBoundary>
+  </HeatmapInteractionProvider>
+</ComponentPreview>
+
+## Installation
+
+<InstallationTabs name="heatmap-chart" dependencies={["@visx/heatmap", "@visx/group", "@visx/responsive", "@visx/scale", "motion"]} />
+
+When using `loadingLabel` or `HeatmapChartLoading`, centered shimmer text uses `@bklit/shimmering-text` — installed automatically with `@bklit/heatmap-chart`.
+
+## Usage
+
+The Heatmap Chart uses a composable API. Wrap the chart and legend in `HeatmapInteractionProvider` so hover dimming and tooltips stay in sync:
+
+```tsx
+import {
+  HeatmapCells,
+  HeatmapChart,
+  HeatmapInteractionBoundary,
+  HeatmapInteractionProvider,
+  HeatmapLegend,
+  HeatmapTooltip,
+  HeatmapXAxis,
+  HeatmapYAxis,
+} from "@bklitui/ui/charts";
+
+const data = [
+  {
+    bin: 0,
+    bins: [
+      { bin: 0, count: 2, date: new Date(2024, 0, 1) },
+      { bin: 1, count: 0, date: new Date(2024, 0, 2) },
+      // …one week column with 7 day bins
+    ],
+  },
+  // …one column per week
+];
+
+export default function ContributionHeatmap() {
+  return (
+    <HeatmapInteractionProvider>
+      <HeatmapInteractionBoundary>
+        <HeatmapChart data={data} layout="fluid">
+          <HeatmapCells />
+          <HeatmapXAxis />
+          <HeatmapYAxis />
+          <HeatmapTooltip />
+        </HeatmapChart>
+        <HeatmapLegend />
+      </HeatmapInteractionBoundary>
+    </HeatmapInteractionProvider>
+  );
+}
+```
+
+## Components
+
+### HeatmapChart
+
+The root component that sizes the grid, builds color scales, and provides context to children.
+
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| `data` | `HeatmapColumn[]` | required | One column per week (or category) with row bins inside |
+| `xDomain` | `[Date, Date]` | - | Visible time range — filters week columns |
+| `sizingColumnCount` | `number` | - | Column count for stable cell sizing when scrubbing |
+| `layout` | `"fluid" \| "fill"` | `"fluid"` | `fluid` hugs content height; `fill` expands cells to parent |
+| `margin` | `Partial<Margin>` | `{ top: 28, right: 16, bottom: 0, left: 40 }` | Chart margins |
+| `binSize` | `number` | `0` | Fixed cell size in px; `0` sizes cells to fit |
+| `gap` | `number` | `2` | Gap between cells in pixels |
+| `colorScale` | `(count) => string` | - | Override the default color scale |
+| `levelColors` | `HeatmapLevelColors` | `--chart-scale-01` … `--chart-scale-05` | Five colors for empty + four activity levels |
+| `levelStyles` | `HeatmapLevelStyles` | - | Per-level color and optional pattern; takes precedence over `levelColors` |
+| `aspectRatio` | `string` | - | CSS aspect ratio for the outer container |
+| `status` | `ChartStatus` | `"ready"` | Fetch / display status |
+| `loadingLabel` | `string` | - | Centered label while loading |
+| `animationDuration` | `number` | `1600` | Enter animation duration in ms |
+| `animate` | `boolean` | `true` | Play enter fade-in / loading shimmer |
+| `columnSeparators` | `HeatmapSeparatorParsedConfig` | - | Column grouping without a `HeatmapSeparator` child |
+| `weekStartDay` | `0`–`6` | `0` | First row of the grid (`0` = Sunday, `1` = Monday, etc.) |
+| `className` | `string` | `""` | Additional CSS class |
+
+### HeatmapCells
+
+Renders the grid of cells with enter animation and hover dimming.
+
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| `cornerRadius` | `number` | `2` | Corner radius for each cell |
+| `colorScale` | `(count) => string` | - | Override chart color scale |
+| `inactiveOpacity` | `number` | `0.3` | Opacity for inactive cells while hovering |
+| `inactiveScale` | `number` | `1` | Scale for inactive cells while hovering |
+| `activeScale` | `number` | `1` | Scale for the highlighted cell while hovering |
+| `rowOpacity` | `number \| number[]` | `1` | Per-row cell opacity by **display row index** (0 = top row). See [Row opacity](#row-opacity). |
+| `interactive` | `boolean` | `true` | Pointer hover and dimming |
+
+When `inactiveOpacity`, `inactiveScale`, and `activeScale` are all `1`, hover dimming is disabled.
+
+### HeatmapXAxis / HeatmapYAxis
+
+Month labels along the top and weekday labels along the left. Y-axis labels follow `weekStartDay` on `HeatmapChart`.
+
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| `tickFilter` | `"all" \| "odd" \| "even"` | `"odd"` | Which row ticks to show |
+| `labelFormat` | `"full" \| "initial"` | `"full"` | Full name or first letter |
+| `rowOpacity` | `number \| number[]` | - | Per-row label opacity — pass the same value as `HeatmapCells` |
+| `className` | `string` | - | Additional class for labels |
+
+### HeatmapLegend
+
+Less → More scale swatches that share `levelStyles` with the chart.
+
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| `lessLabel` | `string` | `"Less"` | Label before swatches |
+| `moreLabel` | `string` | `"More"` | Label after swatches |
+| `cellSize` | `number` | `11` | Swatch size in pixels |
+| `gap` | `number` | `2` | Gap between swatches |
+| `cornerRadius` | `number` | `2` | Swatch corner radius |
+| `variant` | `"swatches" \| "gradient"` | `"swatches"` | Discrete swatches or continuous gradient bar |
+| `gradientSpan` | `number` | `5` | Gradient bar width in swatch units |
+| `fontSize` | `number` | - | Font size in pixels for side labels |
+| `labelClassName` | `string` | - | Class name for less/more labels |
+| `align` | `"start" \| "center" \| "end"` | `"end"` | Horizontal alignment |
+| `levelStyles` | `HeatmapLevelStyles` | - | Shared level colors and patterns |
+| `inactiveOpacity` | `number` | `0.3` | Opacity for inactive swatches while interacting |
+| `inactiveScale` | `number` | `1` | Scale for inactive swatches while interacting |
+| `activeScale` | `number` | `1` | Scale for the highlighted swatch while interacting |
+| `interactive` | `boolean` | auto | Sync dimming with chart hover |
+
+Gradient mode uses solid colors only (patterns are ignored).
+
+### HeatmapSeparator
+
+Vertical column separators with optional quarter labels.
+
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| `groupBy` | `"every" \| "quarter"` | `"every"` | Group columns by interval or calendar quarter |
+| `every` | `number` | - | Insert a separator every N columns when `groupBy="every"` |
+| `spacing` | `number` | `0` | Horizontal gap between column groups in pixels |
+| `startOffset` | `number` | plot top | Distance from container top to line start (align with month labels) |
+| `labelOffset` | `number` | `0` | Distance below line top for quarter labels |
+| `showLabels` | `boolean` | `false` | Draw Q1–Q4 labels at group starts |
+| `labelClassName` | `string` | - | Class for quarter labels, e.g. `"text-black dark:text-white"` |
+| `stroke` | `string` | `var(--border)` | Line color when `gradient` is omitted |
+| `strokeStyle` | `"solid" \| "dashed"` | `"solid"` | Line style |
+| `strokeDasharray` | `string` | `"4,4"` | Dash pattern when `strokeStyle="dashed"` |
+| `strokeWidth` | `number` | `1` | Line width in pixels |
+| `strokeOpacity` | `number` | `1` | Opacity multiplier for solid strokes or gradient stops |
+| `gradient` | `HeatmapSeparatorGradient` | - | Optional vertical fade; omit for a flat solid stroke |
+
+**Solid stroke** — no `gradient` prop:
+
+```tsx
+<HeatmapSeparator
+  groupBy="quarter"
+  showLabels
+  labelClassName="text-black dark:text-white"
+  stroke="var(--border)"
+  strokeStyle="solid"
+/>
+```
+
+**Gradient fade** — softens the top and bottom of each line:
+
+```tsx
+<HeatmapSeparator
+  groupBy="quarter"
+  showLabels
+  stroke="var(--muted)"
+  gradient={{
+    from: "var(--muted)",
+    via: "var(--muted)",
+    to: "var(--muted)",
+    fromOpacity: 0,
+    viaOpacity: 1,
+    toOpacity: 0,
+  }}
+/>
+```
+
+### HeatmapTooltip
+
+Shows the contribution count and date for the hovered cell.
+
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| `formatLabel` | `(count, date) => string` | default formatter | Custom contribution line (bottom section) |
+| `showDelay` | `number` | `0` | Delay before first show (ms). Cell-to-cell updates are immediate once visible. |
+| `hideDelay` | `number` | `120` | Grace period before hiding when leaving a cell (ms). Reduces flicker between adjacent cells. |
+| `instant` | `boolean` | `false` | No fade/scale motion — tooltip appears and disappears immediately |
+| `backgroundColor` | `string` | `var(--chart-tooltip-background)` | Panel background (CSS variable or color value) |
+| `panelStyle` | `CSSProperties` | - | Inline styles for the tooltip panel |
+| `className` | `string` | `""` | Additional CSS class |
+
+## Level styles and patterns
+
+Pass `levelStyles` (five entries: empty + levels 1–4) to control both cell fills and legend swatches. Each level can be solid or use a pattern preset. Omit `patternColor` to derive stripe color from the level color, or set `patternColor: "var(--chart-scale-pattern-color)"` for the theme default:
+
+```tsx
+const levelStyles = [
+  { color: "var(--chart-scale-01)", fillMode: "solid" },
+  { color: "var(--chart-scale-02)", fillMode: "solid" },
+  { color: "var(--chart-scale-03)", fillMode: "pattern", pattern: "diagonal", patternColor: "var(--chart-scale-pattern-color)" },
+  { color: "var(--chart-scale-04)", fillMode: "solid" },
+  { color: "var(--chart-scale-05)", fillMode: "solid" },
+] as const;
+
+<HeatmapChart data={data} levelStyles={levelStyles}>
+  <HeatmapCells />
+</HeatmapChart>
+<HeatmapLegend levelStyles={levelStyles} />
+```
+
+## Data format
+
+```typescript
+interface HeatmapBin {
+  bin: number;       // row index (0–6 for days of week)
+  count: number;     // activity level 0–4
+  date: Date;
+}
+
+interface HeatmapColumn {
+  bin: number;       // column index (week number)
+  bins: HeatmapBin[];
+}
+```
+
+Counts map to five visual levels (0 = empty, 1–4 = increasing activity). Use `getHeatmapContributionLevel(count)` from `@bklitui/ui/charts` to derive the level from a raw count.
+
+### Row opacity
+
+`rowOpacity` on `HeatmapCells` and `HeatmapYAxis` controls opacity **per display row** — the row index after `weekStartDay` rotation, where `0` is the top row of the grid.
+
+With `weekStartDay={1}` (Monday-first):
+
+| Display row | Day |
+|-------------|-----|
+| 0 | Mon |
+| 1 | Tue |
+| 2 | Wed |
+| 3 | Thu |
+| 4 | Fri |
+| 5 | Sat |
+| 6 | Sun |
+
+Pass the **same** value to `HeatmapCells` and `HeatmapYAxis` so faded rows and their labels stay aligned.
+
+**Plain array** — explicit opacity per row:
+
+```tsx
+const rowOpacity = [1, 1, 1, 1, 1, 0.35, 0.35]; // fade Sat + Sun (Mon-first)
+```
+
+**Helper** — `buildHeatmapRowOpacity` from `@bklitui/ui/charts`:
+
+```tsx
+import { buildHeatmapRowOpacity } from "@bklitui/ui/charts";
+
+// Fade rows 5 and 6 (Sat + Sun when weekStartDay={1})
+const weekendOpacity = buildHeatmapRowOpacity([5, 6], 0.35);
+
+// Same result with a row predicate (nth-style rule)
+const weekendOpacity = buildHeatmapRowOpacity((row) => row >= 5, 0.35);
+```
+
+Other predicate examples:
+
+```tsx
+buildHeatmapRowOpacity((row) => row % 2 === 0, 0.5); // even rows
+buildHeatmapRowOpacity((row) => row < 2, 0.5);     // first two rows
+```
+
+**Single number** — applies to every row:
+
+```tsx
+<HeatmapCells rowOpacity={0.6} />
+```
+
+### Monday-first grid with faded weekends
+
+Source data can stay Sunday-first; `weekStartDay` rotates display rows without reshaping your data:
+
+```tsx
+import { buildHeatmapRowOpacity } from "@bklitui/ui/charts";
+
+const weekendOpacity = buildHeatmapRowOpacity((row) => row >= 5, 0.35);
+
+<HeatmapChart data={data} weekStartDay={1}>
+  <HeatmapCells rowOpacity={weekendOpacity} />
+  <HeatmapYAxis
+    tickFilter="all"
+    labelFormat="initial"
+    rowOpacity={weekendOpacity}
+  />
+</HeatmapChart>
+```
+
+Default level colors use **`--chart-scale-01`** … **`--chart-scale-05`**. See [Theming](/docs/theming).
+
+## Gallery
+
+See the [charts gallery](/charts/heatmap-chart) for pattern fills and layout variants.

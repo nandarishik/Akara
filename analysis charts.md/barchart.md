@@ -1,0 +1,498 @@
+---
+title: Bar Chart
+description: A composable bar chart with spring animations, stacked bars, horizontal orientation, and grouped series support
+---
+
+import {
+  BarChart,
+  Bar,
+  BarXAxis,
+  Grid,
+  ChartTooltip,
+} from "@bklitui/ui/charts";
+import { BarChartLoadingDemo } from "@/components/docs/bar-chart-loading-demo";
+import { Icon } from "@bklitui/icons";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+
+export const chartData = [
+  { month: "Jan", revenue: 12000, profit: 4500 },
+  { month: "Feb", revenue: 15500, profit: 5200 },
+  { month: "Mar", revenue: 11000, profit: 3800 },
+  { month: "Apr", revenue: 18500, profit: 7100 },
+  { month: "May", revenue: 16800, profit: 5400 },
+  { month: "Jun", revenue: 21200, profit: 8800 },
+];
+
+<ComponentPreview registryName="bar-chart">
+  <div className="w-full">
+    <BarChart data={chartData} xDataKey="month">
+      <Grid horizontal />
+      <Bar dataKey="revenue" fill="var(--chart-line-primary)" lineCap="round" />
+      <Bar
+        dataKey="profit"
+        fill="var(--chart-line-secondary)"
+        lineCap="round"
+      />
+      <BarXAxis />
+      <ChartTooltip />
+    </BarChart>
+  </div>
+</ComponentPreview>
+
+## Installation
+
+<InstallationTabs
+  name="bar-chart"
+  dependencies={["@visx/gradient", "@visx/pattern", "@visx/shape", "motion"]}
+/>
+
+## Usage
+
+The Bar Chart uses the same composable API as the Line and Area charts. Build charts by combining components:
+
+```tsx
+import {
+  BarChart,
+  Bar,
+  BarXAxis,
+  Grid,
+  ChartTooltip,
+} from "@bklitui/ui/charts";
+
+const data = [
+  { month: "Jan", revenue: 12000, profit: 4500 },
+  { month: "Feb", revenue: 15500, profit: 5200 },
+  // ... more data
+];
+
+export default function RevenueChart() {
+  return (
+    <BarChart data={data} xDataKey="month">
+      <Grid horizontal />
+      <Bar dataKey="revenue" fill="var(--chart-line-primary)" lineCap="round" />
+      <Bar
+        dataKey="profit"
+        fill="var(--chart-line-secondary)"
+        lineCap="round"
+      />
+      <BarXAxis />
+      <ChartTooltip />
+    </BarChart>
+  );
+}
+```
+
+See the [charts gallery](/charts/bar-chart) for stacked bars, horizontal layouts, gradients, patterns, the **Shape** square-column variant, and more.
+
+## Components
+
+### BarChart
+
+The root component that provides context to all children.
+
+| Prop                | Type                         | Default                                        | Description                                         |
+| ------------------- | ---------------------------- | ---------------------------------------------- | --------------------------------------------------- |
+| `data`              | `Record<string, unknown>[]`  | required                                       | Array of data points                                |
+| `xDataKey`          | `string`                     | `"name"`                                       | Key in data for categorical axis values             |
+| `margin`            | `Partial<Margin>`            | `{ top: 40, right: 40, bottom: 40, left: 40 }` | Chart margins                                       |
+| `animationDuration` | `number`                     | `1100`                                         | Animation duration in ms                            |
+| `aspectRatio`       | `string`                     | `"2 / 1"`                                      | CSS aspect ratio                                    |
+| `barGap`            | `number`                     | `0.2`                                          | Gap between bar groups (0-1 fraction of band width) |
+| `barWidth`          | `number`                     | -                                              | Fixed bar width in pixels (auto-sizes if not set)   |
+| `orientation`       | `"vertical" \| "horizontal"` | `"vertical"`                                   | Bar chart orientation                               |
+| `stacked`           | `boolean`                    | `false`                                        | Stack bars instead of grouping them                 |
+| `stackGap`          | `number`                     | `0`                                            | Gap between stacked bar segments in pixels          |
+| `squareSnap`        | `{ squareGap: number; groupGap?: number; fit?: boolean }` | — | Enables square-column tooltip snapping when using `<BarSquares>` |
+| `className`         | `string`                     | `""`                                           | Additional CSS class                                |
+
+### Bar
+
+Renders a bar for each data point with configurable styling and animations.
+
+| Prop            | Type                          | Default                     | Description                                             |
+| --------------- | ----------------------------- | --------------------------- | ------------------------------------------------------- |
+| `dataKey`       | `string`                      | required                    | Key in data for values                                  |
+| `yAxisId`       | `string \| number`            | `"left"`                    | Y-scale group for vertical biaxial charts (pair with `YAxis`) |
+| `fill`          | `string`                      | `var(--chart-line-primary)` | Bar fill color (can be gradient/pattern url)            |
+| `stroke`        | `string`                      | -                           | Tooltip dot color. Use when fill is a gradient/pattern  |
+| `lineCap`       | `"round" \| "butt" \| number` | `"round"`                   | Bar end cap style or custom radius                      |
+| `animate`       | `boolean`                     | `true`                      | Enable animation                                        |
+| `animationType` | `"grow" \| "fade"`            | `"grow"`                    | Animation style                                         |
+| `fadedOpacity`  | `number`                      | `0.3`                       | Opacity when another bar is hovered                     |
+| `staggerDelay`  | `number`                      | auto                        | Delay between bars (auto-calculated based on bar count) |
+| `stackGap`      | `number`                      | `0`                         | Gap between stacked bars in pixels                      |
+| `perspective` | `boolean`              | `false`                     | Make this a 3D depth bar: trims the front-face top to meet the lid and forces a flat top. Pass `true` when pairing with `BarDepthBack`/`BarDepthFront` (see [3D Depth](#3d-depth--glass-surfaces)) |
+| `minBarHeight`  | `number`                      | `0`                         | Minimum rendered height in px (non-stacked, vertical) — floors short/zero bars so they stay visible. Pair with `<BarDepthProvider minBarHeight>` |
+
+### BarSquares
+
+Renders a **Shape** bar as a vertical stack of discrete squares instead of a continuous `<Bar>`. Use one `<BarSquares>` per series (grouped, vertical charts only). Squares cascade upward on enter; supports solid fills, bar-spanning gradients, and pattern presets.
+
+| Prop            | Type                          | Default                     | Description                                             |
+| --------------- | ----------------------------- | --------------------------- | ------------------------------------------------------- |
+| `dataKey`       | `string`                      | required                    | Key in data for values                                  |
+| `yAxisId`       | `string \| number`            | series default              | Y-scale group for biaxial charts                        |
+| `fill`          | `string`                      | `var(--chart-line-primary)` | Solid color or pattern `url(#…)`                        |
+| `stroke`        | `string`                      | —                           | Tooltip ring/dot color when fill is gradient/pattern    |
+| `squareGap`     | `number`                      | `3`                         | Gap between stacked squares in pixels                   |
+| `squareRadius`  | `number`                      | `0.25`                      | Corner radius as a fraction of square size (0–0.5)    |
+| `squareFit`     | `boolean`                     | `false`                     | Redistribute gap so columns fit bar height exactly      |
+| `useGradient`   | `boolean`                     | `false`                     | Apply a bar-spanning gradient from `gradientStops`      |
+| `gradientStops` | `{ offset: number; color: string }[]` | —                 | Gradient stops (0–100) when `useGradient` is true     |
+| `patternPreset` | pattern preset id             | —                           | Pattern preset when `fill` is a pattern url             |
+| `groupGap`      | `number`                      | `4`                         | Gap between grouped series columns in pixels            |
+| `fadedOpacity`  | `number`                      | `0.3`                       | Opacity when another bar is hovered                     |
+| `animate`       | `boolean`                     | `true`                      | Enable enter animation                                  |
+| `staggerDelay`  | `number`                      | auto                        | Override per-column stagger delay                       |
+
+Pass **`squareSnap`** on `<BarChart>` with the same `squareGap`, `groupGap`, and `squareFit` so tooltip ring indicators align with square columns:
+
+```tsx
+<BarChart
+  data={data}
+  xDataKey="month"
+  squareSnap={{ squareGap: 3, groupGap: 4 }}
+>
+  <BarSquares dataKey="desktop" fill="url(#desktop-pattern)" stroke="var(--chart-5)" squareGap={3} groupGap={4} />
+  <BarSquares
+    dataKey="mobile"
+    fill="var(--chart-1)"
+    useGradient
+    gradientStops={[
+      { offset: 0, color: "var(--chart-1)" },
+      { offset: 25, color: "var(--chart-2)" },
+      { offset: 50, color: "var(--chart-3)" },
+      { offset: 75, color: "var(--chart-4)" },
+      { offset: 100, color: "var(--chart-5)" },
+    ]}
+    stroke="var(--chart-5)"
+    squareGap={3}
+    groupGap={4}
+  />
+  <BarXAxis />
+  <ChartTooltip showCrosshair={false} dotVariant="ring" dotScale={1.05} />
+</BarChart>
+```
+
+See the **Shape & Gradient** and **Shape Squircle Ring** examples on the [bar chart gallery](/charts/bar-chart).
+
+### BarColumnTrack
+
+Optional underlay for Shape bars: patterned or solid fill in the **empty space above** each square column (not behind the bars). Place before `<BarSquares>`.
+
+| Prop           | Type     | Default            | Description                                      |
+| -------------- | -------- | ------------------ | ------------------------------------------------ |
+| `fill`         | `string` | `var(--chart-grid)` | Solid color or pattern `url(#…)`                |
+| `opacity`      | `number` | `0.3`              | Track opacity                                    |
+| `squareGap`    | `number` | `3`                | Match `<BarSquares squareGap>`                   |
+| `squareRadius` | `number` | `0.25`             | Match `<BarSquares squareRadius>`                |
+| `squareFit`    | `boolean`| `false`            | Match `<BarSquares squareFit>`                   |
+| `groupGap`     | `number` | `4`                | Match `<BarSquares groupGap>`                      |
+
+Tracks animate from full column height on enter and shrink in sync as squares stack upward.
+
+### BarXAxis
+
+Displays categorical labels along the x-axis (for vertical bar charts).
+
+| Prop              | Type      | Default | Description                          |
+| ----------------- | --------- | ------- | ------------------------------------ |
+| `tickerHalfWidth` | `number`  | `50`    | Width of ticker for fade calculation |
+| `showAllLabels`   | `boolean` | `false` | Show all labels (may crowd)          |
+| `maxLabels`       | `number`  | `12`    | Maximum labels to show               |
+
+### BarYAxis
+
+Displays categorical labels along the y-axis (for horizontal bar charts).
+
+| Prop            | Type      | Default | Description            |
+| --------------- | --------- | ------- | ---------------------- |
+| `showAllLabels` | `boolean` | `true`  | Show all labels        |
+| `maxLabels`     | `number`  | `20`    | Maximum labels to show |
+
+### Grid
+
+The Grid component now supports `fadeVertical` for vertical grid lines.
+
+| Prop             | Type      | Default | Description                               |
+| ---------------- | --------- | ------- | ----------------------------------------- |
+| `horizontal`     | `boolean` | `true`  | Show horizontal grid lines                |
+| `vertical`       | `boolean` | `false` | Show vertical grid lines                  |
+| `fadeHorizontal` | `boolean` | `true`  | Fade horizontal lines at left/right edges |
+| `fadeVertical`   | `boolean` | `false` | Fade vertical lines at top/bottom edges   |
+
+### Background
+
+Pattern fill for the plot area when you omit `Grid`. See the [Background utility](/docs/utility/background) and **Pattern Background** examples on the [bar chart gallery](/charts/bar-chart).
+
+### BarDepthBack
+
+Renders the 3D side + top faces. Place **before** `<Bar>` so the bar's front face occludes depth that would extend into the next column.
+
+| Prop            | Type                              | Default                     | Description                                              |
+| --------------- | --------------------------------- | --------------------------- | ------------------------------------------------------- |
+| `dataKey`       | `string`                          | required                    | Key in data for the bar value (match the sibling `<Bar dataKey>`) |
+| `color`         | `string`                          | `var(--chart-line-primary)` | Solid color for the side + top faces                    |
+| `colorAccessor` | `(datum, index) => string`        | -                           | Per-bar color override; takes precedence over `color`   |
+
+### BarDepthFront
+
+Renders the glossy glass sheen over the bar's fill. Place **after** `<Bar>`.
+
+| Prop      | Type     | Default  | Description                                              |
+| --------- | -------- | -------- | ------------------------------------------------------- |
+| `dataKey` | `string` | required | Key in data for the bar value (match the sibling `<Bar dataKey>`) |
+
+### BarPulse
+
+Optional looping vertical sweep over a single active bar (e.g. a live value). Place **after** `<BarDepthFront>`.
+
+| Prop          | Type      | Default | Description                                          |
+| ------------- | --------- | ------- | ---------------------------------------------------- |
+| `dataKey`     | `string`  | required| Key in data for the bar value                       |
+| `activeIndex` | `number`  | -       | Index (in the data array) of the bar to pulse       |
+| `pulsePaused` | `boolean` | `false` | Freeze the sweep while keeping the 3D/glass treatment |
+
+### BarDepthProvider
+
+Optional wrapper supplying shared depth config to every layer beneath it. Wrap it **around** `<BarChart>`, not inside it. Use it to split **stacked** bars (`segmentsAccessor`) and/or tune the baseline contact shadow (`groundShadow`).
+
+| Prop               | Type                                          | Default | Description                                          |
+| ------------------ | --------------------------------------------- | ------- | ---------------------------------------------------- |
+| `segmentsAccessor` | `(datum) => { value: number; color: string }[]` | -     | Stacked segments (bottom→top) for each datum         |
+| `groundShadow`     | `number`                                        | `0.26`  | Opacity (0–1) of the dark "contact shadow" that grounds each bar at the baseline. Set `0` to remove it (e.g. on bright fills). |
+| `minBarHeight`     | `number`                                        | `0`     | Floors short/zero bars to a min px height so they stay visible. Pass the **same** value to `<Bar minBarHeight>`. |
+
+## 3D Depth & Glass Surfaces
+
+Give bars a head-on 3D perspective and a glass-block sheen by layering `BarDepthBack` (side + top faces, before `Bar`) and `BarDepthFront` (front glass, after `Bar`). The layers read geometry from the chart context, so the only required prop is the matching `dataKey`.
+
+Add **`perspective`** to the `Bar` and you're done — it shrinks the front face's top so the lid sits flush on the bar (instead of floating above it) and forces a flat top so the lid meets it with no gap. **Always pass it when using the depth layers.**
+
+```tsx
+import {
+  BarChart,
+  Bar,
+  BarDepthBack,
+  BarDepthFront,
+  BarXAxis,
+  Grid,
+  ChartTooltip,
+} from "@bklitui/ui/charts";
+
+<BarChart data={data} xDataKey="month">
+  <Grid horizontal />
+  <BarDepthBack dataKey="revenue" color="var(--chart-1)" />
+  <Bar dataKey="revenue" fill="var(--chart-1)" perspective />
+  <BarDepthFront dataKey="revenue" />
+  <BarXAxis />
+  <ChartTooltip />
+</BarChart>;
+```
+
+### Custom indicator (optional)
+
+The [3D Depth gallery example](/charts/bar-chart) pairs depth bars with a rising line indicator. Disable the default crosshair and dots on `ChartTooltip`, then render your own overlay via `useChart` and a portal — see [Custom Indicator](/docs/utility/custom-indicator).
+
+Color bars individually with `colorAccessor`:
+
+```tsx
+<BarDepthBack
+  dataKey="revenue"
+  colorAccessor={(d) =>
+    (d.revenue as number) >= 15000 ? "var(--chart-1)" : "var(--chart-3)"
+  }
+/>
+```
+
+Highlight a live / in-progress bar with `BarPulse` (render it after `BarDepthFront`):
+
+```tsx
+<BarPulse dataKey="revenue" activeIndex={data.length - 1} />
+```
+
+### Stacked bars (multiple data sources)
+
+To give a **stacked** bar 3D depth, wrap the chart in `BarDepthProvider` with a `segmentsAccessor` returning one `{ value, color }` per data source (bottom→top). The side face splits into a matching parallelogram per segment, and the lid takes the topmost segment's color. The depth's height is the **sum of the segments**, so you don't need a separate total column — just stack a `<Bar>` per source (each with `perspective`) in the same order:
+
+```tsx
+<BarDepthProvider
+  segmentsAccessor={(d) => [
+    { value: d.desktop as number, color: "var(--chart-1)" },
+    { value: d.mobile as number, color: "var(--chart-3)" },
+  ]}
+>
+  <BarChart data={data} xDataKey="month" stacked>
+    <BarDepthBack dataKey="desktop" />
+    <Bar dataKey="desktop" fill="var(--chart-1)" perspective />
+    <Bar dataKey="mobile" fill="var(--chart-3)" perspective />
+    <BarDepthFront dataKey="desktop" />
+    <BarXAxis />
+    <ChartTooltip showCrosshair={false} showDots={false} />
+  </BarChart>
+</BarDepthProvider>;
+```
+
+Each bar gets a subtle dark "contact shadow" at the baseline so it reads as sitting on the axis. Tune or remove it with `groundShadow` on the provider (it reads strongest over bright fills):
+
+```tsx
+<BarDepthProvider groundShadow={0.12}>
+  {/* ...BarChart with depth layers... */}
+</BarDepthProvider>
+```
+
+To keep **zero or very short** bars visible as a tiny bar instead of vanishing, set `minBarHeight` on **both** the `<Bar>` (floors the front face) and `<BarDepthProvider>` (floors the 3D surfaces) — they must match:
+
+```tsx
+<BarDepthProvider minBarHeight={6}>
+  <BarChart data={data} xDataKey="month">
+    <BarDepthBack dataKey="value" color="var(--chart-1)" />
+    <Bar dataKey="value" fill="var(--chart-1)" perspective minBarHeight={6} />
+    <BarDepthFront dataKey="value" />
+  </BarChart>
+</BarDepthProvider>
+```
+
+Negative values are supported (bars grow downward from the baseline) as long as the chart's value scale includes negatives. See the [charts gallery](/charts/bar-chart) for a live 3D depth example.
+
+## Loading state
+
+<Alert className="not-prose mb-6">
+  <Icon className="size-4" name="IconCircleInfo" />
+  <AlertTitle>Loading state is experimental</AlertTitle>
+  <AlertDescription>
+    Bar chart loading is still in development. APIs, Studio controls, and docs
+    may change before release — use with caution in production.
+  </AlertDescription>
+</Alert>
+
+`BarChart` accepts a `status` prop. While `status="loading"`, it replaces the bars with a shimmer skeleton: placeholder bars with a soft diagonal shimmer sweeping across them on a loop. On `status="ready"` it switches to the real bars. No chart data is required during loading. Bar heights come from a deterministic seed (SSR-safe, no `Math.random()`), and it respects `prefers-reduced-motion` by rendering a calm, static skeleton.
+
+<div className="not-prose mb-3 flex items-center justify-between gap-4">
+  <h3 className="m-0 font-semibold text-foreground text-base tracking-tight">
+    Preview
+  </h3>
+</div>
+
+<ComponentShowcase
+  code={`const [status, setStatus] = useState<"loading" | "ready">("loading");
+
+<BarChart data={data} status={status} xDataKey="month">
+  <Grid horizontal />
+  <Bar dataKey="revenue" />
+  <BarXAxis />
+</BarChart>`}
+  liveChartPreview
+  previewMinHeight={320}
+>
+  <BarChartLoadingDemo />
+</ComponentShowcase>
+
+Toggle **Loading** / **Ready** in the preview to swap the shimmer skeleton for the real bars.
+
+```tsx
+import { BarChart, Bar, BarXAxis } from "@bklitui/ui/charts";
+
+function RevenueChart({ data, isLoading }) {
+  return (
+    <BarChart data={data} xDataKey="month" status={isLoading ? "loading" : "ready"}>
+      <Bar dataKey="revenue" />
+      <BarXAxis />
+    </BarChart>
+  );
+}
+```
+
+For the common "render a placeholder until data arrives" case, `BarChartLoading` is a turnkey shortcut for `<BarChart status="loading" />`:
+
+```tsx
+import { BarChartLoading } from "@bklitui/ui/charts";
+
+<BarChartLoading />;
+```
+
+| Prop          | Type                          | Default  | Description                                                  |
+| ------------- | ----------------------------- | -------- | ------------------------------------------------------------ |
+| `status`      | `"loading" \| "ready"`        | `"ready"` | On `BarChart`. `"loading"` shows the shimmer skeleton        |
+| `margin`      | `Partial<Margin>`             | -        | On `BarChartLoading`. Chart margins                          |
+| `aspectRatio` | `string`                      | `"2 / 1"` | On `BarChartLoading`. Container aspect ratio                |
+| `className`   | `string`                      | -        | On `BarChartLoading`. Additional container class            |
+
+## Animation
+
+Bars animate with the same easing as Line charts (`cubic-bezier(0.85, 0, 0.15, 1)`) for a smooth, organic feel. The stagger delay is automatically calculated based on the number of bars to ensure all animations complete within the total animation duration (~1.2s).
+
+### Grow Animation (Default)
+
+Bars grow from zero to their final size:
+
+```tsx
+<Bar dataKey="revenue" animationType="grow" />
+```
+
+### Fade Animation
+
+Bars fade in with a blur effect:
+
+```tsx
+<Bar dataKey="revenue" animationType="fade" />
+```
+
+### Custom Stagger
+
+Stagger is calculated automatically, but you can override it:
+
+```tsx
+// Override automatic stagger with custom delay
+<Bar dataKey="revenue" staggerDelay={0.02} />
+
+// No stagger (all bars animate together)
+<Bar dataKey="revenue" staggerDelay={0} />
+```
+
+## Line Cap Styles
+
+Control the bar end style:
+
+```tsx
+// Rounded caps (default) - full rounding
+<Bar dataKey="revenue" lineCap="round" />
+
+// Square caps - no rounding
+<Bar dataKey="revenue" lineCap="butt" />
+
+// Custom radius in pixels
+<Bar dataKey="revenue" lineCap={4} />
+<Bar dataKey="revenue" lineCap={8} />
+```
+
+## Theming
+
+The Bar Chart uses the same CSS variables as other charts:
+
+```css
+:root {
+  --chart-background: oklch(1 0 0);
+  --chart-foreground: oklch(0.145 0.004 285);
+  --chart-foreground-muted: oklch(0.55 0.014 260);
+  --chart-line-primary: oklch(0.623 0.214 255);
+  --chart-line-secondary: oklch(0.705 0.015 265);
+  --chart-crosshair: oklch(0.4 0.1828 274.34);
+  --chart-grid: oklch(0.9 0 0);
+}
+
+.dark {
+  --chart-background: oklch(0.145 0 0);
+  --chart-foreground: oklch(0.45 0 0);
+  --chart-crosshair: oklch(0.45 0 0);
+  --chart-grid: oklch(0.25 0 0);
+}
+```
+
+## Dependencies
+
+This component requires the same packages as the other charts:
+
+```bash
+pnpm add @visx/shape @visx/scale @visx/responsive @visx/event @visx/grid d3-array motion react-use-measure
+```

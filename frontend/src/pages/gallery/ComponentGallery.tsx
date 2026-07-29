@@ -22,6 +22,15 @@ import ReflectiveCard from "@/components/effects/ReflectiveCard";
 import PlanReflectiveCard, { PLAN_REFLECTIVE_META } from "@/components/effects/PlanReflectiveCard";
 import DashboardPreviewBento from "@/components/landing/DashboardPreviewBento";
 import PrismLazy from "@/components/effects/PrismLazy";
+import CopilotStrandsLoader from "@/components/copilot/CopilotStrandsLoader";
+import AITextLoading from "@/components/copilot/AITextLoading";
+import Loader from "@/components/ui/Loader";
+import ProfileDropdown from "@/components/layout/ProfileDropdown";
+import AvatarPicker from "@/components/settings/AvatarPicker";
+import TeamSeatVisualizer, { buildSeatSlots } from "@/components/team/TeamSeatVisualizer";
+import Folder from "@/components/effects/Folder";
+import LineSidebar from "@/components/effects/LineSidebar";
+import { LINE_SIDEBAR_AKARA } from "@/components/effects/presets";
 import { BORDER_GLOW_DEFAULTS } from "@/components/effects/presets";
 import type { UsageResponse } from "@/lib/api/billing";
 
@@ -61,6 +70,16 @@ const DEMO_USAGE: UsageResponse = {
 
 export default function ComponentGallery() {
   const [loading, setLoading] = useState(false);
+  const [avatarSeed, setAvatarSeed] = useState("Alex");
+
+  const demoTeamSlots = buildSeatSlots(
+    [
+      { id: "1", email: "a@co.com", display_name: "Alex", membership_status: "active" },
+      { id: "2", email: "b@co.com", display_name: "Blair", membership_status: "active" },
+    ],
+    [{ id: "inv-1", email_normalized: "pending@co.com" }],
+    5
+  );
 
   return (
     <div className="min-h-screen bg-surface-bg p-6 lg:p-8">
@@ -139,7 +158,7 @@ export default function ComponentGallery() {
             <GlowCTAButton size="sm">Glow CTA</GlowCTAButton>
             <SpecularButton size="md" onClick={() => undefined}>Specular only</SpecularButton>
           </div>
-          <div className="relative min-h-[420px] flex items-center justify-center rounded-xl border border-surface-border overflow-hidden bg-[#120F17]">
+          <div className="relative min-h-[420px] flex items-center justify-center rounded-xl border border-surface-border overflow-hidden bg-[#0a0a0a]">
             <PrismLazy
               className="absolute inset-0 opacity-40 pointer-events-none"
               animationType="rotate"
@@ -170,8 +189,32 @@ export default function ComponentGallery() {
           </div>
           <div className="space-y-3">
             <p className="text-body text-text-secondary">Dashboard preview (MagicBento)</p>
-            <div className="rounded-xl border border-surface-border bg-[#120F17] p-4 min-h-[420px] overflow-hidden">
+            <div className="rounded-xl border border-surface-border bg-[#0a0a0a] p-4 min-h-[420px] overflow-hidden">
               <DashboardPreviewBento />
+            </div>
+          </div>
+          <div className="space-y-3">
+            <p className="text-body text-text-secondary">LineSidebar (product nav)</p>
+            <div className="rounded-xl border border-white/10 bg-[#0a0a0a] p-6 max-w-xs">
+              <LineSidebar
+                {...LINE_SIDEBAR_AKARA}
+                items={["Dashboard", "Copilot", "Data", "Reports", "Debrief"]}
+                defaultActive={1}
+              />
+            </div>
+          </div>
+          <div className="grid md:grid-cols-2 gap-4">
+            <div className="space-y-3">
+              <p className="text-body text-text-secondary">Copilot Strands loader</p>
+              <div className="rounded-xl border border-white/10 bg-[#0a0a0a] p-6 flex items-center justify-center min-h-[140px]">
+                <CopilotStrandsLoader variant="hero" />
+              </div>
+            </div>
+            <div className="space-y-3">
+              <p className="text-body text-text-secondary">Folder empty state</p>
+              <div className="rounded-xl border border-white/10 bg-[#0a0a0a] p-6 flex items-center justify-center min-h-[140px]">
+                <Folder color="#03B3C3" size={1.5} />
+              </div>
             </div>
           </div>
         </section>
@@ -247,6 +290,36 @@ export default function ComponentGallery() {
         <section className="space-y-4">
           <h2 className="text-h2">Skeleton</h2>
           <PageSkeleton />
+        </section>
+
+        <section className="space-y-4">
+          <h2 className="text-h2">Premium UI (matte black)</h2>
+          <div className="grid md:grid-cols-2 gap-6">
+            <div className="rounded-xl border border-white/10 bg-[#0a0a0a] p-6">
+              <p className="text-sm text-white/60 mb-4">AITextLoading</p>
+              <AITextLoading compact />
+            </div>
+            <div className="rounded-xl border border-white/10 bg-[#0a0a0a] p-6 flex justify-center">
+              <Loader size="sm" title="Loading…" subtitle="" />
+            </div>
+            <div className="rounded-xl border border-white/10 bg-[#0a0a0a] p-6 max-w-xs">
+              <ProfileDropdown
+                data={{
+                  name: "Demo User",
+                  email: "demo@akara.ai",
+                  avatarUrl: `https://api.dicebear.com/9.x/notionists-neutral/svg?seed=${avatarSeed}`,
+                  subscription: "PRO",
+                }}
+                onSignOut={() => undefined}
+              />
+            </div>
+            <div className="rounded-xl border border-white/10 bg-[#0a0a0a] p-6">
+              <AvatarPicker value={avatarSeed} onChange={setAvatarSeed} />
+            </div>
+            <div className="rounded-xl border border-white/10 bg-[#0a0a0a] p-6 md:col-span-2 flex justify-center">
+              <TeamSeatVisualizer slots={demoTeamSlots} occupied={3} seatLimit={5} />
+            </div>
+          </div>
         </section>
 
         <section className="space-y-4">

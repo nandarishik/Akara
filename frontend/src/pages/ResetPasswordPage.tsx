@@ -186,7 +186,7 @@ export function ResetPasswordPage() {
                 value={confirm}
                 onChange={(e) => { setConfirm(e.target.value); setConfirmError("") }}
                 aria-describedby={confirmError ? "confirm-error" : undefined}
-                className={confirmError ? "border-red-400 bg-red-50" : undefined}
+                className={confirmError ? "border-red-500/50 bg-red-500/10" : undefined}
               />
               {confirmError && (
                 <p id="confirm-error" className="text-xs text-red-600" role="alert">{confirmError}</p>

@@ -1,11 +1,13 @@
 import { useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { BarChart3, Download, MessageSquare, RefreshCw } from "lucide-react";
 
 import { apiFetch } from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
 import { isAdmin } from "@/lib/auth-utils";
+import ProductPageLayout from "@/components/layout/ProductPageLayout";
 import GlowSurfaceCard from "@/components/ui/GlowSurfaceCard";
+import GlowCTAButton from "@/components/ui/GlowCTAButton";
 import { AkaraButton } from "@/components/ui/GradientButton";
 import { useBilling } from "@/hooks/useBilling";
 import ShimmerSkeleton from "@/components/ui/ShimmerSkeleton";
@@ -157,31 +159,29 @@ export function DebriefPage() {
 
   if (loading && !detail) {
     return (
-      <div className="p-4 sm:p-6 lg:p-8 max-w-4xl mx-auto space-y-6">
+      <ProductPageLayout maxWidth="5xl" className="space-y-6">
         <ShimmerSkeleton className="h-8 w-48" />
         <ShimmerSkeleton className="h-32 w-full rounded-xl" />
         <div className="grid md:grid-cols-2 gap-4">
           <ShimmerSkeleton className="h-48 w-full rounded-xl" />
           <ShimmerSkeleton className="h-48 w-full rounded-xl" />
         </div>
-      </div>
+      </ProductPageLayout>
     );
   }
 
   if (lifetimeExhausted) {
     return (
-      <div className="p-4 sm:p-6 lg:p-8 max-w-3xl mx-auto">
+      <ProductPageLayout maxWidth="3xl">
         <GlowSurfaceCard className="text-center space-y-4">
           <BarChart3 className="h-10 w-10 mx-auto text-text-muted" />
           <h1 className="text-xl font-bold">Free debrief used</h1>
           <p className="text-sm text-text-secondary">
             Your one lifetime weekly debrief has been sent. Upgrade to Pro for debriefs every Monday.
           </p>
-          <Link to="/billing">
-            <AkaraButton size="sm">Upgrade to Pro →</AkaraButton>
-          </Link>
+          <GlowCTAButton size="sm" to="/billing">Upgrade to Pro →</GlowCTAButton>
         </GlowSurfaceCard>
-      </div>
+      </ProductPageLayout>
     );
   }
 
@@ -190,7 +190,7 @@ export function DebriefPage() {
     const waitingForMonday = dataDays !== null && dataDays >= 7;
 
     return (
-      <div className="p-4 sm:p-6 lg:p-8 max-w-3xl mx-auto">
+      <ProductPageLayout maxWidth="3xl">
         <GlowSurfaceCard className="text-center space-y-4">
           <BarChart3 className="h-10 w-10 mx-auto text-text-muted" />
           {underSeven ? (
@@ -219,14 +219,11 @@ export function DebriefPage() {
             </>
           )}
           <div className="flex flex-wrap gap-2 justify-center">
-            <Link to="/data">
-              <AkaraButton variant="secondary" size="sm">Go to Data →</AkaraButton>
-            </Link>
+            <GlowCTAButton size="sm" to="/data">Go to Data →</GlowCTAButton>
             {adminCanGenerate && (
-              <AkaraButton size="sm" onClick={() => void generateDebrief()} disabled={generating}>
-                <RefreshCw className={`h-4 w-4 mr-1 ${generating ? "animate-spin" : ""}`} />
+              <GlowCTAButton size="sm" onClick={() => void generateDebrief()} disabled={generating} loading={generating}>
                 {generating ? "Generating…" : "Generate debrief now"}
-              </AkaraButton>
+              </GlowCTAButton>
             )}
             <AkaraButton variant="secondary" size="sm" onClick={() => loadReport()}>
               <RefreshCw className="h-4 w-4 mr-1" />
@@ -235,33 +232,38 @@ export function DebriefPage() {
           </div>
           {generateMsg && <p className="text-sm text-text-secondary">{generateMsg}</p>}
         </GlowSurfaceCard>
-      </div>
+      </ProductPageLayout>
     );
   }
 
   if (!meta) return null;
 
   return (
-    <div className="min-h-full bg-surface-canvas">
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+    <ProductPageLayout maxWidth="5xl" className="space-y-6">
         {dataEndsBeforeDebriefWeek && (
-          <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-            This debrief covers {meta.week_start} – {meta.week_end}, but your latest sale is{" "}
-            {meta.data_freshness?.slice(0, 10)} — KPIs may show ₹0 until you upload recent data
-            and regenerate.
-          </div>
+          <GlowSurfaceCard accent="amber" padding="sm" hover={false}>
+            <p className="text-sm text-amber-200">
+              This debrief covers {meta.week_start} – {meta.week_end}, but your latest sale is{" "}
+              {meta.data_freshness?.slice(0, 10)} — KPIs may show ₹0 until you upload recent data
+              and regenerate.
+            </p>
+          </GlowSurfaceCard>
         )}
 
         {isStale && (
-          <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-            Data is {staleDays} days old — upload fresh sales for sharper insights.
-          </div>
+          <GlowSurfaceCard accent="amber" padding="sm" hover={false}>
+            <p className="text-sm text-amber-200">
+              Data is {staleDays} days old — upload fresh sales for sharper insights.
+            </p>
+          </GlowSurfaceCard>
         )}
 
         {meta.limited_mode && (
-          <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-            Limited mode ({meta.days_of_data} days of data). Full comparisons unlock at 14+ days.
-          </div>
+          <GlowSurfaceCard accent="amber" padding="sm" hover={false}>
+            <p className="text-sm text-amber-200">
+              Limited mode ({meta.days_of_data} days of data). Full comparisons unlock at 14+ days.
+            </p>
+          </GlowSurfaceCard>
         )}
 
         <DebriefReportView
@@ -310,7 +312,7 @@ export function DebriefPage() {
                     "text-left rounded-full px-4 py-2 text-sm transition-colors max-w-full truncate",
                     selectedId === item.id
                       ? "bg-accent text-white"
-                      : "bg-surface-raised text-text-secondary hover:bg-accent-soft hover:text-accent"
+                      : "bg-white/10 text-white/70 hover:bg-white/15 hover:text-white"
                   )}
                 >
                   {item.week_start.slice(5)} – {item.week_end.slice(5)}
@@ -319,7 +321,6 @@ export function DebriefPage() {
             </div>
           </GlowSurfaceCard>
         )}
-      </div>
-    </div>
+    </ProductPageLayout>
   );
 }

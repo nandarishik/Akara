@@ -53,6 +53,7 @@ class PreferencesUpdate(BaseModel):
 class ProfileUpdate(BaseModel):
     display_name: str | None = None
     phone_number: str | None = None
+    avatar_seed: str | None = None
 
 
 class DeleteAccountRequest(BaseModel):
@@ -107,16 +108,26 @@ def update_preferences(
 
 @router.patch("/profile")
 def update_profile(body: ProfileUpdate, user: CurrentUser) -> dict[str, str]:
+    supa = get_supabase_service_client()
     update: dict = {}
     if body.display_name is not None:
         update["display_name"] = body.display_name
     if body.phone_number is not None:
         update["phone_number"] = body.phone_number.strip()
+    if body.avatar_seed is not None:
+        profile = (
+            supa.table("profiles")
+            .select("preferences")
+            .eq("id", str(user.user_id))
+            .single()
+            .execute()
+        )
+        prefs = {**DEFAULT_PREFERENCES, **((profile.data or {}).get("preferences") or {})}
+        prefs["avatar_seed"] = body.avatar_seed.strip()
+        update["preferences"] = prefs
     if not update:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, detail="No fields to update")
-    get_supabase_service_client().table("profiles").update(update).eq(
-        "id", str(user.user_id)
-    ).execute()
+    supa.table("profiles").update(update).eq("id", str(user.user_id)).execute()
     return {"status": "ok"}
 
 

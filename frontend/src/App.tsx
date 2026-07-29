@@ -66,15 +66,7 @@ const SuperadminAiPage = React.lazy(() => import("@/pages/superadmin/AiPage").th
 // ─── Dev-only component gallery ───────────────────────────────────────────────
 const ComponentGallery = React.lazy(() => import("@/pages/gallery/ComponentGallery"))
 
-// ─── Fallback spinner ────────────────────────────────────────────────────────
-
-function RouteSpinner() {
-  return (
-    <div className="flex h-full min-h-[200px] items-center justify-center" aria-busy="true">
-      <div className="h-8 w-8 rounded-full border-3 border-[#1976D2] border-t-transparent animate-spin" aria-label="Loading page" />
-    </div>
-  )
-}
+import PageLoader from "@/components/ui/PageLoader"
 
 // ─── QueryClient ─────────────────────────────────────────────────────────────
 
@@ -103,7 +95,7 @@ export default function App() {
           <BrowserRouter>
             <Toaster />
             <CookieBanner />
-            <React.Suspense fallback={<RouteSpinner />}>
+            <React.Suspense fallback={<PageLoader title="Loading AKARA…" subtitle="" />}>
               <Routes>
                 {/* ── Public — landing, auth, onboarding ──────────── */}
                 <Route path="/" element={<LandingPage />} />

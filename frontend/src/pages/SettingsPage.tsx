@@ -3,6 +3,7 @@ import { Link, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/lib/supabase";
 import { apiFetch } from "@/lib/api";
+import ProductPageLayout from "@/components/layout/ProductPageLayout";
 import AkaraButton from "@/components/ui/GradientButton";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -13,6 +14,8 @@ import { roleLabel } from "@/lib/auth-utils";
 import { PlanGate } from "@/components/billing/PlanGate";
 import { useBilling } from "@/hooks/useBilling";
 import { TeamPage } from "@/pages/TeamPage";
+import AvatarPicker from "@/components/settings/AvatarPicker";
+import { defaultAvatarSeed, dicebearUrl } from "@/lib/avatar";
 import { cn } from "@/lib/utils";
 
 type Channels = { whatsapp_enabled: boolean; whatsapp_reason: string };
@@ -73,7 +76,7 @@ function Toggle({
   return (
     <div className="flex items-center justify-between py-2">
       <div>
-        <p className="text-sm font-medium text-text-primary">{label}</p>
+        <p className="text-sm font-medium">{label}</p>
         {description && <p className="text-xs text-text-muted mt-0.5">{description}</p>}
       </div>
       <button
@@ -100,6 +103,7 @@ export function SettingsPage() {
   const [searchParams] = useSearchParams();
   const [tab, setTab] = useState<TabId>("profile");
   const [displayName, setDisplayName] = useState(user?.displayName || "");
+  const [avatarSeed, setAvatarSeed] = useState(() => defaultAvatarSeed(user?.id, user?.email));
   const [phone, setPhone] = useState("");
   const [prefs, setPrefs] = useState<Prefs>(DEFAULT_PREFS);
   const [channels, setChannels] = useState<Channels | null>(null);
@@ -136,7 +140,11 @@ export function SettingsPage() {
       .eq("id", user!.id)
       .single()
       .then(({ data }) => {
-        if (data?.preferences) setPrefs({ ...DEFAULT_PREFS, ...data.preferences });
+        if (data?.preferences) {
+          setPrefs({ ...DEFAULT_PREFS, ...data.preferences });
+          const prefs = data.preferences as { avatar_seed?: string };
+          if (prefs.avatar_seed) setAvatarSeed(prefs.avatar_seed);
+        }
         if (data?.phone_number) setPhone(data.phone_number);
         if (data?.tenant_id) {
           supabase
@@ -174,7 +182,11 @@ export function SettingsPage() {
     try {
       await apiFetch("/account/profile", {
         method: "PATCH",
-        body: JSON.stringify({ display_name: displayName, phone_number: phone }),
+        body: JSON.stringify({
+          display_name: displayName,
+          phone_number: phone,
+          avatar_seed: avatarSeed,
+        }),
       });
       setSaved(true);
       setTimeout(() => setSaved(false), 3000);
@@ -254,15 +266,15 @@ export function SettingsPage() {
   const whatsappLocked = !channels?.whatsapp_enabled;
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8 max-w-3xl mx-auto space-y-6 bg-surface-canvas min-h-full">
+    <ProductPageLayout maxWidth="3xl" className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-text-primary">Settings</h1>
+        <h1 className="text-2xl font-bold">Settings</h1>
         <p className="text-sm text-text-secondary mt-1">
           Profile, notifications, team, and account rights.
         </p>
       </div>
 
-      <div className="flex gap-1 border-b border-surface-border pb-1 overflow-x-auto flex-nowrap -mx-1 px-1">
+      <div className="flex gap-1 border-b border-white/10 pb-1 overflow-x-auto flex-nowrap -mx-1 px-1">
         {TABS.map((t) => (
           <button
             key={t.id}
@@ -271,8 +283,8 @@ export function SettingsPage() {
             className={cn(
               "px-3 py-2.5 text-sm rounded-t-lg transition-colors shrink-0 min-h-[44px]",
               tab === t.id
-                ? "bg-surface-raised text-accent font-medium"
-                : "text-text-muted hover:text-text-primary"
+                ? "bg-white/10 text-accent font-medium"
+                : "text-text-muted hover:text-white"
             )}
           >
             {t.label}
@@ -284,14 +296,17 @@ export function SettingsPage() {
         <GlowSurfaceCard className="space-y-5">
           <h2 className="text-base font-semibold">Profile</h2>
           <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-full bg-accent text-white flex items-center justify-center text-lg font-bold">
-              {user?.email?.[0]?.toUpperCase() || "?"}
-            </div>
+            <img
+              src={dicebearUrl(avatarSeed)}
+              alt=""
+              className="size-14 rounded-full border-2 border-white/10 bg-[#111] object-cover"
+            />
             <div>
               <p className="font-medium">{user?.email}</p>
               <Badge variant="outline" className="text-xs mt-0.5">{role}</Badge>
             </div>
           </div>
+          <AvatarPicker value={avatarSeed} onChange={setAvatarSeed} />
           <div className="space-y-2">
             <Label htmlFor="displayName">Display Name</Label>
             <Input id="displayName" value={displayName} onChange={(e) => setDisplayName(e.target.value)} className="max-w-sm" />
@@ -334,15 +349,17 @@ export function SettingsPage() {
       {tab === "notifications" && (
         <GlowSurfaceCard className="space-y-2">
           <h2 className="text-base font-semibold mb-2">Notifications</h2>
-          {unsubMsg && <p className="text-sm text-emerald-700 bg-emerald-50 rounded px-3 py-2">{unsubMsg}</p>}
+          {unsubMsg && <p className="text-sm text-emerald-300 bg-emerald-400/10 rounded px-3 py-2">{unsubMsg}</p>}
           {usage?.plan === "free" && !localStorage.getItem("akara_slot_K_dismissed") && (
-            <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900 flex justify-between gap-2">
-              <span>Pro plans get WhatsApp morning briefs on your phone.</span>
-              <div className="flex gap-2 shrink-0">
-                <Link to="/upgrade" className="text-accent font-medium underline">Upgrade</Link>
-                <button type="button" className="text-xs text-amber-800" onClick={() => localStorage.setItem("akara_slot_K_dismissed", "1")}>Dismiss</button>
+            <GlowSurfaceCard accent="amber" padding="sm" hover={false}>
+              <div className="text-sm flex justify-between gap-2">
+                <span>Pro plans get WhatsApp morning briefs on your phone.</span>
+                <div className="flex gap-2 shrink-0">
+                  <Link to="/upgrade" className="text-accent font-medium underline">Upgrade</Link>
+                  <button type="button" className="text-xs text-amber-300/80" onClick={() => localStorage.setItem("akara_slot_K_dismissed", "1")}>Dismiss</button>
+                </div>
               </div>
-            </div>
+            </GlowSurfaceCard>
           )}
           <PlanGate feature="morning_brief" requiredPlan="pro" mode="hide">
             <Toggle
@@ -373,7 +390,7 @@ export function SettingsPage() {
               </AkaraButton>
               {testWhatsAppMsg && <p className="text-xs text-text-secondary mt-2">{testWhatsAppMsg}</p>}
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-4 border-t border-surface-border">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-4 border-t border-white/10">
               <div className="space-y-1">
                 <Label htmlFor="briefTime">Morning brief time (IST)</Label>
                 <Input
@@ -388,7 +405,7 @@ export function SettingsPage() {
                 <Label htmlFor="timezone">Timezone</Label>
                 <select
                   id="timezone"
-                  className="w-full max-w-xs text-sm border rounded-md px-2 py-2 bg-surface-canvas"
+                  className="w-full max-w-xs text-sm border border-white/10 rounded-md px-2 py-2 bg-white/5"
                   value={prefs.morning_brief_timezone ?? "Asia/Kolkata"}
                   onChange={(e) => patchPrefs({ morning_brief_timezone: e.target.value })}
                 >
@@ -400,7 +417,7 @@ export function SettingsPage() {
                 <Label htmlFor="debriefDay">Weekly debrief day</Label>
                 <select
                   id="debriefDay"
-                  className="w-full max-w-xs text-sm border rounded-md px-2 py-2 bg-surface-canvas"
+                  className="w-full max-w-xs text-sm border border-white/10 rounded-md px-2 py-2 bg-white/5"
                   value={prefs.debrief_day ?? "monday"}
                   onChange={(e) => patchPrefs({ debrief_day: e.target.value })}
                 >
@@ -480,14 +497,14 @@ export function SettingsPage() {
       )}
 
       {tab === "danger" && (
-        <GlowSurfaceCard className="space-y-4 border-red-200">
-          <h2 className="text-base font-semibold text-red-700 flex items-center gap-2">
+        <GlowSurfaceCard accent="red" className="space-y-4">
+          <h2 className="text-base font-semibold text-red-400 flex items-center gap-2">
             <Trash2 className="h-4 w-4" /> Danger Zone
           </h2>
           <AkaraButton variant="secondary" size="sm" onClick={handleExport}>
             <Download className="h-4 w-4 mr-1" /> Export my data (JSON)
           </AkaraButton>
-          <div className="space-y-2 pt-2 border-t border-surface-border">
+          <div className="space-y-2 pt-2 border-t border-white/10">
             <Label htmlFor="confirmEmail">Delete account — type your email to confirm</Label>
             <Input id="confirmEmail" value={deleteEmail} onChange={(e) => setDeleteEmail(e.target.value)} placeholder={user?.email} className="max-w-sm" />
             <p className="text-xs text-text-muted">Deletion is queued and processed asynchronously (DPDP).</p>
@@ -497,7 +514,7 @@ export function SettingsPage() {
           </div>
         </GlowSurfaceCard>
       )}
-    </div>
+    </ProductPageLayout>
   );
 }
 

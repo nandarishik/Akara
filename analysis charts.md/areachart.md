@@ -1,0 +1,544 @@
+---
+title: Area Chart
+description: A composable area chart with gradient fills, tooltips, and hover interactions
+---
+
+import { studioChartHref } from "@bklitui/studio";
+import { AreaChart, Area, Grid, XAxis, ChartTooltip, ChartBrush, ChartBrushLayout, PatternLines, PatternArea } from "@bklitui/ui/charts";
+import { AreaChartBrushDemo } from "@/components/docs/area-chart-brush-demo";
+import { AreaChartYDomainDemo } from "@/components/docs/area-chart-y-domain-demo";
+import { AreaTooltipDemo } from "@/components/docs/area-tooltip-demo";
+import { OpenInStudioButton } from "@/components/docs/open-in-studio-button";
+
+export const chartData = [
+  { date: new Date(Date.now() - 29 * 24 * 60 * 60 * 1000), revenue: 12000, costs: 8500 },
+  { date: new Date(Date.now() - 28 * 24 * 60 * 60 * 1000), revenue: 13500, costs: 9200 },
+  { date: new Date(Date.now() - 27 * 24 * 60 * 60 * 1000), revenue: 11000, costs: 7800 },
+  { date: new Date(Date.now() - 26 * 24 * 60 * 60 * 1000), revenue: 14500, costs: 10100 },
+  { date: new Date(Date.now() - 25 * 24 * 60 * 60 * 1000), revenue: 13800, costs: 9400 },
+  { date: new Date(Date.now() - 24 * 24 * 60 * 60 * 1000), revenue: 15200, costs: 10800 },
+  { date: new Date(Date.now() - 23 * 24 * 60 * 60 * 1000), revenue: 16000, costs: 11200 },
+  { date: new Date(Date.now() - 22 * 24 * 60 * 60 * 1000), revenue: 14800, costs: 10500 },
+  { date: new Date(Date.now() - 21 * 24 * 60 * 60 * 1000), revenue: 15500, costs: 10900 },
+  { date: new Date(Date.now() - 20 * 24 * 60 * 60 * 1000), revenue: 14200, costs: 9800 },
+  { date: new Date(Date.now() - 19 * 24 * 60 * 60 * 1000), revenue: 16800, costs: 11800 },
+  { date: new Date(Date.now() - 18 * 24 * 60 * 60 * 1000), revenue: 17500, costs: 12400 },
+  { date: new Date(Date.now() - 17 * 24 * 60 * 60 * 1000), revenue: 16200, costs: 11500 },
+  { date: new Date(Date.now() - 16 * 24 * 60 * 60 * 1000), revenue: 15800, costs: 11200 },
+  { date: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000), revenue: 17200, costs: 12100 },
+  { date: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000), revenue: 18500, costs: 13200 },
+  { date: new Date(Date.now() - 13 * 24 * 60 * 60 * 1000), revenue: 17800, costs: 12600 },
+  { date: new Date(Date.now() - 12 * 24 * 60 * 60 * 1000), revenue: 16500, costs: 11700 },
+  { date: new Date(Date.now() - 11 * 24 * 60 * 60 * 1000), revenue: 19200, costs: 13800 },
+  { date: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000), revenue: 18800, costs: 13400 },
+  { date: new Date(Date.now() - 9 * 24 * 60 * 60 * 1000), revenue: 17500, costs: 12400 },
+  { date: new Date(Date.now() - 8 * 24 * 60 * 60 * 1000), revenue: 19800, costs: 14200 },
+  { date: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000), revenue: 20500, costs: 14800 },
+  { date: new Date(Date.now() - 6 * 24 * 60 * 60 * 1000), revenue: 19200, costs: 13600 },
+  { date: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000), revenue: 21000, costs: 15200 },
+  { date: new Date(Date.now() - 4 * 24 * 60 * 60 * 1000), revenue: 21800, costs: 15800 },
+  { date: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000), revenue: 20500, costs: 14600 },
+  { date: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000), revenue: 22500, costs: 16200 },
+  { date: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000), revenue: 23200, costs: 16800 },
+  { date: new Date(), revenue: 24000, costs: 17400 },
+];
+
+<ComponentPreview registryName="area-chart">
+  <div className="w-full">
+    <AreaChart data={chartData}>
+      <Grid horizontal />
+      <Area dataKey="revenue" fill="var(--chart-line-primary)" fillOpacity={0.3} fadeEdges />
+      <Area dataKey="costs" fill="var(--chart-line-secondary)" fillOpacity={0.3} fadeEdges />
+      <XAxis />
+      <AreaTooltipDemo />
+    </AreaChart>
+  </div>
+</ComponentPreview>
+
+## Installation
+
+<InstallationTabs name="area-chart" dependencies={["@visx/curve", "@visx/gradient", "@visx/pattern", "@visx/shape", "motion"]} />
+
+## Usage
+
+The Area Chart uses the same composable API as the Line Chart. See the [charts gallery](/charts/area-chart) for interactive examples.
+
+```tsx
+import { AreaChart, Area, Grid, XAxis, ChartTooltip } from "@bklitui/ui/charts";
+
+const data = [
+  { date: new Date("2025-01-01"), revenue: 12000, costs: 8500 },
+  { date: new Date("2025-01-02"), revenue: 13500, costs: 9200 },
+  // ... more data
+];
+
+export default function RevenueChart() {
+  return (
+    <AreaChart data={data}>
+      <Grid horizontal />
+      <Area dataKey="revenue" fill="var(--chart-line-primary)" />
+      <Area dataKey="costs" fill="var(--chart-line-secondary)" />
+      <XAxis />
+      <ChartTooltip />
+    </AreaChart>
+  );
+}
+```
+
+## Components
+
+### AreaChart
+
+The root component that provides context to all children. It shares the same props as `LineChart`.
+
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| `data` | `Record<string, unknown>[]` | required | Array of data points |
+| `xDataKey` | `string` | `"date"` | Key in data for x-axis values |
+| `margin` | `Partial<Margin>` | `{ top: 40, right: 40, bottom: 40, left: 40 }` | Chart margins |
+| `animationDuration` | `number` | `1100` | Clip-reveal duration in ms (`cubic-bezier(0.85, 0, 0.15, 1)`) |
+| `status` | `"loading" \| "ready"` | `"ready"` | Loading ↔ ready choreography on one chart instance |
+| `loadingLabel` | `string` | — | Centered shimmer label while `status="loading"` (`""` hides it) |
+| `yDomainTween` | `boolean` | `true` | Animate y-domain when status or target domain changes |
+| `yDomainTweenDuration` | `number` | `500` | Y-domain tween duration in ms |
+| `xDomain` | `[Date, Date]` | — | Visible x-range for brush zoom |
+| `xDomainSlotCount` | `number` | — | Full dataset length for x-scale padding when `xDomain` is set |
+| `tweenYDomainOnXDomainChange` | `boolean` | `false` | Tween y-domain when the brush changes the visible x-range |
+| `aspectRatio` | `string` | `"2 / 1"` | CSS aspect ratio |
+| `className` | `string` | `""` | Additional CSS class |
+| `style` | `CSSProperties` | — | Inline container styles (e.g. fixed height for a brush strip) |
+
+### Area
+
+Renders a filled area on the chart with a gradient fill.
+
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| `dataKey` | `string` | required | Key in data for y values |
+| `yAxisId` | `string \| number` | `"left"` | Y-scale group for biaxial charts (pair with `YAxis`) |
+| `fill` | `string` | `var(--chart-line-primary)` | Gradient fill color |
+| `fillOpacity` | `number` | `0.4` | Fill opacity at the top |
+| `stroke` | `string` | Same as `fill` | Line stroke color |
+| `strokeWidth` | `number` | `2` | Line stroke width |
+| `curve` | `CurveFactory` | `curveMonotoneX` | D3 curve function |
+| `animate` | `boolean` | `true` | Enable grow animation |
+| `showLine` | `boolean` | `true` | Show stroke line on top |
+| `showHighlight` | `boolean` | `true` | Show highlight on hover |
+| `gradientToOpacity` | `number` | `0` | Opacity at bottom of gradient |
+| `fadeEdges` | `boolean` | `false` | Fade area fill at left/right edges |
+| `showMarkers` | `boolean` | `false` | Render scatter-style ring markers at each point |
+| `loadingStroke` | `string` | `var(--foreground)` | Pulse stroke color while chart is loading |
+| `loadingStrokeOpacity` | `number` | `0.5` | Pulse stroke opacity while chart is loading |
+| `markers` | `SeriesPointMarkerStyle` | — | Marker styling (same options as [`Scatter`](/docs/components/scatter-chart)) |
+
+### PatternArea
+
+Renders a filled area using an SVG pattern (`url(#id)`). Define the pattern (e.g. `PatternLines`) as a child of `AreaChart`, then pair `PatternArea` with an `Area` that has `fillOpacity={0}` for the stroke line.
+
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| `dataKey` | `string` | required | Key in data for y values |
+| `fill` | `string` | required | Fill color or pattern URL (e.g. `url(#pattern-id)`) |
+| `curve` | `CurveFactory` | `curveMonotoneX` | D3 curve function |
+
+### Grid
+
+Renders grid lines.
+
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| `horizontal` | `boolean` | `true` | Show horizontal lines |
+| `vertical` | `boolean` | `false` | Show vertical lines |
+| `numTicksRows` | `number` | `5` | Number of horizontal lines |
+| `numTicksColumns` | `number` | `10` | Number of vertical lines |
+| `stroke` | `string` | `var(--chart-grid)` | Line color while ready |
+| `loadingStroke` | `string` | — | Grid stroke while loading chrome is active |
+| `strokeDasharray` | `string` | `"4,4"` | Dash pattern |
+| `shimmer` | `boolean` | `false` | Animate a shimmer band across horizontal grid lines |
+| `shimmerStroke` | `string` | `color-mix(…)` on `--foreground` at 68% | Shimmer band color and opacity |
+| `shimmerLength` | `number` | `140` | Shimmer band width in pixels |
+| `shimmerSpeed` | `number` | `1` | Shimmer speed multiplier when sync is off (higher = faster) |
+| `shimmerSync` | `boolean` | `false` | Match shimmer timing to the line pulse (2.2s cycle + 280ms pause) |
+
+### Background
+
+Pattern fill for the plot area when you omit `Grid`. See the [Background utility](/docs/utility/background) and **Pattern Background** examples on the [area chart gallery](/charts/area-chart).
+
+### YAxis
+
+Value labels on the left or right. See [Y Axis](/docs/utility/axis/y-axis) for `yAxisId`, `orientation`, and biaxial usage.
+
+### XAxis
+
+Renders x-axis labels that fade when the crosshair passes.
+
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| `numTicks` | `number` | `5` | Number of tick labels to show |
+| `tickerHalfWidth` | `number` | `50` | Fade radius for labels |
+| `tickMode` | `"data" \| "domain"` | `"data"` | `"data"` snaps labels to data rows (crosshair-aligned); `"domain"` for calendar-even spacing |
+
+### ChartTooltip
+
+Renders the tooltip with crosshair, dots, and content box.
+
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| `showDatePill` | `boolean` | `true` | Show animated date ticker |
+| `showCrosshair` | `boolean` | `true` | Show vertical crosshair |
+| `showDots` | `boolean` | `true` | Show dots on series |
+| `indicatorColor` | `string \| (point) => string` | — | Crosshair and dot color |
+| `indicatorDasharray` | `string` | — | Dash pattern for the crosshair (e.g. `"4,4"`) |
+| `indicatorFadeEdges` | `"both" \| "top" \| "bottom" \| "none"` | `"both"` | Vertical crosshair fade |
+| `indicatorFadeLength` | `number` | `10` | Fade size (% of height) |
+| `matchCrosshair` | `boolean` | `false` | Panel uses crosshair spring when `true` |
+| `damping` | `number` | `20` | Panel follow when `matchCrosshair={false}`; `0` = instant |
+| `content` | `(props) => ReactNode` | - | Custom content renderer |
+| `rows` | `(point) => TooltipRow[]` | - | Custom row generator |
+
+## Brush zoom
+
+See the [Brush](/docs/utility/brush) utility docs for `ChartBrushLayout` and `ChartBrush` props.
+
+Wrap the main chart in `ChartBrushLayout`, render a simplified mini chart in `brushStrip`, and add `ChartBrush` as a child of that strip. Pass `xDomain`, `xDomainSlotCount`, and `tweenYDomainOnXDomainChange` to the main `AreaChart` so the y-scale adapts as users pan and resize the brush.
+
+<div className="not-prose mb-3 flex items-center justify-between gap-4">
+  <h3 className="m-0 font-semibold text-foreground text-base tracking-tight">
+    Preview
+  </h3>
+  <OpenInStudioButton
+    href={studioChartHref("area-chart", { showBrush: true })}
+    slug="area-chart"
+  />
+</div>
+
+<ComponentShowcase
+  code={`<ChartBrushLayout
+  data={data}
+  enabled
+  height={72}
+  brushStrip={(layout) => (
+    <AreaChart data={data} animationDuration={0} status="ready">
+      <Area dataKey="value" fillOpacity={0.15} animate={false} />
+      <ChartBrush
+        initialSelection={layout.brushSelection ?? undefined}
+        onSelectionChange={layout.onBrushSelectionChange}
+      />
+    </AreaChart>
+  )}
+>
+  {(layout) => (
+    <AreaChart
+      data={data}
+      xDomain={layout.xDomain}
+      xDomainSlotCount={layout.xDomainSlotCount}
+      tweenYDomainOnXDomainChange
+      yDomainTween
+    >
+      <Grid horizontal />
+      <Area dataKey="value" fillOpacity={0.35} />
+      <XAxis />
+      <ChartTooltip />
+    </AreaChart>
+  )}
+</ChartBrushLayout>`}
+  liveChartPreview
+  previewMinHeight={360}
+>
+  <AreaChartBrushDemo />
+</ComponentShowcase>
+
+Open [Studio with brush enabled](/studio?chart=area-chart&showBrush=true) to tune strip height, blur, and selection pattern.
+
+## Loading state
+
+Drive loading and ready from your data layer with a single `AreaChart` — one `Grid`, one `Area`, no component swap. Set `status="loading"` while fetching; switch to `"ready"` when data resolves.
+
+**Loading → ready:** pulse loop on skeleton data → pulse finishes its grow, then flows out right → loading label drifts down 30px, blurs, and fades → grid y-domain tween (500ms) → clip-path reveal (`cubic-bezier(0.85, 0, 0.15, 1)`) → interaction enabled.
+
+**Ready → loading:** ready area conceals to the right → grid y-domain tween → pulse loop and shimmer resume.
+
+Pair `Grid` `stroke` / `loadingStroke` with shimmer props. Pair `Area` `loadingStroke` props. Use `loadingLabel` on `AreaChart` for centered shimmer text via `@bklit/shimmering-text`.
+
+<div className="not-prose mb-3 flex items-center justify-between gap-4">
+  <h3 className="m-0 font-semibold text-foreground text-base tracking-tight">
+    Preview
+  </h3>
+  <OpenInStudioButton
+    href={studioChartHref("area-chart", { areaChartState: "loading" })}
+    slug="area-chart"
+  />
+</div>
+
+<ComponentShowcase
+  code={`const [status, setStatus] = useState<"loading" | "ready">("loading");
+const [loadingStyle, setLoadingStyle] = useState<"pulse" | "sweep">("pulse");
+
+<AreaChart
+  data={data}
+  status={status}
+  loadingLabel="Loading revenue…"
+  yDomainTween
+>
+  <Grid
+    horizontal
+    loadingStroke="color-mix(in oklch, var(--chart-grid) 50%, transparent)"
+    shimmer
+    shimmerSync
+    stroke="var(--chart-grid)"
+  />
+  <Area
+    dataKey="revenue"
+    fadeEdges
+    fill="var(--chart-line-primary)"
+    fillOpacity={0.35}
+    loadingStroke="var(--foreground)"
+    loadingStrokeOpacity={0.5}
+    loadingStyle={loadingStyle}
+    strokeWidth={2}
+  />
+</AreaChart>`}
+  liveChartPreview
+  previewMinHeight={320}
+>
+  <AreaChartYDomainDemo />
+</ComponentShowcase>
+
+Toggle **Loading** / **Ready** in the preview to replay the transition, and **Pulse** / **Sweep** to switch the loading animation style. When target data spans a different y-range than the skeleton, `yDomainTween` morphs the scale before the area reveals.
+
+### Studio
+
+Open [Studio in loading mode](/studio?chart=area-chart&areaChartState=loading) and set **State** to **Loading**. In **Settings**, choose **Loading style** — **Pulse** (traveling segment) or **Sweep** (diagonal shimmer). The components tree exposes **Grid**, **Label**, and **Area**:
+
+| Layer | Controls |
+|-------|----------|
+| **Settings** | **Loading style** — Pulse or Sweep (Sweep turns off grid shimmer) |
+| **Grid** | Grid and shimmer color pickers, shimmer toggle, band length, **Animation** (sync with pulse, speed when unsynced) |
+| **Label** | Shimmer label text |
+| **Area** | Pulse stroke color and opacity |
+
+Data and animation panels stay collapsed in loading mode; scramble data is disabled. See the [area chart gallery](/charts/area-chart) (**Loading** example).
+
+Installing `@bklit/area-chart` pulls in `@bklit/shimmering-text` automatically.
+
+### Loading style: pulse or sweep
+
+The loading state has two animation styles, set with `loadingStyle` on the `Area`: the default `"pulse"` (a segment travels along the skeleton stroke) or `"sweep"` (a soft diagonal shimmer sweeps across the whole area). Set it on the `Area` inside a `status="loading"` chart, or on the `AreaChartLoading` wrapper:
+
+```tsx
+<AreaChart data={data} status="loading">
+  <Grid horizontal shimmer />
+  <Area dataKey="revenue" loadingStyle="sweep" />
+</AreaChart>
+
+// or, with the turnkey wrapper:
+<AreaChartLoading loadingStyle="sweep" />;
+```
+
+The sweep masks over the real skeleton stroke, so it follows whatever `curve` the `Area` uses and respects `prefers-reduced-motion`. The sweep is used only during steady loading; the pulse still drives the exit transition. See the **Loading (Sweep)** example on the [area chart gallery](/charts/area-chart).
+
+## Dashed tail
+
+Set `dashFromIndex` on `Area` to draw a solid stroke through one data point, then a dashed segment through the end of the series. Useful when the final period is still in progress (e.g. yesterday → today).
+
+`dashFromIndex` is **inclusive** — dashing starts at that row and continues through the last point. The dashed segment follows the same curved path as the solid stroke and respects the stroke gradient fade from `fadeEdges`.
+
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| `dashFromIndex` | `number` | — | Inclusive data index where the dashed tail begins |
+| `dashArray` | `string` | `"6,4"` | SVG `stroke-dasharray` pattern for the tail segment |
+
+```tsx
+<Area
+  dataKey="visitors"
+  dashFromIndex={5}
+  dashArray="6,4"
+  fill="var(--chart-line-primary)"
+  fillOpacity={0.35}
+/>
+```
+
+## Markers
+
+Add markers to annotate specific dates on the chart:
+
+```tsx
+import {
+  AreaChart,
+  Area,
+  ChartTooltip,
+  ChartMarkers,
+  MarkerTooltipContent,
+  useActiveMarkers,
+  type ChartMarker,
+} from "@bklitui/ui/charts";
+
+const markers: ChartMarker[] = [
+  {
+    date: new Date("2025-01-05"),
+    icon: "🚀",
+    title: "v1.2.0 Released",
+    description: "New chart animations",
+  },
+];
+
+function MyChart({ data }) {
+  return (
+    <AreaChart data={data}>
+      <Area dataKey="revenue" fill="var(--chart-line-primary)" />
+      <ChartMarkers items={markers} />
+      <ChartTooltip>
+        <MarkerContent markers={markers} />
+      </ChartTooltip>
+    </AreaChart>
+  );
+}
+
+function MarkerContent({ markers }) {
+  const activeMarkers = useActiveMarkers(markers);
+  if (activeMarkers.length === 0) return null;
+  return <MarkerTooltipContent markers={activeMarkers} />;
+}
+```
+
+### ChartMarker Interface
+
+```ts
+interface ChartMarker {
+  date: Date;
+  icon: React.ReactNode;
+  title: string;
+  description?: string;
+  content?: React.ReactNode;
+  color?: string;
+  onClick?: () => void;
+  href?: string;
+  target?: "_blank" | "_self";
+}
+```
+
+### ChartMarkers Props
+
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| `items` | `ChartMarker[]` | required | Array of markers |
+| `size` | `number` | `28` | Marker circle size |
+| `showLines` | `boolean` | `true` | Show vertical guide lines |
+| `animate` | `boolean` | `true` | Animate markers on entrance |
+
+## Segment Selection
+
+Add click-drag and touch segment selection with composable components. The area highlight automatically shows the selected path segment.
+
+### Basic Usage
+
+```tsx
+import {
+  AreaChart,
+  Area,
+  Grid,
+  XAxis,
+  ChartTooltip,
+  SegmentBackground,
+  SegmentLineFrom,
+  SegmentLineTo,
+} from "@bklitui/ui/charts";
+
+<AreaChart data={data}>
+  <Grid horizontal />
+  <Area dataKey="revenue" fill="var(--chart-line-primary)" />
+  <SegmentBackground />
+  <SegmentLineFrom />
+  <SegmentLineTo />
+  <XAxis />
+  <ChartTooltip />
+</AreaChart>
+```
+
+Use `SegmentBackground`, `SegmentLineFrom`, and `SegmentLineTo` independently — you do not need all three. Boundary lines support `variant="dashed" | "solid" | "gradient"`.
+
+### Reading Selection Data
+
+Use the `useChart` hook inside a child component to read the active selection:
+
+```tsx
+import { useChart } from "@bklitui/ui/charts";
+
+function SelectionStats({ onSelectionChange }) {
+  const { selection, data, xAccessor } = useChart();
+
+  useEffect(() => {
+    if (!selection?.active) {
+      onSelectionChange(null);
+      return;
+    }
+
+    const startPoint = data[selection.startIndex];
+    const endPoint = data[selection.endIndex];
+    onSelectionChange({ startPoint, endPoint });
+  }, [selection, data, xAccessor, onSelectionChange]);
+
+  return null;
+}
+```
+
+### SegmentBackground
+
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| `fill` | `string` | `var(--chart-segment-background)` | Fill color for the selected region |
+
+### SegmentLineFrom / SegmentLineTo
+
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| `stroke` | `string` | `var(--chart-segment-line)` | Line color |
+| `strokeWidth` | `number` | `1` | Line width |
+| `variant` | `"dashed" \| "solid" \| "gradient"` | `"dashed"` | Line style |
+
+## Theming
+
+The Area Chart uses the same CSS variables as the Line Chart:
+
+```css
+:root {
+  --chart-background: oklch(1 0 0);
+  --chart-foreground: oklch(0.145 0.004 285);
+  --chart-foreground-muted: oklch(0.55 0.014 260);
+  --chart-line-primary: oklch(0.623 0.214 255);
+  --chart-line-secondary: oklch(0.705 0.015 265);
+  --chart-crosshair: oklch(0.4 0.1828 274.34);
+  --chart-grid: oklch(0.9 0 0);
+  --chart-tooltip-foreground: oklch(0.985 0 0);
+  --chart-tooltip-muted: oklch(0.65 0.01 260);
+  --chart-marker-background: oklch(0.97 0.005 260);
+  --chart-marker-border: oklch(0.85 0.01 260);
+  --chart-marker-foreground: oklch(0.3 0.01 260);
+  --chart-marker-badge-background: oklch(0 0 0);
+  --chart-marker-badge-foreground: oklch(1 0 0);
+  --chart-segment-background: oklch(0.5 0 0 / 0.06);
+  --chart-segment-line: oklch(0.5 0 0 / 0.25);
+}
+
+.dark {
+  --chart-background: oklch(0.145 0 0);
+  --chart-foreground: oklch(0.45 0 0);
+  --chart-crosshair: oklch(0.45 0 0);
+  --chart-grid: oklch(0.25 0 0);
+  --chart-marker-background: oklch(0.25 0.01 260);
+  --chart-marker-border: oklch(0.4 0.01 260);
+  --chart-marker-foreground: oklch(0.9 0 0);
+  --chart-marker-badge-background: oklch(1 0 0);
+  --chart-marker-badge-foreground: oklch(0.15 0 0);
+  --chart-segment-background: oklch(1 0 0 / 0.06);
+  --chart-segment-line: oklch(1 0 0 / 0.25);
+}
+```
+
+## Dependencies
+
+This component requires the same packages as the Line Chart:
+
+```bash
+pnpm add @visx/shape @visx/curve @visx/scale @visx/gradient @visx/responsive @visx/event @visx/grid d3-array motion react-use-measure
+```

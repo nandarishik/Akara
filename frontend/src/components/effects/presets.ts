@@ -1,6 +1,6 @@
 /** React Bits BorderGlow spec defaults — do not AKARA-tint. */
 export const BORDER_GLOW_DEFAULTS = {
-  backgroundColor: "#120F17",
+  backgroundColor: "#0a0a0a",
   colors: ["#c084fc", "#f472b6", "#38bdf8"] as string[],
   glowColor: "40 80 80",
   borderRadius: 28,
@@ -27,4 +27,58 @@ export const BORDER_GLOW_BUTTON = {
   borderRadius: 18,
   glowRadius: 20,
   fillOpacity: 0.35,
+} as const;
+
+/** Product app — AKARA cyan/magenta tuned (dashboard, auth, billing). */
+export const BORDER_GLOW_PRODUCT = {
+  ...BORDER_GLOW_DEFAULTS,
+  backgroundColor: "#0a0a0a",
+  colors: ["#D856BF", "#03B3C3", "#38bdf8"] as string[],
+  glowColor: "192 80 70",
+  borderRadius: 16,
+  glowRadius: 32,
+} as const;
+
+export const BORDER_GLOW_PRODUCT_CARD = {
+  ...BORDER_GLOW_PRODUCT,
+  borderRadius: 16,
+  glowRadius: 28,
+} as const;
+
+export const LINE_SIDEBAR_AKARA = {
+  accentColor: "#03B3C3",
+  textColor: "#9ca3af",
+  markerColor: "#4b5563",
+  showIndex: true,
+  showMarker: true,
+  proximityRadius: 80,
+  maxShift: 20,
+  markerLength: 48,
+  fontSize: 0.95,
+  itemGap: 16,
+} as const;
+
+export const STRANDS_COPILOT_MINI = {
+  colors: ["#D856BF", "#03B3C3", "#0E5EA5"] as string[],
+  count: 2,
+  speed: 0.45,
+  amplitude: 0.6,
+  waviness: 1,
+  thickness: 0.6,
+  glow: 1.4,
+  taper: 3,
+  spread: 1,
+  intensity: 0.55,
+  saturation: 1.3,
+  opacity: 1,
+  scale: 0.85,
+  glass: false,
+} as const;
+
+export const STRANDS_COPILOT_INLINE = {
+  ...STRANDS_COPILOT_MINI,
+  count: 2,
+  scale: 1.1,
+  amplitude: 0.45,
+  glow: 1.2,
 } as const;

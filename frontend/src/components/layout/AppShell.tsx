@@ -1,120 +1,76 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useLocation, Outlet } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { ImpersonationBanner } from "@/components/layout/ImpersonationBanner";
 import { MaintenanceOverlay, SystemBanner } from "@/components/layout/SystemBanner";
+import AppLineSidebar from "@/components/layout/AppLineSidebar";
+import ProfileDropdown from "@/components/layout/ProfileDropdown";
+import DarkMeshBackground from "@/components/effects/DarkMeshBackground";
 import { useBilling } from "@/hooks/useBilling";
 import { UsageBanner, PastDueBanner, TrialWarning } from "@/components/billing";
-import { AkaraButton } from "@/components/ui/GradientButton";
-import { GlassIcon } from "@/components/effects/GlassIcon";
+import { GlowCTALink } from "@/components/ui/GlowCTAButton";
+import { APP_NAV_ITEMS } from "@/lib/appNav";
 import { APP_NAV_GLASS } from "@/lib/glassIconMap";
+import { GlassIcon } from "@/components/effects/GlassIcon";
 import { getQuotaLevel } from "@/lib/api/billing";
-import {
-  LayoutDashboard,
-  MessageSquare,
-  Upload,
-  BarChart2,
-  BarChart3,
-  LogOut,
-  TrendingUp,
-  Menu,
-  X,
-  AlertTriangle,
-  Bell,
-  Settings,
-  CreditCard,
-  Lock,
-} from "lucide-react";
+import { getUserAvatarUrl } from "@/lib/avatar";
+import { supabase } from "@/lib/supabase";
+import { AlertTriangle, Menu, X } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { isSuperadmin } from "@/lib/auth-utils";
-import { Shield } from "lucide-react";
 import { MobileNavProvider } from "@/contexts/MobileNavContext";
 
-const NAV_ITEMS = [
-  { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard, shortLabel: "Home", feature: null as string | null },
-  { to: "/copilot", label: "Copilot", icon: MessageSquare, shortLabel: "AI", feature: null },
-  { to: "/data", label: "Data", icon: Upload, shortLabel: "Data", feature: null },
-  { to: "/reports", label: "Reports", icon: BarChart2, shortLabel: "Reports", feature: null },
-  { to: "/debrief", label: "Debrief", icon: BarChart3, shortLabel: "Debrief", feature: null },
-  { to: "/alerts", label: "Alerts", icon: Bell, shortLabel: "Alerts", feature: "alerts" },
-  { to: "/simulator", label: "Simulator", icon: TrendingUp, shortLabel: "Sim", feature: "simulator" },
-];
-
-const PLAN_BADGE: Record<string, string> = {
-  free: "bg-surface-raised text-text-muted",
-  pro: "bg-accent-soft text-accent",
-  business: "bg-accent-soft text-accent-hover",
-};
-
-function NavLink({
-  to,
-  label,
-  icon: Icon,
-  isActive,
-  isLocked,
-  onClick,
-}: {
-  to: string;
-  label: string;
-  icon: React.ComponentType<{ className?: string }>;
-  isActive: boolean;
-  isLocked?: boolean;
-  onClick?: () => void;
-}) {
-  const glass = APP_NAV_GLASS[to] ?? { color: "blue" as const, icon: Icon };
-  const NavIcon = glass.icon;
-
-  return (
-    <Link
-      to={to}
-      onClick={onClick}
-      className={cn(
-        "flex items-center gap-3 px-3 py-2 text-[13px] font-medium transition-colors rounded-lg",
-        isActive
-          ? "bg-accent-soft/80 text-accent"
-          : "text-text-secondary hover:text-text-primary hover:bg-surface-raised",
-        isLocked && "opacity-70"
-      )}
-    >
-      <GlassIcon
-        decorative
-        size="sm"
-        color={glass.color}
-        icon={<NavIcon className="h-3.5 w-3.5" />}
-        label={label}
-        active={isActive}
-      />
-      <span className="flex-1">{label}</span>
-      {isLocked && <Lock className="h-3 w-3 text-text-muted" aria-label="Locked" />}
-    </Link>
-  );
-}
+export { APP_NAV_ITEMS as NAV_ITEMS };
 
 export function AppShell() {
   const { user, signOut } = useAuth();
   const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [avatarSeed, setAvatarSeed] = useState<string | null>(null);
   const { data: usage } = useBilling();
 
+  useEffect(() => {
+    if (!user?.id) return;
+    void (async () => {
+      try {
+        const { data } = await supabase
+          .from("profiles")
+          .select("preferences")
+          .eq("id", user.id)
+          .single();
+        const seed = (data?.preferences as { avatar_seed?: string } | null)?.avatar_seed;
+        if (seed) setAvatarSeed(seed);
+      } catch {
+        // ignore
+      }
+    })();
+  }, [user?.id]);
+
   const plan = usage?.plan ?? "free";
-  const features = usage?.features;
   const copilotLevel = usage
     ? getQuotaLevel(usage.copilot_calls_used, usage.copilot_calls_limit)
     : "ok";
   const quotaWarning = copilotLevel === "warning" || copilotLevel === "critical";
 
+  const profileData = {
+    name: user?.displayName || user?.email?.split("@")[0] || "User",
+    email: user?.email ?? "",
+    avatarUrl: getUserAvatarUrl(
+      { id: user?.id, preferences: avatarSeed ? { avatar_seed: avatarSeed } : null },
+      user?.email
+    ),
+    subscription: plan,
+  };
+
   function closeSidebar() {
     setSidebarOpen(false);
   }
 
-  const isCopilot = location.pathname.startsWith("/copilot");
-
   return (
-    <div className="flex h-screen bg-surface-canvas">
+    <div className="theme-product-dark flex h-screen overflow-hidden">
       {sidebarOpen && (
         <div
-          className="fixed inset-0 bg-black/20 z-40 lg:hidden"
+          className="fixed inset-0 bg-black/60 z-40 lg:hidden"
           onClick={closeSidebar}
           aria-hidden="true"
         />
@@ -122,33 +78,25 @@ export function AppShell() {
 
       <aside
         className={cn(
-          "w-60 flex flex-col z-10 bg-white border-r border-surface-border",
-          "fixed inset-y-0 left-0 z-50",
+          "w-64 flex flex-col z-50 border-r border-white/10 bg-[#0a0a0a]/95 backdrop-blur-md",
+          "fixed inset-y-0 left-0",
           "lg:relative lg:z-10",
           "transform transition-transform duration-200",
           sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
         )}
       >
-        <div className="px-5 py-5 border-b border-surface-border flex items-center justify-between">
+        <div className="px-4 py-4 border-b border-white/10 flex items-start justify-between gap-2">
           <div className="min-w-0 flex-1">
-            <div className="flex items-center gap-2">
-              <span className="text-lg font-bold font-display text-text-primary">AKARA</span>
+            <div className="flex items-center gap-2 mb-3">
+              <span className="text-lg font-bold font-display text-white">AKARA</span>
               {quotaWarning && (
-                <AlertTriangle className="h-3.5 w-3.5 text-amber-500" aria-label="Quota warning" />
+                <AlertTriangle className="h-3.5 w-3.5 text-amber-400" aria-label="Quota warning" />
               )}
             </div>
-            <p className="text-caption mt-0.5 truncate">{user?.email}</p>
-            <span
-              className={cn(
-                "inline-block mt-1.5 text-[10px] px-2.5 py-0.5 rounded-full font-medium capitalize",
-                PLAN_BADGE[plan] ?? PLAN_BADGE.free
-              )}
-            >
-              {plan}
-            </span>
+            <ProfileDropdown data={profileData} onSignOut={signOut} />
           </div>
           <button
-            className="lg:hidden p-1.5 rounded-lg text-text-muted hover:text-text-primary"
+            className="lg:hidden p-1.5 rounded-lg text-white/50 hover:text-white shrink-0"
             onClick={closeSidebar}
             aria-label="Close sidebar"
           >
@@ -156,73 +104,23 @@ export function AppShell() {
           </button>
         </div>
 
-        <nav className="flex-1 px-3 py-3 space-y-0.5 overflow-y-auto">
-          {NAV_ITEMS.map(({ to, label, icon, feature }) => {
-            const isActive = location.pathname.startsWith(to);
-            const isLocked = feature && features && !features[feature as keyof typeof features];
-            return (
-              <NavLink
-                key={to}
-                to={to}
-                label={label}
-                icon={icon}
-                isActive={isActive}
-                isLocked={!!isLocked}
-                onClick={closeSidebar}
-              />
-            );
-          })}
+        <div className="flex-1 overflow-y-auto px-4 py-2">
+          <AppLineSidebar onNavigate={closeSidebar} />
+        </div>
 
-          <div className="pt-3 mt-2 border-t border-surface-border space-y-0.5">
-            <NavLink
-              to="/billing"
-              label="Billing"
-              icon={CreditCard}
-              isActive={location.pathname.startsWith("/billing")}
-              onClick={closeSidebar}
-            />
-            <NavLink
-              to="/settings"
-              label="Settings"
-              icon={Settings}
-              isActive={location.pathname.startsWith("/settings")}
-              onClick={closeSidebar}
-            />
-            {isSuperadmin(user) && (
-              <NavLink
-                to="/superadmin"
-                label="Superadmin"
-                icon={Shield}
-                isActive={location.pathname.startsWith("/superadmin")}
-                onClick={closeSidebar}
-              />
-            )}
-          </div>
-
-        </nav>
-
-        <div className="px-3 py-4 border-t border-surface-border space-y-2">
+        <div className="px-4 py-4 border-t border-white/10 space-y-2">
           {plan === "free" && (
-            <Link to="/upgrade" onClick={closeSidebar} className="block">
-              <AkaraButton size="sm" className="w-full">
-                Upgrade to Pro
-              </AkaraButton>
-            </Link>
+            <GlowCTALink to="/upgrade" size="sm" className="w-full block" onClick={closeSidebar}>
+              Upgrade to Pro →
+            </GlowCTALink>
           )}
-          <button
-            onClick={signOut}
-            className="flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium text-text-secondary hover:text-text-primary hover:bg-surface-raised transition-colors w-full"
-          >
-            <LogOut className="h-4 w-4 shrink-0" />
-            Sign out
-          </button>
         </div>
       </aside>
 
-      <div className={cn("fixed bottom-0 inset-x-0 z-30 lg:hidden", isCopilot && "hidden")}>
-        <nav className="mx-3 mb-3 rounded-2xl bg-white border border-surface-border shadow-card pb-[env(safe-area-inset-bottom)]">
+      <div className="fixed bottom-0 inset-x-0 z-30 lg:hidden">
+        <nav className="mx-3 mb-3 rounded-2xl bg-[#0a0a0a]/95 border border-white/10 backdrop-blur-md pb-[env(safe-area-inset-bottom)]">
           <div className="flex items-center justify-around py-2">
-            {NAV_ITEMS.slice(0, 5).map(({ to, shortLabel, icon: Icon }) => {
+            {APP_NAV_ITEMS.slice(0, 5).map(({ to, shortLabel, icon: Icon }) => {
               const isActive = location.pathname.startsWith(to);
               const glass = APP_NAV_GLASS[to] ?? { color: "blue" as const, icon: Icon };
               const NavIcon = glass.icon;
@@ -232,7 +130,7 @@ export function AppShell() {
                   to={to}
                   className={cn(
                     "flex flex-col items-center gap-0.5 p-1.5 rounded-xl min-w-0 transition-colors",
-                    isActive ? "text-accent" : "text-text-muted"
+                    isActive ? "text-[#03B3C3]" : "text-white/45"
                   )}
                 >
                   <GlassIcon
@@ -252,25 +150,28 @@ export function AppShell() {
       </div>
 
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
-        <header className={cn(
-          "lg:hidden flex items-center gap-3 px-4 py-3 bg-white border-b border-surface-border shrink-0",
-          isCopilot && "hidden"
-        )}>
+        <header className="lg:hidden flex items-center gap-3 px-4 py-3 border-b border-white/10 bg-[#0a0a0a]/90 shrink-0">
           <button
             onClick={() => setSidebarOpen(true)}
-            className="p-1.5 rounded-lg text-text-muted hover:text-text-primary"
+            className="p-1.5 rounded-lg text-white/50 hover:text-white"
             aria-label="Open navigation"
           >
             <Menu className="h-5 w-5" />
           </button>
-          <span className="text-lg font-bold font-display text-text-primary">AKARA</span>
+          <span className="text-lg font-bold font-display text-white flex-1">AKARA</span>
+          <ProfileDropdown
+            data={profileData}
+            onSignOut={signOut}
+            compact
+            className="w-auto"
+          />
         </header>
 
-        {!isCopilot && <SystemBanner />}
-        {!isCopilot && <ImpersonationBanner />}
-        {!isCopilot && <MaintenanceOverlay />}
+        <SystemBanner />
+        <ImpersonationBanner />
+        <MaintenanceOverlay />
 
-        {usage && !isCopilot && (
+        {usage && (
           <>
             <PastDueBanner usage={usage} />
             <TrialWarning usage={usage} />
@@ -278,13 +179,8 @@ export function AppShell() {
           </>
         )}
 
-        <main
-          className={cn(
-            "flex-1 relative bg-surface-canvas",
-            isCopilot ? "overflow-hidden" : "overflow-auto",
-            isCopilot ? "mb-0" : "mb-16 lg:mb-0"
-          )}
-        >
+        <main className="flex-1 relative overflow-auto mb-16 lg:mb-0">
+          <DarkMeshBackground className="fixed inset-0 opacity-30 pointer-events-none" />
           <ErrorBoundary>
             <MobileNavProvider openNav={() => setSidebarOpen(true)}>
               <Outlet />

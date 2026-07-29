@@ -11,12 +11,13 @@ import {
   Calculator,
   Crown,
   Sparkles,
-  Play
 } from "lucide-react";
 import { apiFetch } from "@/lib/api";
 import { useBilling } from "@/hooks/useBilling";
+import ProductPageLayout from "@/components/layout/ProductPageLayout";
 import GlowSurfaceCard from "@/components/ui/GlowSurfaceCard";
-import { AkaraButton, SecondaryButton } from "@/components/ui/GradientButton";
+import GlowCTAButton from "@/components/ui/GlowCTAButton";
+import { SecondaryButton } from "@/components/ui/GradientButton";
 import { SimulatorPlanGate } from "@/components/billing/PlanGate";
 import AnimatedNumber from "@/components/ui/AnimatedNumber";
 import { KPISkeleton } from "@/components/ui/ShimmerSkeleton";
@@ -115,7 +116,7 @@ function ScenarioSlider({
       style={{ animationDelay: `${animationDelay}ms` }}
     >
       <div className="flex justify-between items-center mb-3">
-        <Label className="text-text-primary font-medium">{label}</Label>
+        <Label className="font-medium">{label}</Label>
         <span
           className={`text-sm font-bold tabular-nums transition-all duration-300 ${
             value > 0
@@ -200,7 +201,7 @@ export function SimulatorPage() {
 
   return (
     <SimulatorPlanGate>
-      <div className="p-6 lg:p-8 space-y-6 max-w-7xl mx-auto bg-surface-canvas">
+      <ProductPageLayout className="space-y-6">
         <div className="flex items-center justify-between">
           <div>
             <div className="flex items-center gap-3">
@@ -231,12 +232,12 @@ export function SimulatorPage() {
         </div>
 
         {!baselineLoading && baseline && lowConfidence && (
-          <GlowSurfaceCard padding="sm" className="border-amber-200 bg-amber-50">
+          <GlowSurfaceCard padding="sm" accent="amber">
             <div className="flex items-start gap-3">
-              <AlertCircle className="h-5 w-5 text-amber-500 mt-0.5 shrink-0" />
+              <AlertCircle className="h-5 w-5 text-amber-400 mt-0.5 shrink-0" />
               <div>
-                <p className="text-amber-800 font-medium">Limited data — projections may be noisy</p>
-                <p className="text-amber-700 text-sm mt-1">
+                <p className="text-amber-200 font-medium">Limited data — projections may be noisy</p>
+                <p className="text-amber-300/80 text-sm mt-1">
                   Found {dataDays} distinct day{dataDays !== 1 ? "s" : ""} of sales in the last 30 days.
                   Import more days for tighter confidence ranges (7+ recommended).
                 </p>
@@ -246,12 +247,12 @@ export function SimulatorPage() {
         )}
 
         {!baselineLoading && baseline && !canRun && (
-          <GlowSurfaceCard padding="sm" className="border-amber-200 bg-amber-50">
+          <GlowSurfaceCard padding="sm" accent="amber">
             <div className="flex items-start gap-3">
-              <AlertCircle className="h-5 w-5 text-amber-500 mt-0.5 shrink-0" />
+              <AlertCircle className="h-5 w-5 text-amber-400 mt-0.5 shrink-0" />
               <div>
-                <p className="text-amber-800 font-medium">Insufficient data for reliable projections</p>
-                <p className="text-amber-700 text-sm mt-1">
+                <p className="text-amber-200 font-medium">Insufficient data for reliable projections</p>
+                <p className="text-amber-300/80 text-sm mt-1">
                   Found {baseline.data_days} day{baseline.data_days !== 1 ? "s" : ""} of sales data. 
                   Import at least 7 days for accurate modeling.
                 </p>
@@ -261,12 +262,12 @@ export function SimulatorPage() {
         )}
 
         {baselineError && (
-          <GlowSurfaceCard padding="sm" className="border-red-200 bg-red-50">
+          <GlowSurfaceCard padding="sm" accent="red">
             <div className="flex items-start gap-3">
-              <AlertCircle className="h-5 w-5 text-red-500 mt-0.5 shrink-0" />
+              <AlertCircle className="h-5 w-5 text-red-400 mt-0.5 shrink-0" />
               <div>
-                <p className="text-red-700 font-medium">Failed to load baseline data</p>
-                <p className="text-red-600 text-sm mt-1">Please refresh and try again.</p>
+                <p className="text-red-300 font-medium">Failed to load baseline data</p>
+                <p className="text-red-400/80 text-sm mt-1">Please refresh and try again.</p>
               </div>
             </div>
           </GlowSurfaceCard>
@@ -311,7 +312,7 @@ export function SimulatorPage() {
                   <div className="text-accent">{icon}</div>
                   <span className="text-caption text-xs font-medium">{label}</span>
                 </div>
-                <div className="text-xl font-bold text-text-primary mb-1">
+                <div className="text-xl font-bold mb-1">
                   <AnimatedNumber value={value} />
                 </div>
                 <p className="text-xs text-caption">{sub}</p>
@@ -383,7 +384,7 @@ export function SimulatorPage() {
               )}
 
               {discountChange !== 0 && (
-                <GlowSurfaceCard hover={false} padding="sm" className="border-accent/20 bg-accent-soft">
+                <GlowSurfaceCard hover={false} padding="sm">
                   <div className="flex items-start gap-2">
                     <Info className="h-4 w-4 text-accent mt-0.5 shrink-0" />
                     <p className="text-xs text-body">
@@ -395,26 +396,15 @@ export function SimulatorPage() {
                 </GlowSurfaceCard>
               )}
 
-              <AkaraButton
+              <GlowCTAButton
                 type="button"
                 onClick={handleRunSimulation}
                 disabled={isPending || !canRun}
+                loading={isPending}
                 className="w-full"
               >
-                {isPending ? (
-                  <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
-                    Calculating...
-                  </>
-                ) : !canRun ? (
-                  "Import sales data to run"
-                ) : (
-                  <>
-                    <Play className="h-4 w-4 mr-2" />
-                    Run Simulation
-                  </>
-                )}
-              </AkaraButton>
+                {!canRun ? "Import sales data to run" : "Run Simulation"}
+              </GlowCTAButton>
 
               {!canRun && baseline && (
                 <p className="text-xs text-caption text-center">
@@ -423,8 +413,8 @@ export function SimulatorPage() {
               )}
 
               {runError && (
-                <GlowSurfaceCard padding="sm" className="border-red-200 bg-red-50">
-                  <p className="text-xs text-red-700 text-center font-medium">
+                <GlowSurfaceCard padding="sm" accent="red">
+                  <p className="text-xs text-red-300 text-center font-medium">
                     {parseApiError(runError)}
                   </p>
                 </GlowSurfaceCard>
@@ -443,13 +433,13 @@ export function SimulatorPage() {
                 <div className="text-center px-4">
                   <AlertCircle className="h-10 w-10 text-red-500 mx-auto mb-3" />
                   <p className="text-sm text-red-700 font-medium">{parseApiError(runError)}</p>
-                  <AkaraButton type="button" size="sm" className="mt-4" onClick={handleRunSimulation}>
+                  <GlowCTAButton type="button" size="sm" className="mt-4" onClick={handleRunSimulation}>
                     Try again
-                  </AkaraButton>
+                  </GlowCTAButton>
                 </div>
               ) : !result && !isPending ? (
                 <div className="text-center">
-                  <div className="w-16 h-16 mx-auto mb-4 rounded-2xl flex items-center justify-center bg-accent-soft text-accent opacity-70">
+                  <div className="w-16 h-16 mx-auto mb-4 rounded-2xl flex items-center justify-center bg-white/10 text-accent opacity-70">
                     <TrendingUp className="h-8 w-8" />
                   </div>
                   <p className="text-body text-sm">Adjust parameters and run simulation</p>
@@ -468,7 +458,7 @@ export function SimulatorPage() {
                     <p className="text-caption text-xs uppercase tracking-wide mb-2">
                       Projected 30-Day Revenue
                     </p>
-                    <div className="text-3xl font-bold text-text-primary mb-2">
+                    <div className="text-3xl font-bold mb-2">
                       <AnimatedNumber
                         value={result?.projected_revenue || 0}
                         format={{ style: "currency", currency: "INR", maximumFractionDigits: 0 }}
@@ -487,10 +477,10 @@ export function SimulatorPage() {
                       <span>Baseline</span>
                       <span>Projection</span>
                     </div>
-                    <div className="w-full bg-surface-raised rounded-full h-3">
+                    <div className="w-full bg-white/10 rounded-full h-3">
                       <div className="h-3 rounded-full bg-accent transition-all duration-2000 ease-out" style={{ width: '60%' }} />
                     </div>
-                    <div className="w-full bg-surface-raised rounded-full h-3">
+                    <div className="w-full bg-white/10 rounded-full h-3">
                       <div 
                         className={`h-3 rounded-full transition-all duration-2000 ease-out ${
                           isPositive ? 'bg-emerald-500' : 'bg-red-500'
@@ -526,13 +516,13 @@ export function SimulatorPage() {
                   ].map(({ label, value, type }, i) => (
                     <div 
                       key={label}
-                      className="flex justify-between items-center py-2 border-b border-surface-border animate-fadeInUp"
+                      className="flex justify-between items-center py-2 border-b border-white/10 animate-fadeInUp"
                       style={{ animationDelay: `${i * 100}ms` }}
                     >
                       <span className="text-body text-sm">{label}</span>
                       <span className={`font-semibold text-sm ${
                         type === "positive" ? "text-emerald-600" : 
-                        type === "negative" ? "text-red-600" : "text-text-primary"
+                        type === "negative" ? "text-red-600" : ""
                       }`}>
                         {value}
                       </span>
@@ -540,10 +530,10 @@ export function SimulatorPage() {
                   ))}
                 </div>
 
-                <GlowSurfaceCard hover={false} padding="sm" className="border-accent/20 bg-accent-soft">
+                <GlowSurfaceCard hover={false} padding="sm">
                   <div className="text-center">
                     <p className="text-caption text-xs mb-1">95% Confidence Range</p>
-                    <div className="text-text-primary font-medium text-sm">
+                    <div className="font-medium text-sm">
                       {formatINR(result.confidence_interval_lower)} – {formatINR(result.confidence_interval_upper)}
                     </div>
                   </div>
@@ -571,14 +561,14 @@ export function SimulatorPage() {
                   </div>
                 </div>
 
-                <p className="text-xs text-caption text-center pt-2 border-t border-surface-border">
+                <p className="text-xs text-caption text-center pt-2 border-t border-white/10">
                   Based on {result.data_days} days of actual sales data. Not financial advice.
                 </p>
               </div>
             )}
           </GlowSurfaceCard>
         </div>
-      </div>
+      </ProductPageLayout>
     </SimulatorPlanGate>
   );
 }

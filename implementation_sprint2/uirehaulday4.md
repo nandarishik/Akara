@@ -1068,3 +1068,33 @@ The total experience should feel like **a luxury sports car starting up** — sm
 When a founder opens superadmin, they should feel like they've entered **a control room** — every metric at their fingertips, real-time data flowing, full command over their empire.
 
 This is not a dashboard. This is a **command center for Indian commerce intelligence**.
+
+---
+
+## v2 Addendum — FireAI Light Product App (Post–Day 5)
+
+**Supersedes** the “dark navy glass everywhere” interpretation of this document for the **customer-facing application**.
+
+### Locked direction
+
+| Surface | Canvas | Cards | CTAs |
+|---------|--------|-------|------|
+| Marketing + Auth | `#FAFCFF` | White + soft shadow | Blue pill (`AkaraButton`) |
+| Product app | `#F8FAFC` | `SurfaceCard` white + border | Same pills |
+| Footer / CTA band / Superadmin | Dark navy OK | Raised dark panels | Cyan accent (superadmin) |
+
+### Deprecated for customer app
+
+- `LiquidGlassCard`, `GradientMesh`, gradient text headings, hover scale-up, neon lock glow
+- Dark glass cards on light main canvas
+
+### Canonical primitives (implemented)
+
+- `SurfaceCard`, `AkaraButton` (alias `GradientButton`), `GlowKPICard` (light), unified `PlanGate`, slim `UsageBanner`
+- Living style guide: `/gallery` (`ComponentGallery.tsx`)
+- Tokens in `frontend/src/index.css` (`--surface-canvas`, `--accent`, etc.)
+
+### Reference
+
+FireAI landing + product mockup: white canvas, blue accent, pill buttons, generous whitespace, real UI screenshots.
+

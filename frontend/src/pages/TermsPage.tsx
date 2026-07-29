@@ -1,9 +1,9 @@
 export function TermsPage() {
   return (
-    <div className="min-h-screen bg-surface-bg">
-      <div className="max-w-3xl mx-auto px-6 py-16 prose prose-slate">
-        <h1 className="text-3xl font-bold text-text-primary">Terms of Service</h1>
-        <p className="text-text-muted">Last updated: July 2026 · Version 1.0</p>
+    <div className="theme-product-dark min-h-screen bg-[#0a0a0a]">
+      <div className="max-w-3xl mx-auto px-6 py-16 prose prose-invert prose-headings:text-white prose-p:text-white/80 prose-li:text-white/80 prose-a:text-[#03B3C3] hover:prose-a:text-[#38bdf8]">
+        <h1 className="text-3xl font-bold text-white">Terms of Service</h1>
+        <p className="text-white/50">Last updated: July 2026 · Version 1.0</p>
 
         <h2>Acceptance</h2>
         <p>

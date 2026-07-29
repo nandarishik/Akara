@@ -2,7 +2,12 @@ import { useEffect, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { CheckCircle, Loader2 } from "lucide-react";
 
+import ProductPageLayout from "@/components/layout/ProductPageLayout";
 import GlowSurfaceCard from "@/components/ui/GlowSurfaceCard";
+import GlowCTAButton from "@/components/ui/GlowCTAButton";
+import ReflectiveCard from "@/components/effects/ReflectiveCard";
+import PrismLazy from "@/components/effects/PrismLazy";
+import { PLAN_REFLECTIVE_META } from "@/components/effects/PlanReflectiveCard";
 import AkaraButton from "@/components/ui/GradientButton";
 import { useBilling } from "@/hooks/useBilling";
 import {
@@ -163,27 +168,58 @@ export function BillingPage() {
   };
 
   return (
-    <div className="min-h-full bg-surface-canvas">
-      <div className="p-6 lg:p-10 max-w-4xl mx-auto space-y-6">
-        <div>
-          <h1 className="text-2xl font-bold text-text-primary">Billing & Usage</h1>
-          <p className="text-sm text-text-secondary mt-1">
-            Manage your plan, usage, and GST details.
-          </p>
-        </div>
+    <ProductPageLayout
+      maxWidth="5xl"
+      className="space-y-6"
+      title="Billing & Usage"
+      description="Manage your plan, usage, and GST details."
+    >
 
         {(sessionSuccess || upgradedSuccess) && (
-          <div className="flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-emerald-700 text-sm">
-            <CheckCircle className="h-4 w-4 shrink-0" />
-            Payment received — your plan will update shortly.
-          </div>
+          <GlowSurfaceCard accent="green" padding="sm" hover={false}>
+            <div className="flex items-center gap-2 text-emerald-300 text-sm">
+              <CheckCircle className="h-4 w-4 shrink-0" />
+              Payment received — your plan will update shortly.
+            </div>
+          </GlowSurfaceCard>
         )}
+
+        <div className="relative min-h-[300px] rounded-2xl overflow-hidden">
+          <PrismLazy
+            className="absolute inset-0 opacity-40 pointer-events-none"
+            animationType="rotate"
+            timeScale={0.35}
+            suspendWhenOffscreen
+          />
+          <div className="relative z-10 max-w-md mx-auto p-4">
+            <ReflectiveCard
+              planName={`AKARA ${usage.plan.charAt(0).toUpperCase()}${usage.plan.slice(1)}`}
+              planPrice={
+                usage.plan === "free"
+                  ? "₹0 / month"
+                  : usage.plan === "pro"
+                    ? "₹7,999 / month"
+                    : "₹13,999 / month"
+              }
+              planId={
+                PLAN_REFLECTIVE_META[
+                  usage.plan.charAt(0).toUpperCase() + usage.plan.slice(1) as keyof typeof PLAN_REFLECTIVE_META
+                ]?.planId ?? "AKR-****-****-0000"
+              }
+              badgeText={
+                PLAN_REFLECTIVE_META[
+                  usage.plan.charAt(0).toUpperCase() + usage.plan.slice(1) as keyof typeof PLAN_REFLECTIVE_META
+                ]?.badgeText ?? "ACTIVE PLAN"
+              }
+            />
+          </div>
+        </div>
 
         <GlowSurfaceCard className="space-y-4">
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div>
               <div className="flex items-center gap-2">
-                <span className="text-lg font-semibold text-text-primary capitalize">
+                <span className="text-lg font-semibold capitalize">
                   {usage.plan} plan
                 </span>
                 <Badge
@@ -206,9 +242,7 @@ export function BillingPage() {
             </div>
             <div className="flex flex-wrap gap-2">
               {usage.plan === "free" ? (
-                <Link to="/upgrade">
-                  <AkaraButton size="sm">Upgrade plan</AkaraButton>
-                </Link>
+                <GlowCTAButton size="sm" to="/upgrade">Upgrade plan</GlowCTAButton>
               ) : (
                 <>
                   <Link to="/upgrade">
@@ -329,9 +363,9 @@ export function BillingPage() {
               {invoices.map((inv) => (
                 <div
                   key={inv.id}
-                  className="flex justify-between items-center text-sm py-2 border-b border-surface-border last:border-0"
+                  className="flex justify-between items-center text-sm py-2 border-b border-white/10 last:border-0"
                 >
-                  <span className="text-text-primary">{inv.invoice_number}</span>
+                  <span>{inv.invoice_number}</span>
                   <span className="text-text-secondary">₹{inv.total_amount.toLocaleString("en-IN")}</span>
                   <Badge variant="outline">{inv.tax_type}</Badge>
                   {inv.pdf_storage_path && (
@@ -349,7 +383,6 @@ export function BillingPage() {
             </div>
           </GlowSurfaceCard>
         )}
-      </div>
-    </div>
+    </ProductPageLayout>
   );
 }
