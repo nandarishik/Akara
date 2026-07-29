@@ -139,6 +139,32 @@
   --surface-base: #051B37;
   --glass-bg: rgba(15, 52, 96, 0.4);
   --glass-border: rgba(33, 150, 243, 0.12);
+
+  /* Bklit chart tokens (matte-black product UI) */
+  --chart-1: #00BCD4;
+  --chart-2: #42A5F5;
+  --chart-3: #00E676;
+  --chart-4: #FFB300;
+  --chart-5: #FF80AB;
+  --chart-background: #0a0a0a;
+  --chart-foreground: #e2e8f0;
+  --chart-foreground-muted: #94a3b8;
+  --chart-label: #64748b;
+  --chart-line-primary: #00BCD4;
+  --chart-line-secondary: #42A5F5;
+  --chart-crosshair: rgba(148, 163, 184, 0.45);
+  --chart-grid: rgba(255, 255, 255, 0.08);
+  --chart-indicator-color: #00BCD4;
+  --chart-indicator-secondary-color: #42A5F5;
+  --chart-marker-background: #111111;
+  --chart-marker-border: rgba(0, 188, 212, 0.35);
+  --chart-marker-foreground: #f8fafc;
+  --chart-marker-badge-background: #0a0a0a;
+  --chart-marker-badge-foreground: #e2e8f0;
+  --chart-segment-background: rgba(255, 255, 255, 0.06);
+  --chart-segment-line: rgba(255, 255, 255, 0.12);
+  --chart-brush-border: rgba(0, 188, 212, 0.25);
+  --chart-tooltip-background: rgba(10, 10, 10, 0.92);
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════

@@ -11,7 +11,6 @@ import {
   Eye,
   Calendar,
   Filter,
-  ArrowUpRight
 } from "lucide-react";
 import { useReports, useSchemeLeakage } from "@/hooks/useReports";
 import { useBilling } from "@/hooks/useBilling";
@@ -25,6 +24,9 @@ import { TableSkeleton, ChartSkeleton } from "@/components/ui/ShimmerSkeleton";
 import { NoDataEmptyState } from "@/components/ui/EmptyState";
 import AnimatedNumber from "@/components/ui/AnimatedNumber";
 import { PlanGate } from "@/components/billing/PlanGate";
+import { RouteBarChart } from "@/components/charts/akara/BarCharts";
+import { LeakageFunnelChart } from "@/components/charts/akara/LeakageFunnelChart";
+import { ZoneRadarChart } from "@/components/charts/akara/ZoneRadarChart";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "@/components/ui/toast";
 
@@ -118,8 +120,6 @@ export function ReportsPage() {
           efficiency: Math.round(Number(z.revenue_pct)),
         }))
     : mockRoutePerformance.slice(0, 6);
-  const routeMaxRevenue = Math.max(...routeRows.map((r) => r.revenue), 1);
-
   return (
     <ProductPageLayout className="space-y-6">
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
@@ -166,43 +166,15 @@ export function ReportsPage() {
                 ({hasRealZones ? "Your data" : "Sample data"})
               </span>
             </h3>
-            <div className="space-y-4">
-              {routeRows.map((route, i) => {
-                const percentage = (route.revenue / routeMaxRevenue) * 100;
-                return (
-                  <div 
-                    key={route.route} 
-                    className="animate-fadeInUp"
-                    style={{ animationDelay: `${i * 100}ms` }}
-                  >
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="font-medium text-sm">{route.route}</span>
-                      <div className="text-right">
-                        <span className="text-accent font-semibold text-sm">
-                          {formatINR(route.revenue)}
-                        </span>
-                        <div className="text-xs text-text-secondary">{route.orders} orders</div>
-                      </div>
-                    </div>
-                    <div className="w-full bg-white/10 rounded-full h-3">
-                      <div 
-                        className="h-3 rounded-full bg-accent transition-all duration-1000 ease-out"
-                        style={{ width: `${percentage}%` }}
-                      />
-                    </div>
-                    <div className="flex items-center justify-between mt-2 text-xs">
-                      <span className="text-caption">Efficiency: {route.efficiency}%</span>
-                      <span className={`flex items-center gap-1 ${
-                        route.growth >= 0 ? 'text-emerald-600' : 'text-red-600'
-                      }`}>
-                        <ArrowUpRight className={`h-3 w-3 ${route.growth < 0 ? 'rotate-90' : ''}`} />
-                        {Math.abs(route.growth).toFixed(1)}%
-                      </span>
-                    </div>
-                  </div>
-                );
-              })}
+            <div className="h-[280px] mb-4">
+              <RouteBarChart routes={routeRows} />
             </div>
+            {hasRealZones && kpiData?.zone_breakdown ? (
+              <div className="h-[320px] border-t border-surface-border pt-4">
+                <h3 className="text-text-secondary font-medium mb-3 text-sm">Zone comparison</h3>
+                <ZoneRadarChart zones={kpiData.zone_breakdown} />
+              </div>
+            ) : null}
           </div>
 
           <div>
@@ -360,6 +332,10 @@ export function ReportsPage() {
                     </div>
                   </div>
                 </GlowSurfaceCard>
+
+                <div className="h-[280px]">
+                  <LeakageFunnelChart rows={leakageRows ?? []} />
+                </div>
 
                 <div className="space-y-3">
                   {leakageRows?.slice(0, 5).map((row, i) => (

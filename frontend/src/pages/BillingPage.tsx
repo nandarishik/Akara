@@ -24,6 +24,8 @@ import {
   type SubscriptionInfo,
 } from "@/lib/api/billing";
 import { Badge } from "@/components/ui/badge";
+import { QuotaRingChart } from "@/components/charts/akara/QuotaRingChart";
+import { PlanHealthGauge } from "@/components/charts/akara/GaugeCharts";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "@/components/ui/toast";
@@ -306,6 +308,20 @@ export function BillingPage() {
             <span>
               Undos today: {usage.undos_today}/{usage.undos_per_day}
             </span>
+          </div>
+          <div className="grid gap-6 border-t border-surface-border pt-6 md:grid-cols-2">
+            <div className="h-[260px]">
+              <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-text-muted">
+                Quota rings
+              </p>
+              <QuotaRingChart usage={usage} />
+            </div>
+            <div className="flex flex-col items-center justify-center">
+              <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-text-muted">
+                Peak utilization
+              </p>
+              <PlanHealthGauge usage={usage} />
+            </div>
           </div>
         </GlowSurfaceCard>
 

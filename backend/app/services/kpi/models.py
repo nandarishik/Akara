@@ -45,3 +45,16 @@ class KPIResponse(BaseModel):
 class DataBoundsResponse(BaseModel):
     start: str | None = None
     end: str | None = None
+
+
+class HeatmapCell(BaseModel):
+    zone: str
+    product_name: str
+    revenue: Decimal
+    order_count: int
+
+
+class HeatmapResponse(BaseModel):
+    cells: list[HeatmapCell]
+    date_range_start: str
+    date_range_end: str

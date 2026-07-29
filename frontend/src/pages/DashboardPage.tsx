@@ -13,6 +13,8 @@ import {
   ArrowDown,
 } from "lucide-react";
 import { useKPIs } from "@/hooks/useKPIs";
+import { useSalesHeatmap } from "@/hooks/useSalesHeatmap";
+import { SalesHeatmapChart } from "@/components/charts/akara/SalesHeatmapChart";
 import { toNum, formatINR as fmtINR } from "@/lib/format";
 import { RevenueTrendChart } from "@/components/dashboard/RevenueTrendChart";
 import { ZoneChart } from "@/components/dashboard/ZoneChart";
@@ -56,6 +58,7 @@ export function DashboardPage() {
   const [showWhatsAppNudge, setShowWhatsAppNudge] = useState(false);
   const [start, end] = getDateRange(period);
   const { data, isLoading, error } = useKPIs(start, end);
+  const { data: heatmapData, isLoading: heatmapLoading } = useSalesHeatmap(start, end, !!data);
 
   useEffect(() => {
     if (localStorage.getItem(SLOT_E_DISMISSED_KEY)) return;
@@ -234,7 +237,7 @@ export function DashboardPage() {
           {isLoading ? (
             <div className="h-64 skeleton rounded-lg" />
           ) : (data?.revenue_trend?.length || 0) > 0 ? (
-            <RevenueTrendChart data={data?.revenue_trend || []} />
+            <RevenueTrendChart data={data?.revenue_trend || []} loading={isLoading} />
           ) : (
             <div className="flex items-center justify-center h-64 text-text-muted text-sm">No data</div>
           )}
@@ -248,12 +251,30 @@ export function DashboardPage() {
           {isLoading ? (
             <div className="h-48 skeleton rounded-lg" />
           ) : (data?.zone_breakdown?.length || 0) > 0 ? (
-            <ZoneChart data={data?.zone_breakdown || []} />
+            <ZoneChart data={data?.zone_breakdown || []} loading={isLoading} />
           ) : (
             <div className="flex items-center justify-center h-48 text-text-muted text-sm">No data</div>
           )}
         </GlowSurfaceCard>
       </div>
+
+      <GlowSurfaceCard>
+        <div className="flex items-center gap-2 mb-5">
+          <BarChart3 className="h-4 w-4 text-accent" />
+          <h2 className="text-h2">Product × Zone Activity</h2>
+        </div>
+        <div className="h-[280px]">
+          <SalesHeatmapChart
+            rows={(heatmapData?.cells ?? []).map((c) => ({
+              zone: c.zone,
+              product_name: c.product_name,
+              revenue: toNum(c.revenue),
+              order_count: c.order_count,
+            }))}
+            loading={heatmapLoading}
+          />
+        </div>
+      </GlowSurfaceCard>
 
       <GlowSurfaceCard>
         <div className="flex items-center gap-2 mb-5">

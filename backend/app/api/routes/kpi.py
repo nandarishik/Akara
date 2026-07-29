@@ -4,7 +4,11 @@ from fastapi import APIRouter, Query
 
 from app.core.auth import CurrentUser
 from app.core.tenant import TenantCtx, get_supabase_service_client
-from app.services.kpi.models import DataBoundsResponse, KPIResponse
+from app.services.kpi.models import (
+    DataBoundsResponse,
+    HeatmapResponse,
+    KPIResponse,
+)
 from app.services.kpi.service import KPIService
 from app.services.schema.discovery import SchemaDiscovery
 
@@ -40,3 +44,29 @@ def get_data_bounds(user: CurrentUser, tenant: TenantCtx) -> DataBoundsResponse:
     if bounds:
         return DataBoundsResponse(start=bounds[0], end=bounds[1])
     return DataBoundsResponse()
+
+
+@router.get("/heatmap", response_model=HeatmapResponse)
+def get_heatmap(
+    user: CurrentUser,
+    tenant: TenantCtx,
+    start_date: str = Query(
+        default=(date.today() - timedelta(days=30)).isoformat(),
+        description="Start date (YYYY-MM-DD)",
+    ),
+    end_date: str = Query(
+        default=date.today().isoformat(),
+        description="End date (YYYY-MM-DD)",
+    ),
+) -> HeatmapResponse:
+    service = KPIService(supabase=get_supabase_service_client())
+    cells = service.get_sales_heatmap(
+        tenant_id=tenant.tenant_id,
+        start_date=start_date,
+        end_date=end_date,
+    )
+    return HeatmapResponse(
+        cells=cells,
+        date_range_start=start_date,
+        date_range_end=end_date,
+    )

@@ -19,6 +19,12 @@ import GlowSurfaceCard from "@/components/ui/GlowSurfaceCard";
 import GlowCTAButton from "@/components/ui/GlowCTAButton";
 import { SecondaryButton } from "@/components/ui/GradientButton";
 import { SimulatorPlanGate } from "@/components/billing/PlanGate";
+import {
+  ScenarioProjectionChart,
+  ScenarioPnLChart,
+} from "@/components/charts/akara/LineCharts";
+import { ConfidenceGauge } from "@/components/charts/akara/GaugeCharts";
+import { simulatorConfidenceScore } from "@/lib/charts/chartAdapters";
 import AnimatedNumber from "@/components/ui/AnimatedNumber";
 import { KPISkeleton } from "@/components/ui/ShimmerSkeleton";
 import { Label } from "@/components/ui/label";
@@ -453,8 +459,8 @@ export function SimulatorPage() {
                   <p className="text-body text-sm mt-1">Processing {baseline?.data_days || 30} days of data</p>
                 </div>
               ) : (
-                <div className="text-center w-full">
-                  <div className="mb-4">
+                <div className="w-full space-y-6">
+                  <div className="text-center">
                     <p className="text-caption text-xs uppercase tracking-wide mb-2">
                       Projected 30-Day Revenue
                     </p>
@@ -472,23 +478,32 @@ export function SimulatorPage() {
                     </div>
                   </div>
 
-                  <div className="space-y-2">
-                    <div className="flex justify-between text-xs text-text-secondary">
-                      <span>Baseline</span>
-                      <span>Projection</span>
-                    </div>
-                    <div className="w-full bg-white/10 rounded-full h-3">
-                      <div className="h-3 rounded-full bg-accent transition-all duration-2000 ease-out" style={{ width: '60%' }} />
-                    </div>
-                    <div className="w-full bg-white/10 rounded-full h-3">
-                      <div 
-                        className={`h-3 rounded-full transition-all duration-2000 ease-out ${
-                          isPositive ? 'bg-emerald-500' : 'bg-red-500'
-                        }`}
-                        style={{ width: `${Math.min(100, 60 + (result?.revenue_delta_pct || 0))}%` }}
-                      />
-                    </div>
-                  </div>
+                  {result && baseline ? (
+                    <>
+                      <div className="h-[220px]">
+                        <ScenarioProjectionChart
+                          dailyAvg={baseline.daily_avg_revenue}
+                          projectedTotal={result.projected_revenue}
+                          dataDays={baseline.data_days}
+                        />
+                      </div>
+                      <div className="grid gap-4 sm:grid-cols-2">
+                        <ConfidenceGauge
+                          score={simulatorConfidenceScore(
+                            result.baseline_revenue,
+                            result.confidence_interval_lower,
+                            result.confidence_interval_upper,
+                          )}
+                        />
+                        <div className="h-[180px]">
+                          <ScenarioPnLChart
+                            baselineDaily={baseline.daily_avg_revenue}
+                            projectedDaily={result.projected_revenue / 30}
+                          />
+                        </div>
+                      </div>
+                    </>
+                  ) : null}
                 </div>
               )}
             </div>

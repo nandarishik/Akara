@@ -7,6 +7,8 @@ from postgrest.exceptions import APIError
 from supabase import Client
 
 from app.services.kpi.models import (
+    HeatmapCell,
+    HeatmapResponse,
     KPIResponse,
     KPISummary,
     RevenueByDate,
@@ -175,6 +177,34 @@ class KPIService:
         except APIError as exc:
             logger.warning("get_last_import_at sales_data fallback failed: %s", exc)
         return None
+
+    def get_sales_heatmap(
+        self, tenant_id: UUID, start_date: str, end_date: str
+    ) -> list[HeatmapCell]:
+        try:
+            result = self._supabase.rpc(
+                "get_sales_heatmap",
+                {
+                    "p_tenant_id": str(tenant_id),
+                    "p_start_date": start_date,
+                    "p_end_date": end_date,
+                },
+            ).execute()
+        except APIError as exc:
+            logger.warning("get_sales_heatmap failed: %s", exc)
+            return []
+        rows = result.data or []
+        if not isinstance(rows, list):
+            return []
+        return [
+            HeatmapCell(
+                zone=row.get("zone", ""),
+                product_name=row.get("product_name", ""),
+                revenue=Decimal(str(row.get("revenue", 0))),
+                order_count=int(row.get("order_count", 0)),
+            )
+            for row in rows
+        ]
 
     def get_all(
         self, tenant_id: UUID, start_date: str, end_date: str

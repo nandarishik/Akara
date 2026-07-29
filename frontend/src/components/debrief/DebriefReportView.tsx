@@ -14,24 +14,17 @@ import {
   ArrowDown,
   ArrowUp,
 } from "lucide-react";
-import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  Cell,
-} from "recharts";
-
 import AnimatedNumber from "@/components/ui/AnimatedNumber";
 import GlowSurfaceCard from "@/components/ui/GlowSurfaceCard";
+import { WeekdayBarChart, ProductMoverBarChart } from "@/components/charts/akara/BarCharts";
+import {
+  DebriefMomentumProjectionChart,
+  WeekdayPnLChart,
+} from "@/components/charts/akara/LineCharts";
 import { GlassIcon } from "@/components/effects/GlassIcon";
 import type { GlassIconColor } from "@/components/effects/GlassIcons";
 import { DEBRIEF_METRIC_GLASS } from "@/lib/glassIconMap";
 import { cn } from "@/lib/utils";
-import { formatINRCompact } from "@/lib/format";
 import {
   enrichDebriefMetrics,
   formatInrDisplay,
@@ -343,11 +336,13 @@ export function DebriefReportView({
     ...safeMeta.went_wrong.map((i) => impactFromItem(i.detail, i.impact_inr))
   );
 
-  const moverChartData = movers.slice(0, 5).map((m) => ({
-    name: m.name.length > 14 ? `${m.name.slice(0, 14)}…` : m.name,
-    change: m.change_inr,
-    fill: m.direction === "up" ? "#059669" : "#dc2626",
-  }));
+  const moverChartData = movers.slice(0, 5);
+
+  const projectedMonth = safeMeta.momentum?.projected_month ?? 0;
+  const priorRevenue = parties?.prior_revenue ?? metrics.priorWeekRevenue;
+  const thisRevenue = parties?.revenue ?? metrics.thisWeekRevenue;
+  const showMomentumCharts =
+    projectedMonth > 0 && (priorRevenue > 0 || thisRevenue > 0);
 
   const revenueDisplay =
     metrics.thisWeekRevenue > 0 ? (
@@ -461,6 +456,27 @@ export function DebriefReportView({
             <TrendChip label="60d" trend={safeMeta.momentum?.trend_60d} />
             <TrendChip label="90d" trend={safeMeta.momentum?.trend_90d} />
           </div>
+
+          {(showMomentumCharts || weekdayPulse.length > 0) && (
+            <div className="mt-5 grid gap-4 border-t border-surface-border/80 pt-5 lg:grid-cols-2">
+              {showMomentumCharts ? (
+                <div className="h-[220px]">
+                  <h4 className="mb-2 text-xs font-semibold text-text-secondary">Month projection</h4>
+                  <DebriefMomentumProjectionChart
+                    priorRevenue={priorRevenue}
+                    thisRevenue={thisRevenue}
+                    projectedMonth={projectedMonth}
+                  />
+                </div>
+              ) : null}
+              {weekdayPulse.length > 0 ? (
+                <div className="h-[220px]">
+                  <h4 className="mb-2 text-xs font-semibold text-text-secondary">Daily variance</h4>
+                  <WeekdayPnLChart pulse={weekdayPulse} />
+                </div>
+              ) : null}
+            </div>
+          )}
         </div>
       </div>
 
@@ -505,32 +521,7 @@ export function DebriefReportView({
               <p className="text-xs text-text-muted mt-1 mb-4">
                 Green = beat your usual weekday
               </p>
-              <ResponsiveContainer width="100%" height={200}>
-                <BarChart data={weekdayPulse} margin={{ top: 4, right: 4, left: 0, bottom: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#334155" vertical={false} />
-                  <XAxis dataKey="day" tick={{ fontSize: 11, fill: "#94a3b8" }} />
-                  <YAxis
-                    tick={{ fontSize: 10, fill: "#94a3b8" }}
-                    tickFormatter={formatINRCompact}
-                    width={44}
-                  />
-                  <Tooltip
-                    formatter={(v: number, name: string) => [
-                      formatINRCompact(v),
-                      name === "revenue" ? "This week" : "Usual avg",
-                    ]}
-                  />
-                  <Bar dataKey="revenue" radius={[4, 4, 0, 0]}>
-                    {weekdayPulse.map((d, i) => (
-                      <Cell
-                        key={i}
-                        fill={d.revenue >= d.trailing_avg ? "#059669" : "#6366f1"}
-                      />
-                    ))}
-                  </Bar>
-                  <Bar dataKey="trailing_avg" fill="#e2e8f0" radius={[4, 4, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
+              <WeekdayBarChart pulse={weekdayPulse} className="h-[200px]" />
             </GlowSurfaceCard>
           ) : metrics.hasRevenueCompare ? (
             <GlowSurfaceCard padding="md" hover={false} className="flex flex-col justify-center">
@@ -572,27 +563,9 @@ export function DebriefReportView({
             <Package className="h-4 w-4 text-accent" />
             Product shifts
           </h3>
-          <ResponsiveContainer width="100%" height={Math.max(100, moverChartData.length * 40)}>
-            <BarChart
-              data={moverChartData}
-              layout="vertical"
-              margin={{ top: 0, right: 16, left: 4, bottom: 0 }}
-            >
-              <XAxis type="number" tickFormatter={formatINRCompact} tick={{ fontSize: 10 }} />
-              <YAxis
-                type="category"
-                dataKey="name"
-                width={100}
-                tick={{ fontSize: 11, fill: "#cbd5e1" }}
-              />
-              <Tooltip formatter={(v: number) => [formatINRCompact(Math.abs(v)), "WoW change"]} />
-              <Bar dataKey="change" radius={[0, 4, 4, 0]}>
-                {moverChartData.map((entry, i) => (
-                  <Cell key={i} fill={entry.fill} />
-                ))}
-              </Bar>
-            </BarChart>
-          </ResponsiveContainer>
+          <div className="h-[200px]">
+            <ProductMoverBarChart movers={moverChartData} />
+          </div>
         </GlowSurfaceCard>
       )}
 

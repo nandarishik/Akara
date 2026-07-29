@@ -28,6 +28,28 @@ import Loader from "@/components/ui/Loader";
 import ProfileDropdown from "@/components/layout/ProfileDropdown";
 import AvatarPicker from "@/components/settings/AvatarPicker";
 import TeamSeatVisualizer, { buildSeatSlots } from "@/components/team/TeamSeatVisualizer";
+import { RevenueAreaChart } from "@/components/charts/akara/RevenueAreaChart";
+import { ZoneBarChart } from "@/components/charts/akara/ZoneBarChart";
+import { WeekdayBarChart, ProductMoverBarChart } from "@/components/charts/akara/BarCharts";
+import { QuotaRingChart } from "@/components/charts/akara/QuotaRingChart";
+import { PlanHealthGauge, ConfidenceGauge } from "@/components/charts/akara/GaugeCharts";
+import { LeakageFunnelChart } from "@/components/charts/akara/LeakageFunnelChart";
+import { ZoneRadarChart } from "@/components/charts/akara/ZoneRadarChart";
+import { SalesHeatmapChart } from "@/components/charts/akara/SalesHeatmapChart";
+import {
+  MomentumProjectionChart,
+  WeekdayPnLChart,
+} from "@/components/charts/akara/LineCharts";
+import {
+  fixtureAreaSeries,
+  fixtureBarRows,
+  fixtureFunnel,
+  fixtureHeatmapRows,
+  fixtureUsage,
+  fixtureZones,
+  fixtureWeekdayPulse,
+  fixtureMovers,
+} from "@/lib/charts/fixtures";
 import Folder from "@/components/effects/Folder";
 import LineSidebar from "@/components/effects/LineSidebar";
 import { LINE_SIDEBAR_AKARA } from "@/components/effects/presets";
@@ -319,6 +341,77 @@ export default function ComponentGallery() {
             <div className="rounded-xl border border-white/10 bg-[#0a0a0a] p-6 md:col-span-2 flex justify-center">
               <TeamSeatVisualizer slots={demoTeamSlots} occupied={3} seatLimit={5} />
             </div>
+          </div>
+        </section>
+
+        <section className="space-y-4">
+          <h2 className="text-h2">Analytics charts (Bklit)</h2>
+          <div className="grid gap-4 lg:grid-cols-2">
+            <GlowSurfaceCard padding="md">
+              <h3 className="text-sm font-medium mb-3">Area — revenue trend</h3>
+              <div className="h-[220px]">
+                <RevenueAreaChart data={fixtureAreaSeries} />
+              </div>
+            </GlowSurfaceCard>
+            <GlowSurfaceCard padding="md">
+              <h3 className="text-sm font-medium mb-3">Bar — zones</h3>
+              <div className="h-[220px]">
+                <ZoneBarChart data={fixtureBarRows} />
+              </div>
+            </GlowSurfaceCard>
+            <GlowSurfaceCard padding="md">
+              <h3 className="text-sm font-medium mb-3">Funnel — scheme leakage</h3>
+              <div className="h-[240px]">
+                <LeakageFunnelChart stages={fixtureFunnel} />
+              </div>
+            </GlowSurfaceCard>
+            <GlowSurfaceCard padding="md">
+              <h3 className="text-sm font-medium mb-3">Radar — zone comparison</h3>
+              <div className="h-[280px]">
+                <ZoneRadarChart zones={fixtureZones} />
+              </div>
+            </GlowSurfaceCard>
+            <GlowSurfaceCard padding="md">
+              <h3 className="text-sm font-medium mb-3">Ring + gauge — billing</h3>
+              <div className="grid gap-4 sm:grid-cols-2 h-[260px]">
+                <QuotaRingChart usage={fixtureUsage} />
+                <PlanHealthGauge usage={fixtureUsage} />
+              </div>
+            </GlowSurfaceCard>
+            <GlowSurfaceCard padding="md">
+              <h3 className="text-sm font-medium mb-3">Heatmap — product × zone</h3>
+              <div className="h-[240px]">
+                <SalesHeatmapChart rows={fixtureHeatmapRows} />
+              </div>
+            </GlowSurfaceCard>
+            <GlowSurfaceCard padding="md">
+              <h3 className="text-sm font-medium mb-3">Projection + P/L</h3>
+              <div className="space-y-4">
+                <div className="h-[180px]">
+                  <MomentumProjectionChart
+                    actual={[
+                      { date: new Date(Date.now() - 7 * 86400000), revenue: 280000 },
+                      { date: new Date(), revenue: 320000 },
+                    ]}
+                    endValue={1400000}
+                  />
+                </div>
+                <div className="h-[140px]">
+                  <WeekdayPnLChart pulse={fixtureWeekdayPulse} />
+                </div>
+              </div>
+            </GlowSurfaceCard>
+            <GlowSurfaceCard padding="md">
+              <h3 className="text-sm font-medium mb-3">Bar — weekday + movers</h3>
+              <div className="space-y-4">
+                <WeekdayBarChart pulse={fixtureWeekdayPulse} className="h-[120px]" />
+                <ProductMoverBarChart movers={fixtureMovers} className="h-[120px]" />
+              </div>
+            </GlowSurfaceCard>
+            <GlowSurfaceCard padding="md" className="lg:col-span-2">
+              <h3 className="text-sm font-medium mb-3">Simulator confidence gauge</h3>
+              <ConfidenceGauge score={78} />
+            </GlowSurfaceCard>
           </div>
         </section>
 
