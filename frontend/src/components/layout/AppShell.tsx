@@ -14,7 +14,12 @@ import { APP_NAV_ITEMS } from "@/lib/appNav";
 import { APP_NAV_GLASS } from "@/lib/glassIconMap";
 import { GlassIcon } from "@/components/effects/GlassIcon";
 import { getQuotaLevel } from "@/lib/api/billing";
-import { getUserAvatarUrl } from "@/lib/avatar";
+import { getUserAvatarUrl, readCachedAvatarSeed } from "@/lib/avatar";
+import {
+  PROFILE_UPDATED_EVENT,
+  readCachedDisplayName,
+  type ProfileUpdateDetail,
+} from "@/lib/profileSync";
 import { supabase } from "@/lib/supabase";
 import { AlertTriangle, Menu, X } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -26,25 +31,40 @@ export function AppShell() {
   const { user, signOut } = useAuth();
   const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [avatarSeed, setAvatarSeed] = useState<string | null>(null);
+  const [avatarSeed, setAvatarSeed] = useState<string | null>(() => readCachedAvatarSeed());
+  const [displayName, setDisplayName] = useState<string | null>(() => readCachedDisplayName());
   const { data: usage } = useBilling();
 
   useEffect(() => {
     if (!user?.id) return;
-    void (async () => {
+
+    async function loadProfileFields() {
       try {
         const { data } = await supabase
           .from("profiles")
-          .select("preferences")
-          .eq("id", user.id)
+          .select("preferences, display_name")
+          .eq("id", user!.id)
           .single();
         const seed = (data?.preferences as { avatar_seed?: string } | null)?.avatar_seed;
         if (seed) setAvatarSeed(seed);
+        if (data?.display_name) setDisplayName(data.display_name);
       } catch {
         // ignore
       }
-    })();
-  }, [user?.id]);
+    }
+
+    void loadProfileFields();
+  }, [user?.id, location.pathname]);
+
+  useEffect(() => {
+    function onProfileUpdated(e: Event) {
+      const detail = (e as CustomEvent<ProfileUpdateDetail>).detail;
+      if (detail?.avatarSeed) setAvatarSeed(detail.avatarSeed);
+      if (detail?.displayName) setDisplayName(detail.displayName);
+    }
+    window.addEventListener(PROFILE_UPDATED_EVENT, onProfileUpdated);
+    return () => window.removeEventListener(PROFILE_UPDATED_EVENT, onProfileUpdated);
+  }, []);
 
   const plan = usage?.plan ?? "free";
   const copilotLevel = usage
@@ -53,7 +73,11 @@ export function AppShell() {
   const quotaWarning = copilotLevel === "warning" || copilotLevel === "critical";
 
   const profileData = {
-    name: user?.displayName || user?.email?.split("@")[0] || "User",
+    name:
+      displayName?.trim() ||
+      user?.displayName?.trim() ||
+      user?.email?.split("@")[0] ||
+      "User",
     email: user?.email ?? "",
     avatarUrl: getUserAvatarUrl(
       { id: user?.id, preferences: avatarSeed ? { avatar_seed: avatarSeed } : null },

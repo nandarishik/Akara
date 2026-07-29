@@ -16,6 +16,7 @@ class MeResponse(BaseModel):
     email: str | None
     tenant_id: UUID | None
     role: str
+    display_name: str | None = None
     impersonating_tenant_id: UUID | None = None
     impersonating_tenant_name: str | None = None
     impersonation_session_id: UUID | None = None
@@ -69,7 +70,7 @@ async def me(request: Request, user: CurrentUser) -> MeResponse:
     try:
         profile_result = (
             client.table("profiles")
-            .select("tenant_id, role")
+            .select("tenant_id, role, display_name")
             .eq("id", str(user.user_id))
             .maybe_single()
             .execute()
@@ -104,6 +105,7 @@ async def me(request: Request, user: CurrentUser) -> MeResponse:
         email=user.email,
         tenant_id=tenant_id,
         role=profile_result.data.get("role") or "user",
+        display_name=profile_result.data.get("display_name"),
         impersonating_tenant_id=imp_tid,
         impersonating_tenant_name=imp_name,
         impersonation_session_id=imp_sid,

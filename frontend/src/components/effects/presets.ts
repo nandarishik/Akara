@@ -82,3 +82,21 @@ export const STRANDS_COPILOT_INLINE = {
   amplitude: 0.45,
   glow: 1.2,
 } as const;
+
+/** Beside Copilot input — larger, multi-strand “alien intelligence” orb */
+export const STRANDS_COPILOT_COMPANION = {
+  colors: ["#7C3AED", "#03B3C3", "#D856BF", "#22D3EE"] as string[],
+  count: 3,
+  speed: 0.32,
+  amplitude: 0.85,
+  waviness: 1.25,
+  thickness: 0.7,
+  glow: 2.2,
+  taper: 2.5,
+  spread: 0.9,
+  intensity: 0.9,
+  saturation: 1.6,
+  opacity: 1,
+  scale: 1.2,
+  glass: false,
+} as const;

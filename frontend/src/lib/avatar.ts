@@ -46,3 +46,27 @@ export function getUserAvatarUrl(
 ): string {
   return dicebearUrl(getAvatarSeed(profile, fallbackEmail));
 }
+
+export const AVATAR_UPDATED_EVENT = "akara:avatar-updated";
+
+const AVATAR_SEED_CACHE_KEY = "akara_avatar_seed";
+
+/** @deprecated use notifyProfileUpdated from profileSync */
+export function notifyAvatarUpdated(seed: string): void {
+  if (typeof window === "undefined") return;
+  try {
+    sessionStorage.setItem(AVATAR_SEED_CACHE_KEY, seed);
+  } catch {
+    // ignore quota / private mode
+  }
+  window.dispatchEvent(new CustomEvent(AVATAR_UPDATED_EVENT, { detail: seed }));
+}
+
+export function readCachedAvatarSeed(): string | null {
+  if (typeof window === "undefined") return null;
+  try {
+    return sessionStorage.getItem(AVATAR_SEED_CACHE_KEY);
+  } catch {
+    return null;
+  }
+}

@@ -311,7 +311,6 @@ export function CopilotPage() {
           <div className="flex-1 overflow-y-auto px-4 lg:px-8 py-6">
             {messages.length === 0 ? (
               <div className="flex flex-col items-center justify-center h-full text-center max-w-lg mx-auto">
-                <CopilotStrandsLoader variant="hero" className="mb-6" />
                 <h2 className="text-xl font-semibold text-white">Ask AKARA anything</h2>
                 <p className="text-sm mt-2 text-white/60">
                   Type a question below or pick a suggestion to get started.
@@ -416,8 +415,7 @@ export function CopilotPage() {
                       icon={<Bot className="h-3.5 w-3.5" />}
                       label="AKARA"
                     />
-                    <div className="rounded-xl px-4 py-3 bg-[#0a0a0a]/80 border border-white/10 text-white/60 text-sm flex items-center gap-3 min-w-[200px]">
-                      <CopilotStrandsLoader variant="inline" />
+                    <div className="rounded-xl px-4 py-3 bg-[#0a0a0a]/80 border border-white/10 text-white/60 text-sm flex items-center min-w-[200px]">
                       <AITextLoading compact />
                     </div>
                   </div>
@@ -437,7 +435,8 @@ export function CopilotPage() {
           )}
 
           <div className="px-4 lg:px-8 py-4 pb-[max(1rem,env(safe-area-inset-bottom))] border-t border-white/10 bg-[#0a0a0a]/90 shrink-0">
-            <div className="max-w-3xl mx-auto flex gap-2 items-end">
+            <div className="max-w-3xl mx-auto flex gap-3 items-end">
+              <CopilotStrandsLoader variant="companion" active={isStreaming} />
               <Textarea
                 value={input}
                 onChange={(e) => setInput(e.target.value)}

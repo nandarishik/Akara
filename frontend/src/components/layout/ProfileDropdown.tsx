@@ -79,6 +79,7 @@ export default function ProfileDropdown({
                 <div className="h-10 w-10 rounded-full bg-gradient-to-br from-[#D856BF] via-[#03B3C3] to-[#38bdf8] p-0.5">
                   <div className="h-full w-full overflow-hidden rounded-full bg-[#0a0a0a]">
                     <img
+                      key={data.avatarUrl}
                       alt={data.name}
                       className="h-full w-full rounded-full object-cover"
                       src={data.avatarUrl || getUserAvatarUrl(null, data.email)}

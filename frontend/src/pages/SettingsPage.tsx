@@ -16,6 +16,7 @@ import { useBilling } from "@/hooks/useBilling";
 import { TeamPage } from "@/pages/TeamPage";
 import AvatarPicker from "@/components/settings/AvatarPicker";
 import { defaultAvatarSeed, dicebearUrl } from "@/lib/avatar";
+import { notifyProfileUpdated } from "@/lib/profileSync";
 import { cn } from "@/lib/utils";
 
 type Channels = { whatsapp_enabled: boolean; whatsapp_reason: string };
@@ -99,7 +100,7 @@ function Toggle({
 }
 
 export function SettingsPage() {
-  const { user, session } = useAuth();
+  const { user, session, refreshProfile } = useAuth();
   const [searchParams] = useSearchParams();
   const [tab, setTab] = useState<TabId>("profile");
   const [displayName, setDisplayName] = useState(user?.displayName || "");
@@ -136,10 +137,11 @@ export function SettingsPage() {
     apiFetch<Channels>("/account/channels").then(setChannels).catch(() => null);
     supabase
       .from("profiles")
-      .select("preferences, phone_number, tenant_id")
+      .select("preferences, phone_number, tenant_id, display_name")
       .eq("id", user!.id)
       .single()
       .then(({ data }) => {
+        if (data?.display_name) setDisplayName(data.display_name);
         if (data?.preferences) {
           setPrefs({ ...DEFAULT_PREFS, ...data.preferences });
           const prefs = data.preferences as { avatar_seed?: string };
@@ -188,6 +190,11 @@ export function SettingsPage() {
           avatar_seed: avatarSeed,
         }),
       });
+      notifyProfileUpdated({
+        displayName: displayName.trim(),
+        avatarSeed,
+      });
+      await refreshProfile();
       setSaved(true);
       setTimeout(() => setSaved(false), 3000);
     } catch (err: unknown) {

@@ -67,6 +67,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         email: data.email,
         tenantId: data.tenant_id ?? null,
         role: data.role,
+        displayName: data.display_name ?? undefined,
         impersonatingTenantId: data.impersonating_tenant_id ?? null,
         impersonatingTenantName: data.impersonating_tenant_name ?? null,
         impersonationSessionId: data.impersonation_session_id ?? null,
