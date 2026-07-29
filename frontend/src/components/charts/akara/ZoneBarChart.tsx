@@ -12,21 +12,30 @@ interface Props {
   loading?: boolean;
   horizontal?: boolean;
   className?: string;
+  aspectRatio?: string | null;
 }
 
-export function ZoneBarChart({ data, loading, horizontal = true, className }: Props) {
+export function ZoneBarChart({
+  data,
+  loading,
+  horizontal = false,
+  className,
+  aspectRatio,
+}: Props) {
   const rows =
     data.length > 0 && "zone" in data[0]
       ? toZoneBarSeries(data as ZoneBreakdown[])
       : (data as BarRow[]);
 
   const chartData = rows.map((r) => ({ name: r.name, value: r.value }));
+  const resolvedAspect =
+    aspectRatio === null ? undefined : (aspectRatio ?? chartAspect.standard);
 
   if (loading && chartData.length === 0) {
     return (
       <BarChartLoading
         className={className}
-        aspectRatio={chartAspect.standard}
+        aspectRatio={resolvedAspect}
         margin={horizontal ? chartMargins.barHorizontal : chartMargins.bar}
       />
     );
@@ -46,12 +55,12 @@ export function ZoneBarChart({ data, loading, horizontal = true, className }: Pr
       data={chartData}
       xDataKey="name"
       orientation={horizontal ? "horizontal" : "vertical"}
-      aspectRatio={chartAspect.standard}
+      aspectRatio={resolvedAspect}
       margin={horizontal ? chartMargins.barHorizontal : chartMargins.bar}
       status={loading ? "loading" : "ready"}
     >
       <Grid horizontal={!horizontal} vertical={horizontal} stroke={chartColors.grid} />
-      <Bar dataKey="value" fill={chartColors.primary} />
+      <Bar dataKey="value" fill={chartColors.primary} lineCap="butt" />
       {horizontal ? <BarYAxis /> : <BarXAxis />}
     </BarChart>
   );

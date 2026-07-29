@@ -71,8 +71,8 @@ export interface BarChartProps {
   enterTransition?: Transition;
   /** Signature of motion URL state — triggers enter replay when it changes. */
   revealSignature?: string;
-  /** Aspect ratio as "width / height". Default: "2 / 1" */
-  aspectRatio?: string;
+  /** Aspect ratio as "width / height". Omit or pass undefined to fill parent height. Default: "2 / 1" */
+  aspectRatio?: string | null;
   /** Additional class name for the container */
   className?: string;
   /** Gap between bar groups as a fraction of band width (0-1). Default: 0.2 */
@@ -677,7 +677,7 @@ export function BarChart({
   animationEasing = DEFAULT_ANIMATION_EASING,
   enterTransition,
   revealSignature,
-  aspectRatio = "2 / 1",
+  aspectRatio,
   className = "",
   barGap = 0.2,
   barWidth,
@@ -696,7 +696,9 @@ export function BarChart({
     <div
       className={cn("relative w-full overflow-visible", className)}
       ref={containerRef}
-      style={{ aspectRatio }}
+      style={{
+        ...(aspectRatio ? { aspectRatio } : { height: "100%" }),
+      }}
     >
       <ParentSize debounceTime={10}>
         {({ width, height }) => (

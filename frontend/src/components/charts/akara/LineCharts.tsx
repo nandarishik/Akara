@@ -32,9 +32,10 @@ interface PnLProps {
   points: ProfitLossPoint[];
   loading?: boolean;
   className?: string;
+  aspectRatio?: string | null;
 }
 
-export function WowProfitLossChart({ points, loading, className }: PnLProps) {
+export function WowProfitLossChart({ points, loading, className, aspectRatio }: PnLProps) {
   if (!loading && points.length === 0) {
     return (
       <div className="flex h-full items-center justify-center text-sm text-text-muted">
@@ -47,7 +48,7 @@ export function WowProfitLossChart({ points, loading, className }: PnLProps) {
     <LineChart
       className={className}
       data={(points.length ? points : [{ date: new Date(), pnl: 0 }]) as unknown as Record<string, unknown>[]}
-      aspectRatio={chartAspect.wide}
+      aspectRatio={aspectRatio === null ? undefined : (aspectRatio ?? chartAspect.wide)}
       margin={chartMargins.line}
       status={loading ? "loading" : "ready"}
       loadingLabel={loading ? CHART_LOADING_LABEL : undefined}
@@ -81,16 +82,19 @@ export function WeekdayPnLChart({
   pulse,
   loading,
   className,
+  aspectRatio,
 }: {
   pulse: { day: string; revenue: number; trailing_avg: number }[];
   loading?: boolean;
   className?: string;
+  aspectRatio?: string | null;
 }) {
   return (
     <WowProfitLossChart
       points={toWeekdayProfitLoss(pulse)}
       loading={loading}
       className={className}
+      aspectRatio={aspectRatio}
     />
   );
 }
@@ -100,17 +104,20 @@ export function ScenarioPnLChart({
   projectedDaily,
   loading,
   className,
+  aspectRatio,
 }: {
   baselineDaily: number;
   projectedDaily: number;
   loading?: boolean;
   className?: string;
+  aspectRatio?: string | null;
 }) {
   return (
     <WowProfitLossChart
       points={toSimulatorProfitLoss(baselineDaily, projectedDaily)}
       loading={loading}
       className={className}
+      aspectRatio={aspectRatio}
     />
   );
 }
@@ -121,6 +128,7 @@ interface ProjectionProps {
   seriesKey?: string;
   loading?: boolean;
   className?: string;
+  aspectRatio?: string | null;
 }
 
 export function MomentumProjectionChart({
@@ -129,6 +137,7 @@ export function MomentumProjectionChart({
   seriesKey = "revenue",
   loading,
   className,
+  aspectRatio,
 }: ProjectionProps) {
   const chartData = actual.map((p) => ({ date: p.date, [seriesKey]: p.revenue }));
   const projectionPath = buildProjectionPath({
@@ -147,6 +156,7 @@ export function MomentumProjectionChart({
       projectionPath={projectionPath}
       loading={loading}
       className={className}
+      aspectRatio={aspectRatio}
     />
   );
 }
@@ -157,12 +167,14 @@ export function ScenarioProjectionChart({
   dataDays,
   loading,
   className,
+  aspectRatio,
 }: {
   dailyAvg: number;
   projectedTotal: number;
   dataDays: number;
   loading?: boolean;
   className?: string;
+  aspectRatio?: string | null;
 }) {
   const { actual, projectionPath } = toSimulatorProjectionSeries(
     dailyAvg,
@@ -177,6 +189,7 @@ export function ScenarioProjectionChart({
       projectionPath={projectionPath}
       loading={loading}
       className={className}
+      aspectRatio={aspectRatio}
     />
   );
 }
@@ -187,12 +200,14 @@ export function DebriefMomentumProjectionChart({
   projectedMonth,
   loading,
   className,
+  aspectRatio,
 }: {
   priorRevenue: number;
   thisRevenue: number;
   projectedMonth: number;
   loading?: boolean;
   className?: string;
+  aspectRatio?: string | null;
 }) {
   const { actual, projectionPath } = toMomentumProjectionSeries(
     priorRevenue,
@@ -207,6 +222,7 @@ export function DebriefMomentumProjectionChart({
       projectionPath={projectionPath}
       loading={loading}
       className={className}
+      aspectRatio={aspectRatio}
     />
   );
 }
@@ -217,12 +233,14 @@ function ProjectionChartInner({
   projectionPath,
   loading,
   className,
+  aspectRatio,
 }: {
   chartData: Record<string, unknown>[];
   seriesKey: string;
   projectionPath: ReturnType<typeof buildProjectionPath>;
   loading?: boolean;
   className?: string;
+  aspectRatio?: string | null;
 }) {
   if (!loading && chartData.length === 0) {
     return (
@@ -236,7 +254,7 @@ function ProjectionChartInner({
     <LineChart
       className={className}
       data={chartData}
-      aspectRatio={chartAspect.wide}
+      aspectRatio={aspectRatio === null ? undefined : (aspectRatio ?? chartAspect.wide)}
       margin={chartMargins.line}
       status={loading ? "loading" : "ready"}
       loadingLabel={loading ? CHART_LOADING_LABEL : undefined}

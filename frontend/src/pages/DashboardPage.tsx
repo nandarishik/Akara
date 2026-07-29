@@ -251,7 +251,9 @@ export function DashboardPage() {
           {isLoading ? (
             <div className="h-48 skeleton rounded-lg" />
           ) : (data?.zone_breakdown?.length || 0) > 0 ? (
-            <ZoneChart data={data?.zone_breakdown || []} loading={isLoading} />
+            <div className="min-h-[192px]">
+              <ZoneChart data={data?.zone_breakdown || []} loading={isLoading} />
+            </div>
           ) : (
             <div className="flex items-center justify-center h-48 text-text-muted text-sm">No data</div>
           )}
@@ -263,8 +265,9 @@ export function DashboardPage() {
           <BarChart3 className="h-4 w-4 text-accent" />
           <h2 className="text-h2">Product × Zone Activity</h2>
         </div>
-        <div className="h-[280px]">
+        <div className="flex h-[280px] flex-col">
           <SalesHeatmapChart
+            className="h-full min-h-0 flex-1"
             rows={(heatmapData?.cells ?? []).map((c) => ({
               zone: c.zone,
               product_name: c.product_name,

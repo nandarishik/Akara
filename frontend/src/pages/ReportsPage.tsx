@@ -167,7 +167,7 @@ export function ReportsPage() {
               </span>
             </h3>
             <div className="h-[280px] mb-4">
-              <RouteBarChart routes={routeRows} />
+              <RouteBarChart routes={routeRows} aspectRatio={null} className="h-full w-full" />
             </div>
             {hasRealZones && kpiData?.zone_breakdown ? (
               <div className="h-[320px] border-t border-surface-border pt-4">

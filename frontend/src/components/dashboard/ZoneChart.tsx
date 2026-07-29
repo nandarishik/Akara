@@ -8,7 +8,15 @@ interface Props {
 
 /** @deprecated Use ZoneBarChart directly */
 export function ZoneChart({ data, loading }: Props) {
-  return <ZoneBarChart data={data} loading={loading} />;
+  return (
+    <ZoneBarChart
+      data={data}
+      loading={loading}
+      horizontal={false}
+      className="h-full min-h-[192px]"
+      aspectRatio={null}
+    />
+  );
 }
 
 export { ZoneBarChart };

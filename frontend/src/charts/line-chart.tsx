@@ -39,8 +39,8 @@ export interface LineChartProps {
   animationEasing?: string;
   enterTransition?: Transition;
   revealSignature?: string;
-  /** Aspect ratio as "width / height". Default: "2 / 1". Omit to fill a sized parent. */
-  aspectRatio?: string;
+  /** Aspect ratio as "width / height". Omit to fill a sized parent. */
+  aspectRatio?: string | null;
   /** Additional class name for the container */
   className?: string;
   /** Loading vs ready — drives chart phase and loading chrome. Default: `"ready"`. */
@@ -218,7 +218,7 @@ export function LineChart({
   animationEasing,
   enterTransition,
   revealSignature,
-  aspectRatio = "2 / 1",
+  aspectRatio,
   className = "",
   status = DEFAULT_CHART_STATUS,
   loadingLabel,
@@ -257,7 +257,7 @@ export function LineChart({
       className={cn("relative w-full", className)}
       ref={containerRef}
       style={{
-        ...(aspectRatio ? { aspectRatio } : undefined),
+        ...(aspectRatio ? { aspectRatio } : { height: "100%" }),
         touchAction: "none",
         ...style,
       }}

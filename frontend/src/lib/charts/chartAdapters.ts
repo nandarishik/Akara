@@ -186,10 +186,14 @@ export function toSimulatorProfitLoss(
   days = 14,
 ): ProfitLossPoint[] {
   const start = new Date();
-  return Array.from({ length: days }, (_, i) => ({
-    date: new Date(start.getFullYear(), start.getMonth(), start.getDate() + i),
-    pnl: projectedDaily - baselineDaily,
-  }));
+  const delta = projectedDaily - baselineDaily;
+  return Array.from({ length: days }, (_, i) => {
+    const t = days <= 1 ? 1 : i / (days - 1);
+    return {
+      date: new Date(start.getFullYear(), start.getMonth(), start.getDate() + i),
+      pnl: delta * t,
+    };
+  });
 }
 
 export function toMomentumProjectionSeries(

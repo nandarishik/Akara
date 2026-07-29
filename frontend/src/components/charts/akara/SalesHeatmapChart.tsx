@@ -25,9 +25,17 @@ interface Props {
 export function SalesHeatmapChart({ rows, columns, loading, className }: Props) {
   const data = columns ?? (rows ? toHeatmapColumns(rows) : []);
 
+  if (loading && data.length === 0) {
+    return (
+      <div className={`flex h-full min-h-[200px] items-center justify-center ${className ?? ""}`}>
+        <div className="skeleton h-full w-full rounded-lg" aria-label={CHART_LOADING_LABEL} />
+      </div>
+    );
+  }
+
   if (!loading && data.length === 0) {
     return (
-      <div className="flex h-full items-center justify-center text-sm text-text-muted">
+      <div className={`flex h-full items-center justify-center text-sm text-text-muted ${className ?? ""}`}>
         No product × zone activity yet
       </div>
     );
@@ -36,11 +44,11 @@ export function SalesHeatmapChart({ rows, columns, loading, className }: Props) 
   return (
     <HeatmapInteractionProvider>
       <HeatmapInteractionBoundary>
-        <div className={`flex w-full flex-col items-stretch gap-3 ${className ?? ""}`}>
+        <div className={`flex h-full min-h-0 w-full flex-col gap-3 ${className ?? ""}`}>
           <HeatmapChart
-            className="w-full"
-            data={data.length ? data : [{ bin: 0, bins: [{ bin: 0, count: 0, date: new Date() }] }]}
-            layout="fluid"
+            className="h-full min-h-0 w-full flex-1"
+            data={data}
+            layout="fill"
             status={loading ? "loading" : "ready"}
             loadingLabel={loading ? CHART_LOADING_LABEL : undefined}
           >
@@ -53,6 +61,7 @@ export function SalesHeatmapChart({ rows, columns, loading, className }: Props) 
             inactiveOpacity={1}
             inactiveScale={1}
             levelStyles={HEATMAP_DEFAULT_LEVEL_STYLES}
+            className="shrink-0"
           />
         </div>
       </HeatmapInteractionBoundary>

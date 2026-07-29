@@ -50,7 +50,7 @@ export default function GlowSurfaceCard({
     >
       <div
         className={cn(
-          "relative text-white/90 [&_.text-text-primary]:text-white [&_.text-text-secondary]:text-white/70 [&_.text-text-muted]:text-white/50",
+          "relative text-white/90",
           PADDING[padding]
         )}
         {...props}

@@ -434,79 +434,82 @@ export function SimulatorPage() {
               <h2 className="text-h2">Live Projection</h2>
             </div>
 
-            <div className="h-64 flex flex-col items-center justify-center">
-              {runError && !isPending && !result ? (
-                <div className="text-center px-4">
-                  <AlertCircle className="h-10 w-10 text-red-500 mx-auto mb-3" />
-                  <p className="text-sm text-red-700 font-medium">{parseApiError(runError)}</p>
-                  <GlowCTAButton type="button" size="sm" className="mt-4" onClick={handleRunSimulation}>
-                    Try again
-                  </GlowCTAButton>
+            {runError && !isPending && !result ? (
+              <div className="text-center px-4 py-8">
+                <AlertCircle className="h-10 w-10 text-red-400 mx-auto mb-3" />
+                <p className="text-sm text-red-300 font-medium">{parseApiError(runError)}</p>
+                <GlowCTAButton type="button" size="sm" className="mt-4" onClick={handleRunSimulation}>
+                  Try again
+                </GlowCTAButton>
+              </div>
+            ) : !result && !isPending ? (
+              <div className="text-center py-12">
+                <div className="w-16 h-16 mx-auto mb-4 rounded-2xl flex items-center justify-center bg-white/10 text-accent opacity-70">
+                  <TrendingUp className="h-8 w-8" />
                 </div>
-              ) : !result && !isPending ? (
+                <p className="text-body text-sm">Adjust parameters and run simulation</p>
+              </div>
+            ) : isPending ? (
+              <div className="text-center py-12 animate-pulse">
+                <div className="w-20 h-20 mx-auto mb-4 rounded-2xl flex items-center justify-center bg-accent text-white">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white" />
+                </div>
+                <p className="text-accent font-medium animate-pulse">Running projection...</p>
+                <p className="text-body text-sm mt-1">Processing {baseline?.data_days || 30} days of data</p>
+              </div>
+            ) : (
+              <div className="w-full space-y-6">
                 <div className="text-center">
-                  <div className="w-16 h-16 mx-auto mb-4 rounded-2xl flex items-center justify-center bg-white/10 text-accent opacity-70">
-                    <TrendingUp className="h-8 w-8" />
+                  <p className="text-caption text-xs uppercase tracking-wide mb-2">
+                    Projected 30-Day Revenue
+                  </p>
+                  <div className="text-3xl font-bold mb-2">
+                    <AnimatedNumber
+                      value={result?.projected_revenue || 0}
+                      format={{ style: "currency", currency: "INR", maximumFractionDigits: 0 }}
+                    />
                   </div>
-                  <p className="text-body text-sm">Adjust parameters and run simulation</p>
-                </div>
-              ) : isPending ? (
-                <div className="text-center animate-pulse">
-                  <div className="w-20 h-20 mx-auto mb-4 rounded-2xl flex items-center justify-center bg-accent text-white">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white" />
+                  <div className={`flex items-center justify-center gap-1 text-sm font-medium ${
+                    isPositive ? "text-emerald-400" : "text-red-400"
+                  }`}>
+                    {isPositive ? <TrendingUp className="h-4 w-4" /> : <TrendingDown className="h-4 w-4" />}
+                    <span>{isPositive ? "+" : ""}{result?.revenue_delta_pct.toFixed(1)}% vs baseline</span>
                   </div>
-                  <p className="text-accent font-medium animate-pulse">Running projection...</p>
-                  <p className="text-body text-sm mt-1">Processing {baseline?.data_days || 30} days of data</p>
                 </div>
-              ) : (
-                <div className="w-full space-y-6">
-                  <div className="text-center">
-                    <p className="text-caption text-xs uppercase tracking-wide mb-2">
-                      Projected 30-Day Revenue
-                    </p>
-                    <div className="text-3xl font-bold mb-2">
-                      <AnimatedNumber
-                        value={result?.projected_revenue || 0}
-                        format={{ style: "currency", currency: "INR", maximumFractionDigits: 0 }}
+
+                {result && baseline ? (
+                  <>
+                    <div className="h-[220px]">
+                      <ScenarioProjectionChart
+                        dailyAvg={baseline.daily_avg_revenue}
+                        projectedTotal={result.projected_revenue}
+                        dataDays={baseline.data_days}
+                        aspectRatio={null}
+                        className="h-full w-full"
                       />
                     </div>
-                    <div className={`flex items-center justify-center gap-1 text-sm font-medium ${
-                      isPositive ? "text-emerald-600" : "text-red-600"
-                    }`}>
-                      {isPositive ? <TrendingUp className="h-4 w-4" /> : <TrendingDown className="h-4 w-4" />}
-                      <span>{isPositive ? "+" : ""}{result?.revenue_delta_pct.toFixed(1)}% vs baseline</span>
+                    <div className="grid gap-4 sm:grid-cols-2">
+                      <ConfidenceGauge
+                        className="h-[180px] flex items-center justify-center"
+                        score={simulatorConfidenceScore(
+                          result.baseline_revenue,
+                          result.confidence_interval_lower,
+                          result.confidence_interval_upper,
+                        )}
+                      />
+                      <div className="h-[180px]">
+                        <ScenarioPnLChart
+                          baselineDaily={baseline.daily_avg_revenue}
+                          projectedDaily={result.projected_revenue / 30}
+                          aspectRatio={null}
+                          className="h-full w-full"
+                        />
+                      </div>
                     </div>
-                  </div>
-
-                  {result && baseline ? (
-                    <>
-                      <div className="h-[220px]">
-                        <ScenarioProjectionChart
-                          dailyAvg={baseline.daily_avg_revenue}
-                          projectedTotal={result.projected_revenue}
-                          dataDays={baseline.data_days}
-                        />
-                      </div>
-                      <div className="grid gap-4 sm:grid-cols-2">
-                        <ConfidenceGauge
-                          score={simulatorConfidenceScore(
-                            result.baseline_revenue,
-                            result.confidence_interval_lower,
-                            result.confidence_interval_upper,
-                          )}
-                        />
-                        <div className="h-[180px]">
-                          <ScenarioPnLChart
-                            baselineDaily={baseline.daily_avg_revenue}
-                            projectedDaily={result.projected_revenue / 30}
-                          />
-                        </div>
-                      </div>
-                    </>
-                  ) : null}
-                </div>
-              )}
-            </div>
+                  </>
+                ) : null}
+              </div>
+            )}
           </GlowSurfaceCard>
 
           <GlowSurfaceCard padding="md">

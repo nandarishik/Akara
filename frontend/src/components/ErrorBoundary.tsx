@@ -28,7 +28,7 @@ export class ErrorBoundary extends Component<Props, State> {
   render() {
     if (this.state.hasError) {
       return (
-        <div className="flex flex-col items-center justify-center h-full min-h-[400px] p-8 bg-surface-canvas">
+        <div className="flex flex-col items-center justify-center h-full min-h-[400px] p-8 bg-[#0a0a0a]">
           <GlowSurfaceCard className="max-w-md w-full text-center">
             <p className="text-4xl mb-4" aria-hidden>
               ⚠️

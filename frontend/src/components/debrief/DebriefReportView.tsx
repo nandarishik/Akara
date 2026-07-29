@@ -238,8 +238,8 @@ function InsightCard({
       className={cn(
         "group relative rounded-xl border p-4 transition-shadow hover:shadow-md",
         variant === "positive"
-          ? "border-emerald-100 bg-gradient-to-br from-emerald-50/80 to-white"
-          : "border-red-100 bg-gradient-to-br from-red-50/60 to-white"
+          ? "border-emerald-500/20 bg-gradient-to-br from-emerald-950/50 to-[#111111]"
+          : "border-red-500/20 bg-gradient-to-br from-red-950/40 to-[#111111]"
       )}
     >
       <div className="flex gap-3">
@@ -247,8 +247,8 @@ function InsightCard({
           className={cn(
             "flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-bold",
             variant === "positive"
-              ? "bg-emerald-100 text-emerald-800"
-              : "bg-red-100 text-red-800"
+              ? "bg-emerald-500/20 text-emerald-300"
+              : "bg-red-500/20 text-red-300"
           )}
         >
           {index + 1}
@@ -260,7 +260,7 @@ function InsightCard({
               <span
                 className={cn(
                   "text-xs font-bold tabular-nums shrink-0",
-                  variant === "positive" ? "text-emerald-700" : "text-red-700"
+                  variant === "positive" ? "text-emerald-400" : "text-red-400"
                 )}
               >
                 {formatInrDisplay(impact)}
@@ -268,7 +268,7 @@ function InsightCard({
             )}
           </div>
           {impact > 0 && (
-            <div className="mt-2 h-1.5 rounded-full bg-white/90 overflow-hidden">
+            <div className="mt-2 h-1.5 rounded-full bg-white/10 overflow-hidden">
               <div
                 className={cn(
                   "h-full rounded-full transition-all duration-500",
@@ -369,7 +369,7 @@ export function DebriefReportView({
     <div className="space-y-6">
       {/* Hero */}
       <div className="relative overflow-hidden rounded-2xl border border-surface-border shadow-card">
-        <div className="absolute inset-0 bg-gradient-to-br from-accent/8 via-indigo-50/40 to-white pointer-events-none" />
+        <div className="absolute inset-0 bg-gradient-to-br from-accent/10 via-[#111111] to-[#0a0a0a] pointer-events-none" />
         <div className="absolute -top-24 -right-24 h-48 w-48 rounded-full bg-accent/10 blur-3xl pointer-events-none" />
 
         <div className="relative p-6 sm:p-8">
@@ -466,13 +466,15 @@ export function DebriefReportView({
                     priorRevenue={priorRevenue}
                     thisRevenue={thisRevenue}
                     projectedMonth={projectedMonth}
+                    aspectRatio={null}
+                    className="h-full w-full"
                   />
                 </div>
               ) : null}
               {weekdayPulse.length > 0 ? (
                 <div className="h-[220px]">
                   <h4 className="mb-2 text-xs font-semibold text-text-secondary">Daily variance</h4>
-                  <WeekdayPnLChart pulse={weekdayPulse} />
+                  <WeekdayPnLChart pulse={weekdayPulse} aspectRatio={null} className="h-full w-full" />
                 </div>
               ) : null}
             </div>
@@ -516,12 +518,12 @@ export function DebriefReportView({
           )}
 
           {weekdayPulse.length > 0 ? (
-            <GlowSurfaceCard padding="md" hover={false}>
+            <GlowSurfaceCard padding="md" hover={false} className="overflow-hidden">
               <h3 className="text-sm font-semibold text-text-primary">Daily pulse</h3>
               <p className="text-xs text-text-muted mt-1 mb-4">
                 Green = beat your usual weekday
               </p>
-              <WeekdayBarChart pulse={weekdayPulse} className="h-[200px]" />
+              <WeekdayBarChart pulse={weekdayPulse} className="h-[200px] w-full" aspectRatio={null} />
             </GlowSurfaceCard>
           ) : metrics.hasRevenueCompare ? (
             <GlowSurfaceCard padding="md" hover={false} className="flex flex-col justify-center">
@@ -598,7 +600,7 @@ export function DebriefReportView({
       {/* Narrative */}
       <div className="grid md:grid-cols-2 gap-4">
         <GlowSurfaceCard padding="md" accent="green" hover={false}>
-          <h3 className="text-sm font-semibold text-emerald-800 mb-4 flex items-center gap-2">
+          <h3 className="text-sm font-semibold text-emerald-400 mb-4 flex items-center gap-2">
             <TrendingUp className="h-4 w-4" />
             Went right
             <span className="ml-auto text-xs font-normal bg-emerald-100 text-emerald-800 rounded-full px-2 py-0.5">
@@ -619,7 +621,7 @@ export function DebriefReportView({
         </GlowSurfaceCard>
 
         <GlowSurfaceCard padding="md" accent="red" hover={false}>
-          <h3 className="text-sm font-semibold text-red-800 mb-4 flex items-center gap-2">
+          <h3 className="text-sm font-semibold text-red-400 mb-4 flex items-center gap-2">
             <TrendingDown className="h-4 w-4" />
             Went wrong
             <span className="ml-auto text-xs font-normal bg-red-100 text-red-800 rounded-full px-2 py-0.5">
@@ -653,7 +655,7 @@ export function DebriefReportView({
                 <div
                   key={i}
                   className={cn(
-                    "relative rounded-xl border border-surface-border border-l-4 bg-surface-canvas p-4",
+                    "relative rounded-xl border border-white/10 border-l-4 bg-white/5 p-4",
                     style.border
                   )}
                 >
@@ -702,8 +704,8 @@ export function DebriefReportView({
       )}
 
       {safeMeta.insights?.next_hook && (
-        <div className="rounded-xl border border-accent/25 bg-gradient-to-r from-accent-soft/60 to-indigo-50/50 px-5 py-4">
-          <p className="text-sm text-text-primary leading-relaxed font-medium">
+        <div className="rounded-xl border border-accent/25 bg-gradient-to-r from-accent/10 to-[#111111] px-5 py-4">
+          <p className="text-sm text-white/80 leading-relaxed font-medium">
             {safeMeta.insights.next_hook}
           </p>
         </div>

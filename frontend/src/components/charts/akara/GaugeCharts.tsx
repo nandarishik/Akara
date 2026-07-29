@@ -21,7 +21,7 @@ export function PlanHealthGauge({ usage, label = "Plan utilization", className }
         suffix="%"
         activeFill={chartColors.primary}
         inactiveFillOpacity={0.35}
-        minWidth={240}
+        minWidth={200}
       />
     </div>
   );
@@ -40,9 +40,9 @@ export function ConfidenceGauge({ score, className }: ConfidenceProps) {
         centerValue={score}
         defaultLabel="Confidence"
         suffix="%"
-        activeFill={chartColors.secondary}
+        activeFill={chartColors.primary}
         inactiveFillOpacity={0.35}
-        minWidth={240}
+        minWidth={200}
       />
     </div>
   );

@@ -5,7 +5,7 @@ export const CHART_LOADING_LABEL = "Loading analytics…";
 
 export const chartMargins = {
   area: { top: 16, right: 16, bottom: 32, left: 48 } satisfies Partial<Margin>,
-  bar: { top: 12, right: 16, bottom: 32, left: 48 } satisfies Partial<Margin>,
+  bar: { top: 12, right: 16, bottom: 40, left: 48 } satisfies Partial<Margin>,
   barHorizontal: { top: 8, right: 24, bottom: 8, left: 72 } satisfies Partial<Margin>,
   line: { top: 16, right: 16, bottom: 32, left: 48 } satisfies Partial<Margin>,
 } as const;

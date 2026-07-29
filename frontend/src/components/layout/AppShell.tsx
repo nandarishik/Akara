@@ -205,7 +205,7 @@ export function AppShell() {
 
         <main className="flex-1 relative overflow-auto mb-16 lg:mb-0">
           <DarkMeshBackground className="fixed inset-0 opacity-30 pointer-events-none" />
-          <ErrorBoundary>
+          <ErrorBoundary key={location.pathname}>
             <MobileNavProvider openNav={() => setSidebarOpen(true)}>
               <Outlet />
             </MobileNavProvider>
