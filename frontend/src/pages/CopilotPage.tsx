@@ -32,6 +32,13 @@ import { MobileHistoryDrawer } from "@/components/copilot/MobileHistoryDrawer";
 import { ChatMarkdown } from "@/components/copilot/ChatMarkdown";
 import { GlassIcon } from "@/components/effects/GlassIcon";
 import { useMobileNav } from "@/contexts/MobileNavContext";
+import { PromoDismissCard } from "@/components/promo/PromoDismissCard";
+import {
+  dismissSlot,
+  incrementVisitCount,
+  isSlotDismissed,
+  SLOT_KEYS,
+} from "@/lib/promoSlots";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL as string;
 
@@ -66,6 +73,7 @@ export function CopilotPage() {
     "connected" | "disconnected" | "reconnecting"
   >("connected");
   const [showHistory, setShowHistory] = useState(false);
+  const [showDemoSlot, setShowDemoSlot] = useState(false);
   const openMobileNav = useMobileNav();
   const bottomRef = useRef<HTMLDivElement>(null);
 
@@ -103,6 +111,12 @@ export function CopilotPage() {
       setConnectionStatus("connected");
     }
   }, [error]);
+
+  useEffect(() => {
+    if (isSlotDismissed(SLOT_KEYS.F)) return;
+    const views = incrementVisitCount(SLOT_KEYS.F_VIEWS);
+    if (views >= 3) setShowDemoSlot(true);
+  }, []);
 
   async function handleFeedback(messageId: string, rating: 1 | -1) {
     try {
@@ -217,6 +231,22 @@ export function CopilotPage() {
         {connectionStatus === "disconnected" && (
           <div className="mt-3 rounded-lg border border-amber-400/30 bg-amber-400/10 px-3 py-2 text-xs text-amber-200">
             AI is temporarily unavailable. Your dashboard and data still work — try again in a few minutes.
+          </div>
+        )}
+
+        {showDemoSlot && (
+          <div className="mt-3">
+            <PromoDismissCard
+              title="See Copilot in action"
+              description="Watch a 2-minute demo of revenue questions, route analysis, and debrief follow-ups."
+              ctaLabel="View demo →"
+              ctaTo="/reports"
+              accent="blue"
+              onDismiss={() => {
+                dismissSlot(SLOT_KEYS.F);
+                setShowDemoSlot(false);
+              }}
+            />
           </div>
         )}
 
@@ -435,6 +465,18 @@ export function CopilotPage() {
           )}
 
           <div className="px-4 lg:px-8 py-4 pb-[max(1rem,env(safe-area-inset-bottom))] border-t border-white/10 bg-[#0a0a0a]/90 shrink-0">
+            {quotaLevel === "blocked" && !isSlotDismissed(SLOT_KEYS.L) && (
+              <div className="max-w-3xl mx-auto mb-3">
+                <PromoDismissCard
+                  title="Monthly Copilot quota reached"
+                  description="Upgrade to Pro for 500 questions/month and unlock scheme leakage reports."
+                  ctaLabel="Upgrade plan →"
+                  ctaTo="/upgrade"
+                  accent="amber"
+                  onDismiss={() => dismissSlot(SLOT_KEYS.L)}
+                />
+              </div>
+            )}
             <div className="max-w-3xl mx-auto flex gap-3 items-end">
               <CopilotStrandsLoader variant="companion" active={isStreaming} />
               <Textarea

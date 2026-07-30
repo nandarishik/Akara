@@ -1,10 +1,12 @@
+import hashlib
 from datetime import UTC, datetime
 from uuid import UUID
 
 from fastapi import APIRouter, HTTPException, Request, status
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from app.core.auth import CurrentUser
+from app.core.config import settings
 from app.core.rate_limit import limiter
 from app.core.tenant import get_supabase_service_client
 
@@ -110,3 +112,76 @@ async def me(request: Request, user: CurrentUser) -> MeResponse:
         impersonating_tenant_name=imp_name,
         impersonation_session_id=imp_sid,
     )
+
+
+class ConsentStatusResponse(BaseModel):
+    terms_version: str
+    privacy_version: str
+    accepted_terms: str | None = None
+    accepted_privacy: str | None = None
+    ai_processing: bool = False
+    reaccept_required: bool = False
+
+
+class ConsentAcceptRequest(BaseModel):
+    terms: bool = Field(..., description="User accepts current Terms of Service")
+    privacy: bool = Field(..., description="User accepts current Privacy Policy")
+    ai_processing: bool = Field(..., description="User consents to AI processing of sales data")
+
+
+@router.get("/consent-status", response_model=ConsentStatusResponse)
+@limiter.limit("30/minute")
+async def consent_status(request: Request, user: CurrentUser) -> ConsentStatusResponse:
+    """Return whether the user must re-accept updated legal documents."""
+    client = get_supabase_service_client()
+    latest = (
+        client.table("consent_log")
+        .select("version_tos, version_privacy, ai_processing")
+        .eq("user_id", str(user.user_id))
+        .order("created_at", desc=True)
+        .limit(1)
+        .execute()
+    )
+    row = (latest.data or [{}])[0] if latest.data else {}
+    accepted_terms = row.get("version_tos")
+    accepted_privacy = row.get("version_privacy")
+    ai_ok = bool(row.get("ai_processing"))
+    reaccept = (
+        accepted_terms != settings.terms_version
+        or accepted_privacy != settings.privacy_version
+        or not ai_ok
+    )
+    return ConsentStatusResponse(
+        terms_version=settings.terms_version,
+        privacy_version=settings.privacy_version,
+        accepted_terms=accepted_terms,
+        accepted_privacy=accepted_privacy,
+        ai_processing=ai_ok,
+        reaccept_required=reaccept,
+    )
+
+
+@router.post("/consent-accept", status_code=status.HTTP_204_NO_CONTENT)
+@limiter.limit("10/minute")
+async def consent_accept(
+    request: Request,
+    body: ConsentAcceptRequest,
+    user: CurrentUser,
+) -> None:
+    if not (body.terms and body.privacy and body.ai_processing):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="All consent checkboxes must be accepted",
+        )
+    client = get_supabase_service_client()
+    ip = request.client.host if request.client else "unknown"
+    ip_hash = hashlib.sha256(ip.encode()).hexdigest()
+    client.table("consent_log").insert(
+        {
+            "user_id": str(user.user_id),
+            "version_tos": settings.terms_version,
+            "version_privacy": settings.privacy_version,
+            "ai_processing": True,
+            "ip_hash": ip_hash,
+        }
+    ).execute()

@@ -1,10 +1,11 @@
 from datetime import UTC, datetime
 from uuid import UUID
 
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, HTTPException, Request, status
 from pydantic import BaseModel
 
 from app.core.auth import CurrentUser
+from app.core.rate_limit import limiter
 from app.core.tenant import TenantCtx, get_supabase_service_client
 
 router = APIRouter(prefix="/copilot/conversations", tags=["copilot"])
@@ -34,7 +35,9 @@ class MessageOut(BaseModel):
 
 
 @router.get("/", response_model=list[ConversationOut])
+@limiter.limit("30/minute")
 def list_conversations(
+    request: Request,
     user: CurrentUser,
     tenant: TenantCtx,
 ) -> list[ConversationOut]:
@@ -71,7 +74,9 @@ def list_conversations(
 
 
 @router.post("/", response_model=ConversationOut, status_code=status.HTTP_201_CREATED)
+@limiter.limit("10/minute")
 def create_conversation(
+    request: Request,
     body: ConversationCreate,
     user: CurrentUser,
     tenant: TenantCtx,
@@ -92,7 +97,9 @@ def create_conversation(
 
 
 @router.get("/{conversation_id}/messages", response_model=list[MessageOut])
+@limiter.limit("30/minute")
 def get_conversation_messages(
+    request: Request,
     conversation_id: UUID,
     user: CurrentUser,
     tenant: TenantCtx,
@@ -140,7 +147,9 @@ def get_conversation_messages(
 
 
 @router.patch("/{conversation_id}", response_model=ConversationOut)
+@limiter.limit("10/minute")
 def update_conversation(
+    request: Request,
     conversation_id: UUID,
     body: ConversationUpdate,
     user: CurrentUser,
@@ -166,7 +175,9 @@ def update_conversation(
 
 
 @router.delete("/{conversation_id}", status_code=status.HTTP_204_NO_CONTENT)
+@limiter.limit("10/minute")
 def delete_conversation(
+    request: Request,
     conversation_id: UUID,
     user: CurrentUser,
     tenant: TenantCtx,

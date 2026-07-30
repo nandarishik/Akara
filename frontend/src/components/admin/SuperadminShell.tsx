@@ -5,7 +5,7 @@ import { NotFoundPage } from "@/pages/NotFoundPage";
 import { SudoGate } from "@/components/admin/SudoGate";
 import { CommandPalette } from "@/components/admin/CommandPalette";
 import { useAuth } from "@/contexts/AuthContext";
-import { checkSuperadminAccess } from "@/lib/api/superadmin";
+import { checkSuperadminAccess, sa, type AtRiskResponse, type RevenueSummary } from "@/lib/api/superadmin";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import {
@@ -13,15 +13,14 @@ import {
   Users,
   Wallet,
   LineChart,
-  Database,
-  Shield,
-  Bot,
-  LogOut,
-  Coins,
   Mail,
-  Cog,
+  LogOut,
   ClipboardList,
   Wrench,
+  LayoutDashboard,
+  Activity,
+  Clock,
+  Bot,
 } from "lucide-react";
 import { GlassIcon } from "@/components/effects/GlassIcon";
 import DarkMeshBackground from "@/components/effects/DarkMeshBackground";
@@ -36,39 +35,41 @@ export type NavItem = {
 
 const NAV_GROUPS: { label: string; items: NavItem[] }[] = [
   {
+    label: "Home",
+    items: [{ href: "/superadmin/overview", label: "Overview", icon: LayoutDashboard, color: "blue" }],
+  },
+  {
     label: "Customers",
     items: [
       { href: "/superadmin/tenants", label: "Tenants", icon: Building2, color: "blue" },
       { href: "/superadmin/users", label: "Users", icon: Users, color: "purple" },
+      { href: "/superadmin/usage", label: "Usage", icon: Activity, color: "green" },
     ],
   },
   {
     label: "Commercial",
     items: [
+      { href: "/superadmin/revenue", label: "Revenue", icon: LineChart, color: "green" },
       { href: "/superadmin/billing", label: "Billing", icon: Wallet, color: "green" },
-      { href: "/superadmin/costs", label: "Costs", icon: Coins, color: "orange" },
-      { href: "/superadmin/analytics", label: "Analytics", icon: LineChart, color: "green" },
     ],
   },
   {
     label: "Operations",
     items: [
-      { href: "/superadmin/data", label: "Data", icon: Database, color: "indigo" },
-      { href: "/superadmin/security", label: "Security", icon: Shield, color: "red" },
-      { href: "/superadmin/ops", label: "Ops / Jobs", icon: Cog, color: "blue" },
       { href: "/superadmin/comms", label: "Comms", icon: Mail, color: "orange" },
+      { href: "/superadmin/cron", label: "Cron", icon: Clock, color: "blue" },
     ],
   },
   {
     label: "Governance",
     items: [
       { href: "/superadmin/audit", label: "Audit Log", icon: ClipboardList, color: "red" },
-      { href: "/superadmin/settings", label: "Settings", icon: Wrench, color: "indigo" },
+      { href: "/superadmin/settings", label: "System", icon: Wrench, color: "indigo" },
     ],
   },
   {
     label: "Product",
-    items: [{ href: "/superadmin/ai", label: "AI / LLM", icon: Bot, color: "purple" }],
+    items: [{ href: "/superadmin/ai", label: "AI Briefing", icon: Bot, color: "purple" }],
   },
 ];
 
@@ -78,6 +79,7 @@ export function SuperadminShell() {
   const { session, user, loading, signOut } = useAuth();
   const location = useLocation();
   const [allowed, setAllowed] = useState<boolean | null>(null);
+  const [attentionCount, setAttentionCount] = useState(0);
 
   useEffect(() => {
     if (!session) return;
@@ -85,6 +87,37 @@ export function SuperadminShell() {
       .then(setAllowed)
       .catch(() => setAllowed(false));
   }, [session]);
+
+  useEffect(() => {
+    if (!session || allowed !== true) return;
+    void Promise.all([
+      sa.revenue(),
+      sa.cronHealth(),
+      sa.atRiskTenants(),
+      sa.tenants({ limit: 200 }),
+    ])
+      .then(
+        ([revenue, cron, atRisk, tenants]: [
+          RevenueSummary,
+          { tasks: Array<{ status: string | null }> },
+          AtRiskResponse,
+          { items: Array<{ copilot_limit: number; copilot_calls_this_month: number }> },
+        ]) => {
+          let count = 0;
+          if ((cron.tasks || []).some((t) => t.status === "failed")) count++;
+          if (revenue.churned_this_month > 0) count += revenue.churned_this_month;
+          count +=
+            atRisk.past_due.length + atRisk.no_import_14d.length + atRisk.no_login_14d.length;
+          const highQuota = tenants.items.filter((t) => {
+            if (t.copilot_limit <= 0 || t.copilot_limit === -1) return false;
+            return (t.copilot_calls_this_month / t.copilot_limit) * 100 >= 80;
+          }).length;
+          count += highQuota;
+          setAttentionCount(count);
+        },
+      )
+      .catch(() => setAttentionCount(0));
+  }, [session, allowed]);
 
   if (loading || (session && allowed === null)) {
     return (
@@ -161,6 +194,15 @@ export function SuperadminShell() {
             <h1 className="text-sm font-semibold text-sa-text">{activeItem.label}</h1>
           </div>
           <div className="flex items-center gap-4">
+            {attentionCount > 0 && (
+              <Link
+                to="/superadmin/overview"
+                className="flex items-center gap-1.5 text-xs text-amber-400 hover:text-amber-300"
+              >
+                <span className="h-2 w-2 rounded-full bg-amber-400" aria-hidden />
+                {attentionCount} needs attention
+              </Link>
+            )}
             <span className="hidden text-xs text-sa-muted sm:inline">⌘K command palette</span>
             <span className="truncate text-sm text-sa-muted">{user?.email ?? session.user.email}</span>
           </div>

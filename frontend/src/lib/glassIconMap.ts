@@ -52,13 +52,12 @@ export const SUPERADMIN_NAV_GLASS: Record<
   "/superadmin/users": { color: "purple", icon: Users, label: "Users" },
   "/superadmin/billing": { color: "green", icon: Wallet, label: "Billing" },
   "/superadmin/comms": { color: "orange", icon: Radio, label: "Comms" },
-  "/superadmin/data": { color: "indigo", icon: Database, label: "Data" },
-  "/superadmin/analytics": { color: "green", icon: LineChart, label: "Analytics" },
+  "/superadmin/usage": { color: "indigo", icon: Database, label: "Usage" },
+  "/superadmin/revenue": { color: "green", icon: LineChart, label: "Revenue" },
+  "/superadmin/overview": { color: "blue", icon: Sparkles, label: "Overview" },
   "/superadmin/ai": { color: "purple", icon: Bot, label: "AI" },
   "/superadmin/audit": { color: "red", icon: FileSearch, label: "Audit" },
-  "/superadmin/security": { color: "red", icon: Shield, label: "Security" },
   "/superadmin/settings": { color: "indigo", icon: Settings, label: "Settings" },
-  "/superadmin/ops": { color: "blue", icon: Sparkles, label: "Ops" },
   "/superadmin": { color: "purple", icon: Shield, label: "Overview" },
 };
 

@@ -1,6 +1,13 @@
+import { PageSEO } from "@/components/seo/PageSEO";
+
 export function PrivacyPage() {
   return (
     <div className="theme-product-dark min-h-screen bg-[#0a0a0a]">
+      <PageSEO
+        title="Privacy Policy"
+        description="How AKARA collects, uses, and protects your sales data and account information under DPDP Act 2023."
+        path="/privacy"
+      />
       <div className="max-w-3xl mx-auto px-6 py-16 prose prose-invert prose-headings:text-white prose-p:text-white/80 prose-li:text-white/80 prose-th:text-white prose-td:text-white/80 prose-a:text-[#03B3C3] hover:prose-a:text-[#38bdf8]">
         <h1 className="text-3xl font-bold text-white">Privacy Policy</h1>
         <p className="text-white/50">Last updated: July 2026 · Version 1.0</p>
@@ -11,6 +18,18 @@ export function PrivacyPage() {
           usage analytics, and billing details when you subscribe. We use cookies for
           session management and product analytics.
         </p>
+
+        <h2 id="cookies">Cookies &amp; Tracking</h2>
+        <p>
+          We use essential cookies for authentication sessions (Supabase Auth), security
+          (Cloudflare Turnstile on signup), and optional product analytics (PostHog when
+          enabled). You can dismiss analytics cookies via the cookie banner on first visit.
+        </p>
+        <ul>
+          <li><strong>Session cookies</strong> — keep you signed in; required for the product.</li>
+          <li><strong>Turnstile</strong> — bot prevention on signup; no advertising use.</li>
+          <li><strong>PostHog</strong> — anonymous usage analytics when you accept cookies.</li>
+        </ul>
 
         <h2 id="ai-processing">AI Processing</h2>
         <p>

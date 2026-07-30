@@ -8,6 +8,7 @@ from sendgrid import SendGridAPIClient
 from sendgrid.helpers.mail import Attachment, Mail
 
 from app.core.config import settings
+from app.services.email.renderer import render_template
 
 logger = logging.getLogger(__name__)
 
@@ -77,12 +78,11 @@ def send_payment_success_email(
     plan: str,
     pdf_bytes: bytes | None = None,
 ) -> bool:
-    html = f"""
-    <p>Thank you for upgrading to AKARA {plan.capitalize()}.</p>
-    <p>Your GST invoice <strong>{invoice_number}</strong> is attached.</p>
-    <p>Manage your subscription anytime from Billing in the app.</p>
-    <p>— AKARA Team</p>
-    """
+    html = render_template(
+        "payment_success.html",
+        plan=plan.capitalize(),
+        invoice_number=invoice_number,
+    )
     return _send(
         to_email,
         f"AKARA — Invoice {invoice_number}",
@@ -93,11 +93,10 @@ def send_payment_success_email(
 
 
 def send_payment_failed_email(to_email: str) -> bool:
-    html = """
-    <p><strong>Payment failed</strong> for your AKARA subscription.</p>
-    <p>Please update your payment method to avoid losing access.</p>
-    <p><a href="{url}/billing">Update payment method →</a></p>
-    """.format(url=settings.customer_frontend_url.rstrip("/"))
+    html = render_template(
+        "payment_failed.html",
+        billing_url=f"{settings.customer_frontend_url.rstrip('/')}/billing",
+    )
     return _send(to_email, "AKARA — Payment failed", html)
 
 
@@ -108,8 +107,31 @@ def send_dunning_reminder_email(to_email: str, day_offset: int) -> bool:
         14: "Your AKARA plan has been downgraded to Free. Your data is preserved.",
     }
     body = messages.get(day_offset, "Action needed on your AKARA subscription.")
-    html = f"<p>{body}</p><p><a href=\"{settings.customer_frontend_url.rstrip('/')}/billing\">Go to Billing →</a></p>"
+    html = render_template(
+        "dunning_reminder.html",
+        body=body,
+        billing_url=f"{settings.customer_frontend_url.rstrip('/')}/billing",
+    )
     return _send(to_email, f"AKARA — Subscription notice (day {day_offset})", html)
+
+
+def send_quota_warning_email(to_email: str, plan: str, pct: int) -> bool:
+    html = render_template(
+        "quota_warning.html",
+        plan=plan.capitalize(),
+        pct=pct,
+        upgrade_url=f"{settings.customer_frontend_url.rstrip('/')}/upgrade",
+    )
+    return _send(to_email, f"AKARA — {pct}% of Copilot quota used", html)
+
+
+def send_welcome_email(to_email: str, name: str) -> bool:
+    html = render_template(
+        "welcome.html",
+        name=name or "there",
+        dashboard_url=f"{settings.customer_frontend_url.rstrip('/')}/dashboard",
+    )
+    return _send(to_email, "Welcome to AKARA", html)
 
 
 def send_downgrade_email(to_email: str) -> bool:

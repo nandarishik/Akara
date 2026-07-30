@@ -14,6 +14,7 @@ from app.core.config import settings
 from app.core.plan_guard import (
     apply_copilot_quota_headers,
     get_copilot_quota_metadata,
+    maybe_notify_copilot_quota_threshold,
     require_copilot_quota,
     require_feature,
 )
@@ -246,12 +247,16 @@ async def chat(
                     response_parts.append(chunk)
                     yield f"data: {chunk}\n\n"
 
+                prev_count = int(quota_meta["quota_used"])
                 try:
                     supabase.rpc(
                         "increment_usage",
                         {"p_tenant_id": str(tenant.tenant_id), "p_field": "copilot_calls"},
                     ).execute()
                     usage_incremented = True
+                    maybe_notify_copilot_quota_threshold(
+                        tenant.tenant_id, prev_count, prev_count + 1
+                    )
                 except Exception as exc:
                     logger.warning("Failed to increment copilot usage (stream): %s", exc)
 
@@ -303,11 +308,15 @@ async def chat(
         latency_ms = int(time.time() * 1000) - start_ms
 
         # CRITICAL: Only increment usage after successful answer (not before)
+        prev_count = int(quota_meta["quota_used"])
         try:
             supabase.rpc(
                 "increment_usage",
                 {"p_tenant_id": str(tenant.tenant_id), "p_field": "copilot_calls"},
             ).execute()
+            maybe_notify_copilot_quota_threshold(
+                tenant.tenant_id, prev_count, prev_count + 1
+            )
         except Exception as exc:
             logger.warning("Failed to increment copilot usage: %s", exc)
 
@@ -415,8 +424,10 @@ class FeedbackResponse(BaseModel):
 
 
 @router.post("/feedback", response_model=FeedbackResponse)
+@limiter.limit("30/minute")
 async def submit_feedback(
-    request: FeedbackRequest,
+    request: Request,
+    body: FeedbackRequest,
     user: CurrentUser,
     tenant: TenantCtx,
 ) -> FeedbackResponse:
@@ -428,7 +439,7 @@ async def submit_feedback(
     """
 
     # Validate rating
-    if request.rating not in [-1, 1]:
+    if body.rating not in [-1, 1]:
         raise HTTPException(
             status_code=400,
             detail="Rating must be 1 (thumbs up) or -1 (thumbs down)"
@@ -439,31 +450,31 @@ async def submit_feedback(
     try:
         # Insert feedback record
         feedback_result = supabase.table("copilot_feedback").insert({
-            "conversation_id": str(request.conversation_id) if request.conversation_id else None,
-            "message_id": request.message_id,
+            "conversation_id": str(body.conversation_id) if body.conversation_id else None,
+            "message_id": body.message_id,
             "tenant_id": str(tenant.tenant_id),
             "user_id": str(user.user_id),
-            "rating": request.rating,
-            "comment": request.comment,
-            "question": request.question or "",
+            "rating": body.rating,
+            "comment": body.comment,
+            "question": body.question or "",
         }).execute()
 
         if not feedback_result.data:
             raise HTTPException(status_code=500, detail="Failed to save feedback")
 
         # Log thumbs down feedback with high priority for review
-        if request.rating == -1:
+        if body.rating == -1:
             logger.error(
                 "NEGATIVE FEEDBACK - Tenant: %s, User: %s, Message: %s, Question: %s, Comment: %s",
                 tenant.tenant_id,
                 user.user_id,
-                request.message_id,
-                request.question or "Unknown",
-                request.comment or "No comment",
+                body.message_id,
+                body.question or "Unknown",
+                body.comment or "No comment",
                 extra={
                     "tenant_id": str(tenant.tenant_id),
                     "user_id": str(user.user_id),
-                    "message_id": str(request.message_id),
+                    "message_id": str(body.message_id),
                     "feedback_type": "thumbs_down",
                     "priority": "high"
                 }
@@ -473,7 +484,7 @@ async def submit_feedback(
             logger.info(
                 "POSITIVE FEEDBACK - Tenant: %s, Message: %s",
                 tenant.tenant_id,
-                request.message_id
+                body.message_id
             )
             message = "Thank you for your positive feedback!"
 

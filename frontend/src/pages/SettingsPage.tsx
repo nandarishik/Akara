@@ -18,6 +18,7 @@ import AvatarPicker from "@/components/settings/AvatarPicker";
 import { defaultAvatarSeed, dicebearUrl } from "@/lib/avatar";
 import { notifyProfileUpdated } from "@/lib/profileSync";
 import { cn } from "@/lib/utils";
+import { dismissSlot, isSlotDismissed, SLOT_KEYS } from "@/lib/promoSlots";
 
 type Channels = { whatsapp_enabled: boolean; whatsapp_reason: string };
 
@@ -99,6 +100,8 @@ function Toggle({
   );
 }
 
+type SessionRow = { id: string; device: string; current: boolean; last_active: string };
+
 export function SettingsPage() {
   const { user, session, refreshProfile } = useAuth();
   const [searchParams] = useSearchParams();
@@ -114,9 +117,12 @@ export function SettingsPage() {
   const [deleteEmail, setDeleteEmail] = useState("");
   const [password, setPassword] = useState("");
   const [passwordMsg, setPasswordMsg] = useState("");
+  const [sessions, setSessions] = useState<SessionRow[]>([]);
+  const [revokingOthers, setRevokingOthers] = useState(false);
   const [testEmailMsg, setTestEmailMsg] = useState("");
   const [testWhatsAppMsg, setTestWhatsAppMsg] = useState("");
   const [unsubMsg, setUnsubMsg] = useState("");
+  const [slotKDismissed, setSlotKDismissed] = useState(() => isSlotDismissed(SLOT_KEYS.K));
   const [tenantMeta, setTenantMeta] = useState<{ company?: string; industry?: string; language?: string }>({});
 
   useEffect(() => {
@@ -132,6 +138,25 @@ export function SettingsPage() {
         .catch(() => setUnsubMsg("Could not process unsubscribe."));
     }
   }, [searchParams, user]);
+
+  useEffect(() => {
+    if (tab !== "security") return;
+    apiFetch<SessionRow[]>("/account/sessions")
+      .then(setSessions)
+      .catch(() => setSessions([]));
+  }, [tab]);
+
+  async function handleRevokeOtherSessions() {
+    setRevokingOthers(true);
+    try {
+      await apiFetch("/account/sessions/revoke-others", { method: "POST" });
+      setPasswordMsg("Signed out on all other devices.");
+    } catch {
+      setPasswordMsg("Could not revoke other sessions.");
+    } finally {
+      setRevokingOthers(false);
+    }
+  }
 
   useEffect(() => {
     apiFetch<Channels>("/account/channels").then(setChannels).catch(() => null);
@@ -357,13 +382,13 @@ export function SettingsPage() {
         <GlowSurfaceCard className="space-y-2">
           <h2 className="text-base font-semibold mb-2">Notifications</h2>
           {unsubMsg && <p className="text-sm text-emerald-300 bg-emerald-400/10 rounded px-3 py-2">{unsubMsg}</p>}
-          {usage?.plan === "free" && !localStorage.getItem("akara_slot_K_dismissed") && (
+          {usage?.plan === "free" && !slotKDismissed && (
             <GlowSurfaceCard accent="amber" padding="sm" hover={false}>
               <div className="text-sm flex justify-between gap-2">
                 <span>Pro plans get WhatsApp morning briefs on your phone.</span>
                 <div className="flex gap-2 shrink-0">
                   <Link to="/upgrade" className="text-accent font-medium underline">Upgrade</Link>
-                  <button type="button" className="text-xs text-amber-300/80" onClick={() => localStorage.setItem("akara_slot_K_dismissed", "1")}>Dismiss</button>
+                  <button type="button" className="text-xs text-amber-300/80" onClick={() => { dismissSlot(SLOT_KEYS.K); setSlotKDismissed(true); }}>Dismiss</button>
                 </div>
               </div>
             </GlowSurfaceCard>
@@ -477,7 +502,30 @@ export function SettingsPage() {
       {tab === "security" && (
         <GlowSurfaceCard className="space-y-4">
           <h2 className="text-base font-semibold">Security</h2>
-          <p className="text-sm text-text-secondary">Active sessions: 1 device (current)</p>
+          <div className="space-y-2">
+            <p className="text-sm font-medium text-text-primary">Active sessions</p>
+            <ul className="divide-y divide-white/10 rounded-lg border border-white/10">
+              {sessions.map((s) => (
+                <li key={s.id} className="px-3 py-2 text-sm flex justify-between gap-2">
+                  <span className="text-text-secondary truncate">{s.device}</span>
+                  {s.current && (
+                    <Badge variant="outline" className="shrink-0 text-xs">Current</Badge>
+                  )}
+                </li>
+              ))}
+              {sessions.length === 0 && (
+                <li className="px-3 py-2 text-sm text-text-muted">Loading sessions…</li>
+              )}
+            </ul>
+            <AkaraButton
+              variant="secondary"
+              size="sm"
+              onClick={() => void handleRevokeOtherSessions()}
+              disabled={revokingOthers}
+            >
+              Sign out other devices
+            </AkaraButton>
+          </div>
           <div className="space-y-2">
             <Label htmlFor="password">New password</Label>
             <Input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} className="max-w-sm" />

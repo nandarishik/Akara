@@ -24,6 +24,8 @@ import {
   type SubscriptionInfo,
 } from "@/lib/api/billing";
 import { Badge } from "@/components/ui/badge";
+import { PromoDismissCard } from "@/components/promo/PromoDismissCard";
+import { dismissSlot, isSlotDismissed, SLOT_KEYS } from "@/lib/promoSlots";
 import { QuotaRingChart } from "@/components/charts/akara/QuotaRingChart";
 import { PlanHealthGauge } from "@/components/charts/akara/GaugeCharts";
 import { Input } from "@/components/ui/input";
@@ -69,6 +71,7 @@ export function BillingPage() {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
+  const [showQuotaNudge, setShowQuotaNudge] = useState(false);
 
   const sessionSuccess = params.get("session_id");
   const upgradedSuccess = params.get("upgraded") === "1";
@@ -106,6 +109,16 @@ export function BillingPage() {
       return () => clearTimeout(t);
     }
   }, [sessionSuccess, upgradedSuccess, params, setParams, refetch]);
+
+  useEffect(() => {
+    if (!usage || isSlotDismissed(SLOT_KEYS.H)) return;
+    const pct = Math.max(
+      getUsagePct(usage.copilot_calls_used, usage.copilot_calls_limit),
+      getUsagePct(usage.rows_used, usage.rows_limit),
+      getUsagePct(usage.uploads_used, usage.uploads_limit)
+    );
+    if (pct >= 80) setShowQuotaNudge(true);
+  }, [usage]);
 
   useEffect(() => {
     fetchInvoices().then(setInvoices).catch(() => {});
@@ -184,6 +197,20 @@ export function BillingPage() {
               Payment received — your plan will update shortly.
             </div>
           </GlowSurfaceCard>
+        )}
+
+        {showQuotaNudge && usage.plan === "free" && (
+          <PromoDismissCard
+            title="You're approaching your plan limits"
+            description="Upgrade to Pro for more Copilot questions, row storage, and secondary sales imports."
+            ctaLabel="View plans →"
+            ctaTo="/upgrade"
+            accent="amber"
+            onDismiss={() => {
+              dismissSlot(SLOT_KEYS.H);
+              setShowQuotaNudge(false);
+            }}
+          />
         )}
 
         <div className="relative min-h-[300px] rounded-2xl overflow-hidden">

@@ -11,6 +11,7 @@ import hashlib
 from fastapi import APIRouter, Request
 from pydantic import BaseModel
 
+from app.core.rate_limit import limiter
 from app.core.tenant import get_supabase_service_client
 
 router = APIRouter(prefix="/marketing", tags=["marketing"])
@@ -30,6 +31,7 @@ class EmailCaptureRequest(BaseModel):
     status_code=200,
     summary="Landing-page email capture (no auth required)",
 )
+@limiter.limit("5/minute")
 async def email_capture(body: EmailCaptureRequest, request: Request) -> dict:
     """Insert *email* into the ``marketing_emails`` table.
 

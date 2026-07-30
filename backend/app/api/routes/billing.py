@@ -17,6 +17,7 @@ from app.core.auth import CurrentUser
 from app.core.idempotency import IdempotencyKey
 from app.core.plan_guard import _get_current_usage
 from app.core.plan_limits import PLAN_LIMITS
+from app.core.rate_limit import limiter
 from app.core.tenant import TenantCtx, get_supabase_service_client
 from app.services.billing.checkout import (
     cancel_subscription,
@@ -115,7 +116,8 @@ class InvoiceListResponse(BaseModel):
 
 
 @router.get("/usage", response_model=UsageResponse)
-def get_usage(user: CurrentUser, tenant: TenantCtx) -> UsageResponse:
+@limiter.limit("30/minute")
+def get_usage(request: Request, user: CurrentUser, tenant: TenantCtx) -> UsageResponse:
     supa = get_supabase_service_client()
     limits = PLAN_LIMITS.get(tenant.plan, PLAN_LIMITS["free"])
 
@@ -165,7 +167,9 @@ def get_usage(user: CurrentUser, tenant: TenantCtx) -> UsageResponse:
 
 
 @router.post("/create-checkout-session", response_model=CheckoutResponse)
+@limiter.limit("10/minute")
 def create_checkout(
+    request: Request,
     body: CheckoutRequest,
     user: CurrentUser,
     tenant: TenantCtx,
@@ -198,20 +202,23 @@ def create_checkout(
 
 
 @router.get("/subscription", response_model=SubscriptionResponse)
-def get_subscription(tenant: TenantCtx) -> SubscriptionResponse:
+@limiter.limit("30/minute")
+def get_subscription(request: Request, tenant: TenantCtx) -> SubscriptionResponse:
     data = fetch_subscription_status(tenant.tenant_id)
     return SubscriptionResponse(**data)
 
 
 @router.post("/sync-subscription", response_model=SubscriptionResponse)
-def sync_subscription(tenant: TenantCtx) -> SubscriptionResponse:
+@limiter.limit("10/minute")
+def sync_subscription(request: Request, tenant: TenantCtx) -> SubscriptionResponse:
     """Pull Razorpay subscription state and apply plan upgrade if payment is active."""
     data = sync_subscription_from_razorpay(tenant.tenant_id)
     return SubscriptionResponse(**data)
 
 
 @router.post("/cancel-subscription", response_model=CancelSubscriptionResponse)
-def cancel_sub(tenant: TenantCtx) -> CancelSubscriptionResponse:
+@limiter.limit("10/minute")
+def cancel_sub(request: Request, tenant: TenantCtx) -> CancelSubscriptionResponse:
     if not tenant.is_admin:
         raise HTTPException(
             status.HTTP_403_FORBIDDEN,
@@ -238,7 +245,9 @@ async def razorpay_webhook(request: Request) -> dict[str, bool]:
 
 
 @router.patch("/details", response_model=BillingDetailsResponse)
+@limiter.limit("10/minute")
 def update_billing_details(
+    request: Request,
     body: BillingDetailsRequest,
     tenant: TenantCtx,
 ) -> BillingDetailsResponse:
@@ -271,7 +280,8 @@ def update_billing_details(
 
 
 @router.get("/details", response_model=BillingDetailsResponse)
-def get_billing_details(tenant: TenantCtx) -> BillingDetailsResponse:
+@limiter.limit("30/minute")
+def get_billing_details(request: Request, tenant: TenantCtx) -> BillingDetailsResponse:
     supa = get_supabase_service_client()
     result = (
         supa.table("tenants")
@@ -285,7 +295,8 @@ def get_billing_details(tenant: TenantCtx) -> BillingDetailsResponse:
 
 
 @router.get("/invoices", response_model=InvoiceListResponse)
-def list_invoices(tenant: TenantCtx) -> InvoiceListResponse:
+@limiter.limit("30/minute")
+def list_invoices(request: Request, tenant: TenantCtx) -> InvoiceListResponse:
     supa = get_supabase_service_client()
     result = (
         supa.table("invoices")
@@ -311,7 +322,8 @@ def list_invoices(tenant: TenantCtx) -> InvoiceListResponse:
 
 
 @router.get("/invoices/{invoice_id}/download")
-def download_invoice(invoice_id: UUID, tenant: TenantCtx) -> Response:
+@limiter.limit("10/minute")
+def download_invoice(request: Request, invoice_id: UUID, tenant: TenantCtx) -> Response:
     supa = get_supabase_service_client()
     result = (
         supa.table("invoices")

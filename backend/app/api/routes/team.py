@@ -7,7 +7,7 @@ from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 from pydantic import BaseModel, Field
 
@@ -15,6 +15,7 @@ from app.core.auth import CurrentUser
 from app.core.config import settings
 from app.core.plan_guard import require_feature
 from app.core.plan_limits import get_limit
+from app.core.rate_limit import limiter
 from app.core.tenant import TenantContext, get_supabase_service_client, get_tenant_context
 from app.services.billing.email import _send
 
@@ -133,7 +134,9 @@ def _send_invite_email(to_email: str, token: str, tenant_name: str) -> None:
 
 
 @router.post("/invite", response_model=InviteOut)
+@limiter.limit("10/minute")
 def create_invite(
+    request: Request,
     body: InviteRequest,
     user: CurrentUser,
     tenant: TenantContext = Depends(get_tenant_context),
@@ -193,7 +196,9 @@ def create_invite(
 
 
 @router.post("/invites/{invite_id}/resend")
+@limiter.limit("10/minute")
 def resend_invite(
+    request: Request,
     invite_id: UUID,
     user: CurrentUser,
     tenant: TenantContext = Depends(get_tenant_context),
@@ -232,7 +237,9 @@ def resend_invite(
 
 
 @router.delete("/invites/{invite_id}", status_code=status.HTTP_204_NO_CONTENT)
+@limiter.limit("10/minute")
 def cancel_invite(
+    request: Request,
     invite_id: UUID,
     user: CurrentUser,
     tenant: TenantContext = Depends(get_tenant_context),
@@ -252,7 +259,8 @@ def cancel_invite(
 
 
 @router.post("/accept")
-def accept_invite(body: AcceptInviteRequest, user: CurrentUser) -> dict[str, str]:
+@limiter.limit("10/minute")
+def accept_invite(request: Request, body: AcceptInviteRequest, user: CurrentUser) -> dict[str, str]:
     supa = get_supabase_service_client()
     invite = (
         supa.table("team_invites")
@@ -295,7 +303,9 @@ def accept_invite(body: AcceptInviteRequest, user: CurrentUser) -> dict[str, str
 
 
 @router.patch("/members/{member_id}/role")
+@limiter.limit("10/minute")
 def update_member_role(
+    request: Request,
     member_id: UUID,
     body: RoleUpdate,
     user: CurrentUser,
@@ -312,7 +322,9 @@ def update_member_role(
 
 
 @router.delete("/members/{member_id}", status_code=status.HTTP_204_NO_CONTENT)
+@limiter.limit("10/minute")
 def remove_member(
+    request: Request,
     member_id: UUID,
     user: CurrentUser,
     tenant: TenantContext = Depends(get_tenant_context),
@@ -340,7 +352,9 @@ def remove_member(
 
 
 @router.post("/downgrade-seat-selection")
+@limiter.limit("10/minute")
 def downgrade_seat_selection(
+    request: Request,
     body: DowngradeSeatSelection,
     user: CurrentUser,
     tenant: TenantContext = Depends(get_tenant_context),
@@ -366,7 +380,9 @@ def downgrade_seat_selection(
 
 
 @router.post("/members/{member_id}/reactivate")
+@limiter.limit("10/minute")
 def reactivate_member(
+    request: Request,
     member_id: UUID,
     user: CurrentUser,
     tenant: TenantContext = Depends(get_tenant_context),

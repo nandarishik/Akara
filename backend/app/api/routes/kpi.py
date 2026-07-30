@@ -1,8 +1,9 @@
 from datetime import date, timedelta
 
-from fastapi import APIRouter, Query
+from fastapi import APIRouter, Query, Request
 
 from app.core.auth import CurrentUser
+from app.core.rate_limit import limiter
 from app.core.tenant import TenantCtx, get_supabase_service_client
 from app.services.kpi.models import (
     DataBoundsResponse,
@@ -16,7 +17,9 @@ router = APIRouter(prefix="/kpi", tags=["kpi"])
 
 
 @router.get("/", response_model=KPIResponse)
+@limiter.limit("30/minute")
 def get_kpis(
+    request: Request,
     user: CurrentUser,
     tenant: TenantCtx,
     start_date: str = Query(
@@ -37,7 +40,8 @@ def get_kpis(
 
 
 @router.get("/data-bounds", response_model=DataBoundsResponse)
-def get_data_bounds(user: CurrentUser, tenant: TenantCtx) -> DataBoundsResponse:
+@limiter.limit("30/minute")
+def get_data_bounds(request: Request, user: CurrentUser, tenant: TenantCtx) -> DataBoundsResponse:
     """Return min/max invoice_date for the tenant's imported sales data."""
     schema = SchemaDiscovery(supabase=get_supabase_service_client())
     bounds = schema.get_data_date_range(tenant.tenant_id)
@@ -47,7 +51,9 @@ def get_data_bounds(user: CurrentUser, tenant: TenantCtx) -> DataBoundsResponse:
 
 
 @router.get("/heatmap", response_model=HeatmapResponse)
+@limiter.limit("30/minute")
 def get_heatmap(
+    request: Request,
     user: CurrentUser,
     tenant: TenantCtx,
     start_date: str = Query(

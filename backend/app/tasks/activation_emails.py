@@ -20,6 +20,7 @@ logger = logging.getLogger(__name__)
 _TEMPLATE_DIR = Path(__file__).parent.parent / "services" / "email" / "templates"
 
 STAGES = (
+    ("day0_welcome", None, "activation_day0.html", "Welcome to AKARA — let's get started", 0),
     ("day1_no_import", "first_import", "activation_day1.html", "Upload your first file to AKARA", 1),
     ("day3_no_copilot", "first_copilot", "activation_day3.html", "Ask AKARA Copilot your first question", 3),
     ("day7_no_phone", "first_debrief", "activation_day7.html", "Add your phone for WhatsApp debrief", 7),
@@ -106,6 +107,9 @@ def _should_send_stage(
     if _already_sent(supa, profile["id"], stage):
         return False
 
+    if stage == "day0_welcome":
+        return days == 0
+
     if stage == "day7_no_phone":
         if _has_event(supa, profile["id"], "first_debrief"):
             return False
@@ -136,7 +140,7 @@ def run_activation_emails() -> dict[str, int]:
 
     profiles = (
         supa.table("profiles")
-        .select("id, created_at, tenant_id, phone_number")
+        .select("id, created_at, tenant_id, phone_number, display_name")
         .not_.is_("tenant_id", "null")
         .execute()
     )
@@ -161,6 +165,8 @@ def run_activation_emails() -> dict[str, int]:
 
             try:
                 extra: dict = {"dashboard_url": frontend}
+                if stage in ("day0_welcome", "day1_no_import"):
+                    extra["name"] = profile.get("display_name") or "there"
                 if stage == "day14_upgrade_nudge":
                     tenant_id = profile.get("tenant_id")
                     extra["usage_pct"] = int(_copilot_usage_pct(supa, tenant_id or ""))

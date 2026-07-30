@@ -27,6 +27,8 @@ import { supabase } from "@/lib/supabase";
 import { toast } from "@/components/ui/toast";
 import { formatApiError } from "@/lib/formatApiError";
 import { cn } from "@/lib/utils";
+import { PromoDismissCard } from "@/components/promo/PromoDismissCard";
+import { dismissSlot, isSlotDismissed, SLOT_KEYS } from "@/lib/promoSlots";
 import {
   DataUploadPanel,
   type ImportResult,
@@ -39,7 +41,7 @@ interface ImportJob {
   source_type: string;
   file_size: number;
   estimated_rows: number;
-  status: "pending" | "processing" | "completed" | "failed";
+  status: "pending" | "queued" | "processing" | "completed" | "failed" | "cancelled";
   progress_pct: number;
   rows_inserted?: number;
   rows_skipped?: number;
@@ -167,7 +169,48 @@ async function fetchImportJobs(): Promise<ImportJob[]> {
   });
   if (!res.ok) throw new Error(`Failed to fetch jobs: ${res.status}`);
   const data_result = await res.json();
-  return data_result.jobs || [];
+  return (data_result.jobs || []).map((j: Record<string, unknown>) => ({
+    id: String(j.id),
+    filename: String(j.filename || "upload"),
+    source_type: String(j.source_type || "primary"),
+    file_size: Number(j.file_size || 0),
+    estimated_rows: Number(j.rows_inserted || 0),
+    status: (j.status === "queued" ? "pending" : j.status) as ImportJob["status"],
+    progress_pct: j.status === "processing" ? 50 : j.status === "completed" ? 100 : 0,
+    rows_inserted: j.rows_inserted as number | undefined,
+    rows_skipped: j.rows_skipped as number | undefined,
+    error_message: j.error_message as string | undefined,
+    created_at: String(j.created_at),
+    completed_at: j.completed_at as string | undefined,
+  }));
+}
+
+async function cancelImportJob(jobId: string): Promise<void> {
+  const { data } = await supabase.auth.getSession();
+  const token = data.session?.access_token;
+  if (!token) throw new Error("Not authenticated");
+  const res = await fetch(`${BASE}/data/import/jobs/${jobId}/cancel`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) {
+    const errData = await res.json().catch(() => ({}));
+    throw new Error(formatApiError(errData.detail, `Cancel failed (${res.status})`));
+  }
+}
+
+async function retryImportJob(jobId: string): Promise<void> {
+  const { data } = await supabase.auth.getSession();
+  const token = data.session?.access_token;
+  if (!token) throw new Error("Not authenticated");
+  const res = await fetch(`${BASE}/data/import/jobs/${jobId}/retry`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) {
+    const errData = await res.json().catch(() => ({}));
+    throw new Error(formatApiError(errData.detail, `Retry failed (${res.status})`));
+  }
 }
 
 async function undoImport(jobId: string): Promise<void> {
@@ -185,18 +228,20 @@ async function undoImport(jobId: string): Promise<void> {
 }
 
 function StatusBadge({ status }: { status: ImportJob["status"] }) {
+  const normalized = status === "queued" ? "pending" : status;
   const map = {
-    pending: { label: "Pending", className: "bg-amber-400/15 text-amber-300 ring-amber-400/30" },
+    pending: { label: "Queued", className: "bg-amber-400/15 text-amber-300 ring-amber-400/30" },
     processing: { label: "Processing", className: "bg-accent/15 text-accent ring-accent/30" },
     completed: { label: "Done", className: "bg-emerald-400/15 text-emerald-300 ring-emerald-400/30" },
     failed: { label: "Failed", className: "bg-red-400/15 text-red-300 ring-red-400/30" },
+    cancelled: { label: "Cancelled", className: "bg-neutral-400/15 text-neutral-300 ring-neutral-400/30" },
   } as const;
-  const s = map[status];
+  const s = map[normalized as keyof typeof map] ?? map.pending;
   return (
     <span className={cn("inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium ring-1", s.className)}>
-      {status === "processing" && <Loader2 className="h-3 w-3 animate-spin" />}
-      {status === "completed" && <CheckCircle className="h-3 w-3" />}
-      {status === "failed" && <AlertCircle className="h-3 w-3" />}
+      {normalized === "processing" && <Loader2 className="h-3 w-3 animate-spin" />}
+      {normalized === "completed" && <CheckCircle className="h-3 w-3" />}
+      {(normalized === "failed" || normalized === "cancelled") && <AlertCircle className="h-3 w-3" />}
       {s.label}
     </span>
   );
@@ -211,6 +256,8 @@ export function DataPage() {
   const [loadingJobs, setLoadingJobs] = useState(false);
   const [activeSource, setActiveSource] = useState<SourceType>("primary");
   const [undoingJobId, setUndoingJobId] = useState<string | null>(null);
+  const [actionJobId, setActionJobId] = useState<string | null>(null);
+  const [showProUpsell, setShowProUpsell] = useState(false);
   const [uploadKey, setUploadKey] = useState(0);
 
   const hasSecondary = billing?.features.secondary_sales ?? false;
@@ -238,7 +285,7 @@ export function DataPage() {
 
     loadJobs();
     const hasActive = importJobs.some(
-      (j) => j.status === "pending" || j.status === "processing"
+      (j) => j.status === "pending" || j.status === "queued" || j.status === "processing"
     );
     if (hasActive) interval = setInterval(loadJobs, 5000);
 
@@ -270,7 +317,36 @@ export function DataPage() {
       toast.success(`${r.rows_inserted} rows imported.`);
     }
     await refreshJobs();
+    if (billing?.plan === "free" && !isSlotDismissed(SLOT_KEYS.G)) {
+      setShowProUpsell(true);
+    }
     return r;
+  }
+
+  async function handleCancelImport(jobId: string) {
+    setActionJobId(jobId);
+    try {
+      await cancelImportJob(jobId);
+      toast.success("Import cancelled");
+      await refreshJobs();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Cancel failed");
+    } finally {
+      setActionJobId(null);
+    }
+  }
+
+  async function handleRetryImport(jobId: string) {
+    setActionJobId(jobId);
+    try {
+      await retryImportJob(jobId);
+      toast.success("Import re-queued");
+      await refreshJobs();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Retry failed");
+    } finally {
+      setActionJobId(null);
+    }
   }
 
   async function handleUndoImport(jobId: string) {
@@ -412,6 +488,20 @@ export function DataPage() {
           )}
         </GlowSurfaceCard>
 
+        {showProUpsell && billing?.plan === "free" && (
+          <PromoDismissCard
+            title="Unlock secondary sales & scheme analysis"
+            description="Pro plan adds DMS offtake imports and scheme leakage detection."
+            ctaLabel="Upgrade to Pro →"
+            ctaTo="/upgrade"
+            accent="green"
+            onDismiss={() => {
+              dismissSlot(SLOT_KEYS.G);
+              setShowProUpsell(false);
+            }}
+          />
+        )}
+
         {/* Import history */}
         <GlowSurfaceCard padding="md" hover={false}>
           <div className="flex items-center justify-between mb-5">
@@ -475,6 +565,26 @@ export function DataPage() {
                         ) : (
                           <Trash2 className="h-4 w-4" />
                         )}
+                      </button>
+                    )}
+                    {(job.status === "pending" || job.status === "queued" || job.status === "processing") && isAdminUser && (
+                      <button
+                        type="button"
+                        onClick={() => void handleCancelImport(job.id)}
+                        disabled={actionJobId === job.id}
+                        className="text-xs font-medium text-red-400 hover:underline disabled:opacity-40"
+                      >
+                        Cancel
+                      </button>
+                    )}
+                    {(job.status === "failed" || job.status === "cancelled") && isAdminUser && (
+                      <button
+                        type="button"
+                        onClick={() => void handleRetryImport(job.id)}
+                        disabled={actionJobId === job.id}
+                        className="text-xs font-medium text-accent hover:underline disabled:opacity-40"
+                      >
+                        Retry
                       </button>
                     )}
                   </div>

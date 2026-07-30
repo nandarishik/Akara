@@ -12,7 +12,7 @@
 
 import * as React from "react"
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom"
-// import { HelmetProvider } from "react-helmet-async"
+import { HelmetProvider } from "react-helmet-async"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import { AuthProvider } from "@/contexts/AuthContext"
 import { ProtectedRoute } from "@/components/ProtectedRoute"
@@ -20,10 +20,13 @@ import { AppShell } from "@/components/layout/AppShell"
 import { SuperadminShell } from "@/components/admin/SuperadminShell"
 import { Toaster } from "@/components/ui/toast"
 import { CookieBanner } from "@/components/CookieBanner"
+import { ErrorBoundary } from "@/components/ErrorBoundary"
 
 // ─── Eager (very small, needed on every first load) ───────────────────────────
 import { LoginPage } from "@/pages/LoginPage"
 import { NotFoundPage } from "@/pages/NotFoundPage"
+
+const ServerErrorPage = React.lazy(() => import("@/pages/ServerErrorPage").then(m => ({ default: m.ServerErrorPage })))
 
 // ─── Lazy — public / auth / onboarding pages ──────────────────────────────────
 const LandingPage             = React.lazy(() => import("@/pages/LandingPage").then(m => ({ default: m.LandingPage })))
@@ -50,14 +53,13 @@ const PrivacyPage    = React.lazy(() => import("@/pages/PrivacyPage").then(m => 
 const TermsPage      = React.lazy(() => import("@/pages/TermsPage").then(m => ({ default: m.TermsPage })))
 
 // ─── Lazy — superadmin ────────────────────────────────────────────────────────
+const OverviewPage = React.lazy(() => import("@/pages/superadmin/OverviewPage").then(m => ({ default: m.OverviewPage })))
+const UsagePage = React.lazy(() => import("@/pages/superadmin/UsagePage").then(m => ({ default: m.UsagePage })))
+const CronPage = React.lazy(() => import("@/pages/superadmin/CronPage").then(m => ({ default: m.CronPage })))
 const SATenantsPage    = React.lazy(() => import("@/pages/admin/TenantsPage").then(m => ({ default: m.TenantsPage })))
 const SAUsersPage      = React.lazy(() => import("@/pages/admin/UsersPage").then(m => ({ default: m.UsersPage })))
-const CostDiagnostics  = React.lazy(() => import("@/pages/admin/CostDiagnostics"))
 const BillingOpsPage   = React.lazy(() => import("@/pages/superadmin/BillingOpsPage").then(m => ({ default: m.BillingOpsPage })))
-const SecurityOpsPage  = React.lazy(() => import("@/pages/superadmin/SecurityOpsPage").then(m => ({ default: m.SecurityOpsPage })))
-const SuperadminDataPage = React.lazy(() => import("@/pages/superadmin/DataPage").then(m => ({ default: m.SuperadminDataPage })))
 const SuperadminAuditPage = React.lazy(() => import("@/pages/superadmin/AuditPage").then(m => ({ default: m.SuperadminAuditPage })))
-const SuperadminOpsPage = React.lazy(() => import("@/pages/superadmin/OpsPage").then(m => ({ default: m.SuperadminOpsPage })))
 const SuperadminCommsPage = React.lazy(() => import("@/pages/superadmin/CommsPage").then(m => ({ default: m.SuperadminCommsPage })))
 const SuperadminAnalyticsPage = React.lazy(() => import("@/pages/superadmin/AnalyticsPage").then(m => ({ default: m.SuperadminAnalyticsPage })))
 const SuperadminSettingsPage = React.lazy(() => import("@/pages/superadmin/SettingsPage").then(m => ({ default: m.SuperadminSettingsPage })))
@@ -89,9 +91,10 @@ export default function App() {
   const isDev = import.meta.env.DEV
 
   return (
-    // <HelmetProvider>
+    <HelmetProvider>
     <QueryClientProvider client={queryClient}>
         <AuthProvider>
+          <ErrorBoundary>
           <BrowserRouter>
             <Toaster />
             <CookieBanner />
@@ -107,6 +110,7 @@ export default function App() {
                 <Route path="/login" element={<LoginPage />} />
                 <Route path="/privacy" element={<PrivacyPage />} />
                 <Route path="/terms" element={<TermsPage />} />
+                <Route path="/500" element={<ServerErrorPage />} />
                 <Route path="/upgrade" element={<UpgradePage />} />
 
                 {/* ── Onboarding (session required, no AppShell) ─────── */}
@@ -135,19 +139,21 @@ export default function App() {
                 {/* ── Superadmin panel ────────────────────────────────── */}
                 <Route element={<ProtectedRoute />}>
                   <Route path="/superadmin" element={<SuperadminShell />}>
-                    <Route index element={<Navigate to="/superadmin/tenants" replace />} />
+                    <Route index element={<Navigate to="/superadmin/overview" replace />} />
+                    <Route path="overview" element={<OverviewPage />} />
                     <Route path="tenants"   element={<SATenantsPage />} />
                     <Route path="users"     element={<SAUsersPage />} />
-                    <Route path="costs"     element={<CostDiagnostics />} />
+                    <Route path="usage"     element={<UsagePage />} />
+                    <Route path="revenue"   element={<SuperadminAnalyticsPage />} />
+                    <Route path="analytics" element={<Navigate to="/superadmin/revenue" replace />} />
                     <Route path="billing"   element={<BillingOpsPage />} />
-                    <Route path="security" element={<SecurityOpsPage />} />
-                    <Route path="data"      element={<SuperadminDataPage />} />
-                    <Route path="audit"     element={<SuperadminAuditPage />} />
-                    <Route path="ops"       element={<SuperadminOpsPage />} />
                     <Route path="comms"     element={<SuperadminCommsPage />} />
-                    <Route path="analytics" element={<SuperadminAnalyticsPage />} />
+                    <Route path="cron"      element={<CronPage />} />
+                    <Route path="audit"     element={<SuperadminAuditPage />} />
                     <Route path="settings"  element={<SuperadminSettingsPage />} />
                     <Route path="ai"        element={<SuperadminAiPage />} />
+                    <Route path="costs"     element={<Navigate to="/superadmin/revenue" replace />} />
+                    <Route path="ops"       element={<Navigate to="/superadmin/settings" replace />} />
                   </Route>
                 </Route>
 
@@ -161,8 +167,9 @@ export default function App() {
               </Routes>
             </React.Suspense>
           </BrowserRouter>
+          </ErrorBoundary>
         </AuthProvider>
     </QueryClientProvider>
-    // </HelmetProvider>
+    </HelmetProvider>
   )
 }

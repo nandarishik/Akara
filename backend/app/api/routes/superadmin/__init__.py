@@ -8,6 +8,7 @@ from app.api.routes.superadmin import (
     conversations,
     data,
     impersonate,
+    overview,
     plan,
     quota,
     reports,
@@ -15,8 +16,10 @@ from app.api.routes.superadmin import (
     sudo,
     system,
     tenants,
+    usage,
     users,
 )
+from app.api.routes import superadmin_copilot
 
 router = APIRouter(prefix="/superadmin", tags=["superadmin"])
 
@@ -32,4 +35,7 @@ router.include_router(reports.router)
 router.include_router(security.router)
 router.include_router(impersonate.router)
 router.include_router(audit.router)
+router.include_router(overview.router)
+router.include_router(usage.router)
 router.include_router(system.router)
+router.include_router(superadmin_copilot.router)

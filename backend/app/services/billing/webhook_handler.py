@@ -139,6 +139,45 @@ def _admin_email(tenant_id: str) -> str | None:
         return None
 
 
+def _admin_phone(tenant_id: str) -> str | None:
+    profiles = (
+        _supa()
+        .table("profiles")
+        .select("phone_number")
+        .eq("tenant_id", tenant_id)
+        .eq("role", "admin")
+        .limit(1)
+        .execute()
+    )
+    if not profiles.data:
+        return None
+    phone = profiles.data[0].get("phone_number")
+    return str(phone).strip() if phone else None
+
+
+def _send_dunning_day0_whatsapp(tenant_id: str) -> bool:
+    """Day 0 payment-failure WhatsApp — gated until BSP templates are approved."""
+    import asyncio
+
+    from app.services.notifications.whatsapp import send_whatsapp_template
+
+    phone = _admin_phone(tenant_id)
+    if not phone:
+        return False
+    try:
+        return asyncio.run(
+            send_whatsapp_template(
+                to_phone=phone,
+                template_name="payment_failed",
+                variables=["AKARA"],
+                tenant_id=tenant_id,
+            )
+        )
+    except Exception as exc:
+        logger.warning("Dunning Day 0 WhatsApp skipped for %s: %s", tenant_id, exc)
+        return False
+
+
 def _plan_from_subscription(sub: dict[str, Any], fallback: str = "pro") -> str:
     return resolve_plan_from_subscription(sub, fallback)
 
@@ -194,6 +233,14 @@ def handle_subscription_halted_or_pending(sub: dict[str, Any]) -> bool:
             "status": "sent",
             "sent_at": now,
         }).execute()
+        if _send_dunning_day0_whatsapp(tenant["id"]):
+            _supa().table("dunning_events").insert({
+                "tenant_id": tenant["id"],
+                "day_offset": 0,
+                "channel": "whatsapp",
+                "status": "sent",
+                "sent_at": now,
+            }).execute()
     return True
 
 

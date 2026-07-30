@@ -1,6 +1,13 @@
+import { PageSEO } from "@/components/seo/PageSEO";
+
 export function TermsPage() {
   return (
     <div className="theme-product-dark min-h-screen bg-[#0a0a0a]">
+      <PageSEO
+        title="Terms of Service"
+        description="Terms governing use of AKARA sales analytics and AI copilot for Indian FMCG businesses."
+        path="/terms"
+      />
       <div className="max-w-3xl mx-auto px-6 py-16 prose prose-invert prose-headings:text-white prose-p:text-white/80 prose-li:text-white/80 prose-a:text-[#03B3C3] hover:prose-a:text-[#38bdf8]">
         <h1 className="text-3xl font-bold text-white">Terms of Service</h1>
         <p className="text-white/50">Last updated: July 2026 · Version 1.0</p>

@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import logging
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from typing import Any
 from uuid import UUID
 
@@ -20,7 +20,9 @@ from app.core.superadmin import (
     require_csrf,
 )
 from app.core.tenant import get_supabase_service_client
+from app.core.plan_limits import get_limit
 from app.services.superadmin.audit import record_operation
+from app.services.superadmin.revenue import PLAN_MRR_INR
 from app.services.superadmin.mutations import (
     SuperadminMutation,
     check_expected_version,
@@ -47,6 +49,9 @@ class TenantListItem(BaseModel):
     copilot_calls_this_month: int = 0
     rows_stored: int = 0
     last_import_at: str | None = None
+    last_active_at: str | None = None
+    copilot_limit: int = 0
+    questions_today: int = 0
     created_at: str | None = None
     trial_ends_at: str | None = None
     internal_notes: str = ""
@@ -90,6 +95,21 @@ class TenantDebriefStatus(BaseModel):
     last_whatsapp_status: str | None
 
 
+class DeliveryEvent(BaseModel):
+    action: str
+    created_at: str
+    details: dict[str, Any] = Field(default_factory=dict)
+
+
+class TenantOpsDetail(BaseModel):
+    tenant_id: str
+    imports_this_month: int
+    imports_limit: int
+    margin_pct: float | None
+    llm_cost_usd_this_month: float
+    delivery_events: list[DeliveryEvent] = Field(default_factory=list)
+
+
 def _get_tenant_or_404(tenant_id: UUID) -> dict[str, Any]:
     supa = get_supabase_service_client()
     row = (
@@ -102,6 +122,68 @@ def _get_tenant_or_404(tenant_id: UUID) -> dict[str, Any]:
     if not row.data:
         raise AkaraHTTPException(status_code=404, code="NOT_FOUND", message="Tenant not found")
     return row.data
+
+
+def _today_start_iso() -> str:
+    return datetime.now(UTC).replace(hour=0, minute=0, second=0, microsecond=0).isoformat()
+
+
+def _questions_today(supa, tenant_id: str) -> int:
+    result = (
+        supa.table("llm_cost_log")
+        .select("id", count="exact")
+        .eq("tenant_id", tenant_id)
+        .eq("feature", "copilot")
+        .gte("created_at", _today_start_iso())
+        .execute()
+    )
+    return int(result.count or 0)
+
+
+def _last_active_at(supa, tenant_id: str) -> str | None:
+    profiles = (
+        supa.table("profiles")
+        .select("id")
+        .eq("tenant_id", tenant_id)
+        .execute()
+    )
+    latest: str | None = None
+    for profile in profiles.data or []:
+        try:
+            user = supa.auth.admin.get_user_by_id(profile["id"])
+            ts = user.user.last_sign_in_at if user and user.user else None
+            if not ts:
+                continue
+            ts_str = ts if isinstance(ts, str) else ts.isoformat()
+            if latest is None or ts_str > latest:
+                latest = ts_str
+        except Exception:
+            continue
+    return latest
+
+
+def _resolve_tenant_admin(supa, tenant_id: UUID) -> tuple[str, str]:
+    profiles = (
+        supa.table("profiles")
+        .select("id")
+        .eq("tenant_id", str(tenant_id))
+        .eq("role", "admin")
+        .limit(1)
+        .execute()
+    )
+    if not profiles.data:
+        raise AkaraHTTPException(status_code=404, code="NOT_FOUND", message="No admin user")
+    user_id = profiles.data[0]["id"]
+    try:
+        user = supa.auth.admin.get_user_by_id(user_id)
+        email = user.user.email if user and user.user else None
+    except Exception as exc:
+        raise AkaraHTTPException(
+            status_code=502, code="SERVICE_UNAVAILABLE", message="Could not resolve email"
+        ) from exc
+    if not email:
+        raise AkaraHTTPException(status_code=400, code="VALIDATION_ERROR", message="No admin email")
+    return user_id, email
 
 
 def _enrich_tenant(row: dict[str, Any]) -> TenantListItem:
@@ -136,12 +218,13 @@ def _enrich_tenant(row: dict[str, Any]) -> TenantListItem:
         .execute()
     )
     last_import_at = last_import.data[0]["created_at"] if last_import.data else None
+    plan = row.get("plan", "free")
 
     return TenantListItem(
         id=UUID(tid),
         name=row.get("name", ""),
         slug=row.get("slug", ""),
-        plan=row.get("plan", "free"),
+        plan=plan,
         plan_status=row.get("plan_status", "active"),
         is_active=row.get("is_active", True),
         feature_overrides=row.get("feature_overrides") or {},
@@ -149,6 +232,9 @@ def _enrich_tenant(row: dict[str, Any]) -> TenantListItem:
         copilot_calls_this_month=copilot_calls,
         rows_stored=rows_stored,
         last_import_at=last_import_at,
+        last_active_at=_last_active_at(supa, tid),
+        copilot_limit=get_limit(plan, "copilot_calls_per_month"),
+        questions_today=_questions_today(supa, tid),
         created_at=row.get("created_at"),
         trial_ends_at=row.get("trial_ends_at"),
         internal_notes=row.get("internal_notes") or "",
@@ -196,6 +282,80 @@ def get_tenant(
     _admin: SuperAdmin,
 ) -> TenantListItem:
     return _enrich_tenant(_get_tenant_or_404(tenant_id))
+
+
+@router.get("/{tenant_id}/ops-detail", response_model=TenantOpsDetail)
+@limiter.limit(ADMIN_READ_LIMIT)
+def get_tenant_ops_detail(
+    request: Request,
+    tenant_id: UUID,
+    _admin: SuperAdmin,
+) -> TenantOpsDetail:
+    tenant = _get_tenant_or_404(tenant_id)
+    tid = str(tenant_id)
+    supa = get_supabase_service_client()
+    month_start = datetime.now(UTC).replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+
+    imports = (
+        supa.table("import_jobs")
+        .select("id", count="exact")
+        .eq("tenant_id", tid)
+        .gte("created_at", month_start.isoformat())
+        .execute()
+    )
+    imports_count = int(imports.count or 0)
+    plan = tenant.get("plan") or "free"
+    imports_limit = get_limit(plan, "imports_per_month")
+
+    llm_rows = (
+        supa.table("llm_cost_log")
+        .select("cost_usd")
+        .eq("tenant_id", tid)
+        .gte("created_at", month_start.isoformat())
+        .execute()
+    ).data or []
+    llm_cost = sum(float(r.get("cost_usd") or 0) for r in llm_rows)
+    plan_mrr = PLAN_MRR_INR.get(plan, 0)
+    margin_pct = (
+        round((1 - (llm_cost * 85 / plan_mrr)) * 100, 1) if plan_mrr > 0 else None
+    )
+
+    audit = (
+        supa.table("audit_log")
+        .select("action, created_at, details")
+        .eq("tenant_id", tid)
+        .order("created_at", desc=True)
+        .limit(50)
+        .execute()
+    ).data or []
+    delivery_keywords = (
+        "activation",
+        "debrief",
+        "morning_brief",
+        "nudge",
+        "dunning",
+        "broadcast",
+        "whatsapp",
+        "email",
+    )
+    delivery_events = [
+        DeliveryEvent(
+            action=row.get("action") or "",
+            created_at=str(row.get("created_at") or ""),
+            details=row.get("details") or {},
+        )
+        for row in audit
+        if any(k in (row.get("action") or "").lower() for k in delivery_keywords)
+    ][:15]
+
+    return TenantOpsDetail(
+        tenant_id=tid,
+        imports_this_month=imports_count,
+        imports_limit=imports_limit,
+        margin_pct=margin_pct,
+        llm_cost_usd_this_month=round(llm_cost, 4),
+        delivery_events=delivery_events,
+    )
 
 
 @router.post("", status_code=201)
@@ -475,6 +635,131 @@ def deactivate_tenant(
         **meta,
     )
     return {"ok": True, "tenant": after, "audit": audit}
+
+
+class NudgeUpgradeBody(SuperadminMutation):
+    channel: str = Field(default="email", pattern="^(email)$")
+
+
+@router.post("/{tenant_id}/nudge-upgrade")
+@limiter.limit(ADMIN_WRITE_LIMIT)
+def nudge_upgrade(
+    request: Request,
+    tenant_id: UUID,
+    body: NudgeUpgradeBody,
+    admin: SudoCtx,
+    _: None = Depends(require_csrf),
+) -> dict[str, Any]:
+    tenant = _get_tenant_or_404(tenant_id)
+    supa = get_supabase_service_client()
+    _, email = _resolve_tenant_admin(supa, tenant_id)
+
+    if body.dry_run:
+        return dry_run_response(
+            action="superadmin.tenant.nudge_upgrade",
+            impact={"tenant_id": str(tenant_id), "email": email, "plan": tenant.get("plan")},
+        )
+
+    from app.core.config import settings
+    from app.services.billing.email import _send
+
+    plan = tenant.get("plan") or "free"
+    subject = "You're getting great value from AKARA — upgrade for more"
+    html = (
+        f"<p>Hi,</p><p>Your team at <strong>{tenant.get('name')}</strong> is approaching "
+        f"or has reached limits on the {plan} plan.</p>"
+        f"<p><a href=\"{settings.customer_frontend_url.rstrip('/')}/upgrade\">"
+        "See Pro and Business plans →</a></p>"
+    )
+    sent = _send(email, subject, html)
+    meta = request_actor_meta(request)
+    audit = record_operation(
+        action="superadmin.tenant.nudge_upgrade",
+        actor_id=admin.user_id,
+        actor_email=admin.email,
+        reason=body.reason,
+        tenant_id=tenant_id,
+        operation_id=body.operation_id,
+        details={"email": email, "sent": sent},
+        **meta,
+    )
+    return {"ok": True, "sent": sent, "email": email, "audit": audit}
+
+
+class ActivationNudgeBody(SuperadminMutation):
+    template: str = Field(
+        default="day1_no_import",
+        pattern="^(day1_no_import|day3_no_copilot|day7_no_phone)$",
+    )
+
+
+_ACTIVATION_TEMPLATES = {
+    "day1_no_import": ("activation_day1.html", "Upload your first file to AKARA"),
+    "day3_no_copilot": ("activation_day3.html", "Ask AKARA Copilot your first question"),
+    "day7_no_phone": ("activation_day7.html", "Add your phone for WhatsApp debrief"),
+}
+
+
+@router.post("/{tenant_id}/activation-nudge")
+@limiter.limit(ADMIN_WRITE_LIMIT)
+def activation_nudge(
+    request: Request,
+    tenant_id: UUID,
+    body: ActivationNudgeBody,
+    admin: SudoCtx,
+    _: None = Depends(require_csrf),
+) -> dict[str, Any]:
+    tenant = _get_tenant_or_404(tenant_id)
+    supa = get_supabase_service_client()
+    admin_user_id, email = _resolve_tenant_admin(supa, tenant_id)
+    template_name, subject = _ACTIVATION_TEMPLATES[body.template]
+
+    if body.dry_run:
+        return dry_run_response(
+            action="superadmin.tenant.activation_nudge",
+            impact={
+                "tenant_id": str(tenant_id),
+                "email": email,
+                "template": body.template,
+            },
+        )
+
+    from pathlib import Path
+
+    from jinja2 import Environment, FileSystemLoader, select_autoescape
+
+    from app.core.config import settings
+    from app.services.billing.email import _send
+
+    template_dir = Path(__file__).resolve().parents[3] / "services" / "email" / "templates"
+    jinja = Environment(
+        loader=FileSystemLoader(str(template_dir)),
+        autoescape=select_autoescape(["html"]),
+    )
+    profile = (
+        supa.table("profiles")
+        .select("display_name")
+        .eq("id", admin_user_id)
+        .maybe_single()
+        .execute()
+    )
+    html = jinja.get_template(template_name).render(
+        name=(profile.data or {}).get("display_name") or "there",
+        dashboard_url=settings.customer_frontend_url.rstrip("/"),
+    )
+    sent = _send(email, f"AKARA — {subject}", html)
+    meta = request_actor_meta(request)
+    audit = record_operation(
+        action="superadmin.tenant.activation_nudge",
+        actor_id=admin.user_id,
+        actor_email=admin.email,
+        reason=body.reason,
+        tenant_id=tenant_id,
+        operation_id=body.operation_id,
+        details={"email": email, "template": body.template, "sent": sent},
+        **meta,
+    )
+    return {"ok": True, "sent": sent, "email": email, "template": body.template, "audit": audit}
 
 
 @router.delete("/{tenant_id}/data")

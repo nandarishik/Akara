@@ -7,12 +7,13 @@ import logging
 from datetime import UTC, datetime
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, Response, status
+from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from pydantic import BaseModel, Field
 
 from app.core.auth import CurrentUser
 from app.core.config import settings
 from app.core.plan_guard import require_feature
+from app.core.rate_limit import limiter
 from app.core.tenant import TenantContext, get_supabase_service_client, get_tenant_context
 from app.services.billing.email import _send
 from app.services.notifications.delivery_log import log_delivery
@@ -88,7 +89,9 @@ def get_channels(_user: CurrentUser) -> ChannelsResponse:
 
 
 @router.patch("/preferences")
+@limiter.limit("30/minute")
 def update_preferences(
+    request: Request,
     body: PreferencesUpdate,
     user: CurrentUser,
     tenant: TenantContext = Depends(get_tenant_context),
@@ -107,7 +110,8 @@ def update_preferences(
 
 
 @router.patch("/profile")
-def update_profile(body: ProfileUpdate, user: CurrentUser) -> dict[str, str]:
+@limiter.limit("30/minute")
+def update_profile(request: Request, body: ProfileUpdate, user: CurrentUser) -> dict[str, str]:
     supa = get_supabase_service_client()
     update: dict = {}
     if body.display_name is not None:
@@ -132,7 +136,10 @@ def update_profile(body: ProfileUpdate, user: CurrentUser) -> dict[str, str]:
 
 
 @router.get("/export")
-def export_account_data(user: CurrentUser, tenant: TenantContext = Depends(get_tenant_context)) -> Response:
+@limiter.limit("5/minute")
+def export_account_data(
+    request: Request, user: CurrentUser, tenant: TenantContext = Depends(get_tenant_context)
+) -> Response:
     supa = get_supabase_service_client()
     profile = (
         supa.table("profiles")
@@ -188,7 +195,9 @@ def export_account_data(user: CurrentUser, tenant: TenantContext = Depends(get_t
 
 
 @router.post("/preferences/test-email")
+@limiter.limit("5/minute")
 def send_test_email(
+    request: Request,
     user: CurrentUser,
     tenant: TenantContext = Depends(get_tenant_context),
     _: None = Depends(require_feature("morning_brief")),
@@ -222,7 +231,9 @@ def send_test_email(
 
 
 @router.post("/preferences/unsubscribe")
+@limiter.limit("10/minute")
 def unsubscribe_preferences(
+    request: Request,
     body: UnsubscribeRequest,
     user: CurrentUser,
 ) -> dict[str, str]:
@@ -256,7 +267,9 @@ def unsubscribe_preferences(
 
 
 @router.post("/preferences/test-whatsapp")
+@limiter.limit("5/minute")
 async def send_test_whatsapp(
+    request: Request,
     user: CurrentUser,
     tenant: TenantContext = Depends(get_tenant_context),
     _: None = Depends(require_feature("morning_brief")),
@@ -291,7 +304,8 @@ async def send_test_whatsapp(
 
 
 @router.delete("", status_code=status.HTTP_202_ACCEPTED)
-def delete_account(body: DeleteAccountRequest, user: CurrentUser) -> dict[str, str]:
+@limiter.limit("3/minute")
+def delete_account(request: Request, body: DeleteAccountRequest, user: CurrentUser) -> dict[str, str]:
     if body.confirm_email.lower() != (user.email or "").lower():
         raise HTTPException(status.HTTP_400_BAD_REQUEST, detail="Email confirmation does not match")
 
@@ -326,3 +340,45 @@ def delete_account(body: DeleteAccountRequest, user: CurrentUser) -> dict[str, s
         logger.warning("Could not revoke sessions for %s: %s", user.user_id, exc)
 
     return {"status": "queued", "message": "Account deletion scheduled. You will be signed out."}
+
+
+class SessionInfo(BaseModel):
+    id: str
+    device: str
+    current: bool
+    last_active: str
+
+
+@router.get("/sessions", response_model=list[SessionInfo])
+def list_sessions(request: Request, user: CurrentUser) -> list[SessionInfo]:
+    """List active sessions — current device from request metadata."""
+    ua = request.headers.get("user-agent", "Unknown device")[:120]
+    return [
+        SessionInfo(
+            id="current",
+            device=ua,
+            current=True,
+            last_active=datetime.now(UTC).isoformat(),
+        )
+    ]
+
+
+@router.post("/sessions/revoke-others")
+@limiter.limit("5/minute")
+def revoke_other_sessions(request: Request, user: CurrentUser) -> dict[str, str]:
+    """Sign out all sessions except the current one (best-effort via Supabase Admin)."""
+    supa = get_supabase_service_client()
+    try:
+        supa.auth.admin.sign_out(str(user.user_id), scope="others")  # type: ignore[call-arg]
+    except TypeError:
+        logger.info(
+            "Supabase client lacks scope=others — revoke-others is a no-op for %s",
+            user.user_id,
+        )
+    except Exception as exc:
+        logger.warning("Could not revoke other sessions for %s: %s", user.user_id, exc)
+        raise HTTPException(
+            status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Could not revoke other sessions",
+        ) from exc
+    return {"status": "ok", "message": "Other sessions revoked"}

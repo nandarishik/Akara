@@ -1,11 +1,33 @@
-import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { X } from "lucide-react";
+import { useEffect, useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useSearchParams } from "react-router-dom";
+import { MoreHorizontal } from "lucide-react";
 
-import { Button } from "@/components/ui/button";
+import { TenantDrawer } from "@/components/admin/TenantDrawer";
+import { ConfirmDialog } from "@/components/admin/ConfirmDialog";
+import { MutationReasonField } from "@/components/admin/MutationReasonField";
 import GlowSurfaceCard from "@/components/ui/GlowSurfaceCard";
 import { Badge } from "@/components/ui/badge";
-import { superadminFetch } from "@/lib/api/superadmin";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { sa, type TenantRow } from "@/lib/api/superadmin";
+import {
+  AlertDialog,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import {
   Table,
   TableBody,
@@ -15,51 +37,120 @@ import {
   TableRow,
 } from "@/components/ui/table";
 
-interface Tenant {
-  id: string;
-  name: string;
-  slug: string;
-  plan: string;
-  plan_status: string;
-  is_active: boolean;
-  user_count: number;
-  copilot_calls_this_month: number;
-  rows_stored: number;
-  last_import_at: string | null;
-  internal_notes: string;
+type DrawerTab = "overview" | "plan" | "features" | "quota" | "billing" | "data" | "danger";
+
+function formatRelative(iso: string | null | undefined): string {
+  if (!iso) return "Never";
+  const diff = Date.now() - new Date(iso).getTime();
+  const mins = Math.floor(diff / 60000);
+  if (mins < 1) return "Just now";
+  if (mins < 60) return `${mins}m ago`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs}h ago`;
+  const days = Math.floor(hrs / 24);
+  if (days < 30) return `${days}d ago`;
+  return new Date(iso).toLocaleDateString("en-IN");
 }
 
-interface TenantPage {
-  items: Tenant[];
-  total: number;
-}
+type PendingConfirm =
+  | { type: "suspend"; tenant: TenantRow }
+  | { type: "wipe"; tenant: TenantRow }
+  | { type: "delete"; tenant: TenantRow }
+  | null;
 
-interface DebriefStatus {
-  tenant_id: string;
-  last_debrief_at: string | null;
-  debrief_count: number;
-  last_email_status: string | null;
-  last_whatsapp_status: string | null;
-}
+const DEFAULT_REASON = "Superadmin action from Tenants panel";
 
 export function TenantsPage() {
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const queryClient = useQueryClient();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const openId = searchParams.get("open");
+  const filterNew = searchParams.get("filter") === "new";
+  const [selectedId, setSelectedId] = useState<string | null>(openId);
+  const [drawerTab, setDrawerTab] = useState<DrawerTab | undefined>();
+  const [search, setSearch] = useState("");
+  const [planFilter, setPlanFilter] = useState("");
+  const [statusFilter, setStatusFilter] = useState("");
+  const [reason, setReason] = useState(DEFAULT_REASON);
+  const [showNewTenant, setShowNewTenant] = useState(false);
+  const [newName, setNewName] = useState("");
+  const [newSlug, setNewSlug] = useState("");
+  const [newPlan, setNewPlan] = useState("free");
+  const [pendingConfirm, setPendingConfirm] = useState<PendingConfirm>(null);
+
+  const reasonOk = reason.trim().length >= 10;
+
+  useEffect(() => {
+    setSelectedId(openId);
+  }, [openId]);
 
   const { data, isLoading, isError, error } = useQuery({
-    queryKey: ["superadmin", "tenants"],
-    queryFn: () => superadminFetch<TenantPage>("/superadmin/tenants?limit=100"),
+    queryKey: ["superadmin", "tenants", search, planFilter, statusFilter],
+    queryFn: () =>
+      sa.tenants({
+        limit: 100,
+        search: search || undefined,
+        plan: planFilter || undefined,
+        plan_status: statusFilter || undefined,
+      }),
     retry: false,
   });
 
-  const { data: debriefStatus } = useQuery({
-    queryKey: ["superadmin", "tenants", selectedId, "debrief-status"],
-    queryFn: () =>
-      superadminFetch<DebriefStatus>(`/superadmin/tenants/${selectedId}/debrief-status`),
-    enabled: !!selectedId,
+  const createMutation = useMutation({
+    mutationFn: () =>
+      sa.createTenant({
+        name: newName.trim(),
+        slug: newSlug.trim(),
+        plan: newPlan,
+        reason,
+      }),
+    onSuccess: (res) => {
+      void queryClient.invalidateQueries({ queryKey: ["superadmin", "tenants"] });
+      setShowNewTenant(false);
+      setNewName("");
+      setNewSlug("");
+      if (res.tenant?.id) openDrawer(res.tenant.id);
+    },
   });
 
-  const tenants = data?.items ?? [];
-  const selected = tenants.find((t) => t.id === selectedId) ?? null;
+  const weekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
+  const tenants = (data?.items ?? []).filter((t) => {
+    if (!filterNew) return true;
+    if (!t.created_at) return false;
+    return new Date(t.created_at).getTime() >= weekAgo;
+  });
+
+  function openDrawer(id: string, tab?: DrawerTab) {
+    setSelectedId(id);
+    setDrawerTab(tab);
+    setSearchParams({ open: id });
+  }
+
+  function closeDrawer() {
+    setSelectedId(null);
+    setDrawerTab(undefined);
+    setSearchParams({});
+  }
+
+  async function handleImpersonate(t: TenantRow) {
+    if (!reasonOk) return;
+    const r = await sa.impersonate(t.id, reason);
+    if (r.magic_link) window.open(r.magic_link, "_blank", "noopener,noreferrer");
+  }
+
+  async function handleConfirmAction() {
+    if (!pendingConfirm || !reasonOk) return;
+    const { tenant } = pendingConfirm;
+    if (pendingConfirm.type === "suspend") {
+      if (tenant.is_active) await sa.deactivateTenant(tenant.id, reason);
+      else await sa.activateTenant(tenant.id, reason);
+    } else if (pendingConfirm.type === "wipe") {
+      await sa.wipeTenantData(tenant.id, { reason });
+    } else if (pendingConfirm.type === "delete") {
+      await sa.deleteTenant(tenant.id, { reason, confirm: `DELETE ${tenant.name}` });
+    }
+    setPendingConfirm(null);
+    void queryClient.invalidateQueries({ queryKey: ["superadmin", "tenants"] });
+  }
 
   if (isLoading) {
     return <div className="p-8 text-text-secondary">Loading tenants...</div>;
@@ -67,61 +158,149 @@ export function TenantsPage() {
 
   if (isError) {
     const msg = error instanceof Error ? error.message : "Could not load tenants";
-    const denied = msg.includes("404");
     return (
       <div className="p-8 max-w-lg space-y-3">
         <h1 className="text-display text-2xl">Tenants</h1>
-        <p className="text-red-700 text-sm">
-          {denied
-            ? "Superadmin access required. Confirm profiles.role = superadmin, sign out/in, then open /superadmin and complete the sudo gate."
-            : msg}
-        </p>
+        <p className="text-red-700 text-sm">{msg}</p>
       </div>
     );
   }
 
   return (
-    <div className="p-6 lg:p-8 space-y-6 max-w-7xl mx-auto bg-surface-canvas">
-      <div className="flex items-center justify-between">
+    <div className="p-6 space-y-4 max-w-6xl">
+      <div className="flex flex-wrap items-center justify-between gap-2">
         <h1 className="text-display text-2xl">Tenants</h1>
-        <span className="text-sm text-text-muted">{data?.total ?? tenants.length} total</span>
+        <Button type="button" size="sm" onClick={() => setShowNewTenant(true)}>
+          + New tenant
+        </Button>
       </div>
 
-      <GlowSurfaceCard padding="none" className="overflow-hidden">
+      <MutationReasonField value={reason} onChange={setReason} />
+
+      <div className="flex flex-wrap gap-2">
+        <Input
+          placeholder="Search name or slug"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="max-w-xs"
+        />
+        <select
+          className="rounded border border-sa-border bg-sa-raised px-2 py-1 text-sm"
+          value={planFilter}
+          onChange={(e) => setPlanFilter(e.target.value)}
+        >
+          <option value="">All plans</option>
+          <option value="free">Free</option>
+          <option value="pro">Pro</option>
+          <option value="business">Business</option>
+        </select>
+        <select
+          className="rounded border border-sa-border bg-sa-raised px-2 py-1 text-sm"
+          value={statusFilter}
+          onChange={(e) => setStatusFilter(e.target.value)}
+        >
+          <option value="">All statuses</option>
+          <option value="active">Active</option>
+          <option value="past_due">Past due</option>
+          <option value="cancelled">Cancelled</option>
+        </select>
+      </div>
+
+      <GlowSurfaceCard className="overflow-hidden">
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Name</TableHead>
+              <TableHead>Tenant</TableHead>
               <TableHead>Plan</TableHead>
-              <TableHead>Users</TableHead>
-              <TableHead>Copilot (mo)</TableHead>
               <TableHead>Status</TableHead>
-              <TableHead>Actions</TableHead>
+              <TableHead>Users</TableHead>
+              <TableHead>Questions</TableHead>
+              <TableHead>Rows</TableHead>
+              <TableHead>Last active</TableHead>
+              <TableHead />
             </TableRow>
           </TableHeader>
           <TableBody>
             {tenants.map((t) => (
-              <TableRow key={t.id}>
+              <TableRow
+                key={t.id}
+                className="cursor-pointer hover:bg-white/5"
+                onClick={() => openDrawer(t.id)}
+              >
                 <TableCell>
-                  <div>
-                    <p className="font-medium">{t.name}</p>
-                    <p className="text-xs text-text-muted font-mono">{t.slug}</p>
-                  </div>
+                  <div className="font-medium">{t.name}</div>
+                  <div className="text-xs text-muted-foreground">{t.slug}</div>
                 </TableCell>
                 <TableCell>
-                  <Badge variant="outline" className="capitalize">{t.plan}</Badge>
-                </TableCell>
-                <TableCell>{t.user_count}</TableCell>
-                <TableCell>{t.copilot_calls_this_month}</TableCell>
-                <TableCell>
-                  <Badge variant={t.is_active ? "default" : "secondary"}>
-                    {t.is_active ? t.plan_status : "Inactive"}
+                  <Badge variant="outline" className="capitalize">
+                    {t.plan}
                   </Badge>
                 </TableCell>
+                <TableCell className="capitalize">
+                  {t.is_active ? t.plan_status : "Inactive"}
+                </TableCell>
+                <TableCell>{t.user_count}</TableCell>
                 <TableCell>
-                  <Button variant="outline" size="sm" onClick={() => setSelectedId(t.id)}>
-                    Manage
-                  </Button>
+                  <div className="tabular-nums">
+                    {t.copilot_calls_this_month}/
+                    {t.copilot_limit === -1 ? "∞" : t.copilot_limit}
+                  </div>
+                  <div className="text-xs text-muted-foreground tabular-nums">
+                    {t.questions_today} today
+                  </div>
+                </TableCell>
+                <TableCell>{t.rows_stored.toLocaleString("en-IN")}</TableCell>
+                <TableCell className="text-xs text-muted-foreground">
+                  {formatRelative(t.last_active_at)}
+                </TableCell>
+                <TableCell>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <MoreHorizontal className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
+                      <DropdownMenuItem onClick={() => openDrawer(t.id)}>
+                        View details
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        disabled={!reasonOk}
+                        onClick={() => void handleImpersonate(t)}
+                      >
+                        Impersonate
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => openDrawer(t.id, "data")}>
+                        Data preview
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem
+                        disabled={!reasonOk}
+                        onClick={() => setPendingConfirm({ type: "suspend", tenant: t })}
+                      >
+                        {t.is_active ? "Suspend" : "Activate"}
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        disabled={!reasonOk}
+                        className="text-amber-600 focus:text-amber-600"
+                        onClick={() => setPendingConfirm({ type: "wipe", tenant: t })}
+                      >
+                        Wipe data
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        disabled={!reasonOk}
+                        className="text-red-600 focus:text-red-600"
+                        onClick={() => setPendingConfirm({ type: "delete", tenant: t })}
+                      >
+                        Delete
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </TableCell>
               </TableRow>
             ))}
@@ -129,86 +308,97 @@ export function TenantsPage() {
         </Table>
       </GlowSurfaceCard>
 
-      {selected && (
-        <div className="fixed inset-0 z-50 flex justify-end bg-black/30">
-          <div className="w-full max-w-md h-full bg-surface-card shadow-xl overflow-y-auto">
-            <div className="sticky top-0 bg-surface-card border-b border-surface-border px-5 py-4 flex items-center justify-between">
-              <h2 className="font-semibold">{selected.name}</h2>
-              <button
-                type="button"
-                onClick={() => setSelectedId(null)}
-                className="p-1 rounded hover:bg-surface-raised"
-                aria-label="Close tenant drawer"
-              >
-                <X className="h-5 w-5" />
-              </button>
+      <TenantDrawer tenantId={selectedId} initialTab={drawerTab} onClose={closeDrawer} />
+
+      <AlertDialog open={showNewTenant} onOpenChange={setShowNewTenant}>
+        <AlertDialogContent className="border-sa-border bg-sa-surface text-sa-text sm:max-w-md">
+          <AlertDialogHeader>
+            <AlertDialogTitle>New tenant</AlertDialogTitle>
+            <AlertDialogDescription className="text-sa-muted">
+              Creates a tenant record. Add users separately.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="space-y-3">
+            <div>
+              <Label className="text-xs">Name</Label>
+              <Input
+                value={newName}
+                onChange={(e) => setNewName(e.target.value)}
+                className="mt-1 bg-sa-raised border-sa-border"
+              />
             </div>
-
-            <div className="p-5 space-y-5">
-              <div className="grid grid-cols-2 gap-3 text-sm">
-                <div>
-                  <p className="text-text-muted text-xs">Plan</p>
-                  <p className="font-medium capitalize">{selected.plan}</p>
-                </div>
-                <div>
-                  <p className="text-text-muted text-xs">Rows stored</p>
-                  <p className="font-medium">{selected.rows_stored.toLocaleString("en-IN")}</p>
-                </div>
-                <div>
-                  <p className="text-text-muted text-xs">Last import</p>
-                  <p className="font-medium">
-                    {selected.last_import_at
-                      ? new Date(selected.last_import_at).toLocaleDateString("en-IN")
-                      : "Never"}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-text-muted text-xs">Users</p>
-                  <p className="font-medium">{selected.user_count}</p>
-                </div>
-              </div>
-
-              <GlowSurfaceCard padding="sm" className="space-y-2">
-                <h3 className="font-semibold text-sm">Weekly debrief</h3>
-                {debriefStatus ? (
-                  <dl className="text-sm space-y-1">
-                    <div className="flex justify-between">
-                      <dt className="text-text-muted">Debriefs sent</dt>
-                      <dd>{debriefStatus.debrief_count}</dd>
-                    </div>
-                    <div className="flex justify-between">
-                      <dt className="text-text-muted">Last debrief</dt>
-                      <dd>
-                        {debriefStatus.last_debrief_at
-                          ? new Date(debriefStatus.last_debrief_at).toLocaleString("en-IN")
-                          : "None yet"}
-                      </dd>
-                    </div>
-                    <div className="flex justify-between">
-                      <dt className="text-text-muted">Last email</dt>
-                      <dd className="capitalize">{debriefStatus.last_email_status ?? "—"}</dd>
-                    </div>
-                    <div className="flex justify-between">
-                      <dt className="text-text-muted">Last WhatsApp</dt>
-                      <dd className="capitalize">{debriefStatus.last_whatsapp_status ?? "—"}</dd>
-                    </div>
-                  </dl>
-                ) : (
-                  <p className="text-sm text-text-muted">Loading debrief status…</p>
-                )}
-              </GlowSurfaceCard>
-
-              {selected.internal_notes && (
-                <GlowSurfaceCard padding="sm">
-                  <h3 className="font-semibold text-sm mb-1">Internal notes</h3>
-                  <p className="text-sm text-text-secondary whitespace-pre-wrap">
-                    {selected.internal_notes}
-                  </p>
-                </GlowSurfaceCard>
-              )}
+            <div>
+              <Label className="text-xs">Slug</Label>
+              <Input
+                value={newSlug}
+                onChange={(e) => setNewSlug(e.target.value)}
+                placeholder="company-name"
+                className="mt-1 bg-sa-raised border-sa-border"
+              />
+            </div>
+            <div>
+              <Label className="text-xs">Plan</Label>
+              <select
+                className="mt-1 w-full rounded border border-sa-border bg-sa-raised p-2 text-sm"
+                value={newPlan}
+                onChange={(e) => setNewPlan(e.target.value)}
+              >
+                <option value="free">Free</option>
+                <option value="pro">Pro</option>
+                <option value="business">Business</option>
+              </select>
             </div>
           </div>
-        </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="border-sa-border bg-sa-raised text-sa-text">
+              Cancel
+            </AlertDialogCancel>
+            <Button
+              type="button"
+              disabled={
+                !reasonOk ||
+                !newName.trim() ||
+                !newSlug.trim() ||
+                createMutation.isPending
+              }
+              loading={createMutation.isPending}
+              onClick={() => createMutation.mutate()}
+            >
+              Create
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {pendingConfirm && (
+        <ConfirmDialog
+          open
+          onOpenChange={() => setPendingConfirm(null)}
+          title={
+            pendingConfirm.type === "suspend"
+              ? pendingConfirm.tenant.is_active
+                ? "Suspend tenant"
+                : "Activate tenant"
+              : pendingConfirm.type === "wipe"
+                ? "Wipe tenant data"
+                : "Delete tenant"
+          }
+          description={
+            pendingConfirm.type === "suspend"
+              ? pendingConfirm.tenant.is_active
+                ? "Users will not be able to log in."
+                : "Restore tenant access."
+              : pendingConfirm.type === "wipe"
+                ? "Deletes sales data but keeps the account."
+                : "Permanent. All users and data removed."
+          }
+          confirmPhrase={
+            pendingConfirm.type === "delete"
+              ? `DELETE ${pendingConfirm.tenant.name}`
+              : "CONFIRM"
+          }
+          onConfirm={handleConfirmAction}
+        />
       )}
     </div>
   );

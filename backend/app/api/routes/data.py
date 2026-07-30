@@ -1,5 +1,6 @@
 import logging
 import uuid
+from datetime import UTC, datetime
 from typing import Annotated
 
 from fastapi import (
@@ -62,7 +63,9 @@ class SheetListResponse(BaseModel):
 
 
 @router.post("/sheets", response_model=SheetListResponse)
+@limiter.limit("10/minute")
 async def list_excel_sheets(
+    request: Request,
     user: CurrentUser,
     tenant: TenantCtx,
     file: UploadFile = File(...),
@@ -216,7 +219,9 @@ async def import_data(
 
 
 @router.delete("/imports/{import_job_id}", status_code=status.HTTP_200_OK)
+@limiter.limit("10/minute")
 async def undo_import(
+    request: Request,
     import_job_id: str,
     user: CurrentUser,
     tenant: TenantCtx,
@@ -300,7 +305,9 @@ class SyncPayload(BaseModel):
 
 
 @router.post("/sync", response_model=ImportResult, status_code=status.HTTP_201_CREATED)
-def sync_data(
+@limiter.limit("10/minute")
+async def sync_data(
+    request: Request,
     user: CurrentUser,
     tenant: TenantCtx,
     body: Annotated[SyncPayload, Body()],
@@ -317,6 +324,8 @@ def sync_data(
         )
     if not body.rows:
         return ImportResult(rows_inserted=0, rows_skipped=0, errors=[], warnings=["No rows in payload"])
+
+    await require_import_quota(len(body.rows))(tenant)
 
     service = DataImportService(supabase=get_supabase_service_client())
     result = service.import_rows(
@@ -504,7 +513,9 @@ async def import_data_async(
 
 
 @router.get("/import/jobs/{job_id}", response_model=ImportJob)
+@limiter.limit("30/minute")
 async def get_import_job(
+    request: Request,
     job_id: Annotated[str, Path(description="Import job ID")],
     user: CurrentUser,
     tenant: TenantCtx,
@@ -557,7 +568,9 @@ async def get_import_job(
 
 
 @router.get("/import/jobs", response_model=ImportJobsResponse)
+@limiter.limit("30/minute")
 async def list_import_jobs(
+    request: Request,
     user: CurrentUser,
     tenant: TenantCtx,
     limit: Annotated[int, Query(ge=1, le=50)] = 10,
@@ -625,3 +638,97 @@ async def list_import_jobs(
     ]
 
     return ImportJobsResponse(jobs=jobs, total=total)
+
+
+def _get_tenant_import_job(supa, tenant_id: str, job_id: str) -> dict:
+    try:
+        result = (
+            supa.table("import_jobs")
+            .select("*")
+            .eq("id", job_id)
+            .eq("tenant_id", tenant_id)
+            .single()
+            .execute()
+        )
+    except Exception as e:
+        logger.error("Failed to fetch import job %s: %s", job_id, e)
+        raise HTTPException(status_code=404, detail="Import job not found") from e
+    if not result.data:
+        raise HTTPException(status_code=404, detail="Import job not found")
+    return result.data
+
+
+@router.post("/import/jobs/{job_id}/cancel")
+@limiter.limit("10/minute")
+async def cancel_import_job(
+    request: Request,
+    job_id: Annotated[str, Path(description="Import job ID")],
+    user: CurrentUser,
+    tenant: TenantCtx,
+) -> dict[str, str]:
+    """Cancel a queued or processing async import job."""
+    if not tenant.is_admin:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only admins can cancel import jobs",
+        )
+
+    supa = get_supabase_service_client()
+    job = _get_tenant_import_job(supa, str(tenant.tenant_id), job_id)
+
+    if job["status"] not in ("queued", "processing"):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Cannot cancel job in status '{job['status']}'",
+        )
+
+    supa.table("import_jobs").update({
+        "status": "cancelled",
+        "error_message": "Cancelled by user",
+        "worker_id": None,
+        "completed_at": datetime.now(UTC).isoformat(),
+    }).eq("id", job_id).execute()
+
+    return {"status": "cancelled", "job_id": job_id}
+
+
+@router.post("/import/jobs/{job_id}/retry")
+@limiter.limit("10/minute")
+async def retry_import_job(
+    request: Request,
+    job_id: Annotated[str, Path(description="Import job ID")],
+    user: CurrentUser,
+    tenant: TenantCtx,
+) -> dict[str, str]:
+    """Re-queue a failed or cancelled async import job for processing."""
+    if not tenant.is_admin:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only admins can retry import jobs",
+        )
+
+    supa = get_supabase_service_client()
+    job = _get_tenant_import_job(supa, str(tenant.tenant_id), job_id)
+
+    if job["status"] not in ("failed", "cancelled"):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Cannot retry job in status '{job['status']}'",
+        )
+    if not job.get("storage_path"):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Job has no stored file — upload again instead",
+        )
+
+    supa.table("import_jobs").update({
+        "status": "queued",
+        "error_message": None,
+        "worker_id": None,
+        "heartbeat_at": None,
+        "completed_at": None,
+        "rows_inserted": 0,
+        "rows_skipped": 0,
+    }).eq("id", job_id).execute()
+
+    return {"status": "queued", "job_id": job_id}

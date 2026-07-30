@@ -24,6 +24,9 @@ import { supabase } from "@/lib/supabase";
 import { AlertTriangle, Menu, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { MobileNavProvider } from "@/contexts/MobileNavContext";
+import { ConsentReacceptanceModal } from "@/components/ConsentReacceptanceModal";
+import { PlanBadge } from "@/components/ui/badge";
+import { dismissSlot, isSlotDismissed, SLOT_KEYS } from "@/lib/promoSlots";
 
 export { APP_NAV_ITEMS as NAV_ITEMS };
 
@@ -71,6 +74,7 @@ export function AppShell() {
     ? getQuotaLevel(usage.copilot_calls_used, usage.copilot_calls_limit)
     : "ok";
   const quotaWarning = copilotLevel === "warning" || copilotLevel === "critical";
+  const showSlotM = plan !== "business" && !isSlotDismissed(SLOT_KEYS.M);
 
   const profileData = {
     name:
@@ -133,6 +137,25 @@ export function AppShell() {
         </div>
 
         <div className="px-4 py-4 border-t border-white/10 space-y-2">
+          {showSlotM && (
+            <div className="flex items-center justify-between gap-2">
+              <Link
+                to={plan === "free" ? "/upgrade" : "/billing"}
+                onClick={closeSidebar}
+                className="hover:opacity-90 transition-opacity"
+              >
+                <PlanBadge plan={plan as "free" | "pro" | "business"} />
+              </Link>
+              <button
+                type="button"
+                className="text-[10px] text-white/40 hover:text-white/60"
+                onClick={() => dismissSlot(SLOT_KEYS.M)}
+                aria-label="Dismiss plan badge"
+              >
+                ×
+              </button>
+            </div>
+          )}
           {plan === "free" && (
             <GlowCTALink to="/upgrade" size="sm" className="w-full block" onClick={closeSidebar}>
               Upgrade to Pro →
@@ -205,6 +228,7 @@ export function AppShell() {
 
         <main className="flex-1 relative overflow-auto mb-16 lg:mb-0">
           <DarkMeshBackground className="fixed inset-0 opacity-30 pointer-events-none" />
+          <ConsentReacceptanceModal />
           <ErrorBoundary key={location.pathname}>
             <MobileNavProvider openNav={() => setSidebarOpen(true)}>
               <Outlet />

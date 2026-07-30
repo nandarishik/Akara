@@ -16,6 +16,7 @@ import {
   AlertTriangle,
 } from "lucide-react"
 import { useAuth } from "@/contexts/AuthContext"
+import { PageSEO } from "@/components/seo/PageSEO"
 import { useTypewriter } from "@/hooks/useTypewriter"
 import { SecondaryButton } from "@/components/ui/GradientButton"
 import GlowCTAButton, { GlowCTALink } from "@/components/ui/GlowCTAButton"
@@ -27,6 +28,7 @@ import { GlassIcon } from "@/components/effects/GlassIcon"
 import type { GlassIconColor } from "@/components/effects/GlassIcons"
 import BorderGlow from "@/components/effects/BorderGlow"
 import PlanReflectiveCard, { PLAN_REFLECTIVE_META } from "@/components/effects/PlanReflectiveCard"
+import { dismissSlot, isSlotDismissed, migrateLegacySlotA, SLOT_KEYS } from "@/lib/promoSlots"
 import PrismLazy from "@/components/effects/PrismLazy"
 import { BORDER_GLOW_DEFAULTS } from "@/components/effects/presets"
 import { cn } from "@/lib/utils"
@@ -132,16 +134,19 @@ export function LandingPage() {
     else el.close()
   }, [demoOpen])
 
-  const [slotAVisible, setSlotAVisible] = useState(
-    () => localStorage.getItem("banner_wa_dismissed") !== "true"
-  )
+  const [slotAVisible, setSlotAVisible] = useState(() => {
+    migrateLegacySlotA()
+    return !isSlotDismissed(SLOT_KEYS.A)
+  })
   function dismissSlotA() {
-    localStorage.setItem("banner_wa_dismissed", "true")
+    dismissSlot(SLOT_KEYS.A)
     setSlotAVisible(false)
   }
 
   const pricingRef = useRef<HTMLElement>(null)
   const [showStickyBar, setShowStickyBar] = useState(false)
+  const [slotBDismissed, setSlotBDismissed] = useState(() => isSlotDismissed(SLOT_KEYS.B))
+  const [slotCDismissed, setSlotCDismissed] = useState(() => isSlotDismissed(SLOT_KEYS.C))
   const heroRef = useRef<HTMLElement>(null)
   useEffect(() => {
     const onScroll = () => {
@@ -192,6 +197,18 @@ export function LandingPage() {
 
   return (
     <div className="min-h-screen overflow-x-hidden bg-[#0a0a0a] text-white">
+      <PageSEO
+        title="AKARA — FMCG sales intelligence for India"
+        description="Import Tally data, ask AI questions, and get weekly debriefs. Built for Indian FMCG distributors and brands."
+        path="/"
+        jsonLd={{
+          "@context": "https://schema.org",
+          "@type": "SoftwareApplication",
+          name: "AKARA",
+          applicationCategory: "BusinessApplication",
+          offers: { "@type": "Offer", price: "0", priceCurrency: "INR" },
+        }}
+      />
       <header className="sticky top-0 z-40 backdrop-blur border-b bg-[#0a0a0a]/80 border-white/10 -mt-0">
         <nav className="max-w-6xl mx-auto px-5 sm:px-8 h-16 flex items-center justify-between">
           <a href="/" className="text-xl font-bold tracking-tight font-display text-white">
@@ -597,6 +614,8 @@ export function LandingPage() {
             </div>
             <div>
               <p className="font-semibold text-sm mb-3 text-white/80">Get launch updates</p>
+              {!slotCDismissed && (
+                <>
               <p className="text-white/60 text-sm mb-3">Analytics tips + product news</p>
               {captureStatus === "done" ? (
                 <p className="text-emerald-400 text-sm">✓ You&apos;re on the list!</p>
@@ -625,6 +644,18 @@ export function LandingPage() {
                   </GlowCTAButton>
                 </form>
               )}
+              <button
+                type="button"
+                className="mt-2 text-xs text-white/40 hover:text-white/60"
+                onClick={() => {
+                  dismissSlot(SLOT_KEYS.C)
+                  setSlotCDismissed(true)
+                }}
+              >
+                Dismiss
+              </button>
+                </>
+              )}
             </div>
           </div>
 
@@ -635,11 +666,24 @@ export function LandingPage() {
         </div>
       </footer>
 
-      {showStickyBar && (
+      {showStickyBar && !slotBDismissed && (
         <div className="fixed bottom-0 left-0 right-0 z-40 bg-[#0a0a0a]/95 backdrop-blur border-t border-white/10 px-4 py-3 md:hidden">
-          <GlowCTALink to="/signup" className="block w-full">
-            Start free →
-          </GlowCTALink>
+          <div className="flex items-center gap-2">
+            <GlowCTALink to="/signup" className="block flex-1">
+              Start free →
+            </GlowCTALink>
+            <button
+              type="button"
+              onClick={() => {
+                dismissSlot(SLOT_KEYS.B)
+                setSlotBDismissed(true)
+              }}
+              className="text-white/50 hover:text-white px-2"
+              aria-label="Dismiss sticky bar"
+            >
+              ×
+            </button>
+          </div>
         </div>
       )}
     </div>

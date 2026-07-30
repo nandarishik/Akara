@@ -151,13 +151,45 @@ class ImportWorker:
             if not job.data:
                 return
             user_id = job.data.get("user_id")
+            tenant_id = job.data.get("tenant_id")
             filename = job.data.get("filename") or "upload"
             user = self.supabase.auth.admin.get_user_by_id(user_id)
             email = user.user.email if user and user.user else None
             if email:
                 from app.services.notifications import send_import_failed_email
 
-                send_import_failed_email(email, filename, error_message)
+                tid = UUID(str(tenant_id)) if tenant_id else None
+                uid = UUID(str(user_id)) if user_id else None
+                send_import_failed_email(
+                    email,
+                    filename,
+                    error_message,
+                    tenant_id=tid,
+                    user_id=uid,
+                )
+
+            if settings.whatsapp_sends_enabled and user_id:
+                profile = (
+                    self.supabase.table("profiles")
+                    .select("phone_number, preferences")
+                    .eq("id", str(user_id))
+                    .maybe_single()
+                    .execute()
+                )
+                prefs = (profile.data or {}).get("preferences") or {}
+                phone = (profile.data or {}).get("phone_number")
+                if phone and prefs.get("whatsapp_alerts_enabled", True):
+                    from app.services.notifications.whatsapp import send_whatsapp_template
+
+                    asyncio.run(
+                        send_whatsapp_template(
+                            to_phone=phone,
+                            template_name="import_failed",
+                            variables=[filename[:40], error_message[:120]],
+                            tenant_id=UUID(str(tenant_id)) if tenant_id else None,
+                            user_id=UUID(str(user_id)),
+                        )
+                    )
         except Exception as exc:
             logger.warning("Import failure notification skipped for %s: %s", job_id, exc)
 
@@ -185,6 +217,18 @@ class ImportWorker:
 
     async def process_job(self, job: dict[str, Any]) -> bool:
         job_id = job["id"]
+
+        current = (
+            self.supabase.table("import_jobs")
+            .select("status")
+            .eq("id", str(job_id))
+            .maybe_single()
+            .execute()
+        )
+        if current.data and current.data.get("status") == "cancelled":
+            logger.info("Job %s was cancelled — skipping", job_id)
+            return False
+
         tenant_id = UUID(str(job["tenant_id"]))
         source_type = str(job.get("source_type") or "primary")
         filename = str(job.get("filename") or "upload.csv")

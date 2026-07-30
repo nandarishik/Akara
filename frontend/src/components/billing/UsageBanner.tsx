@@ -4,6 +4,7 @@
 
 import { AlertTriangle, ArrowRight, Ban } from "lucide-react";
 import { Link } from "react-router-dom";
+import { useState } from "react";
 
 import {
   getMonthResetDate,
@@ -11,6 +12,7 @@ import {
   getUsagePct,
 } from "@/lib/api/billing";
 import type { UsageResponse } from "@/lib/api/billing";
+import { dismissSlot, isSlotDismissed, SLOT_KEYS } from "@/lib/promoSlots";
 import { cn } from "@/lib/utils";
 
 interface UsageBannerProps {
@@ -46,6 +48,7 @@ const LEVEL_STYLES = {
 };
 
 export function UsageBanner({ usage, className }: UsageBannerProps) {
+  const [slotNDismissed, setSlotNDismissed] = useState(() => isSlotDismissed(SLOT_KEYS.N));
   const level = getQuotaLevel(
     usage.copilot_calls_used,
     usage.copilot_calls_limit
@@ -100,14 +103,25 @@ export function UsageBanner({ usage, className }: UsageBannerProps) {
         </p>
       )}
 
-      {level === "warning" && (
+      {level === "warning" && !slotNDismissed && (
         <p className={cn("text-xs flex items-center gap-1.5 shrink-0", styles.message)}>
           <AlertTriangle className="h-3.5 w-3.5" aria-hidden />
           {pct}% used · resets {resetDate}
+          <button
+            type="button"
+            className="ml-1 opacity-70 hover:underline"
+            onClick={() => {
+              dismissSlot(SLOT_KEYS.N);
+              setSlotNDismissed(true);
+            }}
+            aria-label="Dismiss quota warning"
+          >
+            Dismiss
+          </button>
         </p>
       )}
 
-      {level === "critical" && (
+      {level === "critical" && !slotNDismissed && (
         <p className={cn("text-xs flex items-center gap-1.5 shrink-0", styles.message)}>
           <AlertTriangle className="h-3.5 w-3.5" aria-hidden />
           {remaining} left ·{" "}

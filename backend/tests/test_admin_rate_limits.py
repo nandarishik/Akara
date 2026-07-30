@@ -1,4 +1,4 @@
-"""Rate limit wiring on admin billing endpoints."""
+"""Rate limit wiring on superadmin billing endpoints."""
 
 from __future__ import annotations
 
@@ -7,37 +7,32 @@ from unittest.mock import MagicMock, patch
 import pytest
 from fastapi.testclient import TestClient
 
-from tests.conftest import TENANT_PRO, USER_PRO
-from tests.test_billing_endpoint import _make_tenant_supa
+from tests.superadmin_helpers import clear_auth_override, make_superadmin_client, profile_only_supabase
 
 
 @pytest.fixture
-def authed_admin_client() -> TestClient:
-    from app.core.auth import AuthenticatedUser, get_current_user
-    from app.main import app
-
-    fake_user = AuthenticatedUser(user_id=USER_PRO, email="admin@akara.test", role="admin")
-    app.dependency_overrides[get_current_user] = lambda: fake_user
-    client = TestClient(app, headers={"Authorization": "Bearer fake-test-token"})
+def superadmin_client() -> TestClient:
+    client = make_superadmin_client()
     yield client
-    app.dependency_overrides.pop(get_current_user, None)
+    clear_auth_override()
 
 
-@patch("app.api.routes.admin.billing.get_supabase_service_client")
-@patch("app.core.tenant.get_supabase_service_client")
-def test_admin_billing_read_rate_limit(mock_ctx_supa, mock_admin_supa, authed_admin_client):
-    mock_ctx_supa.return_value = _make_tenant_supa("pro")
-    supa = MagicMock()
+@patch("app.api.routes.superadmin.billing.get_supabase_service_client")
+@patch("app.core.superadmin.get_supabase_service_client")
+def test_admin_billing_read_rate_limit(mock_sa_supa, mock_billing_supa, superadmin_client):
+    mock_sa_supa.return_value = profile_only_supabase("superadmin")
+
+    billing_supa = MagicMock()
     events_mock = MagicMock()
     events_mock.execute.return_value = MagicMock(data=[])
-    supa.table.return_value.select.return_value.gte.return_value.order.return_value.limit.return_value = (
+    billing_supa.table.return_value.select.return_value.gte.return_value.order.return_value.limit.return_value = (
         events_mock
     )
-    mock_admin_supa.return_value = supa
+    mock_billing_supa.return_value = billing_supa
 
     last_status = 200
     for _ in range(31):
-        response = authed_admin_client.get("/admin/billing/webhooks/status")
+        response = superadmin_client.get("/superadmin/billing/webhooks/status")
         last_status = response.status_code
 
     assert last_status == 429

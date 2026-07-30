@@ -10,6 +10,7 @@ import { Link, useNavigate, useSearchParams } from "react-router-dom"
 import { Eye, EyeOff } from "lucide-react"
 import { useAuth } from "@/contexts/AuthContext"
 import { PremiumAuthLayout } from "@/components/layout/PremiumAuthLayout"
+import { PageSEO } from "@/components/seo/PageSEO"
 import PageLoader from "@/components/ui/PageLoader"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -220,6 +221,12 @@ export function SignUpPage() {
 
   return (
     <PremiumAuthLayout subtitle="Create your free account">
+      <PageSEO
+        title="Sign up"
+        description="Create your free AKARA account — import sales data and unlock AI copilot insights for Indian FMCG."
+        path="/signup"
+        noindex
+      />
       {loading && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#0a0a0a]/80 backdrop-blur-sm">
           <PageLoader title="Creating your account…" subtitle="" minHeight="min-h-0" />

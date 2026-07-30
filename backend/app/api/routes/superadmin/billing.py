@@ -7,10 +7,11 @@ from datetime import UTC, datetime, timedelta
 from typing import Any
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, Request
+from fastapi import APIRouter, Depends, Query, Request
 from pydantic import BaseModel, Field
 
 from app.core.errors import AkaraHTTPException
+from app.core.plan_limits import PLAN_LIMITS, get_limit
 from app.core.rate_limit import ADMIN_READ_LIMIT, ADMIN_WRITE_LIMIT, limiter
 from app.core.superadmin import SuperAdmin, SudoCtx, request_actor_meta, require_csrf
 from app.core.tenant import get_supabase_service_client
@@ -18,6 +19,7 @@ from app.services.billing.checkout import fetch_subscription_status
 from app.services.billing.email import send_payment_success_email
 from app.services.superadmin.audit import record_operation
 from app.services.superadmin.mutations import SuperadminMutation, dry_run_response
+from app.services.superadmin.revenue import compute_revenue_summary
 
 logger = logging.getLogger(__name__)
 
@@ -379,47 +381,127 @@ def revenue_summary(
     request: Request,
     _admin: SuperAdmin,
 ) -> dict[str, Any]:
+    return compute_revenue_summary()
+
+
+@router.get("/revenue/snapshots")
+@limiter.limit(ADMIN_READ_LIMIT)
+def revenue_snapshots(
+    request: Request,
+    _admin: SuperAdmin,
+    months: int = 6,
+) -> dict[str, Any]:
     supa = get_supabase_service_client()
-    tenants = supa.table("tenants").select("id, plan, plan_status, created_at").execute()
-    rows = tenants.data or []
+    cutoff = (datetime.now(UTC) - timedelta(days=months * 31)).date().isoformat()
+    rows = (
+        supa.table("revenue_snapshots")
+        .select("*")
+        .gte("snapshot_date", cutoff)
+        .order("snapshot_date", desc=False)
+        .execute()
+    ).data or []
+    return {"items": rows, "total": len(rows)}
 
-    by_plan = {"free": 0, "pro": 0, "business": 0}
-    mrr = 0
-    for t in rows:
-        plan = t.get("plan") or "free"
-        if plan in by_plan:
-            by_plan[plan] += 1
-        if t.get("plan_status") in ("active", "trialing") and plan in PLAN_MRR_INR:
-            mrr += PLAN_MRR_INR[plan]
 
+@router.get("/billing/recent-payments")
+@limiter.limit(ADMIN_READ_LIMIT)
+def recent_payments(
+    request: Request,
+    _admin: SuperAdmin,
+    limit: int = Query(default=10, ge=1, le=50),
+) -> dict[str, Any]:
+    supa = get_supabase_service_client()
+    invoices = (
+        supa.table("invoices")
+        .select("id, tenant_id, invoice_number, total_amount, status, created_at")
+        .order("created_at", desc=True)
+        .limit(limit)
+        .execute()
+    ).data or []
+    tenant_names: dict[str, str] = {}
+    items: list[dict[str, Any]] = []
+    for row in invoices:
+        tid = str(row.get("tenant_id") or "")
+        if tid and tid not in tenant_names:
+            tenant = (
+                supa.table("tenants")
+                .select("name")
+                .eq("id", tid)
+                .maybe_single()
+                .execute()
+            )
+            tenant_names[tid] = (tenant.data or {}).get("name") or tid[:8]
+        items.append(
+            {
+                "id": row.get("id"),
+                "tenant_id": tid,
+                "tenant_name": tenant_names.get(tid),
+                "invoice_number": row.get("invoice_number"),
+                "amount_inr": float(row.get("total_amount") or 0),
+                "status": row.get("status") or "unknown",
+                "created_at": row.get("created_at"),
+            }
+        )
+    return {"items": items, "total": len(items)}
+
+
+@router.get("/plan-limits")
+@limiter.limit(ADMIN_READ_LIMIT)
+def plan_limits_catalog(
+    request: Request,
+    _admin: SuperAdmin,
+) -> dict[str, Any]:
+    return {"plans": PLAN_LIMITS}
+
+
+@router.get("/costs/tenants")
+@limiter.limit(ADMIN_READ_LIMIT)
+def tenant_cost_diagnostics(
+    request: Request,
+    _admin: SuperAdmin,
+) -> list[dict[str, Any]]:
+    supa = get_supabase_service_client()
     month_start = datetime.now(UTC).replace(day=1, hour=0, minute=0, second=0, microsecond=0)
-    new_paid = sum(
-        1
-        for t in rows
-        if t.get("plan") in ("pro", "business")
-        and t.get("created_at")
-        and str(t["created_at"]) >= month_start.isoformat()
-    )
-    churned = sum(1 for t in rows if t.get("plan_status") == "cancelled")
-
-    llm = (
+    tenants = supa.table("tenants").select("id, name, plan, plan_status, feature_overrides").execute()
+    usage_rows = (
+        supa.table("usage_tracking")
+        .select("tenant_id, copilot_calls, rows_imported")
+        .gte("month", month_start.strftime("%Y-%m"))
+        .execute()
+    ).data or []
+    usage_by_tenant = {r["tenant_id"]: r for r in usage_rows}
+    llm_rows = (
         supa.table("llm_cost_log")
-        .select("cost_usd")
+        .select("tenant_id, cost_usd")
         .gte("created_at", month_start.isoformat())
         .execute()
-    )
-    llm_cost = sum(float(r.get("cost_usd") or 0) for r in (llm.data or []))
-    margin_pct = round((1 - (llm_cost * 85 / max(mrr, 1))) * 100, 2) if mrr else 0
+    ).data or []
+    cost_by_tenant: dict[str, float] = {}
+    for r in llm_rows:
+        tid = r.get("tenant_id") or ""
+        cost_by_tenant[tid] = cost_by_tenant.get(tid, 0) + float(r.get("cost_usd") or 0)
 
-    return {
-        "mrr_inr": mrr,
-        "arr_inr": mrr * 12,
-        "tenants_by_plan": by_plan,
-        "new_paid_this_month": new_paid,
-        "churned_this_month": churned,
-        "total_llm_cost_usd_this_month": round(llm_cost, 4),
-        "estimated_gross_margin_pct": margin_pct,
-    }
+    out: list[dict[str, Any]] = []
+    for t in tenants.data or []:
+        tid = t["id"]
+        plan = t.get("plan") or "free"
+        u = usage_by_tenant.get(tid, {})
+        out.append(
+            {
+                "tenant_id": tid,
+                "tenant_name": t.get("name") or tid,
+                "plan": plan,
+                "plan_status": t.get("plan_status") or "active",
+                "copilot_calls_used": int(u.get("copilot_calls") or 0),
+                "copilot_calls_limit": get_limit(plan, "copilot_calls_per_month"),
+                "rows_used": int(u.get("rows_imported") or 0),
+                "rows_limit": get_limit(plan, "rows_total"),
+                "cost_usd_this_month": round(cost_by_tenant.get(tid, 0), 6),
+                "retention_days": get_limit(plan, "retention_days"),
+                "feature_overrides": t.get("feature_overrides") or {},
+            }
+        )
+    return out
 
 
 @router.get("/costs")

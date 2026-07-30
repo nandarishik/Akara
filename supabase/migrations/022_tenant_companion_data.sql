@@ -1,5 +1,5 @@
 -- ============================================================
--- 020_tenant_companion_data.sql
+-- 022_tenant_companion_data.sql
 -- Companion/auxiliary import rows (wastage, shifts, referrals, etc.)
 -- for cross-file copilot questions.
 -- ============================================================

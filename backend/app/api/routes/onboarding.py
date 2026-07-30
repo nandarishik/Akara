@@ -328,7 +328,8 @@ async def setup_tenant(
     status_code=status.HTTP_200_OK,
     summary="Mark onboarding complete",
 )
-async def onboarding_complete(user: CurrentUser) -> dict:
+@limiter.limit("10/minute")
+async def onboarding_complete(request: Request, user: CurrentUser) -> dict:
     """Set ``has_completed_onboarding = True`` on the user's profile row.
 
     Called from the frontend when the user clicks "Go to my dashboard →"
@@ -339,4 +340,21 @@ async def onboarding_complete(user: CurrentUser) -> dict:
         {"has_completed_onboarding": True}
     ).eq("id", str(user.user_id)).execute()
     record_user_event(user.user_id, "onboarded")
+
+    try:
+        from app.services.billing.email import send_welcome_email
+
+        profile = (
+            client.table("profiles")
+            .select("display_name")
+            .eq("id", str(user.user_id))
+            .maybe_single()
+            .execute()
+        )
+        name = (profile.data or {}).get("display_name") or user.email or "there"
+        if user.email:
+            send_welcome_email(user.email, name)
+    except Exception:
+        pass
+
     return {"ok": True}

@@ -10,11 +10,12 @@ Discount elasticity uses the industry-standard FMCG estimate of -0.3.
 
 import logging
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from pydantic import BaseModel, Field
 
 from app.core.auth import CurrentUser
 from app.core.plan_guard import require_feature
+from app.core.rate_limit import limiter
 from app.core.tenant import TenantCtx, get_supabase_service_client
 from app.services.simulator.projector import RevenueProjector
 
@@ -52,7 +53,9 @@ class SimulatorResponse(BaseModel):
 
 
 @router.get("/baseline", response_model=BaselineResponse)
+@limiter.limit("30/minute")
 def get_baseline(
+    request: Request,
     user: CurrentUser,
     tenant: TenantCtx,
 ) -> BaselineResponse:
@@ -73,7 +76,9 @@ def get_baseline(
 
 
 @router.post("/run", response_model=SimulatorResponse)
+@limiter.limit("30/minute")
 def run_simulation(
+    request: Request,
     body: SimulatorRequest,
     user: CurrentUser,
     tenant: TenantCtx,

@@ -15,6 +15,7 @@ import { AkaraButton, GhostButton } from "@/components/ui/GradientButton"
 import GlowSurfaceCard from "@/components/ui/GlowSurfaceCard"
 import PageLoader from "@/components/ui/PageLoader"
 import { cn } from "@/lib/utils"
+import { dismissSlot, isSlotDismissed, SLOT_KEYS } from "@/lib/promoSlots"
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL ?? ""
 const ONBOARDING_STEP_KEY = "akara_onboarding_step"
@@ -97,7 +98,7 @@ export function OnboardingPage() {
   const [uploadResult, setUploadResult] = useState<{ rows: number; dateRange: string; zones: number } | null>(null)
 
   const [slotIDismissed, setSlotIDismissed] = useState(
-    () => localStorage.getItem("akara_slot_I_dismissed") === "true"
+    () => isSlotDismissed(SLOT_KEYS.I)
   )
 
   async function handleStep1() {
@@ -444,7 +445,7 @@ export function OnboardingPage() {
                   <p className="text-xs text-text-muted mt-0.5">Add team members and collaborate. Available on Pro & Business plans.</p>
                 </div>
                 <button
-                  onClick={() => { localStorage.setItem("akara_slot_I_dismissed", "true"); setSlotIDismissed(true) }}
+                  onClick={() => { dismissSlot(SLOT_KEYS.I); setSlotIDismissed(true) }}
                   className="text-text-muted hover:text-text-secondary flex-shrink-0"
                   aria-label="Dismiss"
                 >

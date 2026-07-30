@@ -1,4 +1,5 @@
 import { Component, type ReactNode } from "react";
+import { Link } from "react-router-dom";
 import GlowSurfaceCard from "@/components/ui/GlowSurfaceCard";
 import { AkaraButton } from "@/components/ui/GradientButton";
 
@@ -40,6 +41,9 @@ export class ErrorBoundary extends Component<Props, State> {
             <AkaraButton className="mt-6" onClick={() => window.location.reload()}>
               Reload page
             </AkaraButton>
+            <Link to="/500" className="block mt-3 text-sm text-accent hover:underline">
+              Server error details
+            </Link>
           </GlowSurfaceCard>
         </div>
       );

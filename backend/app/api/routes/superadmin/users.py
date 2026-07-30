@@ -48,13 +48,22 @@ class UserDeleteBody(SuperadminMutation):
     confirm: bool = False
 
 
-def _resolve_email(user_id: str) -> str | None:
+def _resolve_auth_fields(user_id: str) -> tuple[str | None, str | None]:
     supa = get_supabase_service_client()
     try:
         user = supa.auth.admin.get_user_by_id(user_id)
-        return user.user.email if user and user.user else None
+        if not user or not user.user:
+            return None, None
+        last_sign_in = user.user.last_sign_in_at
+        if last_sign_in is not None and not isinstance(last_sign_in, str):
+            last_sign_in = last_sign_in.isoformat()
+        return user.user.email, last_sign_in
     except Exception:
-        return None
+        return None, None
+
+
+def _resolve_email(user_id: str) -> str | None:
+    return _resolve_auth_fields(user_id)[0]
 
 
 @router.get("", response_model=OffsetPage[UserListItem])
@@ -102,7 +111,7 @@ def list_users(
         if plan and plan_name != plan:
             continue
 
-        email = _resolve_email(row["id"])
+        email, last_sign_in_at = _resolve_auth_fields(row["id"])
         if search:
             hay = f"{email or ''} {row.get('display_name') or ''}".lower()
             if search.lower() not in hay:
@@ -119,6 +128,7 @@ def list_users(
                 plan=plan_name,
                 membership_status=row.get("membership_status"),
                 created_at=row.get("created_at"),
+                last_sign_in_at=last_sign_in_at,
             )
         )
 

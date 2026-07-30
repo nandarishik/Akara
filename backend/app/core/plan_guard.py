@@ -237,6 +237,89 @@ def apply_copilot_quota_headers(response, metadata: dict[str, int | float | bool
     response.headers["X-Quota-Urgent"] = "true" if metadata.get("urgent") else "false"
 
 
+def maybe_notify_copilot_quota_threshold(tenant_id: UUID, prev_count: int, new_count: int) -> None:
+    """Send E10 quota warning email when crossing 80% or 90% (once per threshold per month)."""
+    state = _fetch_billing_state(tenant_id)
+    plan = state.get("plan") or "free"
+    limit = get_limit(plan, "copilot_calls_per_month")
+    if limit <= 0:
+        return
+
+    prev_pct = (prev_count / limit) * 100
+    new_pct = (new_count / limit) * 100
+    thresholds = (80, 90)
+
+    for threshold in thresholds:
+        if prev_pct < threshold <= new_pct:
+            _send_quota_threshold_email(tenant_id, plan, threshold)
+
+
+def _send_quota_threshold_email(tenant_id: UUID, plan: str, threshold: int) -> None:
+    from datetime import timedelta
+
+    from app.services.billing.email import send_quota_warning_email
+    from app.services.notifications.delivery_log import log_delivery
+
+    supa = get_supabase_service_client()
+    template_key = f"quota_warning_{threshold}"
+    since = (datetime.now(UTC) - timedelta(days=31)).isoformat()
+    existing = (
+        supa.table("delivery_logs")
+        .select("id")
+        .eq("tenant_id", str(tenant_id))
+        .eq("template", template_key)
+        .gte("created_at", since)
+        .limit(1)
+        .execute()
+    )
+    if existing.data:
+        return
+
+    admins = (
+        supa.table("profiles")
+        .select("id")
+        .eq("tenant_id", str(tenant_id))
+        .eq("role", "admin")
+        .limit(3)
+        .execute()
+    )
+    for row in admins.data or []:
+        try:
+            user = supa.auth.admin.get_user_by_id(row["id"])
+            email = user.user.email if user and user.user else None
+        except Exception:
+            email = None
+        if not email:
+            continue
+        prefs_row = (
+            supa.table("profiles")
+            .select("preferences")
+            .eq("id", row["id"])
+            .maybe_single()
+            .execute()
+        )
+        prefs = (prefs_row.data or {}).get("preferences") or {}
+        if prefs.get("usage_warnings_enabled") is False:
+            continue
+        ok = send_quota_warning_email(email, plan, threshold)
+        log_delivery(
+            channel="email",
+            template=template_key,
+            status="sent" if ok else "failed",
+            tenant_id=tenant_id,
+            user_id=UUID(str(row["id"])),
+            metadata={"threshold_pct": threshold},
+        )
+        if ok:
+            logger.info(
+                "Quota warning (%s%%) sent to %s for tenant %s",
+                threshold,
+                email,
+                tenant_id,
+            )
+            break
+
+
 # ---------------------------------------------------------------------------
 # Guard: import quota
 # ---------------------------------------------------------------------------

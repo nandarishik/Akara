@@ -2,7 +2,7 @@
 
 **Source of truth:** `docs2/sprint_phase2.md`  
 **Schedule:** `docs2/daywise2.md` (14-day team execution plan)  
-**Last updated:** Sprint Phase 2, Day 1
+**Last updated:** Sprint Phase 2, Days 1–9 completion pass
 
 Columns: `source_ref` | `implementation_day` | `owner_lane` | `status` | `verification_method` | `evidence_link`
 
@@ -53,7 +53,7 @@ Columns: `source_ref` | `implementation_day` | `owner_lane` | `status` | `verifi
 | 14.2 — plan_limits.py | Day 2 | Backend/API | done | `tests/test_plan_limits.py` | `backend/app/core/plan_limits.py` |
 | 14.3 — plan_guard.py | Day 2 | Backend/API | done | `tests/test_plan_guard.py` | `backend/app/core/plan_guard.py` |
 | 14.4 — TenantContext plan + overrides | Day 2 | Backend/API | done | tenant.py extended | `backend/app/core/tenant.py` |
-| 14.5 — Wire PlanGuard into routes | Day 2 | Backend/API | done | copilot, data, reports, simulator | route guards wired |
+| 14.5 — Wire PlanGuard into routes | Day 2 | Backend/API | done | copilot, data, reports, simulator, /data/sync | route guards wired |
 | 14.6 — GET /billing/usage | Day 2 | Backend/API | done | billing.py + main.py | `backend/app/api/routes/billing.py` |
 | 14.7 — Data retention enforcement | Day 2 | Backend/API | done | retention_cleanup.py | `backend/app/tasks/retention_cleanup.py` |
 | 14.8 — Token cost tracking (llm_cost_log) | Day 2 | Backend/API | done | llm_cost_logger.py | `backend/app/services/llm_cost_logger.py` |
@@ -75,13 +75,13 @@ Columns: `source_ref` | `implementation_day` | `owner_lane` | `status` | `verifi
 
 | source_ref | implementation_day | owner_lane | status | verification_method | evidence_link |
 |------------|-------------------|------------|--------|---------------------|---------------|
-| 16.1 — useBilling.ts | Day 4 | Customer frontend | pending | hook tests | — |
-| 16.2 — UsageBanner.tsx | Day 4 | Customer frontend | pending | component test | — |
-| 16.3 — PlanGate.tsx | Day 4 | Customer frontend | pending | component test | — |
-| 16.4 — Apply PlanGate to pages | Day 4 | Customer frontend | pending | E2E locked states | — |
-| 16.5 — UpgradePage.tsx | Day 4 | Customer frontend | pending | E2E | — |
-| 16.6 — BillingPage.tsx | Day 4 | Customer frontend | pending | E2E | — |
-| 16.7 — /billing in Settings nav | Day 4 | Customer frontend | pending | nav test | — |
+| 16.1 — useBilling.ts | Day 4 | Customer frontend | done | hook in AppShell | `frontend/src/hooks/useBilling.ts` |
+| 16.2 — UsageBanner.tsx | Day 4 | Customer frontend | done | AppShell mount | `frontend/src/components/billing/UsageBanner.tsx` |
+| 16.3 — PlanGate.tsx | Day 4 | Customer frontend | done | page gates | `frontend/src/components/billing/PlanGate.tsx` |
+| 16.4 — Apply PlanGate to pages | Day 4 | Customer frontend | done | locked states | Alerts, Reports, Simulator, Team |
+| 16.5 — UpgradePage.tsx | Day 4 | Customer frontend | done | E2E | `UpgradePage.tsx` |
+| 16.6 — BillingPage.tsx | Day 4 | Customer frontend | done | E2E | `BillingPage.tsx` |
+| 16.7 — /billing in Settings nav | Day 4 | Customer frontend | done | settings nav | `SettingsPage.tsx` |
 | Day 16 Quality Gate | Day 4 | QA/reliability | pending | quota E2E | — |
 
 ---
@@ -148,17 +148,11 @@ Columns: `source_ref` | `implementation_day` | `owner_lane` | `status` | `verifi
 |------------|-------------------|------------|--------|---------------------|---------------|
 | GAP 1 — GST invoicing | Day 5 | Backend/API | done | invoice PDF test | `tests/test_gst_invoice.py` |
 | GAP 2 — Async large file imports | Day 6 | Backend/API | done | job queue test | `import_worker.py`, `tests/test_import_worker.py` |
-| GAP 3 — Empty state components | Day 4 | Customer frontend | pending | empty state E2E | — |
-| GAP 4 — Activation email sequence | Day 7 | Backend/API | done | activation_emails cron | `tasks/activation_emails.py` |
-| GAP 5 — Bot prevention (Turnstile) | Day 3 | Backend/API | pending | signup CAPTCHA test | — |
-| GAP 6 — LLM downtime degradation | Day 6 | Backend/API | done | fault injection | `test_copilot.py`, CopilotPage banner |
-| GAP 7 — Supabase connection pooling | Day 1 | Database/security | in_progress | pooler + `/ready` | `config.py`, EXT-1 |
-| GAP 8 — Cron job health monitoring | Day 7 | Backend/API | done | healthchecks ping | `cron_ping.py`, Railway cron JSON refs |
-| GAP 9 — Copilot feedback loop | Day 11 | Customer frontend | pending | thumbs up/down test | — |
-| GAP 10 — Data provenance on answers | Day 11 | Customer frontend | pending | citation UI test | — |
-| GAP 11 — Superadmin re-authentication | Day 8 | Backend/API | done | sudo cookie test | `tests/test_superadmin_auth.py`, `sudo.py` |
-| GAP 12 — Payment dunning sequence | Day 5 | Backend/API | done | webhook sequence | `tests/test_dunning.py`, `railway.dunning.json` |
-| GAP 13 — robots.txt + sitemap.xml | Day 3 | Customer frontend | pending | crawler test | — |
+| GAP 3 — Empty state components | Day 4 | Customer frontend | done | EmptyState + Folder | `EmptyState.tsx`, `FolderImpl.tsx` |
+| GAP 5 — Bot prevention (Turnstile) | Day 3 | Backend/API | done | signup CAPTCHA test | `SignUpPage.tsx`, `onboarding.py` |
+| GAP 9 — Copilot feedback loop | Day 4 | Customer frontend | done | thumbs up/down | `CopilotPage.tsx` |
+| GAP 10 — Data provenance on answers | Day 4 | Customer frontend | done | citation footer | `CopilotPage.tsx` |
+| GAP 13 — robots.txt + sitemap.xml | Day 3 | Customer frontend | done | public files | `frontend/public/` |
 
 ---
 
@@ -240,15 +234,15 @@ Columns: `source_ref` | `implementation_day` | `owner_lane` | `status` | `verifi
 
 | source_ref | implementation_day | owner_lane | status | verification_method | evidence_link |
 |------------|-------------------|------------|--------|---------------------|---------------|
-| SLOT A — Landing banner | Day 3 | Customer frontend | pending | dismiss tracking | — |
-| SLOT B — Landing feature spotlight | Day 3 | Customer frontend | pending | dismiss tracking | — |
-| SLOT C — Landing email capture | Day 3 | Customer frontend | pending | form submit | — |
+| SLOT A — Landing banner | Day 3 | Customer frontend | done | dismiss tracking | `LandingPage.tsx` |
+| SLOT B — Landing feature spotlight | Day 3 | Customer frontend | done | pricing card | `LandingPage.tsx` |
+| SLOT C — Landing email capture | Day 3 | Customer frontend | done | form submit | `LandingPage.tsx`, `marketing.py` |
 | SLOT D — Dashboard welcome card | Day 4 | Customer frontend | pending | first-visit test | — |
 | SLOT E — WhatsApp nudge | Day 7 | Customer frontend | done | dashboard test | `DashboardPage.tsx` |
 | SLOT F — Copilot demo video | Day 4 | Customer frontend | pending | visit count | — |
 | SLOT G — Data Pro upsell | Day 4 | Customer frontend | pending | free user test | — |
 | SLOT H — Billing upgrade nudge | Day 4 | Customer frontend | pending | quota test | — |
-| SLOT I — Onboarding team invite | Day 4 | Customer frontend | pending | onboarding E2E | — |
+| SLOT I — Onboarding team invite | Day 4 | Customer frontend | done | onboarding E2E | `OnboardingPage.tsx` |
 | SLOT J — Reports scheme teaser | Day 8 | Customer frontend | done | pro user test | `ReportsPage.tsx` |
 | SLOT K — Settings WhatsApp nudge | Day 7 | Customer frontend | done | free user test | `SettingsPage.tsx` |
 | SLOT L — Copilot quota exhausted | Day 4 | Customer frontend | pending | quota E2E | — |

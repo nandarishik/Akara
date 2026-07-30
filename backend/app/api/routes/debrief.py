@@ -6,10 +6,11 @@ import logging
 from datetime import datetime
 from uuid import UUID
 
-from fastapi import APIRouter, HTTPException, Response, status
+from fastapi import APIRouter, HTTPException, Request, Response, status
 from pydantic import BaseModel
 
 from app.core.auth import CurrentUser
+from app.core.rate_limit import limiter
 from app.core.tenant import TenantCtx, get_supabase_service_client
 from app.services.debrief.metadata_enrich import enrich_debrief_metadata
 from app.services.debrief.pdf import render_debrief_pdf
@@ -51,7 +52,10 @@ DEBRIEF_SKIP_MESSAGES: dict[str, str] = {
 
 
 @router.post("/generate", response_model=DebriefGenerateResponse)
-async def generate_debrief(user: CurrentUser, tenant: TenantCtx) -> DebriefGenerateResponse:
+@limiter.limit("5/minute")
+async def generate_debrief(
+    request: Request, user: CurrentUser, tenant: TenantCtx
+) -> DebriefGenerateResponse:
     """Generate this week's debrief if missing. No-op when one already exists."""
     if tenant.role not in ("admin", "superadmin"):
         raise HTTPException(status.HTTP_403_FORBIDDEN, detail="Admin access required")
@@ -75,7 +79,8 @@ async def generate_debrief(user: CurrentUser, tenant: TenantCtx) -> DebriefGener
 
 
 @router.get("/latest", response_model=DebriefDetail)
-def get_latest_debrief(user: CurrentUser, tenant: TenantCtx) -> DebriefDetail:
+@limiter.limit("30/minute")
+def get_latest_debrief(request: Request, user: CurrentUser, tenant: TenantCtx) -> DebriefDetail:
     supa = get_supabase_service_client()
     result = (
         supa.table("generated_reports")
@@ -106,7 +111,8 @@ def get_latest_debrief(user: CurrentUser, tenant: TenantCtx) -> DebriefDetail:
 
 
 @router.get("", response_model=list[DebriefSummary])
-def list_debriefs(user: CurrentUser, tenant: TenantCtx) -> list[DebriefSummary]:
+@limiter.limit("30/minute")
+def list_debriefs(request: Request, user: CurrentUser, tenant: TenantCtx) -> list[DebriefSummary]:
     supa = get_supabase_service_client()
     result = (
         supa.table("generated_reports")
@@ -135,7 +141,9 @@ def list_debriefs(user: CurrentUser, tenant: TenantCtx) -> list[DebriefSummary]:
 
 
 @router.get("/{report_id}", response_model=DebriefDetail)
+@limiter.limit("30/minute")
 def get_debrief(
+    request: Request,
     report_id: UUID,
     user: CurrentUser,
     tenant: TenantCtx,
@@ -167,7 +175,9 @@ def get_debrief(
 
 
 @router.get("/{report_id}/pdf")
+@limiter.limit("30/minute")
 def download_debrief_pdf(
+    request: Request,
     report_id: UUID,
     user: CurrentUser,
     tenant: TenantCtx,

@@ -4,6 +4,22 @@
 
 import '@testing-library/jest-dom'
 
+Object.defineProperty(window, 'matchMedia', {
+  writable: true,
+  value: (query: string) => ({
+    matches: false,
+    media: query,
+    onchange: null,
+    addListener: () => {},
+    removeListener: () => {},
+    addEventListener: () => {},
+    removeEventListener: () => {},
+    dispatchEvent: () => false,
+  }),
+})
+
+Element.prototype.scrollIntoView = () => {}
+
 // Silence console.error for expected React warnings in tests
 const originalError = console.error
 beforeAll(() => {

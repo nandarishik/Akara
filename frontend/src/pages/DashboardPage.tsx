@@ -33,6 +33,8 @@ import { GlassIcon } from "@/components/effects/GlassIcon";
 import type { GlassIconColor } from "@/components/effects/GlassIcons";
 import { DASHBOARD_KPI_GLASS } from "@/lib/glassIconMap";
 import { DashboardEmptyState } from "@/components/ui/EmptyState";
+import { PromoDismissCard } from "@/components/promo/PromoDismissCard";
+import { dismissSlot, incrementVisitCount, isSlotDismissed, SLOT_KEYS } from "@/lib/promoSlots";
 import { salesDataAgeDays } from "@/lib/dataFreshness";
 
 function getDateRange(period: string): [string, string] {
@@ -50,24 +52,27 @@ function getDateRange(period: string): [string, string] {
 
 const formatINR = fmtINR;
 
-const SLOT_E_VIEWS_KEY = "akara_slot_E_views";
-const SLOT_E_DISMISSED_KEY = "akara_slot_E_dismissed";
-
 export function DashboardPage() {
   const [period, setPeriod] = useState("30d");
   const [showWhatsAppNudge, setShowWhatsAppNudge] = useState(false);
+  const [showWelcomeSlot, setShowWelcomeSlot] = useState(false);
   const [start, end] = getDateRange(period);
   const { data, isLoading, error } = useKPIs(start, end);
   const { data: heatmapData, isLoading: heatmapLoading } = useSalesHeatmap(start, end, !!data);
 
   useEffect(() => {
-    if (localStorage.getItem(SLOT_E_DISMISSED_KEY)) return;
+    if (!isSlotDismissed(SLOT_KEYS.D)) {
+      setShowWelcomeSlot(true);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (isSlotDismissed(SLOT_KEYS.E)) return;
     if (!data?.last_import) return;
 
-    const views = Number(localStorage.getItem(SLOT_E_VIEWS_KEY) || "0") + 1;
-    localStorage.setItem(SLOT_E_VIEWS_KEY, String(views));
+    const views = incrementVisitCount(SLOT_KEYS.E_VIEWS);
     if (views > 3) {
-      localStorage.setItem(SLOT_E_DISMISSED_KEY, "1");
+      dismissSlot(SLOT_KEYS.E);
       return;
     }
 
@@ -81,7 +86,7 @@ export function DashboardPage() {
   }, [data?.last_import]);
 
   function dismissSlotE() {
-    localStorage.setItem(SLOT_E_DISMISSED_KEY, "1");
+    dismissSlot(SLOT_KEYS.E);
     setShowWhatsAppNudge(false);
   }
 
@@ -118,6 +123,20 @@ export function DashboardPage() {
           </SelectContent>
         </Select>
       </div>
+
+      {showWelcomeSlot && !isLoading && (
+        <PromoDismissCard
+          title="Welcome to AKARA Mission Control"
+          description="Import your first file to unlock KPIs, zone charts, and weekly debriefs."
+          ctaLabel="Import data →"
+          ctaTo="/data"
+          accent="blue"
+          onDismiss={() => {
+            dismissSlot(SLOT_KEYS.D);
+            setShowWelcomeSlot(false);
+          }}
+        />
+      )}
 
       {error && (
         <GlowSurfaceCard accent="red">

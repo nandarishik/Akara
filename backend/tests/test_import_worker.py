@@ -43,6 +43,13 @@ async def test_process_job_completes_on_success(worker: ImportWorker) -> None:
     worker.complete_job = MagicMock()
     worker.retry_job = MagicMock()
 
+    status_chain = MagicMock()
+    status_chain.execute.return_value = MagicMock(data={"status": "processing"})
+    worker.supabase = MagicMock()
+    worker.supabase.table.return_value.select.return_value.eq.return_value.maybe_single.return_value = (
+        status_chain
+    )
+
     mock_df = MagicMock()
     mock_result = ImportResult(
         rows_inserted=10,

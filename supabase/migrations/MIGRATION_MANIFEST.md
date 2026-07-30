@@ -1,36 +1,46 @@
 # AKARA Migration Manifest — Phase 2
 
-> **Last updated:** Sprint Phase 2, Day 3  
+> **Last updated:** Sprint Phase 2, Days 1–9 completion (023 applied)  
 > **Location:** `supabase/migrations/`
 
-## Applied migrations (001–010)
-
-| # | File | Purpose |
-|---|------|---------|
-| 001 | `001_initial_schema.sql` | Core tables: tenants, profiles, sales_data |
-| 002 | `002_rls_policies.sql` | RLS helpers: `get_my_tenant_id()`, `is_admin()` |
-| 003 | `003_functions.sql` | Utility functions |
-| 004 | `004_competitive_additions.sql` | secondary_sales_data, scheme_master |
-| 005 | `005_execute_tenant_query.sql` | Tenant-scoped SQL RPC |
-| 006 | `006_update_tenant_config_rpc.sql` | Tenant config update RPC |
-| 007 | `007_conversations.sql` | Copilot conversation persistence |
-| 008 | `008_user_preferences.sql` | User notification preferences |
-| 009 | `009_scheme_leakage_fn.sql` | Scheme leakage detection |
-| 010 | `010_import_tracking.sql` | `import_id` on sales/import tables |
-
-## Phase 2 roadmap (011–025)
+## Applied migrations (001–023)
 
 | # | File | Day | Purpose |
 |---|------|-----|---------|
-| 011 | `011_billing.sql` | **2** | Tenant billing fields; `import_jobs`; `import_job_id` on `sales_data`; `usage_tracking`; `llm_cost_log` (with `latency_ms`); `idempotency_keys`; `increment_usage` RPC; `get_current_usage` RPC; `tenant_lifetime_debriefs` view | **complete — ready to apply** |
-| 012 | `012_onboarding.sql` | **3** | `profiles.has_completed_onboarding`; `marketing_emails`; `consent_log` | **complete — ready to apply** |
-| 013 | `013_self_signup_profiles.sql` | **3** | Nullable `profiles.tenant_id`; fix `handle_new_user` for self-signup | **complete — ready to apply** |
-| 014 | `014_day4_copilot_feedback_conversations_import_jobs.sql` | **4** | `copilot_feedback`; `conversations.deleted_at`; async `import_jobs` worker columns | **complete — ready to apply** |
-| 015 | `015_billing_stripe_gst.sql` | **5** | `billing_details`; `past_due_since`; `invoices`; `invoice_sequence`; webhook inbox; `dunning_events` (Stripe-named columns renamed in 016) | **applied** |
-| 016 | `016_billing_razorpay_provider.sql` | **5** | `razorpay_*` tenant columns; rename to `provider_payment_id`, `payment_webhook_events` | **ready to apply** |
-| 017+ | TBD | 6–22 | Security, superadmin, launch |
+| 001 | `001_initial_schema.sql` | 1 | Core tables: tenants, profiles, sales_data |
+| 002 | `002_rls_policies.sql` | 1 | RLS helpers: `get_my_tenant_id()`, `is_admin()` |
+| 003 | `003_functions.sql` | 1 | Utility functions |
+| 004 | `004_competitive_additions.sql` | 1 | secondary_sales_data, scheme_master |
+| 005 | `005_execute_tenant_query.sql` | 1 | Tenant-scoped SQL RPC |
+| 006 | `006_update_tenant_config_rpc.sql` | 1 | Tenant config update RPC |
+| 007 | `007_conversations.sql` | 1 | Copilot conversation persistence |
+| 008 | `008_user_preferences.sql` | 1 | User notification preferences |
+| 009 | `009_scheme_leakage_fn.sql` | 1 | Scheme leakage detection |
+| 010 | `010_import_tracking.sql` | 1 | `import_id` on sales/import tables |
+| 011 | `011_billing.sql` | 2 | Billing fields, import_jobs, usage_tracking, llm_cost_log, RPCs |
+| 012 | `012_onboarding.sql` | 3 | Onboarding, marketing_emails, consent_log |
+| 013 | `013_self_signup_profiles.sql` | 3 | Self-signup profile handling |
+| 014 | `014_day4_copilot_feedback_conversations_import_jobs.sql` | 4 | copilot_feedback, async import_jobs columns |
+| 015 | `015_billing_stripe_gst.sql` | 5 | billing_details, invoices, dunning_events |
+| 016 | `016_billing_razorpay_provider.sql` | 5 | Razorpay provider columns |
+| 017 | `017_alerts.sql` | 6 | Alerts tables and RLS |
+| 018 | `018_day7_comms_teams_debrief.sql` | 7 | Team invites, debrief, WhatsApp prefs |
+| 019 | `019_day7_gap_fixes.sql` | 7 | Day 7 gap fixes |
+| 020 | `020_day8_superadmin_foundation.sql` | 8 | cron_runs, global_settings, superadmin audit |
+| 021 | `021_sales_heatmap_fn.sql` | — | Sales heatmap KPI RPC |
+| 022 | `022_tenant_companion_data.sql` | — | tenant_companion_data for auxiliary imports |
+| 023 | `023_day9_founder_ai.sql` | 9 | broadcast_history, revenue_snapshots, founder_brief_runs |
+| 024 | `024_broadcast_schedule.sql` | 9 | broadcast schedule columns, body persistence |
 
-## Conventions
+## Archived (superseded — not in CI sequence)
+
+| File | Notes |
+|------|-------|
+| `_archive/011_billing_day2_delta.sql` | Legacy delta; superseded by full `011_billing.sql` |
+
+## Roadmap (025+)
+
+_No pending migrations._
 
 1. **Immutable numbering** — never renumber applied migrations; add forward-only corrections.
 2. **Transaction boundaries** — wrap DDL in `BEGIN; ... COMMIT;` when safe.
@@ -38,7 +48,7 @@
 4. **SECURITY DEFINER** — always `SET search_path = public`.
 5. **Grants** — service_role for backend writes; authenticated users via RLS only.
 6. **Audit fields** — prefer `created_at` / `updated_at` on new tables.
-7. **Soft delete** — use `deleted_at` where specified in later days; not Day 1.
+7. **Soft delete** — use `deleted_at` where specified in later days.
 
 ## Pre-migration checklist
 
@@ -47,28 +57,6 @@
 - [ ] Apply on **staging** first
 - [ ] Run RLS verification queries below
 - [ ] Apply on production only after staging gate passes
-
-## RLS verification (after 011)
-
-```sql
-SELECT tablename, rowsecurity
-FROM pg_tables
-WHERE schemaname = 'public'
-  AND tablename IN ('usage_tracking', 'llm_cost_log', 'idempotency_keys');
--- Expected: 3 rows, all rowsecurity = true
-```
-
-## Pooler compatibility (GAP-7)
-
-- Staging/production must set `SUPABASE_POOLER_URL` to transaction-mode pooler URI.
-- Backend uses direct URL in development via `settings.effective_db_url`.
-- Verify `/ready` returns `checks.supabase: ok` after pooler cutover.
-
-## Tenant isolation test helpers
-
-- Backend: use deterministic UUIDs in `tests/conftest.py` (tenant A ≠ tenant B).
-- SQL: `tenant_id = public.get_my_tenant_id()` on all RLS policies.
-- API: all routes resolve `TenantCtx` before querying data.
 
 ## Rollback policy
 

@@ -8,7 +8,7 @@ from datetime import UTC, datetime
 from typing import Any
 
 import httpx
-from fastapi import APIRouter, BackgroundTasks, Depends, Request
+from fastapi import APIRouter, BackgroundTasks, Depends, Query, Request
 from pydantic import BaseModel
 
 from app.core.config import settings
@@ -31,6 +31,9 @@ CRON_TASKS = frozenset({
     "dunning",
     "morning_brief",
     "weekly_debrief",
+    "founder_brief",
+    "revenue_snapshot",
+    "broadcast_scheduler",
 })
 
 
@@ -174,6 +177,18 @@ def _run_task(task_name: str) -> None:
             details = run_weekly_debrief_cycle()
         elif task_name == "morning_brief":
             details = {"message": "morning_brief requires per-tenant trigger via /reports/morning-brief"}
+        elif task_name == "founder_brief":
+            from app.tasks.founder_brief import run_founder_brief
+
+            details = run_founder_brief()
+        elif task_name == "revenue_snapshot":
+            from app.tasks.revenue_snapshot import run_revenue_snapshot
+
+            details = run_revenue_snapshot()
+        elif task_name == "broadcast_scheduler":
+            from app.tasks.broadcast_scheduler import run_broadcast_scheduler
+
+            details = run_broadcast_scheduler()
         else:
             status = "failed"
             details = {"error": "unknown task"}
@@ -209,6 +224,30 @@ def cron_health(
             )
         )
     return CronHealthResponse(tasks=items)
+
+
+@router.get("/cron-logs/{task_name}")
+@limiter.limit(ADMIN_READ_LIMIT)
+def cron_logs(
+    request: Request,
+    task_name: str,
+    _admin: SuperAdmin,
+    limit: int = Query(default=20, ge=1, le=100),
+) -> dict[str, Any]:
+    if task_name not in CRON_TASKS:
+        from app.core.errors import AkaraHTTPException
+
+        raise AkaraHTTPException(status_code=404, code="NOT_FOUND", message="Unknown cron task")
+    supa = get_supabase_service_client()
+    rows = (
+        supa.table("cron_runs")
+        .select("task_name, status, details, started_at, finished_at")
+        .eq("task_name", task_name)
+        .order("finished_at", desc=True)
+        .limit(limit)
+        .execute()
+    ).data or []
+    return {"items": rows, "total": len(rows)}
 
 
 @router.post("/cron-run/{task_name}")

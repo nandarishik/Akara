@@ -1,7 +1,8 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { Loader2, RefreshCw, Send } from "lucide-react";
 
-import { superadminFetch } from "@/lib/api/superadmin";
+import { sa, superadminFetch, type TenantRow } from "@/lib/api/superadmin";
 
 interface WebhookStatus {
   last_24h_total: number;
@@ -33,10 +34,13 @@ interface TimelineResponse {
 }
 
 export function BillingOpsPage() {
+  const [searchParams] = useSearchParams();
+  const urlTenant = searchParams.get("tenant") ?? "";
   const [status, setStatus] = useState<WebhookStatus | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [tenantId, setTenantId] = useState("");
+  const [tenantId, setTenantId] = useState(urlTenant);
+  const [selectedTenant, setSelectedTenant] = useState<TenantRow | null>(null);
   const [timeline, setTimeline] = useState<TimelineResponse | null>(null);
   const [timelineLoading, setTimelineLoading] = useState(false);
   const [resendLoading, setResendLoading] = useState(false);
@@ -187,6 +191,22 @@ export function BillingOpsPage() {
     load();
   }, []);
 
+  useEffect(() => {
+    const t = searchParams.get("tenant")?.trim();
+    if (!t) return;
+    setTenantId(t);
+    setTimelineLoading(true);
+    setResendMessage("");
+    void sa
+      .billingTimeline(t)
+      .then(setTimeline)
+      .catch((e) => {
+        setTimeline(null);
+        setError(e instanceof Error ? e.message : "Failed to load timeline");
+      })
+      .finally(() => setTimelineLoading(false));
+  }, [searchParams]);
+
   return (
     <div className="p-8 space-y-6 max-w-4xl">
       <div className="flex items-center justify-between">
@@ -265,13 +285,19 @@ export function BillingOpsPage() {
 
       <div className="rounded-lg border border-sa-border bg-sa-raised p-4 space-y-4">
         <h2 className="text-sm font-medium text-sa-text">Tenant payment timeline</h2>
-        <div className="flex flex-wrap gap-2">
-          <input
-            type="text"
-            value={tenantId}
-            onChange={(e) => setTenantId(e.target.value)}
-            placeholder="Tenant UUID"
-            className="flex-1 min-w-[200px] rounded-md border border-sa-border bg-sa-base px-3 py-2 text-sm text-sa-text"
+        <div className="flex flex-wrap gap-2 items-start">
+          <TenantSearchAutocomplete
+            tenantId={tenantId}
+            selectedTenant={selectedTenant}
+            onSelect={(t) => {
+              setTenantId(t.id);
+              setSelectedTenant(t);
+            }}
+            onClear={() => {
+              setTenantId("");
+              setSelectedTenant(null);
+              setTimeline(null);
+            }}
           />
           <button
             type="button"
@@ -412,6 +438,249 @@ export function BillingOpsPage() {
           <p className="text-sm text-emerald-400">{opsMessage}</p>
         )}
       </div>
+
+      <VoidRefundPanel />
+    </div>
+  );
+}
+
+function TenantSearchAutocomplete({
+  tenantId,
+  selectedTenant,
+  onSelect,
+  onClear,
+}: {
+  tenantId: string;
+  selectedTenant: TenantRow | null;
+  onSelect: (t: TenantRow) => void;
+  onClear: () => void;
+}) {
+  const [query, setQuery] = useState("");
+  const [results, setResults] = useState<TenantRow[]>([]);
+  const [open, setOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const wrapRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (selectedTenant && selectedTenant.id === tenantId) {
+      setQuery(selectedTenant.name);
+      return;
+    }
+    if (tenantId && !selectedTenant) setQuery(tenantId);
+  }, [tenantId, selectedTenant]);
+
+  useEffect(() => {
+    const q = query.trim();
+    if (q.length < 2) {
+      setResults([]);
+      return;
+    }
+    const t = setTimeout(() => {
+      setLoading(true);
+      void sa
+        .tenants({ search: q, limit: 10 })
+        .then((r) => setResults(r.items))
+        .catch(() => setResults([]))
+        .finally(() => setLoading(false));
+    }, 250);
+    return () => clearTimeout(t);
+  }, [query]);
+
+  useEffect(() => {
+    function onDoc(e: MouseEvent) {
+      if (wrapRef.current && !wrapRef.current.contains(e.target as Node)) setOpen(false);
+    }
+    document.addEventListener("mousedown", onDoc);
+    return () => document.removeEventListener("mousedown", onDoc);
+  }, []);
+
+  return (
+    <div ref={wrapRef} className="relative flex-1 min-w-[240px]">
+      <div className="flex gap-2">
+        <input
+          type="text"
+          value={query}
+          onChange={(e) => {
+            setQuery(e.target.value);
+            setOpen(true);
+          }}
+          onFocus={() => setOpen(true)}
+          placeholder="Search tenant name or UUID…"
+          className="flex-1 rounded-md border border-sa-border bg-sa-base px-3 py-2 text-sm text-sa-text"
+        />
+        {(tenantId || query) && (
+          <button
+            type="button"
+            onClick={onClear}
+            className="px-2 text-xs text-sa-muted hover:text-sa-text"
+          >
+            Clear
+          </button>
+        )}
+      </div>
+      {selectedTenant && (
+        <p className="text-xs text-sa-muted mt-1">
+          {selectedTenant.name} · {selectedTenant.plan} · {selectedTenant.id.slice(0, 8)}…
+        </p>
+      )}
+      {open && (loading || results.length > 0) && (
+        <ul className="absolute z-20 mt-1 w-full max-h-48 overflow-y-auto rounded-md border border-sa-border bg-sa-surface shadow-lg">
+          {loading && <li className="px-3 py-2 text-xs text-sa-muted">Searching…</li>}
+          {!loading &&
+            results.map((t) => (
+              <li key={t.id}>
+                <button
+                  type="button"
+                  className="w-full px-3 py-2 text-left text-sm hover:bg-sa-raised"
+                  onClick={() => {
+                    onSelect(t);
+                    setQuery(t.name);
+                    setOpen(false);
+                  }}
+                >
+                  <span className="text-sa-text">{t.name}</span>
+                  <span className="text-sa-muted ml-2 text-xs capitalize">{t.plan}</span>
+                </button>
+              </li>
+            ))}
+        </ul>
+      )}
+    </div>
+  );
+}
+
+function VoidRefundPanel() {
+  const [invoiceRef, setInvoiceRef] = useState("");
+  const [paymentId, setPaymentId] = useState("");
+  const [dryRun, setDryRun] = useState(true);
+  const [preview, setPreview] = useState<Record<string, unknown> | null>(null);
+  const [msg, setMsg] = useState("");
+
+  async function voidInvoice(apply: boolean) {
+    setMsg("");
+    setPreview(null);
+    try {
+      const result = await superadminFetch<Record<string, unknown>>(
+        `/superadmin/billing/void-invoice/${encodeURIComponent(invoiceRef)}`,
+        {
+          method: "POST",
+          body: JSON.stringify({
+            reason: "Void from billing ops UI",
+            dry_run: !apply,
+          }),
+        },
+      );
+      if (!apply) {
+        setPreview(result);
+        setMsg("Preview ready — review impact before applying");
+      } else {
+        setMsg("Invoice voided");
+      }
+    } catch (e) {
+      setMsg(e instanceof Error ? e.message : "Void failed");
+    }
+  }
+
+  async function refundPayment(apply: boolean) {
+    setMsg("");
+    setPreview(null);
+    try {
+      const result = await superadminFetch<Record<string, unknown>>("/superadmin/billing/refund", {
+        method: "POST",
+        body: JSON.stringify({
+          payment_id: paymentId,
+          reason: "Refund from billing ops UI",
+          dry_run: !apply,
+        }),
+      });
+      if (!apply) {
+        setPreview(result);
+        setMsg("Preview ready — review impact before applying");
+      } else {
+        setMsg("Refund submitted");
+      }
+    } catch (e) {
+      setMsg(e instanceof Error ? e.message : "Refund failed");
+    }
+  }
+
+  return (
+    <div className="rounded-lg border border-sa-border bg-sa-raised p-4 space-y-3">
+      <div className="flex items-center justify-between gap-4">
+        <h3 className="font-semibold text-sa-text">Void &amp; refund</h3>
+        <label className="flex items-center gap-2 text-xs text-sa-muted cursor-pointer">
+          <input
+            type="checkbox"
+            checked={dryRun}
+            onChange={(e) => setDryRun(e.target.checked)}
+          />
+          Preview impact (dry run) before apply
+        </label>
+      </div>
+      <div className="flex flex-wrap gap-2 items-end">
+        <input
+          className="rounded border border-sa-border bg-sa-surface px-3 py-2 text-sm flex-1 min-w-[180px]"
+          placeholder="Invoice ref / number"
+          value={invoiceRef}
+          onChange={(e) => setInvoiceRef(e.target.value)}
+        />
+        <button
+          type="button"
+          className="text-sm text-sa-accent underline disabled:opacity-50"
+          disabled={!invoiceRef.trim()}
+          onClick={() => void voidInvoice(!dryRun)}
+        >
+          {dryRun ? "Preview void" : "Void invoice"}
+        </button>
+        {dryRun && preview && (
+          <button
+            type="button"
+            className="text-sm text-red-400 underline"
+            onClick={() => {
+              if (window.confirm("Void this invoice? This cannot be undone.")) {
+                void voidInvoice(true);
+              }
+            }}
+          >
+            Apply void
+          </button>
+        )}
+      </div>
+      <div className="flex flex-wrap gap-2 items-end">
+        <input
+          className="rounded border border-sa-border bg-sa-surface px-3 py-2 text-sm flex-1 min-w-[180px]"
+          placeholder="Razorpay payment ID"
+          value={paymentId}
+          onChange={(e) => setPaymentId(e.target.value)}
+        />
+        <button
+          type="button"
+          className="text-sm text-sa-accent underline disabled:opacity-50"
+          disabled={!paymentId.trim()}
+          onClick={() => void refundPayment(!dryRun)}
+        >
+          {dryRun ? "Preview refund" : "Refund payment"}
+        </button>
+        {dryRun && preview && paymentId && (
+          <button
+            type="button"
+            className="text-sm text-red-400 underline"
+            onClick={() => {
+              if (window.confirm("Submit refund to Razorpay?")) {
+                void refundPayment(true);
+              }
+            }}
+          >
+            Apply refund
+          </button>
+        )}
+      </div>
+      {preview && (
+        <pre className="text-xs text-sa-muted bg-sa-base rounded p-2 overflow-x-auto max-h-32">
+          {JSON.stringify(preview, null, 2)}
+        </pre>
+      )}
+      {msg && <p className="text-xs text-sa-muted">{msg}</p>}
     </div>
   );
 }

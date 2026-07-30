@@ -1,10 +1,14 @@
 import { useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { MoreHorizontal } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
 import GlowSurfaceCard from "@/components/ui/GlowSurfaceCard";
+import { MutationReasonField } from "@/components/admin/MutationReasonField";
 import {
   Table,
   TableBody,
@@ -20,7 +24,24 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { superadminFetch } from "@/lib/api/superadmin";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { ConfirmDialog } from "@/components/admin/ConfirmDialog";
+import { sa, superadminFetch } from "@/lib/api/superadmin";
 
 interface UserRow {
   id: string;
@@ -31,6 +52,7 @@ interface UserRow {
   tenant_name: string | null;
   plan: string | null;
   membership_status: string | null;
+  last_sign_in_at: string | null;
 }
 
 interface UsersPage {
@@ -42,14 +64,26 @@ interface TenantsPage {
   items: { id: string; name: string }[];
 }
 
-const DEFAULT_REASON = "Superadmin role change from Users panel";
+const DEFAULT_REASON = "Superadmin action from Users panel";
+
+type PendingAction =
+  | { type: "delete"; user: UserRow }
+  | { type: "move"; user: UserRow }
+  | null;
 
 export function UsersPage() {
   const queryClient = useQueryClient();
+  const [searchParams] = useSearchParams();
   const [tenantFilter, setTenantFilter] = useState("");
-  const [search, setSearch] = useState("");
+  const [search, setSearch] = useState(() => searchParams.get("search") ?? "");
   const [reason, setReason] = useState(DEFAULT_REASON);
   const [savingId, setSavingId] = useState<string | null>(null);
+  const [actionError, setActionError] = useState("");
+  const [magicLink, setMagicLink] = useState<string | null>(null);
+  const [pendingAction, setPendingAction] = useState<PendingAction>(null);
+  const [moveTenantId, setMoveTenantId] = useState("");
+
+  const reasonOk = reason.trim().length >= 10;
 
   const { data: tenantsData } = useQuery({
     queryKey: ["superadmin", "tenants", "options"],
@@ -85,6 +119,83 @@ export function UsersPage() {
     },
   });
 
+  async function runAction(userId: string, fn: () => Promise<unknown>) {
+    if (!reasonOk) {
+      setActionError("Reason must be at least 10 characters");
+      return;
+    }
+    setActionError("");
+    setSavingId(userId);
+    try {
+      await fn();
+      queryClient.invalidateQueries({ queryKey: ["superadmin", "users"] });
+    } catch (e) {
+      setActionError(e instanceof Error ? e.message : "Action failed");
+    } finally {
+      setSavingId(null);
+    }
+  }
+
+  async function handleSuspend(user: UserRow) {
+    await runAction(user.id, () => sa.suspendUser(user.id, reason.trim()));
+  }
+
+  async function handleActivate(user: UserRow) {
+    await runAction(user.id, () => sa.activateUser(user.id, reason.trim()));
+  }
+
+  async function handleResetPassword(user: UserRow) {
+    await runAction(user.id, () => sa.resetPassword(user.id, reason.trim()));
+  }
+
+  async function handleMagicLink(user: UserRow) {
+    if (!reasonOk) {
+      setActionError("Reason must be at least 10 characters");
+      return;
+    }
+    setActionError("");
+    setSavingId(user.id);
+    try {
+      const res = await sa.magicLink(user.id, reason.trim());
+      setMagicLink(res.magic_link || "No link returned");
+    } catch (e) {
+      setActionError(e instanceof Error ? e.message : "Magic link failed");
+    } finally {
+      setSavingId(null);
+    }
+  }
+
+  async function handleDelete() {
+    if (!pendingAction || pendingAction.type !== "delete") return;
+    const user = pendingAction.user;
+    await runAction(user.id, () => sa.deleteUser(user.id, reason.trim()));
+    setPendingAction(null);
+  }
+
+  async function handleMoveTenant() {
+    if (!pendingAction || pendingAction.type !== "move" || !moveTenantId) return;
+    const user = pendingAction.user;
+    await runAction(user.id, () => sa.moveUserTenant(user.id, moveTenantId, reason.trim()));
+    setPendingAction(null);
+    setMoveTenantId("");
+  }
+
+  function formatRelative(iso: string | null | undefined): string {
+    if (!iso) return "Never";
+    const diff = Date.now() - new Date(iso).getTime();
+    const mins = Math.floor(diff / 60000);
+    if (mins < 1) return "Just now";
+    if (mins < 60) return `${mins}m ago`;
+    const hrs = Math.floor(mins / 60);
+    if (hrs < 24) return `${hrs}h ago`;
+    const days = Math.floor(hrs / 24);
+    if (days < 30) return `${days}d ago`;
+    return new Date(iso).toLocaleDateString("en-IN");
+  }
+
+  const isSuspended = (u: UserRow) =>
+    u.membership_status === "suspended" || u.membership_status === "inactive";
+
   return (
     <div className="p-6 lg:p-8 max-w-6xl mx-auto space-y-6 bg-surface-canvas">
       <div>
@@ -111,14 +222,13 @@ export function UsersPage() {
           <Label className="text-xs text-text-muted">Search email / name</Label>
           <Input className="mt-1" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search…" />
         </div>
-        <div>
-          <Label className="text-xs text-text-muted">Audit reason (min 10 chars)</Label>
-          <Input className="mt-1" value={reason} onChange={(e) => setReason(e.target.value)} />
-        </div>
+        <MutationReasonField value={reason} onChange={setReason} />
       </GlowSurfaceCard>
 
-      {error && (
-        <p className="text-sm text-red-600">{error instanceof Error ? error.message : "Failed to load users"}</p>
+      {(error || actionError) && (
+        <p className="text-sm text-red-600">
+          {actionError || (error instanceof Error ? error.message : "Failed to load users")}
+        </p>
       )}
 
       {isLoading ? (
@@ -139,8 +249,11 @@ export function UsersPage() {
                 <TableHead>Name / Email</TableHead>
                 <TableHead>Tenant</TableHead>
                 <TableHead>Plan</TableHead>
+                <TableHead>Status</TableHead>
                 <TableHead>Role</TableHead>
+                <TableHead>Last sign-in</TableHead>
                 <TableHead className="w-40">Change role</TableHead>
+                <TableHead className="w-12">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -155,15 +268,23 @@ export function UsersPage() {
                     <Badge variant="outline" className="capitalize">{u.plan || "—"}</Badge>
                   </TableCell>
                   <TableCell>
+                    <Badge variant={isSuspended(u) ? "destructive" : "secondary"}>
+                      {u.membership_status || "active"}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>
                     <Badge variant={u.role === "admin" || u.role === "superadmin" ? "default" : "secondary"}>
                       {u.role}
                     </Badge>
+                  </TableCell>
+                  <TableCell className="text-xs text-text-muted">
+                    {formatRelative(u.last_sign_in_at)}
                   </TableCell>
                   <TableCell>
                     <Select
                       defaultValue={u.role}
                       onValueChange={(role) => roleMutation.mutate({ userId: u.id, role })}
-                      disabled={savingId === u.id || reason.trim().length < 10}
+                      disabled={savingId === u.id || !reasonOk}
                     >
                       <SelectTrigger className="w-32 h-8 text-xs">
                         <SelectValue />
@@ -175,12 +296,162 @@ export function UsersPage() {
                       </SelectContent>
                     </Select>
                   </TableCell>
+                  <TableCell>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8"
+                          disabled={savingId === u.id}
+                        >
+                          <MoreHorizontal className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        {!isSuspended(u) ? (
+                          <DropdownMenuItem
+                            disabled={!reasonOk}
+                            onClick={() => void handleSuspend(u)}
+                          >
+                            Suspend
+                          </DropdownMenuItem>
+                        ) : (
+                          <DropdownMenuItem
+                            disabled={!reasonOk}
+                            onClick={() => void handleActivate(u)}
+                          >
+                            Activate
+                          </DropdownMenuItem>
+                        )}
+                        <DropdownMenuItem
+                          disabled={!reasonOk}
+                          onClick={() => void handleResetPassword(u)}
+                        >
+                          Reset password
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          disabled={!reasonOk}
+                          onClick={() => void handleMagicLink(u)}
+                        >
+                          Magic link
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          disabled={!reasonOk}
+                          onClick={() => {
+                            setMoveTenantId(u.tenant_id ?? tenants[0]?.id ?? "");
+                            setPendingAction({ type: "move", user: u });
+                          }}
+                        >
+                          Move to tenant
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem
+                          disabled={!reasonOk}
+                          className="text-red-600 focus:text-red-600"
+                          onClick={() => setPendingAction({ type: "delete", user: u })}
+                        >
+                          Delete
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </TableCell>
                 </TableRow>
               ))}
             </TableBody>
           </Table>
         </GlowSurfaceCard>
       )}
+
+      <AlertDialog open={!!magicLink} onOpenChange={(open) => !open && setMagicLink(null)}>
+        <AlertDialogContent className="border-sa-border bg-sa-surface text-sa-text sm:max-w-lg">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Magic link</AlertDialogTitle>
+            <AlertDialogDescription className="text-sa-muted">
+              Share this link with the user. It expires after first use.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <Input
+            readOnly
+            value={magicLink ?? ""}
+            className="font-mono text-xs border-sa-border bg-sa-raised"
+            onFocus={(e) => e.target.select()}
+          />
+          <AlertDialogFooter>
+            <AlertDialogCancel className="border-sa-border bg-sa-raised text-sa-text">
+              Close
+            </AlertDialogCancel>
+            <Button
+              onClick={() => {
+                if (magicLink) void navigator.clipboard.writeText(magicLink);
+              }}
+            >
+              Copy link
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {pendingAction?.type === "delete" && (
+        <ConfirmDialog
+          open
+          onOpenChange={(open) => !open && setPendingAction(null)}
+          title="Delete user"
+          description={`Permanently delete ${pendingAction.user.email || pendingAction.user.display_name || "this user"}? This cannot be undone.`}
+          confirmLabel="Delete user"
+          confirmPhrase="DELETE"
+          onConfirm={handleDelete}
+          loading={savingId === pendingAction.user.id}
+        />
+      )}
+
+      <AlertDialog
+        open={pendingAction?.type === "move"}
+        onOpenChange={(open) => {
+          if (!open) {
+            setPendingAction(null);
+            setMoveTenantId("");
+          }
+        }}
+      >
+        <AlertDialogContent className="border-sa-border bg-sa-surface text-sa-text sm:max-w-md">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Move user to tenant</AlertDialogTitle>
+            <AlertDialogDescription className="text-sa-muted">
+              Reassign{" "}
+              {pendingAction?.type === "move"
+                ? pendingAction.user.email || pendingAction.user.display_name
+                : "user"}{" "}
+              to a different tenant.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div>
+            <Label className="text-xs">Target tenant</Label>
+            <Select value={moveTenantId} onValueChange={setMoveTenantId}>
+              <SelectTrigger className="mt-1 border-sa-border bg-sa-raised">
+                <SelectValue placeholder="Select tenant" />
+              </SelectTrigger>
+              <SelectContent>
+                {tenants.map((t) => (
+                  <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="border-sa-border bg-sa-raised text-sa-text">
+              Cancel
+            </AlertDialogCancel>
+            <Button
+              disabled={!reasonOk || !moveTenantId || savingId != null}
+              loading={pendingAction?.type === "move" && savingId === pendingAction.user.id}
+              onClick={() => void handleMoveTenant()}
+            >
+              Move user
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

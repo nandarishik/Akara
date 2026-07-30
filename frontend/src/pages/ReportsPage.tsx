@@ -21,13 +21,14 @@ import GlowSurfaceCard from "@/components/ui/GlowSurfaceCard";
 import GlowCTAButton from "@/components/ui/GlowCTAButton";
 import { SecondaryButton } from "@/components/ui/GradientButton";
 import { TableSkeleton, ChartSkeleton } from "@/components/ui/ShimmerSkeleton";
-import { NoDataEmptyState } from "@/components/ui/EmptyState";
+import { NoDataEmptyState, EmptyState } from "@/components/ui/EmptyState";
 import AnimatedNumber from "@/components/ui/AnimatedNumber";
 import { PlanGate } from "@/components/billing/PlanGate";
 import { RouteBarChart } from "@/components/charts/akara/BarCharts";
 import { LeakageFunnelChart } from "@/components/charts/akara/LeakageFunnelChart";
 import { ZoneRadarChart } from "@/components/charts/akara/ZoneRadarChart";
 import { Badge } from "@/components/ui/badge";
+import { dismissSlot, isSlotDismissed, SLOT_KEYS } from "@/lib/promoSlots";
 import { toast } from "@/components/ui/toast";
 
 const BASE = import.meta.env.VITE_API_BASE_URL as string;
@@ -68,17 +69,6 @@ async function downloadReport(reportId: string, title: string) {
   }
 }
 
-const mockRoutePerformance = [
-  { route: 'Mumbai Central', orders: 1247, revenue: 12450000, growth: 12.5, efficiency: 89 },
-  { route: 'Delhi NCR', orders: 998, revenue: 9876000, growth: 8.2, efficiency: 85 },
-  { route: 'Bangalore Tech', orders: 856, revenue: 8560000, growth: 15.7, efficiency: 92 },
-  { route: 'Chennai Metro', orders: 742, revenue: 7420000, growth: -3.1, efficiency: 78 },
-  { route: 'Pune Industrial', orders: 689, revenue: 6890000, growth: 6.8, efficiency: 81 },
-  { route: 'Hyderabad IT', orders: 634, revenue: 6340000, growth: 21.3, efficiency: 95 },
-  { route: 'Kolkata East', orders: 578, revenue: 5780000, growth: 4.2, efficiency: 76 },
-  { route: 'Ahmedabad', orders: 523, revenue: 5230000, growth: 9.1, efficiency: 83 }
-];
-
 export function ReportsPage() {
   const {
     data: reports,
@@ -92,7 +82,7 @@ export function ReportsPage() {
   const { data: kpiData } = useKPIs(start, end);
   const { data: leakageRows, isLoading: leakageLoading } = useSchemeLeakage();
   const [slotJDismissed, setSlotJDismissed] = useState(
-    () => localStorage.getItem("akara_slot_J_dismissed") === "1",
+    () => isSlotDismissed(SLOT_KEYS.J),
   );
   const showSlotJ =
     usage?.plan === "pro" &&
@@ -119,7 +109,13 @@ export function ReportsPage() {
           growth: 0,
           efficiency: Math.round(Number(z.revenue_pct)),
         }))
-    : mockRoutePerformance.slice(0, 6);
+    : [];
+  const topRoute = routeRows[0];
+  const totalRevenue = routeRows.reduce((sum, r) => sum + r.revenue, 0);
+  const avgEfficiency =
+    routeRows.length > 0
+      ? routeRows.reduce((sum, r) => sum + r.efficiency, 0) / routeRows.length
+      : 0;
   return (
     <ProductPageLayout className="space-y-6">
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
@@ -147,24 +143,33 @@ export function ReportsPage() {
           <div className="flex items-center gap-3">
             <BarChart3 className="h-5 w-5 text-accent" />
             <h2 className="text-h2">Route Performance Analytics</h2>
-            <Badge variant="outline" className="text-caption">
-              {hasRealZones ? "Your data" : "Sample data"}
-            </Badge>
+            {hasRealZones && (
+              <Badge variant="outline" className="text-caption">
+                Your data
+              </Badge>
+            )}
           </div>
-          <SecondaryButton size="sm">
-            <ExternalLink className="h-4 w-4 mr-2" />
-            View All Routes
-          </SecondaryButton>
+          {hasRealZones && (
+            <SecondaryButton size="sm">
+              <ExternalLink className="h-4 w-4 mr-2" />
+              View All Routes
+            </SecondaryButton>
+          )}
         </div>
 
+        {!hasRealZones ? (
+          <EmptyState
+            icon={<span className="text-2xl">📭</span>}
+            title="No route data yet"
+            description="Import sales data with zone or route columns to see performance analytics here."
+            primaryAction={{ label: "Import data", href: "/data" }}
+          />
+        ) : (
         <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 mb-6">
           <div>
             <h3 className="text-text-secondary font-medium mb-4 flex items-center gap-2">
               <TrendingUp className="h-4 w-4" />
               Revenue Performance
-              <span className="text-caption text-xs font-normal">
-                ({hasRealZones ? "Your data" : "Sample data"})
-              </span>
             </h3>
             <div className="h-[280px] mb-4">
               <RouteBarChart routes={routeRows} aspectRatio={null} className="h-full w-full" />
@@ -181,20 +186,19 @@ export function ReportsPage() {
             <h3 className="text-text-secondary font-medium mb-4 flex items-center gap-2">
               <BarChart3 className="h-4 w-4" />
               Key Metrics
-              <span className="text-caption text-xs font-normal">
-                ({hasRealZones ? "Your data" : "Sample data"})
-              </span>
             </h3>
             <div className="space-y-4">
               <GlowSurfaceCard hover={false} padding="sm" accent="green">
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-emerald-300 font-medium">Top Performer</p>
-                    <p className="text-emerald-400/80 text-sm">Hyderabad IT</p>
+                    <p className="text-emerald-400/80 text-sm">{topRoute?.route ?? "—"}</p>
                   </div>
                   <div className="text-right">
-                    <div className="text-lg font-bold text-emerald-300">21.3%</div>
-                    <div className="text-xs text-emerald-400/80">growth</div>
+                    <div className="text-lg font-bold text-emerald-300">
+                      {topRoute ? `${topRoute.efficiency}%` : "—"}
+                    </div>
+                    <div className="text-xs text-emerald-400/80">share</div>
                   </div>
                 </div>
               </GlowSurfaceCard>
@@ -207,7 +211,7 @@ export function ReportsPage() {
                   </div>
                   <div className="text-right">
                     <div className="text-lg font-bold text-accent">
-                      <AnimatedNumber value={mockRoutePerformance.length} />
+                      <AnimatedNumber value={routeRows.length} />
                     </div>
                     <div className="text-xs text-text-secondary">routes</div>
                   </div>
@@ -223,7 +227,7 @@ export function ReportsPage() {
                   <div className="text-right">
                     <div className="text-lg font-bold text-accent">
                       <AnimatedNumber 
-                        value={mockRoutePerformance.reduce((sum, r) => sum + r.efficiency, 0) / mockRoutePerformance.length} 
+                        value={avgEfficiency} 
                         format={{ maximumFractionDigits: 1, minimumFractionDigits: 1 }}
                       />%
                     </div>
@@ -240,7 +244,7 @@ export function ReportsPage() {
                   </div>
                   <div className="text-right">
                     <div className="text-lg font-bold text-accent">
-                      {formatINR(mockRoutePerformance.reduce((sum, r) => sum + r.revenue, 0))}
+                      {formatINR(totalRevenue)}
                     </div>
                     <div className="text-xs text-text-secondary">this month</div>
                   </div>
@@ -249,6 +253,7 @@ export function ReportsPage() {
             </div>
           </div>
         </div>
+        )}
       </GlowSurfaceCard>
 
       {showSlotJ && (
@@ -272,7 +277,7 @@ export function ReportsPage() {
                 type="button"
                 className="text-xs text-text-muted hover:underline"
                 onClick={() => {
-                  localStorage.setItem("akara_slot_J_dismissed", "1");
+                  dismissSlot(SLOT_KEYS.J);
                   setSlotJDismissed(true);
                 }}
               >

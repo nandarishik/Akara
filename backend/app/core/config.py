@@ -95,6 +95,10 @@ class Settings(BaseSettings):
     support_email: str = "support@akara.ai"
     billing_email: str = "billing@akara.ai"
 
+    # Legal document versions — bump when Terms/Privacy change (triggers reacceptance)
+    terms_version: str = "2025-01-01"
+    privacy_version: str = "2025-01-01"
+
     # -----------------------------------------------------------------------
     # URLs (used in emails, redirects, CORS)
     # -----------------------------------------------------------------------
