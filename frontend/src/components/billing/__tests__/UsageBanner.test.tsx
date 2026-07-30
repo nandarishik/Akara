@@ -25,6 +25,8 @@ function makeUsage(overrides: Partial<UsageResponse> = {}): UsageResponse {
     undos_per_day: 2,
     users_used: 1,
     users_limit: 1,
+    debrief_count_used: 0,
+    debrief_lifetime_limit: 3,
     features: {
       morning_brief: false,
       scheme_leakage: false,
@@ -37,6 +39,7 @@ function makeUsage(overrides: Partial<UsageResponse> = {}): UsageResponse {
       team_invites: false,
       api_keys: false,
       ask_copilot_debrief: false,
+      alerts: false,
     },
     retention_days: 30,
     ...overrides,

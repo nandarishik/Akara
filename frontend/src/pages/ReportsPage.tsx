@@ -21,7 +21,7 @@ import GlowSurfaceCard from "@/components/ui/GlowSurfaceCard";
 import GlowCTAButton from "@/components/ui/GlowCTAButton";
 import { SecondaryButton } from "@/components/ui/GradientButton";
 import { TableSkeleton, ChartSkeleton } from "@/components/ui/ShimmerSkeleton";
-import { NoDataEmptyState, EmptyState } from "@/components/ui/EmptyState";
+import EmptyState, { NoDataEmptyState } from "@/components/ui/EmptyState";
 import AnimatedNumber from "@/components/ui/AnimatedNumber";
 import { PlanGate } from "@/components/billing/PlanGate";
 import { RouteBarChart } from "@/components/charts/akara/BarCharts";

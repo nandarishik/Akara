@@ -47,7 +47,8 @@ export function CommandPalette() {
         sa.tenants({ search: trimmed, limit: 5 }),
         sa.users({ search: trimmed, limit: 5 }),
       ]);
-      const tenantResults: SearchResult[] = tenants.items.map((t) => ({
+      const tenantItems = tenants.items.map((t) => ({ id: t.id, name: t.name }));
+      const tenantResults: SearchResult[] = tenantItems.map((t) => ({
         kind: "tenant",
         id: t.id,
         label: t.name,
@@ -62,13 +63,15 @@ export function CommandPalette() {
         {
           kind: "action",
           label: "Run founder brief now",
-          run: () => sa.runFounderBrief(),
+          run: async () => {
+            await sa.runFounderBrief();
+          },
         },
       ];
-      for (const t of tenantResults) {
+      for (const t of tenantItems) {
         actions.unshift({
           kind: "action",
-          label: `Impersonate ${t.label}`,
+          label: `Impersonate ${t.name}`,
           impersonate: true,
           run: async () => {
             const r = await sa.impersonate(
@@ -83,7 +86,7 @@ export function CommandPalette() {
           },
         });
       }
-      const billingTenantId = tenantResults[0]?.id;
+      const billingTenantId = tenantItems[0]?.id;
       actions.push({
         kind: "action",
         label: "Open billing ops",

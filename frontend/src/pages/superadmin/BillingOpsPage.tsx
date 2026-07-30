@@ -199,7 +199,7 @@ export function BillingOpsPage() {
     setResendMessage("");
     void sa
       .billingTimeline(t)
-      .then(setTimeline)
+      .then((d) => setTimeline(d as unknown as TimelineResponse))
       .catch((e) => {
         setTimeline(null);
         setError(e instanceof Error ? e.message : "Failed to load timeline");

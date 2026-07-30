@@ -616,7 +616,7 @@ export function TenantDrawer({ tenantId, onClose, initialTab }: TenantDrawerProp
                   {razorpay.current_period_end != null && (
                     <p>Next billing: {formatRelative(String(razorpay.current_period_end))}</p>
                   )}
-                  {(tenant?.trial_ends_at || razorpay.trial_ends_at) && (
+                  {(tenant?.trial_ends_at ?? razorpay.trial_ends_at) != null && (
                     <p>
                       Trial ends:{" "}
                       {new Date(
@@ -752,7 +752,7 @@ export function TenantDrawer({ tenantId, onClose, initialTab }: TenantDrawerProp
                       ? `Active · ${String(razorpay.subscription_status ?? razorpay.razorpay_status ?? "—")}`
                       : "No subscription"}
                   </p>
-                  {(tenant?.trial_ends_at || razorpay.trial_ends_at) && (
+                  {(tenant?.trial_ends_at ?? razorpay.trial_ends_at) != null && (
                     <p>
                       Trial:{" "}
                       {new Date(

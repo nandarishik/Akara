@@ -2,6 +2,7 @@
  * Vitest global setup — Phase 2 test infrastructure
  */
 
+import { afterAll, beforeAll } from 'vitest'
 import '@testing-library/jest-dom'
 
 Object.defineProperty(window, 'matchMedia', {
