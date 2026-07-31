@@ -34,6 +34,7 @@ CRON_TASKS = frozenset({
     "founder_brief",
     "revenue_snapshot",
     "broadcast_scheduler",
+    "content_scheduler",
 })
 
 
@@ -189,6 +190,10 @@ def _run_task(task_name: str) -> None:
             from app.tasks.broadcast_scheduler import run_broadcast_scheduler
 
             details = run_broadcast_scheduler()
+        elif task_name == "content_scheduler":
+            from app.tasks.content_scheduler import run_content_scheduler
+
+            details = run_content_scheduler()
         else:
             status = "failed"
             details = {"error": "unknown task"}

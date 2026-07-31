@@ -5,9 +5,12 @@ from fastapi import APIRouter
 from app.api.routes.superadmin import (
     audit,
     billing,
+    catalog,
+    content,
     conversations,
     data,
     impersonate,
+    legal,
     overview,
     plan,
     quota,
@@ -31,6 +34,9 @@ router.include_router(users.router)
 router.include_router(data.router)
 router.include_router(conversations.router)
 router.include_router(billing.router)
+router.include_router(catalog.router)
+router.include_router(content.router)
+router.include_router(legal.router)
 router.include_router(reports.router)
 router.include_router(security.router)
 router.include_router(impersonate.router)

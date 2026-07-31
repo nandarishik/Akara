@@ -34,7 +34,7 @@ import type { GlassIconColor } from "@/components/effects/GlassIcons";
 import { DASHBOARD_KPI_GLASS } from "@/lib/glassIconMap";
 import { DashboardEmptyState } from "@/components/ui/EmptyState";
 import { PromoDismissCard } from "@/components/promo/PromoDismissCard";
-import { dismissSlot, incrementVisitCount, isSlotDismissed, SLOT_KEYS } from "@/lib/promoSlots";
+import { dismissSlot, incrementVisitCount, isSlotDismissed, PLACEMENT_KEYS, SLOT_KEYS } from "@/lib/promoSlots";
 import { salesDataAgeDays } from "@/lib/dataFreshness";
 
 function getDateRange(period: string): [string, string] {
@@ -126,6 +126,7 @@ export function DashboardPage() {
 
       {showWelcomeSlot && !isLoading && (
         <PromoDismissCard
+          slotKey={PLACEMENT_KEYS.D}
           title="Welcome to AKARA Mission Control"
           description="Import your first file to unlock KPIs, zone charts, and weekly debriefs."
           ctaLabel="Import data →"

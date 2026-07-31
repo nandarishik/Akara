@@ -134,6 +134,29 @@ class ConsentAcceptRequest(BaseModel):
 async def consent_status(request: Request, user: CurrentUser) -> ConsentStatusResponse:
     """Return whether the user must re-accept updated legal documents."""
     client = get_supabase_service_client()
+
+    terms_version = settings.terms_version
+    privacy_version = settings.privacy_version
+    try:
+        for key in ("terms", "privacy"):
+            row = (
+                client.table("document_versions")
+                .select("version, requires_reacceptance")
+                .eq("document_key", key)
+                .eq("is_published", True)
+                .order("effective_at", desc=True)
+                .limit(1)
+                .execute()
+            )
+            if row.data and isinstance(row.data, list) and row.data:
+                ver = str(row.data[0]["version"])
+                if key == "terms":
+                    terms_version = ver
+                else:
+                    privacy_version = ver
+    except Exception:
+        pass
+
     latest = (
         client.table("consent_log")
         .select("version_tos, version_privacy, ai_processing")
@@ -146,14 +169,34 @@ async def consent_status(request: Request, user: CurrentUser) -> ConsentStatusRe
     accepted_terms = row.get("version_tos")
     accepted_privacy = row.get("version_privacy")
     ai_ok = bool(row.get("ai_processing"))
+
+    try:
+        for key, ver in (("terms", terms_version), ("privacy", privacy_version)):
+            uc = (
+                client.table("user_consents")
+                .select("version")
+                .eq("user_id", str(user.user_id))
+                .eq("document_key", key)
+                .eq("version", ver)
+                .maybe_single()
+                .execute()
+            )
+            if uc.data and isinstance(uc.data, dict):
+                if key == "terms":
+                    accepted_terms = ver
+                else:
+                    accepted_privacy = ver
+    except Exception:
+        pass
+
     reaccept = (
-        accepted_terms != settings.terms_version
-        or accepted_privacy != settings.privacy_version
+        accepted_terms != terms_version
+        or accepted_privacy != privacy_version
         or not ai_ok
     )
     return ConsentStatusResponse(
-        terms_version=settings.terms_version,
-        privacy_version=settings.privacy_version,
+        terms_version=terms_version,
+        privacy_version=privacy_version,
         accepted_terms=accepted_terms,
         accepted_privacy=accepted_privacy,
         ai_processing=ai_ok,
@@ -176,11 +219,41 @@ async def consent_accept(
     client = get_supabase_service_client()
     ip = request.client.host if request.client else "unknown"
     ip_hash = hashlib.sha256(ip.encode()).hexdigest()
+    ua = request.headers.get("user-agent")
+
+    terms_version = settings.terms_version
+    privacy_version = settings.privacy_version
+    try:
+        from app.services.legal.document_service import get_published_document, record_user_consent
+
+        terms_doc = get_published_document("terms")
+        privacy_doc = get_published_document("privacy")
+        if terms_doc:
+            terms_version = str(terms_doc.get("version") or terms_version)
+        if privacy_doc:
+            privacy_version = str(privacy_doc.get("version") or privacy_version)
+        record_user_consent(
+            user_id=user.user_id,
+            document_key="terms",
+            version=terms_version,
+            ip_hash=ip_hash,
+            user_agent=ua,
+        )
+        record_user_consent(
+            user_id=user.user_id,
+            document_key="privacy",
+            version=privacy_version,
+            ip_hash=ip_hash,
+            user_agent=ua,
+        )
+    except Exception:
+        pass
+
     client.table("consent_log").insert(
         {
             "user_id": str(user.user_id),
-            "version_tos": settings.terms_version,
-            "version_privacy": settings.privacy_version,
+            "version_tos": terms_version,
+            "version_privacy": privacy_version,
             "ai_processing": True,
             "ip_hash": ip_hash,
         }

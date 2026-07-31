@@ -28,10 +28,13 @@ import { GlassIcon } from "@/components/effects/GlassIcon"
 import type { GlassIconColor } from "@/components/effects/GlassIcons"
 import BorderGlow from "@/components/effects/BorderGlow"
 import PlanReflectiveCard, { PLAN_REFLECTIVE_META } from "@/components/effects/PlanReflectiveCard"
-import { dismissSlot, isSlotDismissed, migrateLegacySlotA, SLOT_KEYS } from "@/lib/promoSlots"
+import { dismissSlot, isSlotDismissed, migrateLegacySlotA, PLACEMENT_KEYS, SLOT_KEYS } from "@/lib/promoSlots"
 import PrismLazy from "@/components/effects/PrismLazy"
 import { BORDER_GLOW_DEFAULTS } from "@/components/effects/presets"
 import { cn } from "@/lib/utils"
+import { usePublicPlans } from "@/hooks/usePublicPlans"
+import { fetchPublicContent } from "@/lib/api/public"
+import { usePlacementSlot } from "@/hooks/usePlacementSlot"
 
 const DashboardPreviewBento = lazy(
   () => import("@/components/landing/DashboardPreviewBento")
@@ -46,36 +49,6 @@ const FAQS = [
   { q: "Can I cancel anytime?", a: "Yes. Your data is preserved for 30 days after cancellation, then permanently deleted." },
   { q: "What happens when I hit the free limit?", a: "The copilot stops answering. Your dashboard and weekly debrief still work. Upgrade to continue." },
   { q: "Does it work for pharma distribution too?", a: "Yes. The copilot understands FMCG, pharma, industrial, and retail distribution terminology." },
-]
-
-const PLANS = [
-  {
-    name: "Free",
-    price: "₹0",
-    period: "/month",
-    cta: "Start free →",
-    ctaLink: "/signup",
-    popular: false,
-    features: ["10 copilot questions/month", "Up to 10,000 rows", "1 user", "Basic dashboard & reports", "CSV / Excel import", "Email support"],
-  },
-  {
-    name: "Pro",
-    price: "₹7,999",
-    period: "/month",
-    cta: "Upgrade to Pro →",
-    ctaLink: "/signup",
-    popular: true,
-    features: ["400 copilot questions/month", "Up to 1,00,000 rows", "3 users", "WhatsApp weekly brief", "Secondary sales analytics", "Priority support"],
-  },
-  {
-    name: "Business",
-    price: "₹13,999",
-    period: "/month",
-    cta: "Upgrade to Business →",
-    ctaLink: "/signup",
-    popular: false,
-    features: ["Unlimited copilot questions", "Unlimited rows", "Unlimited users", "Everything in Pro", "Scheme leakage deep-dive", "What-if simulator", "Dedicated onboarding"],
-  },
 ]
 
 const PAIN_CARDS: {
@@ -118,6 +91,52 @@ const PAIN_CARDS: {
 export function LandingPage() {
   const { session } = useAuth()
   const navigate = useNavigate()
+  const { plans: publicPlans } = usePublicPlans()
+  const displayPlans = publicPlans
+  const slotAFallback = {
+    title: "Launch promo",
+    body: "🚀 Launching WhatsApp weekly briefs — get your data every Monday.",
+    cta_label: "Be the first →",
+    cta_link: "/signup",
+  }
+  const { content: slotAContent, trackClick: trackSlotAClick } = usePlacementSlot(PLACEMENT_KEYS.A, slotAFallback)
+  const [heroTitle, setHeroTitle] = useState<{ eyebrow?: string; headline?: string; headlineAccent?: string }>({})
+  const [heroTagline, setHeroTagline] = useState("")
+  const [faqs, setFaqs] = useState(FAQS)
+  const [seoTitle, setSeoTitle] = useState("AKARA — FMCG sales intelligence for India")
+  const [seoDescription, setSeoDescription] = useState(
+    "Import Tally data, ask AI questions, and get weekly debriefs. Built for Indian FMCG distributors and brands.",
+  )
+
+  useEffect(() => {
+    void Promise.all([
+      fetchPublicContent("landing.hero.title"),
+      fetchPublicContent("landing.hero.subtitle"),
+      fetchPublicContent("landing.faqs"),
+      fetchPublicContent("landing.seo.title"),
+      fetchPublicContent("landing.seo.description"),
+    ]).then(([titleVal, subtitleVal, faqsVal, seoTitleVal, seoDescVal]) => {
+      if (titleVal && typeof titleVal === "object") {
+        setHeroTitle(titleVal as { eyebrow?: string; headline?: string; headlineAccent?: string })
+      }
+      if (subtitleVal && typeof subtitleVal === "object" && "text" in (subtitleVal as object)) {
+        const text = (subtitleVal as { text?: string }).text
+        if (text) setHeroTagline(text)
+      }
+      if (faqsVal && typeof faqsVal === "object") {
+        const items = (faqsVal as { items?: typeof FAQS }).items
+        if (Array.isArray(items) && items.length > 0) setFaqs(items)
+      }
+      if (seoTitleVal && typeof seoTitleVal === "object" && "text" in (seoTitleVal as object)) {
+        const text = (seoTitleVal as { text?: string }).text
+        if (text) setSeoTitle(text)
+      }
+      if (seoDescVal && typeof seoDescVal === "object" && "text" in (seoDescVal as object)) {
+        const text = (seoDescVal as { text?: string }).text
+        if (text) setSeoDescription(text)
+      }
+    }).catch(() => undefined)
+  }, [])
 
   useEffect(() => {
     if (session) navigate("/dashboard", { replace: true })
@@ -198,8 +217,8 @@ export function LandingPage() {
   return (
     <div className="min-h-screen overflow-x-hidden bg-[#0a0a0a] text-white">
       <PageSEO
-        title="AKARA — FMCG sales intelligence for India"
-        description="Import Tally data, ask AI questions, and get weekly debriefs. Built for Indian FMCG distributors and brands."
+        title={seoTitle}
+        description={seoDescription}
         path="/"
         jsonLd={{
           "@context": "https://schema.org",
@@ -261,11 +280,11 @@ export function LandingPage() {
         <div className="relative z-10 w-full max-w-7xl mx-auto px-5 sm:px-8 lg:px-10 pt-12 pb-20 sm:pt-16 sm:pb-28 grid md:grid-cols-[minmax(0,28rem)_1fr] gap-8 lg:gap-20 xl:gap-28 items-center min-h-[min(84vh,800px)]">
           <div className="md:-ml-2 lg:-ml-8 xl:-ml-12">
             <p className="text-[13px] font-semibold tracking-widest uppercase mb-4 text-[#03B3C3]">
-              AI Analytics for FMCG Distributors
+              {heroTitle.eyebrow ?? "AI Analytics for FMCG Distributors"}
             </p>
             <h1 className="text-4xl sm:text-5xl lg:text-[56px] font-extrabold leading-[1.08] tracking-tight mb-6">
               <DecryptedText
-                text="Know your business"
+                text={heroTitle.headline ?? "Know your business"}
                 animateOn="view"
                 sequential
                 revealDirection="center"
@@ -277,7 +296,7 @@ export function LandingPage() {
               />
               <br />
               <DecryptedText
-                text="in 30 seconds."
+                text={heroTitle.headlineAccent ?? "in 30 seconds."}
                 animateOn="view"
                 sequential
                 revealDirection="center"
@@ -290,7 +309,7 @@ export function LandingPage() {
               />
             </h1>
             <p className="text-base sm:text-lg leading-relaxed mb-8 max-w-md text-white/75">
-              Ask in Hindi or English. Get a weekly brief on WhatsApp. Free to start.
+              {heroTagline || "Ask in Hindi or English. Get a weekly brief on WhatsApp. Free to start."}
             </p>
             <div className="flex flex-col sm:flex-row gap-3 mb-8">
               <GlowCTALink to="/signup" size="lg">
@@ -378,8 +397,10 @@ export function LandingPage() {
       {slotAVisible && (
         <div className="bg-[#03B3C3]/10 border-b border-[#03B3C3]/20 text-[#03B3C3] py-2.5 px-4 flex items-center justify-between gap-4">
           <p className="text-sm font-medium flex-1 text-center">
-            🚀 Launching WhatsApp weekly briefs — get your data every Monday.{" "}
-            <Link to="/signup" className="underline font-semibold">Be the first →</Link>
+            {String(slotAContent?.body ?? slotAFallback.body)}{" "}
+            <Link to={String(slotAContent?.cta_link ?? "/signup")} onClick={() => trackSlotAClick()} className="underline font-semibold">
+              {String(slotAContent?.cta_label ?? slotAFallback.cta_label)}
+            </Link>
           </p>
           <button onClick={dismissSlotA} className="text-[#03B3C3]/60 hover:text-[#03B3C3]" aria-label="Dismiss">
             <X className="w-4 h-4" />
@@ -523,7 +544,7 @@ export function LandingPage() {
               suspendWhenOffscreen
             />
             <div className="relative z-10 grid md:grid-cols-3 gap-6 items-start">
-              {PLANS.map((plan) => {
+              {displayPlans.map((plan) => {
                 const meta = PLAN_REFLECTIVE_META[plan.name]
                 return (
                   <BorderGlow
@@ -569,7 +590,7 @@ export function LandingPage() {
             Frequently asked questions
           </h2>
           <div className="space-y-2">
-            {FAQS.map((faq, i) => (
+            {faqs.map((faq, i) => (
               <GlowSurfaceCard key={i} padding="none" className="overflow-hidden">
                 <button
                   className="w-full flex items-center justify-between px-5 py-4 text-left font-medium text-white hover:bg-white/5 transition-colors"

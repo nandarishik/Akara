@@ -37,6 +37,7 @@ import {
   dismissSlot,
   incrementVisitCount,
   isSlotDismissed,
+  PLACEMENT_KEYS,
   SLOT_KEYS,
 } from "@/lib/promoSlots";
 
@@ -237,6 +238,7 @@ export function CopilotPage() {
         {showDemoSlot && (
           <div className="mt-3">
             <PromoDismissCard
+              slotKey={PLACEMENT_KEYS.F}
               title="See Copilot in action"
               description="Watch a 2-minute demo of revenue questions, route analysis, and debrief follow-ups."
               ctaLabel="View demo →"
@@ -468,6 +470,7 @@ export function CopilotPage() {
             {quotaLevel === "blocked" && !isSlotDismissed(SLOT_KEYS.L) && (
               <div className="max-w-3xl mx-auto mb-3">
                 <PromoDismissCard
+                  slotKey={PLACEMENT_KEYS.L}
                   title="Monthly Copilot quota reached"
                   description="Upgrade to Pro for 500 questions/month and unlock scheme leakage reports."
                   ctaLabel="Upgrade plan →"

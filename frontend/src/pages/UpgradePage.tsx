@@ -1,7 +1,6 @@
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { CreditCard, Loader2 } from "lucide-react";
-import { useState } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useEffect, useState } from "react";
 
 import AkaraButton from "@/components/ui/GradientButton";
 import GlowSurfaceCard from "@/components/ui/GlowSurfaceCard";
@@ -12,6 +11,8 @@ import { createCheckoutSession, BillingApiError } from "@/lib/api/billing";
 import { openRazorpaySubscriptionCheckout } from "@/lib/razorpayCheckout";
 import { useBilling } from "@/hooks/useBilling";
 import { useAuth } from "@/contexts/AuthContext";
+import { usePublicPlans } from "@/hooks/usePublicPlans";
+import { formatInrFromMinor, fetchPublicPlans, type PublicPlan } from "@/lib/api/public";
 import { cn } from "@/lib/utils";
 
 const FAQ = [
@@ -35,9 +36,17 @@ export function UpgradePage() {
   const [error, setError] = useState("");
   const [alreadySubscribed, setAlreadySubscribed] = useState(false);
   const { data: usage } = useBilling();
+  const { plans: publicPlans } = usePublicPlans();
+  const [catalogPlans, setCatalogPlans] = useState<PublicPlan[]>([]);
   const { session, user } = useAuth();
   const [params] = useSearchParams();
   const cancelled = params.get("cancelled") === "1";
+
+  useEffect(() => {
+    fetchPublicPlans()
+      .then(setCatalogPlans)
+      .catch(() => setCatalogPlans([]));
+  }, []);
 
   async function handleUpgrade(plan: "pro" | "business") {
     if (!session) {
@@ -86,6 +95,21 @@ export function UpgradePage() {
   }
 
   const currentPlan = usage?.plan ?? "free";
+
+  const proCatalog = catalogPlans.find((p) => p.code === "pro");
+  const businessCatalog = catalogPlans.find((p) => p.code === "business");
+  const proDisplay = publicPlans.find((p) => p.code === "pro");
+  const businessDisplay = publicPlans.find((p) => p.code === "business");
+
+  function catalogPrice(catalog: PublicPlan | undefined, fallbackMonth: number, fallbackYear: number) {
+    if (!catalog) {
+      return formatInrFromMinor(interval === "month" ? fallbackMonth : fallbackYear);
+    }
+    const minor = interval === "month"
+      ? catalog.monthly_price_minor
+      : (catalog.annual_price_minor ?? catalog.monthly_price_minor * 12);
+    return formatInrFromMinor(minor);
+  }
 
   return (
     <div className="theme-product-dark min-h-screen relative">
@@ -184,12 +208,12 @@ export function UpgradePage() {
             <GlowSurfaceCard padding="lg" accent="blue" hover>
               <PlanCard
                 name="Pro"
-                price={interval === "month" ? "₹7,999" : "₹79,999"}
+                price={catalogPrice(proCatalog, 799900, 7679000)}
                 period={interval === "month" ? "/ month" : "/ year"}
                 description="For growing distributors"
                 popular
                 current={currentPlan === "pro"}
-                features={[
+                features={proDisplay?.features ?? [
                   "400 copilot questions/month",
                   "Simulator & secondary sales",
                   "Unlimited monthly uploads",
@@ -224,11 +248,11 @@ export function UpgradePage() {
             <GlowSurfaceCard padding="lg">
               <PlanCard
                 name="Business"
-                price={interval === "month" ? "₹13,999" : "₹1,39,999"}
+                price={catalogPrice(businessCatalog, 1399900, 13439000)}
                 period={interval === "month" ? "/ month" : "/ year"}
                 description="Full intelligence stack"
                 current={currentPlan === "business"}
-                features={[
+                features={businessDisplay?.features ?? [
                   "800 copilot questions/month",
                   "Scheme leakage detection",
                   "Team invites & API keys",

@@ -1,7 +1,9 @@
 import { Link } from "react-router-dom";
 import GlowSurfaceCard from "@/components/ui/GlowSurfaceCard";
+import { usePlacementSlot } from "@/hooks/usePlacementSlot";
 
 interface PromoDismissCardProps {
+  slotKey?: string;
   title: string;
   description: string;
   ctaLabel: string;
@@ -11,6 +13,7 @@ interface PromoDismissCardProps {
 }
 
 export function PromoDismissCard({
+  slotKey,
   title,
   description,
   ctaLabel,
@@ -18,19 +21,28 @@ export function PromoDismissCard({
   onDismiss,
   accent = "amber",
 }: PromoDismissCardProps) {
+  const fallback = { title, body: description, cta_label: ctaLabel, cta_link: ctaTo };
+  const { content, trackClick } = usePlacementSlot(slotKey ?? "", slotKey ? fallback : null);
+
+  const displayTitle = slotKey ? String(content?.title ?? title) : title;
+  const displayBody = slotKey ? String(content?.body ?? description) : description;
+  const displayCta = slotKey ? String(content?.cta_label ?? ctaLabel) : ctaLabel;
+  const displayLink = slotKey ? String(content?.cta_link ?? ctaTo) : ctaTo;
+
   return (
     <GlowSurfaceCard accent={accent} className="animate-fadeInUp">
       <div className="flex items-center justify-between gap-4">
         <div>
-          <p className="font-medium text-sm text-text-primary">{title}</p>
-          <p className="text-xs text-text-muted mt-0.5">{description}</p>
+          <p className="font-medium text-sm text-text-primary">{displayTitle}</p>
+          <p className="text-xs text-text-muted mt-0.5">{displayBody}</p>
         </div>
         <div className="flex items-center gap-3 shrink-0">
           <Link
-            to={ctaTo}
+            to={displayLink}
+            onClick={() => trackClick()}
             className="text-sm font-semibold text-accent hover:underline"
           >
-            {ctaLabel}
+            {displayCta}
           </Link>
           <button
             type="button"

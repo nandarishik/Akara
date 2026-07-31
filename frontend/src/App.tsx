@@ -64,6 +64,9 @@ const SuperadminCommsPage = React.lazy(() => import("@/pages/superadmin/CommsPag
 const SuperadminAnalyticsPage = React.lazy(() => import("@/pages/superadmin/AnalyticsPage").then(m => ({ default: m.SuperadminAnalyticsPage })))
 const SuperadminSettingsPage = React.lazy(() => import("@/pages/superadmin/SettingsPage").then(m => ({ default: m.SuperadminSettingsPage })))
 const SuperadminAiPage = React.lazy(() => import("@/pages/superadmin/AiPage").then(m => ({ default: m.SuperadminAiPage })))
+const PlansPage = React.lazy(() => import("@/pages/superadmin/PlansPage").then(m => ({ default: m.PlansPage })))
+const ContentPage = React.lazy(() => import("@/pages/superadmin/ContentPage").then(m => ({ default: m.ContentPage })))
+const LegalPage = React.lazy(() => import("@/pages/superadmin/LegalPage").then(m => ({ default: m.LegalPage })))
 
 // ─── Dev-only component gallery ───────────────────────────────────────────────
 const ComponentGallery = React.lazy(() => import("@/pages/gallery/ComponentGallery"))
@@ -147,6 +150,9 @@ export default function App() {
                     <Route path="revenue"   element={<SuperadminAnalyticsPage />} />
                     <Route path="analytics" element={<Navigate to="/superadmin/revenue" replace />} />
                     <Route path="billing"   element={<BillingOpsPage />} />
+                    <Route path="plans"     element={<PlansPage />} />
+                    <Route path="content"   element={<ContentPage />} />
+                    <Route path="legal"     element={<LegalPage />} />
                     <Route path="comms"     element={<SuperadminCommsPage />} />
                     <Route path="cron"      element={<CronPage />} />
                     <Route path="audit"     element={<SuperadminAuditPage />} />

@@ -331,6 +331,21 @@ export const sa = {
     superadminFetch(`/superadmin/tenants/${id}`, { method: "PATCH", body: JSON.stringify(body) }),
   patchPlan: (id: string, body: MutationBody & { plan?: string; plan_status?: string; trial_ends_at?: string }) =>
     superadminFetch(`/superadmin/tenants/${id}/plan`, { method: "PATCH", body: JSON.stringify(body) }),
+  assignPlan: (
+    id: string,
+    body: MutationBody & {
+      plan_code: string;
+      custom_limits?: Record<string, unknown>;
+      custom_price_minor?: number | null;
+      source?: string;
+      notes?: string;
+      contract_metadata?: Record<string, unknown>;
+    },
+  ) =>
+    superadminFetch(`/superadmin/tenants/${id}/plan-assignment`, {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
   patchFeatures: (id: string, body: MutationBody & { features: Record<string, boolean> }) =>
     superadminFetch(`/superadmin/tenants/${id}/features`, { method: "PATCH", body: JSON.stringify(body) }),
   patchQuota: (id: string, body: MutationBody & Record<string, unknown>) =>

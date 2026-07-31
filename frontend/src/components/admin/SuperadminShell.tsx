@@ -21,6 +21,9 @@ import {
   Activity,
   Clock,
   Bot,
+  Package,
+  FileText,
+  Scale,
 } from "lucide-react";
 import { GlassIcon } from "@/components/effects/GlassIcon";
 import DarkMeshBackground from "@/components/effects/DarkMeshBackground";
@@ -51,6 +54,7 @@ const NAV_GROUPS: { label: string; items: NavItem[] }[] = [
     items: [
       { href: "/superadmin/revenue", label: "Revenue", icon: LineChart, color: "green" },
       { href: "/superadmin/billing", label: "Billing", icon: Wallet, color: "green" },
+      { href: "/superadmin/plans", label: "Plans & Limits", icon: Package, color: "green" },
     ],
   },
   {
@@ -69,7 +73,11 @@ const NAV_GROUPS: { label: string; items: NavItem[] }[] = [
   },
   {
     label: "Product",
-    items: [{ href: "/superadmin/ai", label: "AI Briefing", icon: Bot, color: "purple" }],
+    items: [
+      { href: "/superadmin/ai", label: "AI Briefing", icon: Bot, color: "purple" },
+      { href: "/superadmin/content", label: "Content & Media", icon: FileText, color: "orange" },
+      { href: "/superadmin/legal", label: "Legal & Changelog", icon: Scale, color: "indigo" },
+    ],
   },
 ];
 

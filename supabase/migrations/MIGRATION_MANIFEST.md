@@ -31,6 +31,9 @@
 | 022 | `022_tenant_companion_data.sql` | — | tenant_companion_data for auxiliary imports |
 | 023 | `023_day9_founder_ai.sql` | 9 | broadcast_history, revenue_snapshots, founder_brief_runs |
 | 024 | `024_broadcast_schedule.sql` | 9 | broadcast schedule columns, body persistence |
+| 025 | `025_day10_omnipotence_1_4.sql` | 10 | plan_catalog, billing ledger, CMS, legal/consent |
+| 026 | `026_day10_gap_closure.sql` | 10 | placement_events, plan_price_migrations, ledger evidence |
+| 027 | `027_day10_finish.sql` | 10 | placement seeds, hero CMS normalize, legal metadata, contract fields |
 
 ## Archived (superseded — not in CI sequence)
 
@@ -38,7 +41,7 @@
 |------|-------|
 | `_archive/011_billing_day2_delta.sql` | Legacy delta; superseded by full `011_billing.sql` |
 
-## Roadmap (025+)
+## Roadmap (028+)
 
 _No pending migrations._
 

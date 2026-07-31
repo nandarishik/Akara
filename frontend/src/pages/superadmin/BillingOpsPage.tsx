@@ -4,6 +4,8 @@ import { Loader2, RefreshCw, Send } from "lucide-react";
 
 import { sa, superadminFetch, type TenantRow } from "@/lib/api/superadmin";
 
+type BillingTab = "ops" | "ledger" | "reconciliation" | "coupons";
+
 interface WebhookStatus {
   last_24h_total: number;
   last_24h_processed: number;
@@ -55,6 +57,36 @@ export function BillingOpsPage() {
   const [reconcileResult, setReconcileResult] = useState<string>("");
   const reconcileReason = "Billing reconcile check from superadmin ops panel";
   const [opsMessage, setOpsMessage] = useState("");
+  const [tab, setTab] = useState<BillingTab>("ops");
+  const [ledger, setLedger] = useState<Array<Record<string, unknown>>>([]);
+  const [ledgerLoading, setLedgerLoading] = useState(false);
+  const [coupons, setCoupons] = useState<Array<Record<string, unknown>>>([]);
+  const [couponForm, setCouponForm] = useState({
+    code: "",
+    name: "",
+    discount_type: "percent",
+    discount_value: 10,
+  });
+  const [promoCouponId, setPromoCouponId] = useState("");
+  const [promoCode, setPromoCode] = useState("");
+  const [reconData, setReconData] = useState<Record<string, unknown> | null>(null);
+  const [refundPaymentId, setRefundPaymentId] = useState("");
+  const [refundAmount, setRefundAmount] = useState("");
+  const [refundPreview, setRefundPreview] = useState<Record<string, unknown> | null>(null);
+  const [ledgerTenantFilter, setLedgerTenantFilter] = useState("");
+  const [ledgerTypeFilter, setLedgerTypeFilter] = useState("");
+  const [markPaidInvoiceId, setMarkPaidInvoiceId] = useState("");
+  const [markPaidBankRef, setMarkPaidBankRef] = useState("");
+  const [markPaidMethod, setMarkPaidMethod] = useState<"NEFT" | "UPI" | "CHEQUE">("NEFT");
+  const [markPaidEvidence, setMarkPaidEvidence] = useState("");
+  const [manualPayAmount, setManualPayAmount] = useState("");
+  const [manualPayBankRef, setManualPayBankRef] = useState("");
+  const [manualPayEvidence, setManualPayEvidence] = useState("");
+  const [creditAmount, setCreditAmount] = useState("");
+  const [creditNote, setCreditNote] = useState("");
+  const [invoiceRetryId, setInvoiceRetryId] = useState("");
+  const [subAction, setSubAction] = useState<"pause" | "resume" | "cancel" | "change_date">("pause");
+  const [subNewDate, setSubNewDate] = useState("");
 
   async function load() {
     setLoading(true);
@@ -207,13 +239,108 @@ export function BillingOpsPage() {
       .finally(() => setTimelineLoading(false));
   }, [searchParams]);
 
+  async function loadLedger() {
+    setLedgerLoading(true);
+    try {
+      const params = new URLSearchParams({ limit: "50" });
+      if (ledgerTenantFilter.trim()) params.set("tenant_id", ledgerTenantFilter.trim());
+      if (ledgerTypeFilter.trim()) params.set("entry_type", ledgerTypeFilter.trim());
+      const data = await superadminFetch<{ items: Array<Record<string, unknown>> }>(
+        `/superadmin/billing/ledger?${params.toString()}`,
+      );
+      setLedger(data.items ?? []);
+    } catch {
+      setLedger([]);
+    } finally {
+      setLedgerLoading(false);
+    }
+  }
+
+  async function uploadEvidence(file: File | null): Promise<string | null> {
+    if (!file) return null;
+    const token = await (async () => {
+      const { supabase } = await import("@/lib/supabase");
+      const { data } = await supabase.auth.getSession();
+      return data.session?.access_token ?? "";
+    })();
+    const csrfMatch = document.cookie.match(/(?:^|;\s*)akara_csrf=([^;]+)/);
+    const csrf = csrfMatch ? decodeURIComponent(csrfMatch[1]) : "";
+    const form = new FormData();
+    form.append("file", file);
+    form.append("alt_text", `Billing evidence ${file.name}`);
+    form.append("kind", "document");
+    const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/superadmin/content/media/upload`, {
+      method: "POST",
+      credentials: "include",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        ...(csrf ? { "X-CSRF-Token": csrf } : {}),
+      },
+      body: form,
+    });
+    if (!res.ok) throw new Error(await res.text());
+    const data = (await res.json()) as { asset?: { storage_path?: string } };
+    return data.asset?.storage_path ?? null;
+  }
+
+  async function loadCoupons() {
+    try {
+      const data = await superadminFetch<{ items: Array<Record<string, unknown>> }>("/superadmin/billing/coupons");
+      setCoupons(data.items ?? []);
+    } catch {
+      setCoupons([]);
+    }
+  }
+
+  async function loadReconciliation() {
+    if (!tenantId.trim()) return;
+    try {
+      const data = await superadminFetch<Record<string, unknown>>(
+        `/superadmin/billing/reconciliation/${encodeURIComponent(tenantId.trim())}`,
+      );
+      setReconData(data);
+    } catch {
+      setReconData(null);
+    }
+  }
+
+  async function handleRefundPreview() {
+    if (!refundPaymentId.trim()) return;
+    try {
+      const data = await superadminFetch<Record<string, unknown>>("/superadmin/billing/refunds/preview", {
+        method: "POST",
+        body: JSON.stringify({
+          payment_id: refundPaymentId.trim(),
+          amount_paise: refundAmount ? parseInt(refundAmount, 10) : null,
+          partial: Boolean(refundAmount),
+        }),
+      });
+      setRefundPreview(data);
+    } catch (e) {
+      setRefundPreview({ error: e instanceof Error ? e.message : "Preview failed" });
+    }
+  }
+
+  useEffect(() => {
+    if (tab === "ledger") void loadLedger();
+    if (tab === "coupons") void loadCoupons();
+    if (tab === "reconciliation" && tenantId.trim()) void loadReconciliation();
+  }, [tab, tenantId, ledgerTenantFilter, ledgerTypeFilter]);
+
+  const billingTabs: { id: BillingTab; label: string }[] = [
+    { id: "ops", label: "Ops" },
+    { id: "ledger", label: "Ledger" },
+    { id: "reconciliation", label: "Reconciliation" },
+    { id: "coupons", label: "Coupons" },
+  ];
+
   return (
     <div className="p-8 space-y-6 max-w-4xl">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-xl font-semibold text-sa-text">Billing Operations</h1>
           <p className="text-sm text-sa-muted mt-1">
-            Razorpay webhook health, payment timeline, manual NEFT upgrades, and reconciliation.
+            Razorpay webhooks, ledger, reconciliation, coupons, and manual ops.
           </p>
         </div>
         <button
@@ -226,19 +353,208 @@ export function BillingOpsPage() {
         </button>
       </div>
 
-      {loading && (
+      <div className="flex gap-2 border-b border-sa-border pb-2">
+        {billingTabs.map(({ id, label }) => (
+          <button
+            key={id}
+            type="button"
+            onClick={() => setTab(id)}
+            className={`px-3 py-1.5 text-sm rounded-lg ${tab === id ? "bg-sa-raised text-sa-text" : "text-sa-muted"}`}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+
+      {tab === "ledger" && (
+        <div className="rounded-lg border border-sa-border bg-sa-raised overflow-hidden">
+          <div className="px-4 py-3 border-b border-sa-border flex flex-wrap gap-2 items-center">
+            <span className="text-sm font-medium text-sa-text">Billing ledger</span>
+            <input
+              placeholder="Tenant UUID filter"
+              value={ledgerTenantFilter}
+              onChange={(e) => setLedgerTenantFilter(e.target.value)}
+              className="rounded-md border border-sa-border bg-sa-base px-2 py-1 text-xs text-sa-text"
+            />
+            <input
+              placeholder="Entry type filter"
+              value={ledgerTypeFilter}
+              onChange={(e) => setLedgerTypeFilter(e.target.value)}
+              className="rounded-md border border-sa-border bg-sa-base px-2 py-1 text-xs text-sa-text"
+            />
+            <button type="button" onClick={() => void loadLedger()} className="text-xs text-sa-accent hover:underline">
+              Apply filters
+            </button>
+          </div>
+          {ledgerLoading ? (
+            <div className="p-8 flex justify-center"><Loader2 className="h-6 w-6 animate-spin text-sa-accent" /></div>
+          ) : ledger.length === 0 ? (
+            <p className="p-4 text-sm text-sa-muted">No ledger entries yet.</p>
+          ) : (
+            <div className="divide-y divide-sa-border">
+              {ledger.map((row) => (
+                <div key={String(row.id)} className="px-4 py-3 text-sm flex justify-between">
+                  <span className="text-sa-text">{String(row.entry_type)} · ₹{Number(row.amount_minor || 0) / 100}</span>
+                  <span className="text-sa-muted text-xs">{String(row.status)} · {String(row.created_at ?? "").slice(0, 10)}</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {tab === "reconciliation" && (
+        <div className="space-y-4">
+          <p className="text-sm text-sa-muted">Enter tenant ID in Ops tab or URL ?tenant=… then open Reconciliation.</p>
+          {reconData ? (
+            <div className="rounded-lg border border-sa-border bg-sa-raised overflow-hidden">
+              <table className="w-full text-sm">
+                <thead className="border-b border-sa-border">
+                  <tr className="text-sa-muted text-left">
+                    <th className="p-3">Razorpay</th>
+                    <th className="p-3">Invoice + GST</th>
+                    <th className="p-3">Ledger</th>
+                    <th className="p-3">Tenant plan</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr className="border-b border-sa-border align-top">
+                    <td className="p-3 text-sa-text">
+                      {(reconData.razorpay as Record<string, unknown>)?.status as string ?? "—"}
+                      <br />
+                      <span className="text-xs text-sa-muted">
+                        ₹{Number((reconData.razorpay as Record<string, unknown>)?.amount_paise ?? 0) / 100}
+                      </span>
+                    </td>
+                    <td className="p-3 text-sa-text">
+                      {(reconData.invoice as Record<string, unknown>)?.invoice_number as string ?? "—"}
+                      <br />
+                      <span className="text-xs text-sa-muted">
+                        {(reconData.invoice as Record<string, unknown>)?.status as string ?? ""} · GST ₹
+                        {Number((reconData.invoice as Record<string, unknown>)?.gst_amount ?? 0)}
+                      </span>
+                    </td>
+                    <td className="p-3 text-sa-text">
+                      {(reconData.ledger as Record<string, unknown>)?.entry_type as string ?? "—"}
+                      <br />
+                      <span className="text-xs text-sa-muted">
+                        {(reconData.ledger as Record<string, unknown>)?.status as string ?? ""}
+                      </span>
+                    </td>
+                    <td className="p-3 text-sa-text">
+                      {(reconData.entitlement as Record<string, unknown>)?.plan as string ?? "—"}
+                      <br />
+                      <span className="text-xs text-sa-muted">
+                        {(reconData.entitlement as Record<string, unknown>)?.plan_status as string ?? ""}
+                      </span>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+              <p className="p-3 text-xs text-sa-muted">
+                Aligned: {reconData.aligned ? "Yes" : "No — review mismatches in Ops reconcile"}
+              </p>
+            </div>
+          ) : (
+            <button type="button" onClick={() => void loadReconciliation()} className="text-sm text-sa-accent hover:underline">
+              Load reconciliation for tenant
+            </button>
+          )}
+        </div>
+      )}
+
+      {tab === "coupons" && (
+        <div className="space-y-4">
+          <div className="rounded-lg border border-sa-border bg-sa-raised p-4 grid gap-2 md:grid-cols-4">
+            <input
+              placeholder="Coupon code"
+              value={couponForm.code}
+              onChange={(e) => setCouponForm((f) => ({ ...f, code: e.target.value }))}
+              className="rounded-md border border-sa-border bg-sa-base px-3 py-2 text-sm text-sa-text"
+            />
+            <input
+              placeholder="Name"
+              value={couponForm.name}
+              onChange={(e) => setCouponForm((f) => ({ ...f, name: e.target.value }))}
+              className="rounded-md border border-sa-border bg-sa-base px-3 py-2 text-sm text-sa-text"
+            />
+            <input
+              type="number"
+              placeholder="Discount value"
+              value={couponForm.discount_value}
+              onChange={(e) => setCouponForm((f) => ({ ...f, discount_value: parseInt(e.target.value, 10) || 0 }))}
+              className="rounded-md border border-sa-border bg-sa-base px-3 py-2 text-sm text-sa-text"
+            />
+            <button
+              type="button"
+              onClick={() =>
+                void superadminFetch("/superadmin/billing/coupons", {
+                  method: "POST",
+                  body: JSON.stringify(couponForm),
+                }).then(() => loadCoupons())
+              }
+              className="rounded-md bg-sa-accent/20 px-3 py-2 text-sm text-sa-text"
+            >
+              Create coupon
+            </button>
+          </div>
+          <div className="rounded-lg border border-sa-border bg-sa-raised p-4 grid gap-2 md:grid-cols-3">
+            <input
+              placeholder="Coupon UUID"
+              value={promoCouponId}
+              onChange={(e) => setPromoCouponId(e.target.value)}
+              className="rounded-md border border-sa-border bg-sa-base px-3 py-2 text-sm text-sa-text md:col-span-1"
+            />
+            <input
+              placeholder="Promotion code"
+              value={promoCode}
+              onChange={(e) => setPromoCode(e.target.value)}
+              className="rounded-md border border-sa-border bg-sa-base px-3 py-2 text-sm text-sa-text"
+            />
+            <button
+              type="button"
+              onClick={() =>
+                void superadminFetch("/superadmin/billing/promotion-codes", {
+                  method: "POST",
+                  body: JSON.stringify({ coupon_id: promoCouponId, code: promoCode }),
+                }).then(() => setOpsMessage("Promotion code created"))
+              }
+              className="rounded-md bg-sa-accent/20 px-3 py-2 text-sm text-sa-text"
+            >
+              Generate promo code
+            </button>
+          </div>
+          <div className="rounded-lg border border-sa-border bg-sa-raised overflow-hidden">
+          <div className="px-4 py-3 border-b border-sa-border text-sm font-medium text-sa-text">Coupons</div>
+          {coupons.length === 0 ? (
+            <p className="p-4 text-sm text-sa-muted">No coupons configured.</p>
+          ) : (
+            <div className="divide-y divide-sa-border">
+              {coupons.map((c) => (
+                <div key={String(c.id)} className="px-4 py-3 text-sm">
+                  <span className="text-sa-text font-mono">{String(c.code)}</span>
+                  <span className="text-sa-muted ml-2">{String(c.discount_type)} {String(c.discount_value)}</span>
+                </div>
+              ))}
+            </div>
+          )}
+          </div>
+        </div>
+      )}
+
+      {tab === "ops" && loading && (
         <div className="flex justify-center py-12">
           <Loader2 className="h-8 w-8 animate-spin text-sa-accent" />
         </div>
       )}
 
-      {error && (
+      {tab === "ops" && error && (
         <div className="rounded-lg border border-red-500/30 bg-red-500/10 p-4 text-red-300 text-sm">
           {error}
         </div>
       )}
 
-      {status && (
+      {tab === "ops" && status && (
         <>
           <div className="grid grid-cols-3 gap-4">
             <div className="rounded-lg border border-sa-border bg-sa-raised p-4">
@@ -439,7 +755,285 @@ export function BillingOpsPage() {
         )}
       </div>
 
-      <VoidRefundPanel />
+      {tab === "ops" && (
+        <ExtendedBillingOpsPanel
+          tenantId={tenantId}
+          markPaidInvoiceId={markPaidInvoiceId}
+          setMarkPaidInvoiceId={setMarkPaidInvoiceId}
+          markPaidBankRef={markPaidBankRef}
+          setMarkPaidBankRef={setMarkPaidBankRef}
+          markPaidMethod={markPaidMethod}
+          setMarkPaidMethod={setMarkPaidMethod}
+          markPaidEvidence={markPaidEvidence}
+          setMarkPaidEvidence={setMarkPaidEvidence}
+          manualPayAmount={manualPayAmount}
+          setManualPayAmount={setManualPayAmount}
+          manualPayBankRef={manualPayBankRef}
+          setManualPayBankRef={setManualPayBankRef}
+          manualPayEvidence={manualPayEvidence}
+          setManualPayEvidence={setManualPayEvidence}
+          creditAmount={creditAmount}
+          setCreditAmount={setCreditAmount}
+          creditNote={creditNote}
+          setCreditNote={setCreditNote}
+          invoiceRetryId={invoiceRetryId}
+          setInvoiceRetryId={setInvoiceRetryId}
+          subAction={subAction}
+          setSubAction={setSubAction}
+          subNewDate={subNewDate}
+          setSubNewDate={setSubNewDate}
+          uploadEvidence={uploadEvidence}
+          onMessage={setOpsMessage}
+          onReloadTimeline={loadTimeline}
+        />
+      )}
+
+      {tab === "ops" && (
+        <div className="rounded-lg border border-sa-border bg-sa-raised p-4 space-y-3">
+          <h3 className="font-semibold text-sa-text">Refund preview</h3>
+          <div className="flex flex-wrap gap-2">
+            <input
+              value={refundPaymentId}
+              onChange={(e) => setRefundPaymentId(e.target.value)}
+              placeholder="Razorpay payment ID"
+              className="flex-1 min-w-[200px] rounded-md border border-sa-border bg-sa-base px-3 py-2 text-sm text-sa-text"
+            />
+            <input
+              value={refundAmount}
+              onChange={(e) => setRefundAmount(e.target.value)}
+              placeholder="Amount paise (optional)"
+              className="w-40 rounded-md border border-sa-border bg-sa-base px-3 py-2 text-sm text-sa-text"
+            />
+            <button type="button" onClick={() => void handleRefundPreview()} className="px-3 py-2 text-sm border border-sa-border rounded-md text-sa-text">
+              Preview
+            </button>
+          </div>
+          {refundPreview && (
+            <pre className="text-xs text-sa-muted overflow-auto">{JSON.stringify(refundPreview, null, 2)}</pre>
+          )}
+        </div>
+      )}
+
+      {tab === "ops" && <VoidRefundPanel />}
+    </div>
+  );
+}
+
+function ExtendedBillingOpsPanel({
+  tenantId,
+  markPaidInvoiceId,
+  setMarkPaidInvoiceId,
+  markPaidBankRef,
+  setMarkPaidBankRef,
+  markPaidMethod,
+  setMarkPaidMethod,
+  markPaidEvidence,
+  setMarkPaidEvidence,
+  manualPayAmount,
+  setManualPayAmount,
+  manualPayBankRef,
+  setManualPayBankRef,
+  manualPayEvidence,
+  setManualPayEvidence,
+  creditAmount,
+  setCreditAmount,
+  creditNote,
+  setCreditNote,
+  invoiceRetryId,
+  setInvoiceRetryId,
+  subAction,
+  setSubAction,
+  subNewDate,
+  setSubNewDate,
+  uploadEvidence,
+  onMessage,
+  onReloadTimeline,
+}: {
+  tenantId: string;
+  markPaidInvoiceId: string;
+  setMarkPaidInvoiceId: (v: string) => void;
+  markPaidBankRef: string;
+  setMarkPaidBankRef: (v: string) => void;
+  markPaidMethod: "NEFT" | "UPI" | "CHEQUE";
+  setMarkPaidMethod: (v: "NEFT" | "UPI" | "CHEQUE") => void;
+  markPaidEvidence: string;
+  setMarkPaidEvidence: (v: string) => void;
+  manualPayAmount: string;
+  setManualPayAmount: (v: string) => void;
+  manualPayBankRef: string;
+  setManualPayBankRef: (v: string) => void;
+  manualPayEvidence: string;
+  setManualPayEvidence: (v: string) => void;
+  creditAmount: string;
+  setCreditAmount: (v: string) => void;
+  creditNote: string;
+  setCreditNote: (v: string) => void;
+  invoiceRetryId: string;
+  setInvoiceRetryId: (v: string) => void;
+  subAction: "pause" | "resume" | "cancel" | "change_date";
+  setSubAction: (v: "pause" | "resume" | "cancel" | "change_date") => void;
+  subNewDate: string;
+  setSubNewDate: (v: string) => void;
+  uploadEvidence: (file: File | null) => Promise<string | null>;
+  onMessage: (msg: string) => void;
+  onReloadTimeline: () => Promise<void>;
+}) {
+  const [markPaidFile, setMarkPaidFile] = useState<File | null>(null);
+  const [manualPayFile, setManualPayFile] = useState<File | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  async function handleMarkPaid() {
+    if (!markPaidInvoiceId.trim() || !markPaidBankRef.trim()) return;
+    setLoading(true);
+    try {
+      const evidencePath = markPaidEvidence || (await uploadEvidence(markPaidFile));
+      await superadminFetch(`/superadmin/billing/invoices/${encodeURIComponent(markPaidInvoiceId.trim())}/mark-paid`, {
+        method: "POST",
+        body: JSON.stringify({
+          reason: "Mark invoice paid from billing ops",
+          bank_reference: markPaidBankRef.trim(),
+          payment_method: markPaidMethod,
+          evidence_storage_path: evidencePath,
+        }),
+      });
+      onMessage("Invoice marked paid");
+      await onReloadTimeline();
+    } catch (e) {
+      onMessage(e instanceof Error ? e.message : "Mark paid failed");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleManualPayment() {
+    if (!tenantId.trim() || !manualPayAmount || !manualPayBankRef.trim()) return;
+    setLoading(true);
+    try {
+      const evidencePath = manualPayEvidence || (await uploadEvidence(manualPayFile));
+      await superadminFetch("/superadmin/billing/manual-payment", {
+        method: "POST",
+        body: JSON.stringify({
+          reason: "Manual payment from billing ops",
+          tenant_id: tenantId.trim(),
+          amount_minor: parseInt(manualPayAmount, 10),
+          bank_reference: manualPayBankRef.trim(),
+          payment_method: "NEFT",
+          evidence_storage_path: evidencePath,
+        }),
+      });
+      onMessage("Manual payment recorded");
+      await onReloadTimeline();
+    } catch (e) {
+      onMessage(e instanceof Error ? e.message : "Manual payment failed");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleCredit() {
+    if (!tenantId.trim() || !creditAmount) return;
+    setLoading(true);
+    try {
+      await superadminFetch("/superadmin/billing/credits", {
+        method: "POST",
+        body: JSON.stringify({
+          reason: "Issue credit from billing ops",
+          tenant_id: tenantId.trim(),
+          amount_minor: parseInt(creditAmount, 10),
+          reason_note: creditNote.trim(),
+        }),
+      });
+      onMessage("Credit issued");
+    } catch (e) {
+      onMessage(e instanceof Error ? e.message : "Credit failed");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleInvoiceRetry() {
+    if (!invoiceRetryId.trim()) return;
+    setLoading(true);
+    try {
+      await superadminFetch(`/superadmin/billing/invoices/${encodeURIComponent(invoiceRetryId.trim())}/retry`, {
+        method: "POST",
+        body: JSON.stringify({ reason: "Retry invoice from billing ops" }),
+      });
+      onMessage("Invoice retry submitted");
+    } catch (e) {
+      onMessage(e instanceof Error ? e.message : "Retry failed");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleSubscriptionAction() {
+    if (!tenantId.trim()) return;
+    setLoading(true);
+    try {
+      await superadminFetch(`/superadmin/billing/subscriptions/${encodeURIComponent(tenantId.trim())}/action`, {
+        method: "POST",
+        body: JSON.stringify({
+          reason: `Subscription ${subAction} from billing ops`,
+          action: subAction,
+          new_date: subAction === "change_date" && subNewDate ? new Date(subNewDate).toISOString() : null,
+        }),
+      });
+      onMessage(`Subscription action: ${subAction}`);
+    } catch (e) {
+      onMessage(e instanceof Error ? e.message : "Subscription action failed");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <div className="rounded-lg border border-sa-border bg-sa-raised p-4 space-y-4">
+      <h2 className="text-sm font-medium text-sa-text">Payments & credits</h2>
+      <div className="grid gap-4 md:grid-cols-2">
+        <div className="space-y-2 rounded-md border border-sa-border p-3">
+          <p className="text-xs font-medium uppercase text-sa-text">Mark invoice paid</p>
+          <input placeholder="Invoice UUID" value={markPaidInvoiceId} onChange={(e) => setMarkPaidInvoiceId(e.target.value)} className="w-full rounded-md border border-sa-border bg-sa-base px-3 py-2 text-sm text-sa-text" />
+          <input placeholder="Bank reference" value={markPaidBankRef} onChange={(e) => setMarkPaidBankRef(e.target.value)} className="w-full rounded-md border border-sa-border bg-sa-base px-3 py-2 text-sm text-sa-text" />
+          <select value={markPaidMethod} onChange={(e) => setMarkPaidMethod(e.target.value as "NEFT" | "UPI" | "CHEQUE")} className="w-full rounded-md border border-sa-border bg-sa-base px-3 py-2 text-sm text-sa-text">
+            <option value="NEFT">NEFT</option>
+            <option value="UPI">UPI</option>
+            <option value="CHEQUE">CHEQUE</option>
+          </select>
+          <input type="file" accept="image/*,application/pdf" onChange={(e) => setMarkPaidFile(e.target.files?.[0] ?? null)} className="text-xs text-sa-muted" />
+          <input placeholder="Evidence path (optional override)" value={markPaidEvidence} onChange={(e) => setMarkPaidEvidence(e.target.value)} className="w-full rounded-md border border-sa-border bg-sa-base px-3 py-2 text-xs text-sa-text" />
+          <button type="button" disabled={loading} onClick={() => void handleMarkPaid()} className="w-full px-4 py-2 rounded-md bg-sa-accent text-white text-sm disabled:opacity-50">Mark paid</button>
+        </div>
+        <div className="space-y-2 rounded-md border border-sa-border p-3">
+          <p className="text-xs font-medium uppercase text-sa-text">Manual payment</p>
+          <input placeholder="Amount (paise)" value={manualPayAmount} onChange={(e) => setManualPayAmount(e.target.value)} className="w-full rounded-md border border-sa-border bg-sa-base px-3 py-2 text-sm text-sa-text" />
+          <input placeholder="Bank reference" value={manualPayBankRef} onChange={(e) => setManualPayBankRef(e.target.value)} className="w-full rounded-md border border-sa-border bg-sa-base px-3 py-2 text-sm text-sa-text" />
+          <input type="file" accept="image/*,application/pdf" onChange={(e) => setManualPayFile(e.target.files?.[0] ?? null)} className="text-xs text-sa-muted" />
+          <input placeholder="Evidence path (optional override)" value={manualPayEvidence} onChange={(e) => setManualPayEvidence(e.target.value)} className="w-full rounded-md border border-sa-border bg-sa-base px-3 py-2 text-xs text-sa-text" />
+          <button type="button" disabled={loading || !tenantId.trim()} onClick={() => void handleManualPayment()} className="w-full px-4 py-2 rounded-md border border-sa-border text-sm text-sa-text disabled:opacity-50">Record manual payment</button>
+        </div>
+        <div className="space-y-2 rounded-md border border-sa-border p-3">
+          <p className="text-xs font-medium uppercase text-sa-text">Issue credit</p>
+          <input placeholder="Amount (paise)" value={creditAmount} onChange={(e) => setCreditAmount(e.target.value)} className="w-full rounded-md border border-sa-border bg-sa-base px-3 py-2 text-sm text-sa-text" />
+          <input placeholder="Reason note" value={creditNote} onChange={(e) => setCreditNote(e.target.value)} className="w-full rounded-md border border-sa-border bg-sa-base px-3 py-2 text-sm text-sa-text" />
+          <button type="button" disabled={loading || !tenantId.trim()} onClick={() => void handleCredit()} className="w-full px-4 py-2 rounded-md border border-sa-border text-sm text-sa-text disabled:opacity-50">Issue credit</button>
+        </div>
+        <div className="space-y-2 rounded-md border border-sa-border p-3">
+          <p className="text-xs font-medium uppercase text-sa-text">Invoice retry & subscription</p>
+          <input placeholder="Invoice UUID to retry" value={invoiceRetryId} onChange={(e) => setInvoiceRetryId(e.target.value)} className="w-full rounded-md border border-sa-border bg-sa-base px-3 py-2 text-sm text-sa-text" />
+          <button type="button" disabled={loading} onClick={() => void handleInvoiceRetry()} className="w-full px-4 py-2 rounded-md border border-sa-border text-sm text-sa-text disabled:opacity-50">Retry invoice</button>
+          <select value={subAction} onChange={(e) => setSubAction(e.target.value as typeof subAction)} className="w-full rounded-md border border-sa-border bg-sa-base px-3 py-2 text-sm text-sa-text">
+            <option value="pause">Pause subscription</option>
+            <option value="resume">Resume subscription</option>
+            <option value="cancel">Cancel subscription</option>
+            <option value="change_date">Change billing date</option>
+          </select>
+          {subAction === "change_date" && (
+            <input type="datetime-local" value={subNewDate} onChange={(e) => setSubNewDate(e.target.value)} className="w-full rounded-md border border-sa-border bg-sa-base px-3 py-2 text-sm text-sa-text" />
+          )}
+          <button type="button" disabled={loading || !tenantId.trim()} onClick={() => void handleSubscriptionAction()} className="w-full px-4 py-2 rounded-md bg-amber-600 text-white text-sm disabled:opacity-50">Apply subscription action</button>
+        </div>
+      </div>
     </div>
   );
 }
@@ -552,6 +1146,7 @@ function TenantSearchAutocomplete({
 function VoidRefundPanel() {
   const [invoiceRef, setInvoiceRef] = useState("");
   const [paymentId, setPaymentId] = useState("");
+  const [refundAmountPaise, setRefundAmountPaise] = useState("");
   const [dryRun, setDryRun] = useState(true);
   const [preview, setPreview] = useState<Record<string, unknown> | null>(null);
   const [msg, setMsg] = useState("");
@@ -585,20 +1180,46 @@ function VoidRefundPanel() {
     setMsg("");
     setPreview(null);
     try {
-      const result = await superadminFetch<Record<string, unknown>>("/superadmin/billing/refund", {
+      if (!apply) {
+        const result = await superadminFetch<Record<string, unknown>>("/superadmin/billing/refunds/preview", {
+          method: "POST",
+          body: JSON.stringify({
+            payment_id: paymentId,
+            amount_paise: refundAmountPaise ? parseInt(refundAmountPaise, 10) : null,
+            partial: Boolean(refundAmountPaise),
+          }),
+        });
+        setPreview(result);
+        setMsg("Preview ready — review impact before applying");
+        return;
+      }
+      const idempotencyKey = crypto.randomUUID();
+      const token = await (async () => {
+        const { supabase } = await import("@/lib/supabase");
+        const { data } = await supabase.auth.getSession();
+        return data.session?.access_token ?? "";
+      })();
+      const csrfMatch = document.cookie.match(/(?:^|;\s*)akara_csrf=([^;]+)/);
+      const csrf = csrfMatch ? decodeURIComponent(csrfMatch[1]) : "";
+      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/superadmin/billing/refund`, {
         method: "POST",
+        credentials: "include",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+          "Idempotency-Key": idempotencyKey,
+          ...(csrf ? { "X-CSRF-Token": csrf } : {}),
+        },
         body: JSON.stringify({
           payment_id: paymentId,
           reason: "Refund from billing ops UI",
-          dry_run: !apply,
+          dry_run: false,
+          amount_paise: refundAmountPaise ? parseInt(refundAmountPaise, 10) : null,
+          partial: Boolean(refundAmountPaise),
         }),
       });
-      if (!apply) {
-        setPreview(result);
-        setMsg("Preview ready — review impact before applying");
-      } else {
-        setMsg("Refund submitted");
-      }
+      if (!res.ok) throw new Error(await res.text());
+      setMsg("Refund submitted with idempotency key");
     } catch (e) {
       setMsg(e instanceof Error ? e.message : "Refund failed");
     }
@@ -652,6 +1273,12 @@ function VoidRefundPanel() {
           placeholder="Razorpay payment ID"
           value={paymentId}
           onChange={(e) => setPaymentId(e.target.value)}
+        />
+        <input
+          className="rounded border border-sa-border bg-sa-surface px-3 py-2 text-sm w-40"
+          placeholder="Amount paise (partial)"
+          value={refundAmountPaise}
+          onChange={(e) => setRefundAmountPaise(e.target.value)}
         />
         <button
           type="button"

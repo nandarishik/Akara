@@ -604,6 +604,8 @@ export function TenantDrawer({ tenantId, onClose, initialTab }: TenantDrawerProp
                 </Button>
               </div>
 
+              <PlanAssignmentSection tenantId={tenantId} reason={reason} reasonOk={reasonOk} onStatus={setStatus} />
+
               {razorpay && (
                 <div className="rounded border border-sa-border bg-sa-raised/50 p-3 text-xs space-y-1">
                   <p className="font-medium">Razorpay</p>
@@ -945,5 +947,157 @@ export function TenantDrawer({ tenantId, onClose, initialTab }: TenantDrawerProp
         />
       )}
     </>
+  );
+}
+
+function PlanAssignmentSection({
+  tenantId,
+  reason,
+  reasonOk,
+  onStatus,
+}: {
+  tenantId: string;
+  reason: string;
+  reasonOk: boolean;
+  onStatus: (msg: string) => void;
+}) {
+  const [planCode, setPlanCode] = useState("pro");
+  const [customLimitsJson, setCustomLimitsJson] = useState("{}");
+  const [source, setSource] = useState("manual");
+  const [notes, setNotes] = useState("");
+  const [customPriceMinor, setCustomPriceMinor] = useState("");
+  const [poNumber, setPoNumber] = useState("");
+  const [contractStart, setContractStart] = useState("");
+  const [contractEnd, setContractEnd] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  function buildPayload(dryRun: boolean) {
+    let custom_limits: Record<string, unknown> = {};
+    try {
+      custom_limits = JSON.parse(customLimitsJson) as Record<string, unknown>;
+    } catch {
+      throw new Error("Invalid custom_limits JSON");
+    }
+    const contract_metadata =
+      source === "contract"
+        ? {
+            po_number: poNumber.trim() || undefined,
+            start_date: contractStart || undefined,
+            end_date: contractEnd || undefined,
+          }
+        : {};
+    return {
+      reason,
+      dry_run: dryRun,
+      plan_code: planCode,
+      custom_limits,
+      source,
+      notes,
+      custom_price_minor: customPriceMinor ? parseInt(customPriceMinor, 10) : null,
+      contract_metadata,
+    };
+  }
+
+  async function dryRun() {
+    setLoading(true);
+    try {
+      await sa.assignPlan(tenantId, buildPayload(true));
+      onStatus("Dry run OK — review impact before applying assignment");
+    } catch (e) {
+      onStatus(e instanceof Error ? e.message : "Dry run failed");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function apply() {
+    if (!reasonOk) return;
+    setLoading(true);
+    try {
+      await sa.assignPlan(tenantId, buildPayload(false));
+      onStatus(`Plan assignment applied: ${planCode}`);
+    } catch (e) {
+      onStatus(e instanceof Error ? e.message : "Assignment failed");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <div className="rounded border border-sa-border bg-sa-raised/50 p-3 text-xs space-y-2">
+      <p className="font-medium">Custom plan assignment</p>
+      <select
+        className="w-full rounded border border-sa-border bg-sa-base p-2"
+        value={planCode}
+        onChange={(e) => setPlanCode(e.target.value)}
+      >
+        <option value="free">free</option>
+        <option value="pro">pro</option>
+        <option value="business">business</option>
+      </select>
+      <textarea
+        rows={3}
+        placeholder='Custom limits JSON e.g. {"users": 5}'
+        value={customLimitsJson}
+        onChange={(e) => setCustomLimitsJson(e.target.value)}
+        className="w-full rounded border border-sa-border bg-sa-base p-2 font-mono"
+      />
+      <select
+        className="w-full rounded border border-sa-border bg-sa-base p-2"
+        value={source}
+        onChange={(e) => setSource(e.target.value)}
+      >
+        <option value="manual">manual</option>
+        <option value="contract">contract</option>
+        <option value="promotion">promotion</option>
+        <option value="razorpay">razorpay</option>
+      </select>
+      <input
+        placeholder="Notes"
+        value={notes}
+        onChange={(e) => setNotes(e.target.value)}
+        className="w-full rounded border border-sa-border bg-sa-base p-2"
+      />
+      {source === "contract" && (
+        <div className="space-y-2 border border-sa-border rounded p-2">
+          <p className="font-medium text-sa-text">Enterprise contract</p>
+          <input
+            type="number"
+            placeholder="Custom price (paise)"
+            value={customPriceMinor}
+            onChange={(e) => setCustomPriceMinor(e.target.value)}
+            className="w-full rounded border border-sa-border bg-sa-base p-2"
+          />
+          <input
+            placeholder="PO number"
+            value={poNumber}
+            onChange={(e) => setPoNumber(e.target.value)}
+            className="w-full rounded border border-sa-border bg-sa-base p-2"
+          />
+          <div className="grid grid-cols-2 gap-2">
+            <input
+              type="date"
+              value={contractStart}
+              onChange={(e) => setContractStart(e.target.value)}
+              className="rounded border border-sa-border bg-sa-base p-2"
+            />
+            <input
+              type="date"
+              value={contractEnd}
+              onChange={(e) => setContractEnd(e.target.value)}
+              className="rounded border border-sa-border bg-sa-base p-2"
+            />
+          </div>
+        </div>
+      )}
+      <div className="flex gap-2">
+        <Button type="button" size="sm" variant="outline" disabled={loading} onClick={() => void dryRun()}>
+          Dry run
+        </Button>
+        <Button type="button" size="sm" disabled={!reasonOk || loading} onClick={() => void apply()}>
+          Apply assignment
+        </Button>
+      </div>
+    </div>
   );
 }

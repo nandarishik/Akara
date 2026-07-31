@@ -16,18 +16,56 @@ from __future__ import annotations
 
 import logging
 from datetime import UTC, datetime
+from typing import Any
 from uuid import UUID
 
 from fastapi import Depends, HTTPException, status
 
 from app.core.plan_limits import (
-    get_limit,
-    is_feature_enabled,
+    get_limit as _static_get_limit,
+    is_feature_enabled as _static_is_feature_enabled,
     required_plan_for_feature,
 )
 from app.core.tenant import TenantContext, get_supabase_service_client, get_tenant_context
 
 logger = logging.getLogger(__name__)
+
+
+def get_limit(plan: str, key: str, tenant_id: UUID | None = None) -> Any:
+    """Resolve limit from plan_assignments → catalog → static fallback."""
+    if tenant_id is not None:
+        try:
+            from app.services.catalog.plan_catalog_service import resolve_tenant_limits
+
+            resolved = resolve_tenant_limits(tenant_id, plan)
+            limits = resolved.get("limits") or {}
+            if key in limits:
+                return limits[key]
+        except Exception:
+            pass
+    return _static_get_limit(plan, key)
+
+
+def is_feature_enabled(
+    plan: str,
+    feature: str,
+    overrides: dict,
+    tenant_id: UUID | None = None,
+) -> bool:
+    if feature in overrides:
+        return bool(overrides[feature])
+    if tenant_id is not None:
+        try:
+            from app.services.catalog.plan_catalog_service import resolve_tenant_limits
+
+            resolved = resolve_tenant_limits(tenant_id, plan)
+            features = resolved.get("features") or {}
+            if feature in features:
+                return bool(features[feature])
+        except Exception:
+            pass
+    return _static_is_feature_enabled(plan, feature, overrides)
+
 
 # ---------------------------------------------------------------------------
 # Typed error responses
@@ -183,7 +221,7 @@ def require_copilot_quota():
     ) -> None:
         _check_plan_status(tenant, block_past_due=True)
         plan = _effective_plan(tenant)
-        limit = get_limit(plan, "copilot_calls_per_month")
+        limit = get_limit(plan, "copilot_calls_per_month", tenant.tenant_id)
         if limit == -1:
             return  # unlimited
 
@@ -208,7 +246,7 @@ def require_copilot_quota():
 def get_copilot_quota_metadata(tenant: TenantContext) -> dict[str, int | float | bool]:
     """Soft quota metadata for response headers (80/90% warnings, hard stop at 100%)."""
     plan = _effective_plan(tenant)
-    limit = get_limit(plan, "copilot_calls_per_month")
+    limit = get_limit(plan, "copilot_calls_per_month", tenant.tenant_id)
     if limit == -1:
         return {
             "quota_used": 0,
@@ -241,7 +279,7 @@ def maybe_notify_copilot_quota_threshold(tenant_id: UUID, prev_count: int, new_c
     """Send E10 quota warning email when crossing 80% or 90% (once per threshold per month)."""
     state = _fetch_billing_state(tenant_id)
     plan = state.get("plan") or "free"
-    limit = get_limit(plan, "copilot_calls_per_month")
+    limit = get_limit(plan, "copilot_calls_per_month", tenant_id)
     if limit <= 0:
         return
 
@@ -343,7 +381,7 @@ def require_import_quota(row_count: int):
         usage = _get_current_usage(tenant.tenant_id)
 
         # 1. Daily upload cap (ALL plans, hard limit)
-        daily_limit = get_limit(plan, "uploads_per_day")  # always 3
+        daily_limit = get_limit(plan, "uploads_per_day", tenant.tenant_id)  # always 3
         uploads_today = usage.get("uploads_today", 0)
         if uploads_today >= daily_limit:
             raise UsageExceeded(
@@ -355,7 +393,7 @@ def require_import_quota(row_count: int):
             )
 
         # 2. Monthly upload limit (free plan only; -1 = unlimited for pro/business)
-        upload_limit = get_limit(plan, "uploads_per_month")
+        upload_limit = get_limit(plan, "uploads_per_month", tenant.tenant_id)
         if upload_limit != -1 and usage.get("uploads_count", 0) >= upload_limit:
             raise UsageExceeded(
                 message=(
@@ -366,7 +404,7 @@ def require_import_quota(row_count: int):
             )
 
         # 3. Row storage cap
-        rows_limit = get_limit(plan, "rows_total")
+        rows_limit = get_limit(plan, "rows_total", tenant.tenant_id)
         if rows_limit != -1:
             current_rows = _get_total_rows(tenant.tenant_id)
             if current_rows + row_count > rows_limit:
@@ -399,7 +437,7 @@ def require_undo_quota():
         tenant: TenantContext = Depends(get_tenant_context),
     ) -> None:
         usage = _get_current_usage(tenant.tenant_id)
-        daily_limit = get_limit(tenant.plan, "undos_per_day")  # always 2
+        daily_limit = get_limit(tenant.plan, "undos_per_day", tenant.tenant_id)  # always 2
         undos_today = usage.get("undos_today", 0)
         if undos_today >= daily_limit:
             raise UsageExceeded(
@@ -431,7 +469,7 @@ def require_feature(feature_name: str):
         tenant: TenantContext = Depends(get_tenant_context),
     ) -> None:
         plan = _effective_plan(tenant)
-        if not is_feature_enabled(plan, feature_name, tenant.feature_overrides):
+        if not is_feature_enabled(plan, feature_name, tenant.feature_overrides, tenant.tenant_id):
             required = required_plan_for_feature(feature_name)
             raise FeatureBlocked(
                 message=f"This feature requires {required}. Upgrade to unlock it.",

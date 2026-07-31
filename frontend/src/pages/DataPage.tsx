@@ -28,7 +28,7 @@ import { toast } from "@/components/ui/toast";
 import { formatApiError } from "@/lib/formatApiError";
 import { cn } from "@/lib/utils";
 import { PromoDismissCard } from "@/components/promo/PromoDismissCard";
-import { dismissSlot, isSlotDismissed, SLOT_KEYS } from "@/lib/promoSlots";
+import { dismissSlot, isSlotDismissed, PLACEMENT_KEYS, SLOT_KEYS } from "@/lib/promoSlots";
 import {
   DataUploadPanel,
   type ImportResult,
@@ -490,6 +490,7 @@ export function DataPage() {
 
         {showProUpsell && billing?.plan === "free" && (
           <PromoDismissCard
+            slotKey={PLACEMENT_KEYS.G}
             title="Unlock secondary sales & scheme analysis"
             description="Pro plan adds DMS offtake imports and scheme leakage detection."
             ctaLabel="Upgrade to Pro →"

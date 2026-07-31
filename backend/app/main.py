@@ -26,6 +26,7 @@ from app.api.routes import debrief as debrief_router
 from app.api.routes import health
 from app.api.routes import kpi as kpi_router
 from app.api.routes import marketing as marketing_router
+from app.api.routes import public_routes as public_router
 from app.api.routes import onboarding as onboarding_router
 from app.api.routes import reports as reports_router
 from app.api.routes import simulator as simulator_router
@@ -132,6 +133,7 @@ app.include_router(auth_router.router)
 app.include_router(billing_router.router)
 app.include_router(onboarding_router.router)
 app.include_router(marketing_router.router)
+app.include_router(public_router.router)
 app.include_router(alerts_router.router)
 app.include_router(copilot_router.router)
 app.include_router(conversations_router.router)

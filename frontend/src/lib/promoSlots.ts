@@ -40,6 +40,27 @@ export const SLOT_KEYS = {
   O: "akara_slot_O_dismissed",
 } as const;
 
+/** CMS placement_slots.key values — separate from localStorage dismiss keys. */
+export const PLACEMENT_KEYS = {
+  A: "landing.banner.a",
+  B: "landing.banner.b",
+  C: "landing.banner.c",
+  D: "dashboard.welcome",
+  E: "landing.pricing.nudge",
+  F: "copilot.demo",
+  G: "data.pro_upsell",
+  H: "billing.quota_nudge",
+  I: "reports.insight",
+  J: "settings.tip",
+  K: "onboarding.hint",
+  L: "copilot.quota_blocked",
+  M: "team.invite",
+  N: "usage.warning",
+  O: "activation.ops",
+} as const;
+
+export const ALL_PLACEMENT_KEY_VALUES = Object.values(PLACEMENT_KEYS);
+
 /** One-time migration from legacy landing banner key. */
 export function migrateLegacySlotA(): void {
   if (localStorage.getItem("banner_wa_dismissed") === "true" && !isSlotDismissed(SLOT_KEYS.A)) {

@@ -1,77 +1,58 @@
+import { useEffect, useState } from "react";
 import { PageSEO } from "@/components/seo/PageSEO";
+import { fetchPublicLegal } from "@/lib/api/public";
+
+const FALLBACK = (
+  <>
+    <h1 className="text-3xl font-bold text-white">Terms of Service</h1>
+    <p className="text-white/50">Last updated: July 2026 · Version 1.0</p>
+    <h2>Acceptance</h2>
+    <p>
+      By creating an AKARA account you agree to these Terms and our Privacy Policy.
+      You must be authorised to bind your business to this agreement.
+    </p>
+    <h2>Service</h2>
+    <p>
+      AKARA provides sales analytics, AI copilot, reports, and related SaaS features
+      subject to your subscription plan limits.
+    </p>
+  </>
+);
 
 export function TermsPage() {
+  const [body, setBody] = useState<string | null>(null);
+  const [version, setVersion] = useState("1.0");
+  const [title, setTitle] = useState("Terms of Service");
+
+  useEffect(() => {
+    fetchPublicLegal("terms")
+      .then((doc) => {
+        if (doc?.body_markdown) {
+          setBody(doc.body_markdown);
+          if (doc.version) setVersion(doc.version);
+          if (doc.title) setTitle(doc.title);
+        }
+      })
+      .catch(() => {});
+  }, []);
+
   return (
     <div className="theme-product-dark min-h-screen bg-[#0a0a0a]">
       <PageSEO
-        title="Terms of Service"
+        title={title}
         description="Terms governing use of AKARA sales analytics and AI copilot for Indian FMCG businesses."
         path="/terms"
       />
       <div className="max-w-3xl mx-auto px-6 py-16 prose prose-invert prose-headings:text-white prose-p:text-white/80 prose-li:text-white/80 prose-a:text-[#03B3C3] hover:prose-a:text-[#38bdf8]">
-        <h1 className="text-3xl font-bold text-white">Terms of Service</h1>
-        <p className="text-white/50">Last updated: July 2026 · Version 1.0</p>
-
-        <h2>Acceptance</h2>
-        <p>
-          By creating an AKARA account you agree to these Terms and our Privacy Policy.
-          You must be authorised to bind your business to this agreement.
-        </p>
-
-        <h2>Service</h2>
-        <p>
-          AKARA provides sales analytics, AI copilot, reports, and related SaaS features
-          subject to your subscription plan limits.
-        </p>
-
-        <h2>Payments &amp; Refunds</h2>
-        <p>
-          Paid plans are billed via Razorpay. GST invoices are issued by AKARA. Subscriptions
-          renew automatically unless cancelled in Billing. Refunds are handled case-by-case
-          for billing errors within 7 days of charge.
-        </p>
-
-        <h2>SLA</h2>
-        <p>
-          We target 99.5% monthly API availability excluding scheduled maintenance.
-          Business plan customers may request priority support via support@akara.ai.
-        </p>
-
-        <h2>Acceptable Use</h2>
-        <p>
-          You may not abuse rate limits, attempt cross-tenant access, upload malware,
-          or use the service for unlawful purposes. We may suspend accounts that violate
-          these terms.
-        </p>
-
-        <h2>Data Ownership</h2>
-        <p>
-          You retain ownership of uploaded sales data. AKARA processes it only to provide
-          the service as described in the Privacy Policy.
-        </p>
-
-        <h2>Liability</h2>
-        <p>
-          AKARA is provided &quot;as is&quot; to the maximum extent permitted by law.
-          Our aggregate liability is limited to fees paid in the preceding 12 months.
-        </p>
-
-        <h2>Termination</h2>
-        <p>
-          You may delete your account from Settings. We may terminate for material breach
-          with notice. Upon termination, data is deleted per the retention schedule.
-        </p>
-
-        <h2>Governing Law</h2>
-        <p>
-          These Terms are governed by the laws of India. Courts in Bengaluru, Karnataka
-          have exclusive jurisdiction.
-        </p>
-
-        <h2>Contact</h2>
-        <p>
-          Legal: <a href="mailto:legal@akara.ai">legal@akara.ai</a>
-        </p>
+        {body ? (
+          <>
+            <h1 className="text-3xl font-bold text-white">{title}</h1>
+            <p className="text-white/50">Version {version}</p>
+            <div className="whitespace-pre-wrap text-white/80">{body}</div>
+          </>
+        ) : (
+          FALLBACK
+        )}
       </div>
     </div>
   );

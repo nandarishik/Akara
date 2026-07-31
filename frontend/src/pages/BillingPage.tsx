@@ -25,7 +25,7 @@ import {
 } from "@/lib/api/billing";
 import { Badge } from "@/components/ui/badge";
 import { PromoDismissCard } from "@/components/promo/PromoDismissCard";
-import { dismissSlot, isSlotDismissed, SLOT_KEYS } from "@/lib/promoSlots";
+import { dismissSlot, isSlotDismissed, PLACEMENT_KEYS, SLOT_KEYS } from "@/lib/promoSlots";
 import { QuotaRingChart } from "@/components/charts/akara/QuotaRingChart";
 import { PlanHealthGauge } from "@/components/charts/akara/GaugeCharts";
 import { Input } from "@/components/ui/input";
@@ -201,6 +201,7 @@ export function BillingPage() {
 
         {showQuotaNudge && usage.plan === "free" && (
           <PromoDismissCard
+            slotKey={PLACEMENT_KEYS.H}
             title="You're approaching your plan limits"
             description="Upgrade to Pro for more Copilot questions, row storage, and secondary sales imports."
             ctaLabel="View plans →"

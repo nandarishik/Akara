@@ -60,6 +60,19 @@ def _resolve_plan_id(plan: str, interval: str) -> str:
     if interval not in ("month", "year"):
         raise HTTPException(status.HTTP_400_BAD_REQUEST, detail="interval must be month or year")
 
+    # Try catalog first (Day 10)
+    try:
+        from app.services.catalog.plan_catalog_service import get_plan
+
+        row = get_plan(plan)
+        if row:
+            col = "razorpay_monthly_plan_id" if interval == "month" else "razorpay_annual_plan_id"
+            catalog_id = row.get(col)
+            if catalog_id:
+                return catalog_id
+    except Exception:
+        pass
+
     attr = PLAN_ID_MAP[plan][interval]
     plan_id = getattr(settings, attr, "")
     if not plan_id:

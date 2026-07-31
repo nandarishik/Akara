@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import io
 import logging
+from typing import Any
 from decimal import Decimal, ROUND_HALF_UP
 from uuid import UUID
 
@@ -196,3 +197,81 @@ def generate_and_store_invoice(
     invoice = (result.data or [row])[0]
     invoice["pdf_bytes"] = pdf_bytes
     return invoice
+
+
+def generate_credit_note(
+    *,
+    tenant_id: UUID,
+    original_invoice_number: str,
+    refund_amount_paise: int,
+    reason: str = "Refund",
+) -> dict[str, Any]:
+    """Generate GST credit note PDF for a refund."""
+    supa = get_supabase_service_client()
+    tenant = (
+        supa.table("tenants")
+        .select("billing_details, name")
+        .eq("id", str(tenant_id))
+        .single()
+        .execute()
+    )
+    billing = (tenant.data or {}).get("billing_details") or {}
+    customer_state = billing.get("billing_state") or ""
+    company_state = settings.company_state_code or "Maharashtra"
+
+    total = Decimal(refund_amount_paise) / 100
+    breakdown = compute_tax_breakdown(total, customer_state, company_state)
+
+    seq_result = supa.rpc("next_invoice_number", {}).execute()
+    credit_number = f"CN-{(seq_result.data or '0001')}"
+
+    buffer = io.BytesIO()
+    c = canvas.Canvas(buffer, pagesize=A4)
+    width, height = A4
+    y = height - 30 * mm
+    c.setFont("Helvetica-Bold", 16)
+    c.drawString(30 * mm, y, settings.company_name)
+    y -= 10 * mm
+    c.setFont("Helvetica-Bold", 14)
+    c.drawString(30 * mm, y, "CREDIT NOTE")
+    y -= 8 * mm
+    c.setFont("Helvetica", 10)
+    c.drawString(30 * mm, y, f"Credit Note No: {credit_number}")
+    y -= 5 * mm
+    c.drawString(30 * mm, y, f"Against Invoice: {original_invoice_number}")
+    y -= 5 * mm
+    c.drawString(30 * mm, y, f"Reason: {reason[:80]}")
+    y -= 8 * mm
+    c.drawString(30 * mm, y, f"Taxable value: ₹{breakdown['amount_excl_tax']}")
+    y -= 5 * mm
+    if breakdown["tax_type"] == "cgst_sgst":
+        c.drawString(30 * mm, y, f"CGST @ 9%: ₹{breakdown['cgst_amount']}")
+        y -= 5 * mm
+        c.drawString(30 * mm, y, f"SGST @ 9%: ₹{breakdown['sgst_amount']}")
+    else:
+        c.drawString(30 * mm, y, f"IGST @ 18%: ₹{breakdown['igst_amount']}")
+    y -= 8 * mm
+    c.setFont("Helvetica-Bold", 11)
+    c.drawString(30 * mm, y, f"Total credit: ₹{breakdown['total_amount']}")
+    c.showPage()
+    c.save()
+    pdf_bytes = buffer.getvalue()
+
+    storage_path = f"credit-notes/{tenant_id}/{credit_number}.pdf"
+    try:
+        supa.storage.from_(settings.supabase_imports_bucket).upload(
+            storage_path,
+            pdf_bytes,
+            {"content-type": "application/pdf", "x-upsert": "true"},
+        )
+    except Exception as exc:
+        logger.warning("Credit note PDF upload failed: %s", exc)
+        storage_path = ""
+
+    return {
+        "credit_note_number": credit_number,
+        "original_invoice_number": original_invoice_number,
+        "total_amount": float(breakdown["total_amount"]),
+        "pdf_storage_path": storage_path,
+        "pdf_bytes": pdf_bytes,
+    }

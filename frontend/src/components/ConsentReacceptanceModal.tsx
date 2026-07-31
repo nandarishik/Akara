@@ -87,8 +87,8 @@ export function ConsentReacceptanceModal() {
           Updated terms & privacy
         </h2>
         <p className="text-sm text-white/60 mb-4">
-          Our Terms of Service and Privacy Policy have been updated. Please review and accept
-          to continue using AKARA.
+          Our Terms of Service (v{status.terms_version}) and Privacy Policy (v{status.privacy_version}) have been
+          updated. Please review and accept to continue using AKARA.
         </p>
         <div className="space-y-3 text-sm text-white/80 mb-4">
           <label className="flex items-start gap-2 cursor-pointer">

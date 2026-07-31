@@ -25,6 +25,7 @@ import { AlertTriangle, Menu, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { MobileNavProvider } from "@/contexts/MobileNavContext";
 import { ConsentReacceptanceModal } from "@/components/ConsentReacceptanceModal";
+import { WhatsNewModal } from "@/components/WhatsNewModal";
 import { PlanBadge } from "@/components/ui/badge";
 import { dismissSlot, isSlotDismissed, SLOT_KEYS } from "@/lib/promoSlots";
 
@@ -229,6 +230,7 @@ export function AppShell() {
         <main className="flex-1 relative overflow-auto mb-16 lg:mb-0">
           <DarkMeshBackground className="fixed inset-0 opacity-30 pointer-events-none" />
           <ConsentReacceptanceModal />
+          <WhatsNewModal />
           <ErrorBoundary key={location.pathname}>
             <MobileNavProvider openNav={() => setSidebarOpen(true)}>
               <Outlet />
