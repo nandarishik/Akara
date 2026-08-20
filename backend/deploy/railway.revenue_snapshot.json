@@ -4,7 +4,7 @@
     "builder": "NIXPACKS"
   },
   "deploy": {
-    "startCommand": "/opt/venv/bin/python -m app.tasks.revenue_snapshot",
+    "startCommand": "/opt/venv/bin/python -m app.workers.revenue_snapshot",
     "restartPolicyType": "NEVER",
     "cronSchedule": "30 0 * * *"
   }

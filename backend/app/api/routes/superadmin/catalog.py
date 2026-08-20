@@ -12,7 +12,7 @@ from app.core.errors import AkaraHTTPException
 from app.core.rate_limit import ADMIN_READ_LIMIT, ADMIN_WRITE_LIMIT, limiter
 from app.core.superadmin import SuperAdmin, SudoCtx, request_actor_meta, require_csrf
 from app.core.tenant import get_supabase_service_client
-from app.services.catalog.plan_catalog_service import (
+from app.infra.catalog.plan_catalog_service import (
     count_affected_tenants,
     create_plan,
     get_plan,
@@ -21,8 +21,8 @@ from app.services.catalog.plan_catalog_service import (
     publish_plan,
     sync_plan_to_razorpay,
 )
-from app.services.superadmin.audit import record_operation
-from app.services.superadmin.mutations import SuperadminMutation, check_expected_version, dry_run_response
+from app.domain.superadmin.audit import record_operation
+from app.domain.superadmin.mutations import SuperadminMutation, check_expected_version, dry_run_response
 
 router = APIRouter(tags=["superadmin-catalog"])
 

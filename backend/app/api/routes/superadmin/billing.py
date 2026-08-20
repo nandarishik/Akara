@@ -17,11 +17,11 @@ from app.core.plan_limits import PLAN_LIMITS, get_limit
 from app.core.rate_limit import ADMIN_READ_LIMIT, ADMIN_WRITE_LIMIT, limiter
 from app.core.superadmin import SuperAdmin, SudoCtx, request_actor_meta, require_csrf
 from app.core.tenant import get_supabase_service_client
-from app.services.billing.checkout import fetch_subscription_status
-from app.services.billing.email import send_payment_success_email
-from app.services.superadmin.audit import record_operation
-from app.services.superadmin.mutations import SuperadminMutation, dry_run_response
-from app.services.superadmin.revenue import compute_revenue_summary
+from app.domain.billing.checkout import fetch_subscription_status
+from app.domain.billing.email import send_payment_success_email
+from app.domain.superadmin.audit import record_operation
+from app.domain.superadmin.mutations import SuperadminMutation, dry_run_response
+from app.domain.superadmin.revenue import compute_revenue_summary
 
 logger = logging.getLogger(__name__)
 
@@ -253,7 +253,7 @@ def refund_payment(
     idempotency_key: OptionalIdempotencyKey = None,
     _: None = Depends(require_csrf),
 ) -> dict[str, Any]:
-    from app.services.billing.ledger import (
+    from app.domain.billing.ledger import (
         check_idempotency_replay,
         preview_refund,
         record_ledger_entry,
@@ -278,7 +278,7 @@ def refund_payment(
     if replay:
         return replay
 
-    from app.services.billing.checkout import _client
+    from app.domain.billing.checkout import _client
 
     payload: dict[str, Any] = {}
     if body.amount_paise:
@@ -321,7 +321,7 @@ def refund_payment(
 
     credit_note = None
     if preview.get("gst_credit_note_required") and body.amount_paise and inv.data:
-        from app.services.billing.gst_invoice import generate_credit_note
+        from app.domain.billing.gst_invoice import generate_credit_note
 
         credit_note = generate_credit_note(
             tenant_id=UUID(inv.data["tenant_id"]),
@@ -698,7 +698,7 @@ def reconcile_tenant(
     admin: SudoCtx,
     _: None = Depends(require_csrf),
 ) -> dict[str, Any]:
-    from app.services.billing.checkout import sync_subscription_from_razorpay
+    from app.domain.billing.checkout import sync_subscription_from_razorpay
 
     row = _get_tenant_row(tenant_id)
     snapshot = fetch_subscription_status(UUID(tenant_id))
@@ -802,7 +802,7 @@ def billing_ledger(
     limit: int = Query(default=50, ge=1, le=200),
     offset: int = Query(default=0, ge=0),
 ) -> dict[str, Any]:
-    from app.services.billing.ledger import list_ledger
+    from app.domain.billing.ledger import list_ledger
 
     return list_ledger(tenant_id=tenant_id, entry_type=entry_type, limit=limit, offset=offset)
 
@@ -814,7 +814,7 @@ def refund_preview(
     body: RefundPreviewBody,
     _admin: SuperAdmin,
 ) -> dict[str, Any]:
-    from app.services.billing.ledger import preview_refund
+    from app.domain.billing.ledger import preview_refund
 
     return preview_refund(
         payment_id=body.payment_id,
@@ -844,7 +844,7 @@ def issue_credit(
     admin: SudoCtx,
     _: None = Depends(require_csrf),
 ) -> dict[str, Any]:
-    from app.services.billing.ledger import record_ledger_entry
+    from app.domain.billing.ledger import record_ledger_entry
 
     if body.dry_run:
         return dry_run_response(
@@ -1055,7 +1055,7 @@ def mark_invoice_paid(
     admin: SudoCtx,
     _: None = Depends(require_csrf),
 ) -> dict[str, Any]:
-    from app.services.billing.ledger import record_ledger_entry
+    from app.domain.billing.ledger import record_ledger_entry
 
     supa = get_supabase_service_client()
     inv = supa.table("invoices").select("*").eq("id", str(invoice_id)).maybe_single().execute()
@@ -1106,7 +1106,7 @@ def write_off_invoice(
     admin: SudoCtx,
     _: None = Depends(require_csrf),
 ) -> dict[str, Any]:
-    from app.services.billing.ledger import record_ledger_entry
+    from app.domain.billing.ledger import record_ledger_entry
 
     supa = get_supabase_service_client()
     inv = supa.table("invoices").select("*").eq("id", str(invoice_id)).maybe_single().execute()
@@ -1150,7 +1150,7 @@ def manual_payment(
     admin: SudoCtx,
     _: None = Depends(require_csrf),
 ) -> dict[str, Any]:
-    from app.services.billing.ledger import record_ledger_entry
+    from app.domain.billing.ledger import record_ledger_entry
 
     if body.dry_run:
         return dry_run_response(
@@ -1206,7 +1206,7 @@ def subscription_action(
     if not sub_id:
         raise AkaraHTTPException(status_code=404, code="NOT_FOUND", message="No Razorpay subscription")
 
-    from app.services.billing.checkout import _client
+    from app.domain.billing.checkout import _client
 
     client = _client()
     result: dict[str, Any] = {"action": body.action}

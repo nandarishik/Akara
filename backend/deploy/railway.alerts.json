@@ -5,7 +5,7 @@
   },
   "deploy": {
     "cronSchedule": "0 6 * * *",
-    "startCommand": "/opt/venv/bin/python -m app.tasks.alert_evaluator",
+    "startCommand": "/opt/venv/bin/python -m app.workers.alert_evaluator",
     "restartPolicyType": "NEVER"
   }
 }

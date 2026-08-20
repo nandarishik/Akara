@@ -16,11 +16,11 @@ from app.core.pagination import OffsetPage, OffsetParams
 from app.core.rate_limit import ADMIN_READ_LIMIT, BROADCAST_LIMIT, limiter
 from app.core.superadmin import SuperAdmin, SudoCtx, request_actor_meta, require_csrf
 from app.core.tenant import get_supabase_service_client
-from app.services.debrief.service import WeeklyDebriefService
-from app.services.email.morning_brief import MorningBriefService
-from app.services.superadmin.audit import record_operation
-from app.services.superadmin.broadcast import execute_broadcast
-from app.services.superadmin.mutations import SuperadminMutation, dry_run_response
+from app.domain.debrief.service import WeeklyDebriefService
+from app.infra.email.morning_brief import MorningBriefService
+from app.domain.superadmin.audit import record_operation
+from app.domain.superadmin.broadcast import execute_broadcast
+from app.domain.superadmin.mutations import SuperadminMutation, dry_run_response
 
 logger = logging.getLogger(__name__)
 

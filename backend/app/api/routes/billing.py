@@ -19,14 +19,14 @@ from app.core.plan_guard import _get_current_usage
 from app.core.plan_limits import PLAN_LIMITS
 from app.core.rate_limit import limiter
 from app.core.tenant import TenantCtx, get_supabase_service_client
-from app.services.billing.checkout import (
+from app.domain.billing.checkout import (
     cancel_subscription,
     create_checkout_session,
     fetch_subscription_status,
     sync_subscription_from_razorpay,
 )
-from app.services.billing.idempotency_store import get_cached_response, store_response
-from app.services.billing.webhook_handler import dispatch_razorpay_event, verify_webhook_signature
+from app.domain.billing.idempotency_store import get_cached_response, store_response
+from app.domain.billing.webhook_handler import dispatch_razorpay_event, verify_webhook_signature
 
 logger = logging.getLogger(__name__)
 

@@ -29,7 +29,7 @@ def authed_superadmin_client() -> TestClient:
 
 @patch("app.core.superadmin.get_supabase_service_client")
 def test_short_reason_rejected(mock_supa, authed_superadmin_client):
-    from app.services.superadmin.mutations import SuperadminMutation
+    from app.domain.superadmin.mutations import SuperadminMutation
     import pydantic
 
     with pytest.raises(pydantic.ValidationError):
@@ -73,7 +73,7 @@ def test_tenant_delete_wrong_confirm_rejected(mock_core, mock_tenants, authed_su
     assert response.status_code in (400, 403)
 
 
-@patch("app.services.superadmin.audit.get_supabase_service_client")
+@patch("app.domain.superadmin.audit.get_supabase_service_client")
 def test_operation_id_idempotent_replay(mock_audit):
     op_id = uuid4()
     audit_table = MagicMock()
@@ -82,7 +82,7 @@ def test_operation_id_idempotent_replay(mock_audit):
     audit_table.insert.return_value.execute.return_value = MagicMock(data=[{"id": "new"}])
     mock_audit.return_value.table.side_effect = lambda n: audit_table if n == "audit_log" else MagicMock()
 
-    from app.services.superadmin.audit import record_operation
+    from app.domain.superadmin.audit import record_operation
 
     first = record_operation(
         action="test.action",

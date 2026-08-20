@@ -10,13 +10,13 @@ from pydantic import BaseModel, Field
 
 from app.core.rate_limit import ADMIN_READ_LIMIT, ADMIN_WRITE_LIMIT, limiter
 from app.core.superadmin import SuperAdmin, SudoCtx, request_actor_meta, require_csrf
-from app.services.legal.document_service import (
+from app.infra.legal.document_service import (
     consent_acceptance_rate,
     list_documents,
     publish_document,
 )
-from app.services.superadmin.audit import record_operation
-from app.services.superadmin.mutations import SuperadminMutation, dry_run_response
+from app.domain.superadmin.audit import record_operation
+from app.domain.superadmin.mutations import SuperadminMutation, dry_run_response
 
 router = APIRouter(tags=["superadmin-legal"])
 

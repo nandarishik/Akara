@@ -224,7 +224,7 @@ async def consent_accept(
     terms_version = settings.terms_version
     privacy_version = settings.privacy_version
     try:
-        from app.services.legal.document_service import get_published_document, record_user_consent
+        from app.infra.legal.document_service import get_published_document, record_user_consent
 
         terms_doc = get_published_document("terms")
         privacy_doc = get_published_document("privacy")

@@ -9,9 +9,9 @@ from fastapi import APIRouter, Request
 from pydantic import BaseModel, Field
 
 from app.core.rate_limit import limiter
-from app.services.catalog.plan_catalog_service import list_public_plans
-from app.services.content.cms_service import get_active_placements, record_placement_event
-from app.services.legal.document_service import get_published_document
+from app.infra.catalog.plan_catalog_service import list_public_plans
+from app.infra.content.cms_service import get_active_placements, record_placement_event
+from app.infra.legal.document_service import get_published_document
 
 router = APIRouter(prefix="/public", tags=["public"])
 
@@ -29,7 +29,7 @@ def public_plans(request: Request) -> dict:
 @router.get("/content/{key}")
 @limiter.limit("60/minute")
 def public_content(request: Request, key: str, locale: str = "en-IN") -> dict:
-    from app.services.content.cms_service import get_content_entry
+    from app.infra.content.cms_service import get_content_entry
 
     entry = get_content_entry(key, locale)
     if entry and entry.get("published_value") is not None:

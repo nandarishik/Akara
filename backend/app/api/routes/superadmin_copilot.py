@@ -14,8 +14,8 @@ from app.core.config import settings
 from app.core.rate_limit import ADMIN_READ_LIMIT, limiter
 from app.core.superadmin import SuperAdmin
 from app.core.tenant import get_supabase_service_client
-from app.services.llm.manager import LLMManager
-from app.services.superadmin.ops_context import build_ops_context, ops_context_prompt
+from app.infra.llm.manager import LLMManager
+from app.domain.superadmin.ops_context import build_ops_context, ops_context_prompt
 
 logger = logging.getLogger(__name__)
 
@@ -51,7 +51,7 @@ def get_ops_context(_admin: SuperAdmin) -> dict:
 @router.post("/founder-brief/run")
 @limiter.limit("5/minute")
 def run_founder_brief_now(request: Request, _admin: SuperAdmin) -> dict:
-    from app.tasks.founder_brief import run_founder_brief
+    from app.workers.founder_brief import run_founder_brief
 
     return run_founder_brief()
 

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from app.services.debrief.pdf import render_debrief_pdf
+from app.domain.debrief.pdf import render_debrief_pdf
 
 
 def test_render_debrief_pdf_non_empty():

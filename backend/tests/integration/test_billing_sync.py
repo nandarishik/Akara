@@ -5,8 +5,8 @@ from __future__ import annotations
 from unittest.mock import MagicMock, patch
 from uuid import uuid4
 
-from app.services.billing.checkout import resolve_plan_from_subscription, sync_subscription_from_razorpay
-from app.services.billing.webhook_handler import dispatch_razorpay_event, handle_subscription_activated
+from app.domain.billing.checkout import resolve_plan_from_subscription, sync_subscription_from_razorpay
+from app.domain.billing.webhook_handler import dispatch_razorpay_event, handle_subscription_activated
 
 
 def test_resolve_plan_from_notes():
@@ -14,7 +14,7 @@ def test_resolve_plan_from_notes():
     assert resolve_plan_from_subscription(sub) == "business"
 
 
-@patch("app.services.billing.checkout.settings")
+@patch("app.domain.billing.checkout.settings")
 def test_resolve_plan_from_plan_id(mock_settings):
     mock_settings.razorpay_business_monthly_plan_id = "plan_THccEuVM4dLyuV"
     mock_settings.razorpay_pro_monthly_plan_id = ""
@@ -24,9 +24,9 @@ def test_resolve_plan_from_plan_id(mock_settings):
     assert resolve_plan_from_subscription(sub) == "business"
 
 
-@patch("app.services.billing.webhook_handler._already_processed", return_value=False)
-@patch("app.services.billing.webhook_handler._mark_processed")
-@patch("app.services.billing.webhook_handler.handle_subscription_activated", return_value=False)
+@patch("app.domain.billing.webhook_handler._already_processed", return_value=False)
+@patch("app.domain.billing.webhook_handler._mark_processed")
+@patch("app.domain.billing.webhook_handler.handle_subscription_activated", return_value=False)
 def test_webhook_not_marked_when_handler_fails(mock_handle, mock_mark, _mock_dup):
     body = {
         "event": "subscription.activated",
@@ -37,7 +37,7 @@ def test_webhook_not_marked_when_handler_fails(mock_handle, mock_mark, _mock_dup
     mock_mark.assert_not_called()
 
 
-@patch("app.services.billing.webhook_handler._supa")
+@patch("app.domain.billing.webhook_handler._supa")
 def test_tenant_lookup_by_subscription_id(mock_supa):
     tenant_row = {"id": str(uuid4()), "plan": "free", "billing_details": {}}
     table = MagicMock()
@@ -54,24 +54,24 @@ def test_tenant_lookup_by_subscription_id(mock_supa):
         "plan_id": "plan_business",
     }
     with patch(
-        "app.services.billing.webhook_handler._tenant_by_id",
+        "app.domain.billing.webhook_handler._tenant_by_id",
         return_value=None,
     ), patch(
-        "app.services.billing.webhook_handler._tenant_by_customer",
+        "app.domain.billing.webhook_handler._tenant_by_customer",
         return_value=None,
     ), patch(
-        "app.services.billing.webhook_handler._tenant_by_subscription_id",
+        "app.domain.billing.webhook_handler._tenant_by_subscription_id",
         return_value=tenant_row,
     ), patch(
-        "app.services.billing.webhook_handler.resolve_plan_from_subscription",
+        "app.domain.billing.webhook_handler.resolve_plan_from_subscription",
         return_value="business",
     ):
         assert handle_subscription_activated(sub) is True
 
 
-@patch("app.services.billing.checkout.fetch_subscription_status")
-@patch("app.services.billing.checkout.get_supabase_service_client")
-@patch("app.services.billing.checkout._client")
+@patch("app.domain.billing.checkout.fetch_subscription_status")
+@patch("app.domain.billing.checkout.get_supabase_service_client")
+@patch("app.domain.billing.checkout._client")
 def test_sync_upgrades_free_tenant(mock_client, mock_supa, mock_fetch):
     tenant_id = uuid4()
     mock_fetch.return_value = {

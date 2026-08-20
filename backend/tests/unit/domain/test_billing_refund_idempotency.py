@@ -5,13 +5,13 @@ from __future__ import annotations
 from unittest.mock import MagicMock, patch
 from uuid import uuid4
 
-from app.services.billing.ledger import check_idempotency_replay, preview_refund
+from app.domain.billing.ledger import check_idempotency_replay, preview_refund
 
 
 def test_idempotency_replay_returns_stored_response():
     key = str(uuid4())
     stored = {"ok": True, "refund": {"id": "rfnd_test"}}
-    with patch("app.services.billing.ledger.get_supabase_service_client") as mock_supa:
+    with patch("app.domain.billing.ledger.get_supabase_service_client") as mock_supa:
         mock_supa.return_value.table.return_value.select.return_value.eq.return_value.maybe_single.return_value.execute.return_value = MagicMock(
             data={"response_body": stored}
         )
@@ -29,7 +29,7 @@ def test_idempotency_replay_on_second_call():
     """Second check_idempotency_replay with stored body returns same payload."""
     key = str(uuid4())
     stored = {"ok": True, "refund": {"id": "rfnd_test"}}
-    with patch("app.services.billing.ledger.get_supabase_service_client") as mock_supa:
+    with patch("app.domain.billing.ledger.get_supabase_service_client") as mock_supa:
         mock_supa.return_value.table.return_value.select.return_value.eq.return_value.maybe_single.return_value.execute.return_value = MagicMock(
             data={"response_body": stored}
         )

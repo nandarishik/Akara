@@ -6,10 +6,10 @@ from unittest.mock import MagicMock, patch
 
 from fastapi.testclient import TestClient
 
-from app.services.content.cms_service import placement_stats, record_placement_event
+from app.infra.content.cms_service import placement_stats, record_placement_event
 
 
-@patch("app.services.content.cms_service.get_supabase_service_client")
+@patch("app.infra.content.cms_service.get_supabase_service_client")
 def test_record_placement_impression(mock_supa):
     mock_supa.return_value.table.return_value.insert.return_value.execute.return_value = MagicMock(
         data=[{"id": "evt-1", "slot_key": "slot_a", "event_type": "impression"}]
@@ -18,7 +18,7 @@ def test_record_placement_impression(mock_supa):
     assert event["event_type"] == "impression"
 
 
-@patch("app.services.content.cms_service.get_supabase_service_client")
+@patch("app.infra.content.cms_service.get_supabase_service_client")
 def test_placement_stats_aggregation(mock_supa):
     mock_supa.return_value.table.return_value.select.return_value.gte.return_value.execute.return_value = MagicMock(
         data=[
@@ -33,7 +33,7 @@ def test_placement_stats_aggregation(mock_supa):
     assert slot_a["clicks"] == 1
 
 
-@patch("app.services.content.cms_service.record_placement_event")
+@patch("app.infra.content.cms_service.record_placement_event")
 def test_placement_impression_http_returns_200(mock_record):
     mock_record.return_value = {"id": "evt-1", "slot_key": "landing.banner.a", "event_type": "impression"}
     from app.main import app
@@ -44,9 +44,9 @@ def test_placement_impression_http_returns_200(mock_record):
     assert res.json()["ok"] is True
 
 
-@patch("app.services.content.cms_service.get_supabase_service_client")
+@patch("app.infra.content.cms_service.get_supabase_service_client")
 def test_get_active_placements_audience_filter(mock_supa):
-    from app.services.content.cms_service import get_active_placements
+    from app.infra.content.cms_service import get_active_placements
 
     now = "2026-01-01T00:00:00+00:00"
     mock_supa.return_value.table.return_value.select.return_value.eq.return_value.execute.return_value = MagicMock(

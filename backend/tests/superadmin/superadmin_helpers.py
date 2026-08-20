@@ -31,7 +31,7 @@ SUPABASE_CLIENT_PATHS = [
     "app.api.routes.superadmin.audit.get_supabase_service_client",
     "app.api.routes.superadmin.system.get_supabase_service_client",
     "app.api.routes.superadmin.sudo.get_supabase_service_client",
-    "app.services.superadmin.audit.get_supabase_service_client",
+    "app.domain.superadmin.audit.get_supabase_service_client",
 ]
 
 

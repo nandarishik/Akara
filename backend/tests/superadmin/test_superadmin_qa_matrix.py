@@ -135,7 +135,7 @@ def test_forged_jwt_superadmin_role_still_requires_db_profile(mock_supa):
 
 def test_expected_version_mismatch_raises_conflict():
     from app.core.errors import AkaraHTTPException
-    from app.services.superadmin.mutations import check_expected_version
+    from app.domain.superadmin.mutations import check_expected_version
 
     with pytest.raises(AkaraHTTPException) as exc:
         check_expected_version(current_version=3, expected_version=2)
@@ -175,7 +175,7 @@ def test_tenant_patch_version_mismatch_returns_409(
 
 @patch("app.api.routes.superadmin.tenants.get_supabase_service_client")
 @patch("app.core.superadmin.get_supabase_service_client")
-@patch("app.services.superadmin.audit.get_supabase_service_client")
+@patch("app.domain.superadmin.audit.get_supabase_service_client")
 def test_tenant_patch_update_race_returns_409(
     mock_audit, mock_core, mock_tenants, superadmin_client: TestClient
 ):
@@ -384,9 +384,9 @@ def test_tenant_wipe_requires_exact_confirm_phrase(
     assert response.json()["code"] == "VALIDATION_ERROR"
 
 
-@patch("app.services.superadmin.audit.get_supabase_service_client")
+@patch("app.domain.superadmin.audit.get_supabase_service_client")
 def test_audit_operation_records_actor_and_reason(mock_audit):
-    from app.services.superadmin.audit import record_operation
+    from app.domain.superadmin.audit import record_operation
 
     captured: dict[str, object] = {}
 

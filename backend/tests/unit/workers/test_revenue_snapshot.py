@@ -8,9 +8,9 @@ from unittest.mock import MagicMock, patch
 from tests.superadmin.superadmin_helpers import clear_auth_override, make_superadmin_client
 
 
-@patch("app.services.superadmin.revenue.get_supabase_service_client")
+@patch("app.domain.superadmin.revenue.get_supabase_service_client")
 def test_compute_mom_deltas(mock_supa):
-    from app.services.superadmin.revenue import compute_mom_deltas
+    from app.domain.superadmin.revenue import compute_mom_deltas
 
     prior_date = (datetime.now(UTC) - timedelta(days=30)).date().isoformat()
     chain = MagicMock()
@@ -39,8 +39,8 @@ def test_compute_mom_deltas(mock_supa):
     assert deltas["margin_delta_pp"] is not None
 
 
-@patch("app.tasks.revenue_snapshot.get_supabase_service_client")
-@patch("app.tasks.revenue_snapshot.compute_revenue_summary")
+@patch("app.workers.revenue_snapshot.get_supabase_service_client")
+@patch("app.workers.revenue_snapshot.compute_revenue_summary")
 def test_revenue_snapshot_upserts(mock_summary, mock_supa):
     mock_summary.return_value = {
         "mrr_inr": 1000,
@@ -51,7 +51,7 @@ def test_revenue_snapshot_upserts(mock_summary, mock_supa):
     supa = MagicMock()
     mock_supa.return_value = supa
 
-    from app.tasks.revenue_snapshot import run_revenue_snapshot
+    from app.workers.revenue_snapshot import run_revenue_snapshot
 
     result = run_revenue_snapshot()
     assert result["ok"] is True

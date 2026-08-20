@@ -2,7 +2,7 @@
 
 from uuid import uuid4
 
-from app.services.debrief.metadata_enrich import enrich_debrief_metadata
+from app.domain.debrief.metadata_enrich import enrich_debrief_metadata
 
 
 def test_enrich_from_insights_week_metrics():

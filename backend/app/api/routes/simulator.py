@@ -17,7 +17,7 @@ from app.core.auth import CurrentUser
 from app.core.plan_guard import require_feature
 from app.core.rate_limit import limiter
 from app.core.tenant import TenantCtx, get_supabase_service_client
-from app.services.simulator.projector import RevenueProjector
+from app.domain.simulator.projector import RevenueProjector
 
 logger = logging.getLogger(__name__)
 

@@ -1,7 +1,7 @@
 """Tests for debrief narrative / metrics reconciliation."""
 
-from app.services.debrief.metadata_enrich import enrich_debrief_metadata
-from app.services.debrief.narrative_reconcile import (
+from app.domain.debrief.metadata_enrich import enrich_debrief_metadata
+from app.domain.debrief.narrative_reconcile import (
     narrative_contradicts_metrics,
     reconcile_narrative,
     strip_contradictory_narrative,

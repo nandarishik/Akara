@@ -4,7 +4,7 @@ from pathlib import Path
 
 import pytest
 
-from app.services.data_import.parser import SalesDataParser
+from app.domain.data_import.parser import SalesDataParser
 
 FIXTURES = Path(__file__).resolve().parent / "fixtures" / "imports"
 

@@ -4,7 +4,7 @@
     "builder": "NIXPACKS"
   },
   "deploy": {
-    "startCommand": "/opt/venv/bin/python -m app.tasks.activation_emails",
+    "startCommand": "/opt/venv/bin/python -m app.workers.activation_emails",
     "restartPolicyType": "NEVER",
     "cronSchedule": "0 8 * * *"
   }

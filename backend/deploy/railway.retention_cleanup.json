@@ -4,7 +4,7 @@
     "builder": "NIXPACKS"
   },
   "deploy": {
-    "startCommand": "/opt/venv/bin/python -m app.tasks.retention_cleanup",
+    "startCommand": "/opt/venv/bin/python -m app.workers.retention_cleanup",
     "restartPolicyType": "NEVER",
     "cronSchedule": "30 20 * * *"
   }

@@ -26,10 +26,10 @@ from app.core.plan_guard import (
 )
 from app.core.rate_limit import limiter
 from app.core.tenant import TenantCtx, get_supabase_service_client
-from app.services.data_import.detector import score_sheets
-from app.services.data_import.models import ImportResult
-from app.services.data_import.service import DataImportService, SourceType
-from app.services.user_events import record_user_event
+from app.domain.data_import.detector import score_sheets
+from app.domain.data_import.models import ImportResult
+from app.domain.data_import.service import DataImportService, SourceType
+from app.domain.user_events import record_user_event
 
 logger = logging.getLogger(__name__)
 

@@ -4,7 +4,7 @@
     "builder": "NIXPACKS"
   },
   "deploy": {
-    "startCommand": "/opt/venv/bin/python -m app.tasks.dunning",
+    "startCommand": "/opt/venv/bin/python -m app.workers.dunning",
     "restartPolicyType": "NEVER",
     "cronSchedule": "0 4 * * *"
   }

@@ -14,7 +14,7 @@ from app.core.errors import AkaraHTTPException
 from app.core.rate_limit import ADMIN_READ_LIMIT, ADMIN_WRITE_LIMIT, limiter
 from app.core.superadmin import SuperAdmin, SudoCtx, request_actor_meta, require_csrf
 from app.core.tenant import get_supabase_service_client
-from app.services.content.cms_service import (
+from app.infra.content.cms_service import (
     create_media_asset,
     delete_media_asset,
     list_content_entries,
@@ -29,8 +29,8 @@ from app.services.content.cms_service import (
     upsert_content_draft,
     upsert_placement,
 )
-from app.services.superadmin.audit import record_operation
-from app.services.superadmin.mutations import SuperadminMutation, dry_run_response
+from app.domain.superadmin.audit import record_operation
+from app.domain.superadmin.mutations import SuperadminMutation, dry_run_response
 
 router = APIRouter(tags=["superadmin-content"])
 

@@ -1,6 +1,6 @@
 from datetime import date
 
-from app.services.copilot.date_range import (
+from app.domain.copilot.date_range import (
     parse_result_limit,
     resolve_date_range_for_question,
 )

@@ -1,9 +1,9 @@
-from app.services.copilot.guardrails.checks import (
+from app.domain.copilot.guardrails.checks import (
     causal_postcheck,
     numeric_postcheck,
     premise_check,
 )
-from app.services.copilot.channel_queries import (
+from app.domain.copilot.channel_queries import (
     channel_order_count_sql,
     match_channel_count_plan,
 )

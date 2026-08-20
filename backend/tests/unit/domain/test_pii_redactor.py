@@ -4,8 +4,8 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
-from app.services.copilot.pii_redactor import redact, redact_row
-from app.services.copilot.planner import Planner
+from app.domain.copilot.pii_redactor import redact, redact_row
+from app.domain.copilot.planner import Planner
 
 
 def test_redact_gst_number():

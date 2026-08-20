@@ -5,13 +5,13 @@ from fastapi import APIRouter, Query, Request
 from app.core.auth import CurrentUser
 from app.core.rate_limit import limiter
 from app.core.tenant import TenantCtx, get_supabase_service_client
-from app.services.kpi.models import (
+from app.domain.kpi.models import (
     DataBoundsResponse,
     HeatmapResponse,
     KPIResponse,
 )
-from app.services.kpi.service import KPIService
-from app.services.schema.discovery import SchemaDiscovery
+from app.domain.kpi.service import KPIService
+from app.infra.schema.discovery import SchemaDiscovery
 
 router = APIRouter(prefix="/kpi", tags=["kpi"])
 

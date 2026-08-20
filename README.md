@@ -60,15 +60,15 @@ Full Razorpay setup: [`docs/operations/razorpay-setup.md`](docs/operations/razor
 ### Background jobs
 ```bash
 # Import worker (every 60s) — separate Railway service or cron
-python -m app.tasks.import_worker
+python -m app.workers.import_worker
 
 # Dunning (daily) — Railway cron service (see backend/deploy/railway.dunning.json)
-python -m app.tasks.dunning
+python -m app.workers.dunning
 ```
 
 **Railway dunning cron:** Add a second service in the same project, root directory `backend`, paste config from `backend/deploy/railway.dunning.json` or set:
 - **Cron schedule:** `0 4 * * *` (daily 4:00 UTC ≈ 9:30 AM IST)
-- **Start command:** `/opt/venv/bin/python -m app.tasks.dunning`
+- **Start command:** `/opt/venv/bin/python -m app.workers.dunning`
 - Copy the same env vars as the API service (Supabase, SendGrid)
 - Optional: `HEALTHCHECKS_PING_URL` base URL; task pings `/dunning` on success
 
@@ -82,9 +82,9 @@ Apply migration **017** (`017_alerts.sql`) on Supabase.
 ### Railway cron / worker services
 | Service | Config | Schedule / command |
 |---------|--------|-------------------|
-| Dunning | `backend/deploy/railway.dunning.json` | Daily `python -m app.tasks.dunning` |
-| Alerts | `backend/deploy/railway.alerts.json` | Daily `python -m app.tasks.alert_evaluator` |
-| Import worker | `backend/deploy/railway.import_worker.json` | Every minute `python -m app.tasks.import_worker` |
+| Dunning | `backend/deploy/railway.dunning.json` | Daily `python -m app.workers.dunning` |
+| Alerts | `backend/deploy/railway.alerts.json` | Daily `python -m app.workers.alert_evaluator` |
+| Import worker | `backend/deploy/railway.import_worker.json` | Every minute `python -m app.workers.import_worker` |
 
 ### E2E checklist
 [`.archive/sprint1/checklists/day6_e2e_checklist.md`](.archive/sprint1/checklists/day6_e2e_checklist.md)
@@ -99,8 +99,8 @@ Apply migration **018** (`018_day7_comms_teams_debrief.sql`) on Supabase.
 
 | Service | Config | Schedule / command | When to add |
 |---------|--------|-------------------|---------------|
-| Weekly debrief | `backend/deploy/railway.weekly_debrief.json` | `30 1 * * 1` → `python -m app.tasks.weekly_debrief` | Day 14+ or after Railway upgrade |
-| Activation emails | `backend/deploy/railway.activation_emails.json` | `0 8 * * *` → `python -m app.tasks.activation_emails` | Day 14+ or after Railway upgrade |
+| Weekly debrief | `backend/deploy/railway.weekly_debrief.json` | `30 1 * * 1` → `python -m app.workers.weekly_debrief` | Day 14+ or after Railway upgrade |
+| Activation emails | `backend/deploy/railway.activation_emails.json` | `0 8 * * *` → `python -m app.workers.activation_emails` | Day 14+ or after Railway upgrade |
 
 **Until crons are live**, use manual triggers:
 
@@ -112,13 +112,13 @@ curl -X POST "$BACKEND_URL/admin/reports/weekly-debrief" \
   -d '{"tenant_id": "<uuid>"}'
 
 # Activation emails — full batch (run locally or one-off Railway job)
-cd backend && python -m app.tasks.activation_emails
+cd backend && python -m app.workers.activation_emails
 
 # Weekly debrief — all active tenants (Monday job substitute)
-cd backend && python -m app.tasks.weekly_debrief
+cd backend && python -m app.workers.weekly_debrief
 
 # Account deletion queue — process pending DPDP deletions
-cd backend && python -m app.tasks.account_deletion_worker
+cd backend && python -m app.workers.account_deletion_worker
 ```
 
 When you add each cron service: **Root Directory = `backend`**, **Restart = Never**, copy env from API (Supabase, SendGrid, OpenRouter, `BACKEND_SERVICE_KEY`), optional `HEALTHCHECKS_PING_URL` (pings `/weekly_debrief` and `/activation_emails`).

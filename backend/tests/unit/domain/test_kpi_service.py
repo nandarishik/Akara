@@ -2,7 +2,7 @@ from collections import defaultdict
 from decimal import Decimal
 from uuid import uuid4
 
-from app.services.kpi.service import KPIService
+from app.domain.kpi.service import KPIService
 
 
 class _FakeResult:

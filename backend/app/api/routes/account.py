@@ -15,8 +15,8 @@ from app.core.config import settings
 from app.core.plan_guard import require_feature
 from app.core.rate_limit import limiter
 from app.core.tenant import TenantContext, get_supabase_service_client, get_tenant_context
-from app.services.billing.email import _send
-from app.services.notifications.delivery_log import log_delivery
+from app.domain.billing.email import _send
+from app.infra.notifications.delivery_log import log_delivery
 
 logger = logging.getLogger(__name__)
 
@@ -275,7 +275,7 @@ async def send_test_whatsapp(
     _: None = Depends(require_feature("morning_brief")),
 ) -> dict[str, str]:
     """Send a test WhatsApp message when BSP is enabled."""
-    from app.services.notifications.whatsapp import send_whatsapp_template
+    from app.infra.notifications.whatsapp import send_whatsapp_template
 
     supa = get_supabase_service_client()
     profile = (

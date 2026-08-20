@@ -17,8 +17,8 @@ from app.core.rate_limit import ADMIN_READ_LIMIT, ADMIN_WRITE_LIMIT, limiter
 from app.core.superadmin import SuperAdmin, SudoCtx, request_actor_meta, require_csrf
 from app.core.tenant import get_supabase_service_client
 from app.api.routes.system import _load_setting
-from app.services.superadmin.audit import record_operation
-from app.services.superadmin.mutations import SuperadminMutation, dry_run_response
+from app.domain.superadmin.audit import record_operation
+from app.domain.superadmin.mutations import SuperadminMutation, dry_run_response
 
 logger = logging.getLogger(__name__)
 
@@ -157,41 +157,41 @@ def _run_task(task_name: str) -> None:
     details: dict[str, Any] = {}
     try:
         if task_name == "retention_cleanup":
-            from app.tasks.retention_cleanup import run
+            from app.workers.retention_cleanup import run
 
             run(dry_run=False)
         elif task_name == "alert_evaluator":
-            from app.tasks.alert_evaluator import run_alert_evaluator_cycle
+            from app.workers.alert_evaluator import run_alert_evaluator_cycle
 
             details = run_alert_evaluator_cycle()
         elif task_name == "activation_emails":
-            from app.tasks.activation_emails import run_activation_emails
+            from app.workers.activation_emails import run_activation_emails
 
             details = run_activation_emails()
         elif task_name == "dunning":
-            from app.tasks.dunning import run_dunning_cycle
+            from app.workers.dunning import run_dunning_cycle
 
             asyncio.run(run_dunning_cycle())
         elif task_name == "weekly_debrief":
-            from app.tasks.weekly_debrief import run_weekly_debrief_cycle
+            from app.workers.weekly_debrief import run_weekly_debrief_cycle
 
             details = run_weekly_debrief_cycle()
         elif task_name == "morning_brief":
             details = {"message": "morning_brief requires per-tenant trigger via /reports/morning-brief"}
         elif task_name == "founder_brief":
-            from app.tasks.founder_brief import run_founder_brief
+            from app.workers.founder_brief import run_founder_brief
 
             details = run_founder_brief()
         elif task_name == "revenue_snapshot":
-            from app.tasks.revenue_snapshot import run_revenue_snapshot
+            from app.workers.revenue_snapshot import run_revenue_snapshot
 
             details = run_revenue_snapshot()
         elif task_name == "broadcast_scheduler":
-            from app.tasks.broadcast_scheduler import run_broadcast_scheduler
+            from app.workers.broadcast_scheduler import run_broadcast_scheduler
 
             details = run_broadcast_scheduler()
         elif task_name == "content_scheduler":
-            from app.tasks.content_scheduler import run_content_scheduler
+            from app.workers.content_scheduler import run_content_scheduler
 
             details = run_content_scheduler()
         else:

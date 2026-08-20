@@ -3,7 +3,7 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
-from app.services.copilot.planner import Plan, Planner, is_conversational
+from app.domain.copilot.planner import Plan, Planner, is_conversational
 
 
 @pytest.fixture

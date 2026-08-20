@@ -2,7 +2,7 @@
 
 from decimal import Decimal
 
-from app.services.billing.gst_invoice import compute_tax_breakdown
+from app.domain.billing.gst_invoice import compute_tax_breakdown
 
 
 def test_igst_interstate():

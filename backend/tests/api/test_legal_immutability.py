@@ -10,9 +10,9 @@ import pytest
 from app.core.errors import AkaraHTTPException
 
 
-@patch("app.services.legal.document_service.get_supabase_service_client")
+@patch("app.infra.legal.document_service.get_supabase_service_client")
 def test_duplicate_version_raises_conflict(mock_supa):
-    from app.services.legal.document_service import publish_document
+    from app.infra.legal.document_service import publish_document
 
     mock_supa.return_value.table.return_value.select.return_value.eq.return_value.eq.return_value.maybe_single.return_value.execute.return_value = MagicMock(
         data={"id": "existing", "version": "1.0"}

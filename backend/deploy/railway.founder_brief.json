@@ -4,7 +4,7 @@
     "builder": "NIXPACKS"
   },
   "deploy": {
-    "startCommand": "/opt/venv/bin/python -m app.tasks.founder_brief",
+    "startCommand": "/opt/venv/bin/python -m app.workers.founder_brief",
     "restartPolicyType": "NEVER",
     "cronSchedule": "0 1 * * *"
   }

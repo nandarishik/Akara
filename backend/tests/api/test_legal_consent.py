@@ -5,10 +5,10 @@ from __future__ import annotations
 from unittest.mock import MagicMock, patch
 from uuid import uuid4
 
-from app.services.legal.document_service import consent_acceptance_rate
+from app.infra.legal.document_service import consent_acceptance_rate
 
 
-@patch("app.services.legal.document_service.get_supabase_service_client")
+@patch("app.infra.legal.document_service.get_supabase_service_client")
 def test_acceptance_rate(mock_supa):
     profiles = MagicMock()
     profiles.select.return_value.execute.return_value = MagicMock(count=10)

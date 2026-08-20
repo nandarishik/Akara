@@ -1,8 +1,8 @@
 """One-off: analyze Sales Report.xlsx sheet selection."""
 from pathlib import Path
 
-from app.services.data_import.detector import score_sheets, best_sales_sheet
-from app.services.data_import.parser import SalesDataParser
+from app.domain.data_import.detector import score_sheets, best_sales_sheet
+from app.domain.data_import.parser import SalesDataParser
 
 path = Path(r"C:\Users\Admin\Desktop\Projects\Sales Report.xlsx")
 content = path.read_bytes()

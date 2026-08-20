@@ -4,8 +4,8 @@ from uuid import uuid4
 
 import pytest
 
-from app.services.data_import.models import ImportResult
-from app.tasks.import_worker import ImportWorker
+from app.domain.data_import.models import ImportResult
+from app.workers.import_worker import ImportWorker
 
 
 @pytest.fixture
@@ -58,7 +58,7 @@ async def test_process_job_completes_on_success(worker: ImportWorker) -> None:
         warnings=[],
     )
 
-    with patch("app.tasks.import_worker.DataImportService") as mock_service_cls:
+    with patch("app.workers.import_worker.DataImportService") as mock_service_cls:
         mock_service = mock_service_cls.return_value
         mock_service.parse_dataframe.return_value = mock_df
         mock_service.import_dataframe.return_value = mock_result

@@ -10,8 +10,8 @@ Scheduled tasks run as separate Railway services with **Root Directory = `backen
 |---------|-------|
 | Config file | `backend/deploy/railway.activation_emails.json` |
 | Schedule | `0 8 * * *` (daily at 08:00 UTC) |
-| Start command | `/opt/venv/bin/python -m app.tasks.activation_emails` |
-| Module | `app.tasks.activation_emails` |
+| Start command | `/opt/venv/bin/python -m app.workers.activation_emails` |
+| Module | `app.workers.activation_emails` |
 
 Sends Day 7 phone nudges and Day 14 quota-warning emails to eligible tenants.
 
@@ -21,8 +21,8 @@ Sends Day 7 phone nudges and Day 14 quota-warning emails to eligible tenants.
 |---------|-------|
 | Config file | `backend/deploy/railway.retention_cleanup.json` |
 | Schedule | `30 20 * * *` (daily at 20:30 UTC) |
-| Start command | `/opt/venv/bin/python -m app.tasks.retention_cleanup` |
-| Module | `app.tasks.retention_cleanup` |
+| Start command | `/opt/venv/bin/python -m app.workers.retention_cleanup` |
+| Module | `app.workers.retention_cleanup` |
 
 Enforces plan-based data retention by deleting expired sales rows per tenant.
 
@@ -31,8 +31,8 @@ Enforces plan-based data retention by deleting expired sales rows per tenant.
 | Setting | Value |
 |---------|-------|
 | Schedule | `*/5 * * * *` (every 5 minutes) |
-| Start command | `/opt/venv/bin/python -m app.tasks.broadcast_scheduler` |
-| Module | `app.tasks.broadcast_scheduler` |
+| Start command | `/opt/venv/bin/python -m app.workers.broadcast_scheduler` |
+| Module | `app.workers.broadcast_scheduler` |
 
 Delivers scheduled superadmin broadcasts from `broadcast_history` when `scheduled_at` is due.
 
@@ -40,10 +40,10 @@ Delivers scheduled superadmin broadcasts from `broadcast_history` when `schedule
 
 ```bash
 cd backend
-python -m app.tasks.activation_emails
-python -m app.tasks.retention_cleanup
-python -m app.tasks.retention_cleanup --dry-run
-python -m app.tasks.broadcast_scheduler
+python -m app.workers.activation_emails
+python -m app.workers.retention_cleanup
+python -m app.workers.retention_cleanup --dry-run
+python -m app.workers.broadcast_scheduler
 ```
 
 ## Verify via superadmin Cron UI

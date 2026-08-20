@@ -5,7 +5,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from app.tasks import dunning as dunning_module
+from app.workers import dunning as dunning_module
 
 
 def _past_due_since(days_ago: int) -> str:

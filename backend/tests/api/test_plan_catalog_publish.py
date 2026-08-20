@@ -11,7 +11,7 @@ def test_public_plans_fallback():
     from fastapi.testclient import TestClient
     from app.main import app
 
-    with patch("app.services.catalog.plan_catalog_service.get_supabase_service_client") as mock_supa:
+    with patch("app.infra.catalog.plan_catalog_service.get_supabase_service_client") as mock_supa:
         mock_supa.side_effect = Exception("table missing")
         client = TestClient(app)
         res = client.get("/public/plans")
@@ -24,7 +24,7 @@ def test_public_plans_fallback():
 
 
 def test_plan_diff_draft_fields():
-    from app.services.catalog.plan_catalog_service import plan_diff
+    from app.infra.catalog.plan_catalog_service import plan_diff
 
     before = {
         "limits": {"users": 1},
@@ -38,7 +38,7 @@ def test_plan_diff_draft_fields():
 
 
 @patch("app.core.superadmin.get_supabase_service_client")
-@patch("app.services.catalog.plan_catalog_service.get_supabase_service_client")
+@patch("app.infra.catalog.plan_catalog_service.get_supabase_service_client")
 def test_catalog_plans_list(mock_catalog_supa, mock_core):
     profile_mock = MagicMock()
     profile_mock.execute.return_value = MagicMock(data={"role": "superadmin"})
@@ -74,10 +74,10 @@ def test_catalog_plans_list(mock_catalog_supa, mock_core):
 
 
 @patch("app.core.superadmin.get_supabase_service_client")
-@patch("app.services.catalog.plan_catalog_service.get_supabase_service_client")
+@patch("app.infra.catalog.plan_catalog_service.get_supabase_service_client")
 def test_plan_publish_version_conflict_returns_409(mock_catalog_supa, mock_core):
     from app.core.errors import AkaraHTTPException
-    from app.services.catalog.plan_catalog_service import publish_plan
+    from app.infra.catalog.plan_catalog_service import publish_plan
 
     plan_row = {
         "code": "pro",

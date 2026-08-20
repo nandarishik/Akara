@@ -35,7 +35,7 @@ def get_limit(plan: str, key: str, tenant_id: UUID | None = None) -> Any:
     """Resolve limit from plan_assignments → catalog → static fallback."""
     if tenant_id is not None:
         try:
-            from app.services.catalog.plan_catalog_service import resolve_tenant_limits
+            from app.infra.catalog.plan_catalog_service import resolve_tenant_limits
 
             resolved = resolve_tenant_limits(tenant_id, plan)
             limits = resolved.get("limits") or {}
@@ -56,7 +56,7 @@ def is_feature_enabled(
         return bool(overrides[feature])
     if tenant_id is not None:
         try:
-            from app.services.catalog.plan_catalog_service import resolve_tenant_limits
+            from app.infra.catalog.plan_catalog_service import resolve_tenant_limits
 
             resolved = resolve_tenant_limits(tenant_id, plan)
             features = resolved.get("features") or {}
@@ -295,8 +295,8 @@ def maybe_notify_copilot_quota_threshold(tenant_id: UUID, prev_count: int, new_c
 def _send_quota_threshold_email(tenant_id: UUID, plan: str, threshold: int) -> None:
     from datetime import timedelta
 
-    from app.services.billing.email import send_quota_warning_email
-    from app.services.notifications.delivery_log import log_delivery
+    from app.domain.billing.email import send_quota_warning_email
+    from app.infra.notifications.delivery_log import log_delivery
 
     supa = get_supabase_service_client()
     template_key = f"quota_warning_{threshold}"

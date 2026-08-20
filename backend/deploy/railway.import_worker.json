@@ -5,7 +5,7 @@
   },
   "deploy": {
     "cronSchedule": "* * * * *",
-    "startCommand": "/opt/venv/bin/python -m app.tasks.import_worker",
+    "startCommand": "/opt/venv/bin/python -m app.workers.import_worker",
     "restartPolicyType": "NEVER"
   }
 }

@@ -10,9 +10,9 @@ from uuid import UUID
 import pytest
 
 from app.core.time_utils import last_completed_week_ist
-from app.services.debrief.engine import WeeklyDebriefEngine
-from app.services.debrief.synthesizer import _fallback_metadata
-from app.services.debrief.validator import validate_metadata
+from app.domain.debrief.engine import WeeklyDebriefEngine
+from app.domain.debrief.synthesizer import _fallback_metadata
+from app.domain.debrief.validator import validate_metadata
 
 TENANT = UUID("22222222-0000-0000-0000-000000000002")
 
@@ -51,7 +51,7 @@ def test_engine_skips_under_seven_days():
 
 
 def test_fallback_metadata_limited_mode():
-    from app.services.debrief.models import DebriefData, WeekMetrics
+    from app.domain.debrief.models import DebriefData, WeekMetrics
 
     week_start, week_end = _week_bounds()
     data = DebriefData(
@@ -68,7 +68,7 @@ def test_fallback_metadata_limited_mode():
 
 
 def test_fallback_metadata_full_mode():
-    from app.services.debrief.models import DebriefData, WeekMetrics, ZoneChange
+    from app.domain.debrief.models import DebriefData, WeekMetrics, ZoneChange
 
     week_start, week_end = _week_bounds()
     data = DebriefData(

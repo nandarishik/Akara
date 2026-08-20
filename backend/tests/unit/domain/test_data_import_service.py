@@ -16,7 +16,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from app.main import app
-from app.services.data_import.service import (
+from app.domain.data_import.service import (
     _safe_float,
     _safe_str,
     _sanitize_for_json,
@@ -99,7 +99,7 @@ def test_import_records_are_json_serializable():
     """Smoke test: enrich a row with NaN values and verify JSON serialization."""
     from uuid import UUID
 
-    from app.services.data_import.service import _enrich_primary
+    from app.domain.data_import.service import _enrich_primary
 
     row = {
         "invoice_date": date(2025, 12, 7),

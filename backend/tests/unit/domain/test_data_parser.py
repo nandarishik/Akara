@@ -3,7 +3,7 @@ import io
 import pandas as pd
 import pytest
 
-from app.services.data_import.parser import SalesDataParser
+from app.domain.data_import.parser import SalesDataParser
 
 
 @pytest.fixture

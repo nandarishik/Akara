@@ -12,9 +12,9 @@ from pydantic import BaseModel
 from app.core.auth import CurrentUser
 from app.core.rate_limit import limiter
 from app.core.tenant import TenantCtx, get_supabase_service_client
-from app.services.debrief.metadata_enrich import enrich_debrief_metadata
-from app.services.debrief.pdf import render_debrief_pdf
-from app.services.debrief.service import WeeklyDebriefService
+from app.domain.debrief.metadata_enrich import enrich_debrief_metadata
+from app.domain.debrief.pdf import render_debrief_pdf
+from app.domain.debrief.service import WeeklyDebriefService
 
 logger = logging.getLogger(__name__)
 

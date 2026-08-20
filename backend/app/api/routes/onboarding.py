@@ -20,7 +20,7 @@ from app.core.auth import CurrentUser
 from app.core.config import settings
 from app.core.rate_limit import limiter
 from app.core.tenant import get_supabase_service_client
-from app.services.user_events import record_user_event
+from app.domain.user_events import record_user_event
 
 if TYPE_CHECKING:
     pass
@@ -342,7 +342,7 @@ async def onboarding_complete(request: Request, user: CurrentUser) -> dict:
     record_user_event(user.user_id, "onboarded")
 
     try:
-        from app.services.billing.email import send_welcome_email
+        from app.domain.billing.email import send_welcome_email
 
         profile = (
             client.table("profiles")

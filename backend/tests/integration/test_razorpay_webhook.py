@@ -4,12 +4,12 @@ from __future__ import annotations
 
 from unittest.mock import MagicMock, patch
 
-from app.services.billing.webhook_handler import _already_processed, dispatch_razorpay_event
+from app.domain.billing.webhook_handler import _already_processed, dispatch_razorpay_event
 
 
-@patch("app.services.billing.webhook_handler._already_processed")
-@patch("app.services.billing.webhook_handler._mark_processed")
-@patch("app.services.billing.webhook_handler.handle_subscription_activated")
+@patch("app.domain.billing.webhook_handler._already_processed")
+@patch("app.domain.billing.webhook_handler._mark_processed")
+@patch("app.domain.billing.webhook_handler.handle_subscription_activated")
 def test_webhook_skips_duplicate(mock_handle, mock_mark, mock_dup):
     mock_dup.return_value = True
     body = {
@@ -21,7 +21,7 @@ def test_webhook_skips_duplicate(mock_handle, mock_mark, mock_dup):
     mock_mark.assert_not_called()
 
 
-@patch("app.services.billing.webhook_handler._supa")
+@patch("app.domain.billing.webhook_handler._supa")
 def test_already_processed_handles_empty_maybe_single(mock_supa):
     chain = MagicMock()
     chain.select.return_value.eq.return_value.maybe_single.return_value.execute.return_value = None
@@ -29,9 +29,9 @@ def test_already_processed_handles_empty_maybe_single(mock_supa):
     assert _already_processed("evt_new") is False
 
 
-@patch("app.services.billing.webhook_handler._already_processed", return_value=False)
-@patch("app.services.billing.webhook_handler._mark_processed")
-@patch("app.services.billing.webhook_handler.handle_subscription_activated")
+@patch("app.domain.billing.webhook_handler._already_processed", return_value=False)
+@patch("app.domain.billing.webhook_handler._mark_processed")
+@patch("app.domain.billing.webhook_handler.handle_subscription_activated")
 def test_webhook_processes_new_event(mock_handle, mock_mark, mock_dup):
     sub = {
         "id": "sub_new",

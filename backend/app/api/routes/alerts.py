@@ -12,7 +12,7 @@ from app.core.plan_guard import FeatureBlocked, _effective_plan
 from app.core.plan_limits import get_limit
 from app.core.rate_limit import limiter
 from app.core.tenant import TenantContext, get_supabase_service_client, get_tenant_context
-from app.services.alerts.metrics import VALID_METRICS
+from app.domain.alerts.metrics import VALID_METRICS
 
 router = APIRouter(prefix="/alerts", tags=["alerts"])
 

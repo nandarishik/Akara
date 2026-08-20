@@ -2,8 +2,8 @@
 
 from unittest.mock import patch
 
-from app.services.superadmin.ops_context import ops_context_prompt
-from app.tasks.founder_brief import generate_founder_brief_text
+from app.domain.superadmin.ops_context import ops_context_prompt
+from app.workers.founder_brief import generate_founder_brief_text
 
 _MOCK_CTX = {
     "mrr_inr": 7999,
@@ -25,7 +25,7 @@ def test_ops_context_prompt_contains_snapshot_keys():
     assert "7999" in prompt
 
 
-@patch("app.tasks.founder_brief.build_ops_context", return_value=_MOCK_CTX)
+@patch("app.workers.founder_brief.build_ops_context", return_value=_MOCK_CTX)
 def test_generate_founder_brief_text_format(_mock):
     text = generate_founder_brief_text()
     assert "MRR" in text

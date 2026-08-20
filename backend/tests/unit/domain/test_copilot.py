@@ -12,7 +12,7 @@ import openai
 import pytest
 from fastapi.testclient import TestClient
 
-from app.services.copilot.agent import CopilotResponse
+from app.domain.copilot.agent import CopilotResponse
 from tests.conftest import TENANT_PRO, USER_PRO
 
 CONV_ID = UUID("aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee")

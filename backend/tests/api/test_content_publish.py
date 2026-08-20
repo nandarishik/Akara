@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from app.services.content.cms_service import validate_content
+from app.infra.content.cms_service import validate_content
 
 
 def test_validate_content_blocks_unsafe_html():

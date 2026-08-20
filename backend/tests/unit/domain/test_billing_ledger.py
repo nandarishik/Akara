@@ -30,7 +30,7 @@ def test_refund_preview(mock_core):
 
 
 @patch("app.core.superadmin.get_supabase_service_client")
-@patch("app.services.billing.ledger.get_supabase_service_client")
+@patch("app.domain.billing.ledger.get_supabase_service_client")
 def test_billing_ledger_list(mock_ledger_supa, mock_core):
     profile_mock = MagicMock()
     profile_mock.execute.return_value = MagicMock(data={"role": "superadmin"})

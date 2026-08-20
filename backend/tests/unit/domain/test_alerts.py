@@ -95,7 +95,7 @@ def test_create_alert_pro(mock_ctx, mock_alerts, authed_pro_client):
 def test_check_condition():
     from decimal import Decimal
 
-    from app.services.alerts.metrics import check_condition
+    from app.domain.alerts.metrics import check_condition
 
     assert check_condition(Decimal("40"), "below", Decimal("50"))
     assert check_condition(Decimal("60"), "above", Decimal("50"))

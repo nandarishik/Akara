@@ -20,18 +20,18 @@ from app.core.plan_guard import (
 )
 from app.core.rate_limit import limiter
 from app.core.tenant import TenantCtx, get_supabase_service_client
-from app.services.copilot.agent import CopilotAgent
-from app.services.copilot.planner import Planner
-from app.services.copilot.synthesizer import Synthesizer
-from app.services.copilot.tools.context_tool import ContextTool
-from app.services.copilot.tools.sql_tool import SQLTool
-from app.services.llm.manager import LLMManager
-from app.services.llm_cost_logger import log_llm_cost
-from app.services.prompts.generator import PromptGenerator
-from app.services.schema.discovery import SchemaDiscovery
-from app.services.debrief.copilot_context import load_debrief_context_addendum
-from app.services.user_events import record_user_event
-from app.sql.executor import SQLExecutor
+from app.domain.copilot.agent import CopilotAgent
+from app.domain.copilot.planner import Planner
+from app.domain.copilot.synthesizer import Synthesizer
+from app.domain.copilot.tools.context_tool import ContextTool
+from app.domain.copilot.tools.sql_tool import SQLTool
+from app.infra.llm.manager import LLMManager
+from app.infra.llm.cost_logger import log_llm_cost
+from app.infra.prompts.generator import PromptGenerator
+from app.infra.schema.discovery import SchemaDiscovery
+from app.domain.debrief.copilot_context import load_debrief_context_addendum
+from app.domain.user_events import record_user_event
+from app.infra.db.executor import SQLExecutor
 
 logger = logging.getLogger(__name__)
 

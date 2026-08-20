@@ -21,9 +21,9 @@ from app.core.superadmin import (
 )
 from app.core.tenant import get_supabase_service_client
 from app.core.plan_limits import get_limit
-from app.services.superadmin.audit import record_operation
-from app.services.superadmin.revenue import PLAN_MRR_INR
-from app.services.superadmin.mutations import (
+from app.domain.superadmin.audit import record_operation
+from app.domain.superadmin.revenue import PLAN_MRR_INR
+from app.domain.superadmin.mutations import (
     SuperadminMutation,
     check_expected_version,
     dry_run_response,
@@ -661,7 +661,7 @@ def nudge_upgrade(
         )
 
     from app.core.config import settings
-    from app.services.billing.email import _send
+    from app.domain.billing.email import _send
 
     plan = tenant.get("plan") or "free"
     subject = "You're getting great value from AKARA — upgrade for more"
@@ -729,7 +729,7 @@ def activation_nudge(
     from jinja2 import Environment, FileSystemLoader, select_autoescape
 
     from app.core.config import settings
-    from app.services.billing.email import _send
+    from app.domain.billing.email import _send
 
     template_dir = Path(__file__).resolve().parents[3] / "services" / "email" / "templates"
     jinja = Environment(

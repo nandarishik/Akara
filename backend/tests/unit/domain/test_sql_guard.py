@@ -1,6 +1,6 @@
 import pytest
 
-from app.sql.guard import SQLGuardError, validate_sql
+from app.infra.db.guard import SQLGuardError, validate_sql
 
 
 def test_select_allowed() -> None:

@@ -4,7 +4,7 @@
     "builder": "NIXPACKS"
   },
   "deploy": {
-    "startCommand": "/opt/venv/bin/python -m app.tasks.weekly_debrief",
+    "startCommand": "/opt/venv/bin/python -m app.workers.weekly_debrief",
     "restartPolicyType": "NEVER",
     "cronSchedule": "30 1 * * 1"
   }

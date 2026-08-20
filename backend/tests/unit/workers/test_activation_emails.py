@@ -5,7 +5,7 @@ from __future__ import annotations
 from datetime import UTC, datetime, timedelta
 from unittest.mock import MagicMock, patch
 
-from app.tasks.activation_emails import (
+from app.workers.activation_emails import (
     STAGES,
     _already_sent,
     _copilot_usage_pct,
@@ -19,8 +19,8 @@ def test_stages_include_day7_and_day14():
     assert "day14_upgrade_nudge" in stage_ids
 
 
-@patch("app.tasks.activation_emails._already_sent", return_value=False)
-@patch("app.tasks.activation_emails._has_event", return_value=False)
+@patch("app.workers.activation_emails._already_sent", return_value=False)
+@patch("app.workers.activation_emails._has_event", return_value=False)
 def test_day7_requires_missing_phone(mock_event, mock_sent):
     supa = MagicMock()
     profile = {
@@ -31,7 +31,7 @@ def test_day7_requires_missing_phone(mock_event, mock_sent):
     assert _should_send_stage(supa, profile, "day7_no_phone", "first_debrief", 7, 8, "a@b.com")
 
 
-@patch("app.tasks.activation_emails._already_sent", return_value=False)
+@patch("app.workers.activation_emails._already_sent", return_value=False)
 def test_day7_skips_when_phone_set(mock_sent):
     supa = MagicMock()
     profile = {"id": "user-1", "tenant_id": "tenant-1", "phone_number": "+91999"}

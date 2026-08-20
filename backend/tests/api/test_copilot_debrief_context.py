@@ -8,13 +8,13 @@ from uuid import UUID, uuid4
 import pytest
 from fastapi import HTTPException
 
-from app.services.debrief.copilot_context import load_debrief_context_addendum
+from app.domain.debrief.copilot_context import load_debrief_context_addendum
 from tests.conftest import TENANT_PRO
 
 REPORT_ID = UUID("aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee")
 
 
-@patch("app.services.debrief.copilot_context.get_supabase_service_client")
+@patch("app.domain.debrief.copilot_context.get_supabase_service_client")
 def test_load_debrief_context_success(mock_supa):
     supa = MagicMock()
     mock_supa.return_value = supa
@@ -27,7 +27,7 @@ def test_load_debrief_context_success(mock_supa):
     assert "Good week" in addendum
 
 
-@patch("app.services.debrief.copilot_context.get_supabase_service_client")
+@patch("app.domain.debrief.copilot_context.get_supabase_service_client")
 def test_load_debrief_context_cross_tenant_rejected(mock_supa):
     supa = MagicMock()
     mock_supa.return_value = supa
