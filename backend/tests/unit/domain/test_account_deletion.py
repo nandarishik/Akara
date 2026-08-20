@@ -8,7 +8,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from tests.conftest import USER_PRO
-from tests.test_billing_endpoint import _make_tenant_supa
+from tests.api.test_billing_endpoint import _make_tenant_supa
 
 
 @pytest.fixture

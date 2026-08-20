@@ -7,7 +7,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 from fastapi.testclient import TestClient
 
-from tests.superadmin_helpers import clear_auth_override, make_superadmin_client, profile_only_supabase
+from tests.superadmin.superadmin_helpers import clear_auth_override, make_superadmin_client, profile_only_supabase
 
 
 @pytest.fixture

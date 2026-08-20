@@ -6,7 +6,7 @@ from unittest.mock import patch
 from uuid import uuid4
 
 from app.api.routes.superadmin.system import CRON_TASKS
-from tests.superadmin_helpers import (
+from tests.superadmin.superadmin_helpers import (
     QaMatrixSupabase,
     clear_auth_override,
     make_superadmin_client,

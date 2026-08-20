@@ -5,7 +5,7 @@ from __future__ import annotations
 from datetime import UTC, datetime, timedelta
 from unittest.mock import MagicMock, patch
 
-from tests.superadmin_helpers import clear_auth_override, make_superadmin_client
+from tests.superadmin.superadmin_helpers import clear_auth_override, make_superadmin_client
 
 
 @patch("app.services.superadmin.revenue.get_supabase_service_client")

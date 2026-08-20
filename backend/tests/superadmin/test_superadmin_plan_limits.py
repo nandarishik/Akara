@@ -5,7 +5,7 @@ from __future__ import annotations
 from unittest.mock import MagicMock, patch
 
 from app.core.plan_limits import PLAN_LIMITS
-from tests.superadmin_helpers import clear_auth_override, make_superadmin_client
+from tests.superadmin.superadmin_helpers import clear_auth_override, make_superadmin_client
 
 
 @patch("app.core.superadmin.get_supabase_service_client")

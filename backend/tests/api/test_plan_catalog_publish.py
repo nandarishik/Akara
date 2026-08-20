@@ -4,7 +4,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from tests.superadmin_helpers import clear_auth_override, make_superadmin_client
+from tests.superadmin.superadmin_helpers import clear_auth_override, make_superadmin_client
 
 
 def test_public_plans_fallback():

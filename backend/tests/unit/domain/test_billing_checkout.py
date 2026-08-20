@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from unittest.mock import patch
 
-from tests.test_billing_endpoint import _make_tenant_supa
+from tests.api.test_billing_endpoint import _make_tenant_supa
 
 
 @patch("app.api.routes.billing.store_response")

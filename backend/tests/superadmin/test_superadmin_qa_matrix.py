@@ -10,7 +10,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from tests.conftest import TENANT_FREE, USER_FREE, USER_SUPERADMIN
-from tests.superadmin_helpers import (
+from tests.superadmin.superadmin_helpers import (
     QaMatrixSupabase,
     SUPERADMIN_READ_ENDPOINTS,
     SUPERADMIN_WRITE_ENDPOINTS_NO_SUDO,

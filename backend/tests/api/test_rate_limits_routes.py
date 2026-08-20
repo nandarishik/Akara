@@ -8,7 +8,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from tests.conftest import TENANT_FREE, USER_FREE
-from tests.test_billing_endpoint import _make_tenant_supa, make_mock_usage
+from tests.api.test_billing_endpoint import _make_tenant_supa, make_mock_usage
 
 
 @pytest.fixture

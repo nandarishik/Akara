@@ -6,7 +6,7 @@ from unittest.mock import MagicMock, patch
 from uuid import uuid4
 
 from tests.conftest import TENANT_FREE, USER_SUPERADMIN
-from tests.superadmin_helpers import (
+from tests.superadmin.superadmin_helpers import (
     QaMatrixSupabase,
     clear_auth_override,
     default_tenant_row,
