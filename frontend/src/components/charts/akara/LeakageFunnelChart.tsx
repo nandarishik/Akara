@@ -1,7 +1,7 @@
 import { FunnelChart } from "@/charts";
 import type { FunnelStageRow } from "@/lib/charts/chartAdapters";
 import { toLeakageFunnel } from "@/lib/charts/chartAdapters";
-import type { SchemeLeakageRow } from "@/hooks/useReports";
+import type { SchemeLeakageRow } from "@/features/reports/hooks/useReports";
 import { chartColors } from "@/lib/charts/chartTheme";
 
 interface Props {

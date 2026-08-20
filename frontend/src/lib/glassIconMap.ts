@@ -26,7 +26,7 @@ import {
   Sparkles,
 } from "lucide-react";
 
-import type { GlassIconColor } from "@/components/effects/GlassIcons";
+import type { GlassIconColor } from "@/shared/effects/GlassIcons";
 
 export const APP_NAV_GLASS: Record<
   string,

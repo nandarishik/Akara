@@ -1,33 +1,33 @@
 import { useState } from "react";
 import { BarChart3, MessageSquare, Bell } from "lucide-react";
 
-import { UsageBanner, PastDueBanner, TrialWarning } from "@/components/billing";
-import { PlanGate } from "@/components/billing/PlanGate";
-import { AkaraButton, SecondaryButton, GhostButton } from "@/components/ui/GradientButton";
-import GlowSurfaceCard from "@/components/ui/GlowSurfaceCard";
-import GlowKPICard, { KPIGrid } from "@/components/ui/GlowKPICard";
-import EmptyState from "@/components/ui/EmptyState";
-import { PageSkeleton } from "@/components/ui/ShimmerSkeleton";
-import { Button } from "@/components/ui/button";
-import { Badge, PlanBadge } from "@/components/ui/badge";
-import { KPICard, PlanCard } from "@/components/ui/card";
-import GlassIcons from "@/components/effects/GlassIcons";
-import { GlassIcon } from "@/components/effects/GlassIcon";
-import BorderGlow from "@/components/effects/BorderGlow";
-import DarkMeshBackground from "@/components/effects/DarkMeshBackground";
-import DecryptedText from "@/components/effects/DecryptedText";
-import SpecularButton from "@/components/effects/SpecularButton";
-import GlowCTAButton from "@/components/ui/GlowCTAButton";
-import ReflectiveCard from "@/components/effects/ReflectiveCard";
-import PlanReflectiveCard, { PLAN_REFLECTIVE_META } from "@/components/effects/PlanReflectiveCard";
-import DashboardPreviewBento from "@/components/landing/DashboardPreviewBento";
-import PrismLazy from "@/components/effects/PrismLazy";
-import CopilotStrandsLoader from "@/components/copilot/CopilotStrandsLoader";
-import AITextLoading from "@/components/copilot/AITextLoading";
-import Loader from "@/components/ui/Loader";
-import ProfileDropdown from "@/components/layout/ProfileDropdown";
-import AvatarPicker from "@/components/settings/AvatarPicker";
-import TeamSeatVisualizer, { buildSeatSlots } from "@/components/team/TeamSeatVisualizer";
+import { UsageBanner, PastDueBanner, TrialWarning } from "@/features/billing/components";
+import { PlanGate } from "@/features/billing/components/PlanGate";
+import { AkaraButton, SecondaryButton, GhostButton } from "@/shared/ui/GradientButton";
+import GlowSurfaceCard from "@/shared/ui/GlowSurfaceCard";
+import GlowKPICard, { KPIGrid } from "@/shared/ui/GlowKPICard";
+import EmptyState from "@/shared/ui/EmptyState";
+import { PageSkeleton } from "@/shared/ui/ShimmerSkeleton";
+import { Button } from "@/shared/ui/button";
+import { Badge, PlanBadge } from "@/shared/ui/badge";
+import { KPICard, PlanCard } from "@/shared/ui/card";
+import GlassIcons from "@/shared/effects/GlassIcons";
+import { GlassIcon } from "@/shared/effects/GlassIcon";
+import BorderGlow from "@/shared/effects/BorderGlow";
+import DarkMeshBackground from "@/shared/effects/DarkMeshBackground";
+import DecryptedText from "@/shared/effects/DecryptedText";
+import SpecularButton from "@/shared/effects/SpecularButton";
+import GlowCTAButton from "@/shared/ui/GlowCTAButton";
+import ReflectiveCard from "@/shared/effects/ReflectiveCard";
+import PlanReflectiveCard, { PLAN_REFLECTIVE_META } from "@/shared/effects/PlanReflectiveCard";
+import DashboardPreviewBento from "@/features/landing/components/DashboardPreviewBento";
+import PrismLazy from "@/shared/effects/PrismLazy";
+import CopilotStrandsLoader from "@/features/copilot/components/CopilotStrandsLoader";
+import AITextLoading from "@/features/copilot/components/AITextLoading";
+import Loader from "@/shared/ui/Loader";
+import ProfileDropdown from "@/shared/layout/ProfileDropdown";
+import AvatarPicker from "@/features/settings/components/AvatarPicker";
+import TeamSeatVisualizer, { buildSeatSlots } from "@/features/team/components/TeamSeatVisualizer";
 import { RevenueAreaChart } from "@/components/charts/akara/RevenueAreaChart";
 import { ZoneBarChart } from "@/components/charts/akara/ZoneBarChart";
 import { WeekdayBarChart, ProductMoverBarChart } from "@/components/charts/akara/BarCharts";
@@ -50,10 +50,10 @@ import {
   fixtureWeekdayPulse,
   fixtureMovers,
 } from "@/lib/charts/fixtures";
-import Folder from "@/components/effects/Folder";
-import LineSidebar from "@/components/effects/LineSidebar";
-import { LINE_SIDEBAR_AKARA } from "@/components/effects/presets";
-import { BORDER_GLOW_DEFAULTS } from "@/components/effects/presets";
+import Folder from "@/shared/effects/Folder";
+import LineSidebar from "@/shared/effects/LineSidebar";
+import { LINE_SIDEBAR_AKARA } from "@/shared/effects/presets";
+import { BORDER_GLOW_DEFAULTS } from "@/shared/effects/presets";
 import type { UsageResponse } from "@/lib/api/billing";
 
 const DEMO_USAGE: UsageResponse = {
@@ -109,7 +109,7 @@ export default function ComponentGallery() {
         <header>
           <h1 className="text-display font-display">AKARA Design System</h1>
           <p className="mt-2 text-body">
-            FireAI-inspired light product — pills, white cards, token colors.
+            FireAI-inspired light product â€” pills, white cards, token colors.
           </p>
         </header>
 
@@ -196,9 +196,9 @@ export default function ComponentGallery() {
                 <PlanReflectiveCard
                   plan={{
                     name: "Pro",
-                    price: "₹7,999",
+                    price: "â‚¹7,999",
                     period: "/month",
-                    cta: "Upgrade to Pro →",
+                    cta: "Upgrade to Pro â†’",
                     popular: true,
                     features: ["Unlimited copilot", "Morning brief", "Scheme leakage"],
                     badgeText: PLAN_REFLECTIVE_META.Pro.badgeText,
@@ -322,7 +322,7 @@ export default function ComponentGallery() {
               <AITextLoading compact />
             </div>
             <div className="rounded-xl border border-white/10 bg-[#0a0a0a] p-6 flex justify-center">
-              <Loader size="sm" title="Loading…" subtitle="" />
+              <Loader size="sm" title="Loadingâ€¦" subtitle="" />
             </div>
             <div className="rounded-xl border border-white/10 bg-[#0a0a0a] p-6 max-w-xs">
               <ProfileDropdown
@@ -348,38 +348,38 @@ export default function ComponentGallery() {
           <h2 className="text-h2">Analytics charts (Bklit)</h2>
           <div className="grid gap-4 lg:grid-cols-2">
             <GlowSurfaceCard padding="md">
-              <h3 className="text-sm font-medium mb-3">Area — revenue trend</h3>
+              <h3 className="text-sm font-medium mb-3">Area â€” revenue trend</h3>
               <div className="h-[220px]">
                 <RevenueAreaChart data={fixtureAreaSeries} />
               </div>
             </GlowSurfaceCard>
             <GlowSurfaceCard padding="md">
-              <h3 className="text-sm font-medium mb-3">Bar — zones</h3>
+              <h3 className="text-sm font-medium mb-3">Bar â€” zones</h3>
               <div className="h-[220px]">
                 <ZoneBarChart data={fixtureBarRows} />
               </div>
             </GlowSurfaceCard>
             <GlowSurfaceCard padding="md">
-              <h3 className="text-sm font-medium mb-3">Funnel — scheme leakage</h3>
+              <h3 className="text-sm font-medium mb-3">Funnel â€” scheme leakage</h3>
               <div className="h-[240px]">
                 <LeakageFunnelChart stages={fixtureFunnel} />
               </div>
             </GlowSurfaceCard>
             <GlowSurfaceCard padding="md">
-              <h3 className="text-sm font-medium mb-3">Radar — zone comparison</h3>
+              <h3 className="text-sm font-medium mb-3">Radar â€” zone comparison</h3>
               <div className="h-[280px]">
                 <ZoneRadarChart zones={fixtureZones} />
               </div>
             </GlowSurfaceCard>
             <GlowSurfaceCard padding="md">
-              <h3 className="text-sm font-medium mb-3">Ring + gauge — billing</h3>
+              <h3 className="text-sm font-medium mb-3">Ring + gauge â€” billing</h3>
               <div className="grid gap-4 sm:grid-cols-2 h-[260px]">
                 <QuotaRingChart usage={fixtureUsage} />
                 <PlanHealthGauge usage={fixtureUsage} />
               </div>
             </GlowSurfaceCard>
             <GlowSurfaceCard padding="md">
-              <h3 className="text-sm font-medium mb-3">Heatmap — product × zone</h3>
+              <h3 className="text-sm font-medium mb-3">Heatmap â€” product Ã— zone</h3>
               <div className="h-[240px]">
                 <SalesHeatmapChart rows={fixtureHeatmapRows} />
               </div>
@@ -402,7 +402,7 @@ export default function ComponentGallery() {
               </div>
             </GlowSurfaceCard>
             <GlowSurfaceCard padding="md">
-              <h3 className="text-sm font-medium mb-3">Bar — weekday + movers</h3>
+              <h3 className="text-sm font-medium mb-3">Bar â€” weekday + movers</h3>
               <div className="space-y-4">
                 <WeekdayBarChart pulse={fixtureWeekdayPulse} className="h-[120px]" />
                 <ProductMoverBarChart movers={fixtureMovers} className="h-[120px]" />
@@ -418,10 +418,10 @@ export default function ComponentGallery() {
         <section className="space-y-4">
           <h2 className="text-h2">Legacy KPICard / PlanCard</h2>
           <div className="grid md:grid-cols-2 gap-4">
-            <KPICard label="Revenue" value="₹12.4L" change="+8.2%" changeVariant="positive" />
+            <KPICard label="Revenue" value="â‚¹12.4L" change="+8.2%" changeVariant="positive" />
             <PlanCard
               name="Pro"
-              price="₹7,999"
+              price="â‚¹7,999"
               popular
               features={["500 copilot questions", "Simulator"]}
               cta={<AkaraButton size="sm">Choose Pro</AkaraButton>}

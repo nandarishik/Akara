@@ -6,7 +6,7 @@ import type { UsageResponse } from "@/lib/api/billing";
 import { getUsagePct } from "@/lib/api/billing";
 import { toNum } from "@/lib/format";
 import type { RevenueByDate, ZoneBreakdown } from "@/types/kpi";
-import type { SchemeLeakageRow } from "@/hooks/useReports";
+import type { SchemeLeakageRow } from "@/features/reports/hooks/useReports";
 
 export interface AreaPoint {
   date: Date;
@@ -72,7 +72,7 @@ export function toMoverBarSeries(
   movers: { name: string; change_inr: number; change_pct: number; direction: "up" | "down" }[],
 ): BarRow[] {
   return movers.slice(0, 8).map((m) => ({
-    name: m.name.length > 18 ? `${m.name.slice(0, 16)}…` : m.name,
+    name: m.name.length > 18 ? `${m.name.slice(0, 16)}â€¦` : m.name,
     value: m.change_inr,
     label: m.direction,
   }));
@@ -82,7 +82,7 @@ export function toRouteBarSeries(
   routes: { route: string; revenue: number; orders: number }[],
 ): BarRow[] {
   return routes.map((r) => ({
-    name: r.route.length > 14 ? `${r.route.slice(0, 12)}…` : r.route,
+    name: r.route.length > 14 ? `${r.route.slice(0, 12)}â€¦` : r.route,
     value: r.revenue,
     label: String(r.orders),
   }));
@@ -274,8 +274,8 @@ export function simulatorConfidenceScore(
 }
 
 function formatCompactINR(v: number): string {
-  if (v >= 1_00_00_000) return `₹${(v / 1_00_00_000).toFixed(1)}Cr`;
-  if (v >= 1_00_000) return `₹${(v / 1_00_000).toFixed(1)}L`;
-  if (v >= 1_000) return `₹${(v / 1_000).toFixed(0)}K`;
-  return `₹${Math.round(v)}`;
+  if (v >= 1_00_00_000) return `â‚¹${(v / 1_00_00_000).toFixed(1)}Cr`;
+  if (v >= 1_00_000) return `â‚¹${(v / 1_00_000).toFixed(1)}L`;
+  if (v >= 1_000) return `â‚¹${(v / 1_000).toFixed(0)}K`;
+  return `â‚¹${Math.round(v)}`;
 }

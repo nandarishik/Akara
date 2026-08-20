@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 
-import GlowSurfaceCard from "@/components/ui/GlowSurfaceCard";
-import { Badge } from "@/components/ui/badge";
+import GlowSurfaceCard from "@/shared/ui/GlowSurfaceCard";
+import { Badge } from "@/shared/ui/badge";
 import { cn } from "@/lib/utils";
 
 interface ChartCardProps {
