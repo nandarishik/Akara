@@ -7,6 +7,12 @@ AI-powered analytics dashboard for FMCG distributors and any business with trans
 - `frontend/` — React 18 + Vite + TailwindCSS + shadcn/ui (hosted on Vercel)
 - `backend/` — FastAPI + Python 3.12 (hosted on Railway)
 - `supabase/` — Migrations, seed data, edge functions
+- `akara-connect/` — Windows tray agent scaffold (Tally/ERP sync)
+- `infra/docker/` — Optional Dockerfiles for API + import worker
+- `docs/` — Active ops / architecture / development docs
+- `.archive/` — Historical sprint plans and UI specs
+
+Task runner: `make dev-api`, `make dev-web`, `make test`, `make lint`
 
 ## Quick start
 
