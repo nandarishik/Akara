@@ -8,7 +8,7 @@ Scheduled tasks run as separate Railway services with **Root Directory = `backen
 
 | Setting | Value |
 |---------|-------|
-| Config file | `backend/railway.activation_emails.json` |
+| Config file | `backend/deploy/railway.activation_emails.json` |
 | Schedule | `0 8 * * *` (daily at 08:00 UTC) |
 | Start command | `/opt/venv/bin/python -m app.tasks.activation_emails` |
 | Module | `app.tasks.activation_emails` |
@@ -19,7 +19,7 @@ Sends Day 7 phone nudges and Day 14 quota-warning emails to eligible tenants.
 
 | Setting | Value |
 |---------|-------|
-| Config file | `backend/railway.retention_cleanup.json` |
+| Config file | `backend/deploy/railway.retention_cleanup.json` |
 | Schedule | `30 20 * * *` (daily at 20:30 UTC) |
 | Start command | `/opt/venv/bin/python -m app.tasks.retention_cleanup` |
 | Module | `app.tasks.retention_cleanup` |

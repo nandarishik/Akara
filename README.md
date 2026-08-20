@@ -62,11 +62,11 @@ Full Razorpay setup: [`docs/operations/razorpay-setup.md`](docs/operations/razor
 # Import worker (every 60s) — separate Railway service or cron
 python -m app.tasks.import_worker
 
-# Dunning (daily) — Railway cron service (see backend/railway.dunning.json)
+# Dunning (daily) — Railway cron service (see backend/deploy/railway.dunning.json)
 python -m app.tasks.dunning
 ```
 
-**Railway dunning cron:** Add a second service in the same project, root directory `backend`, paste config from `railway.dunning.json` or set:
+**Railway dunning cron:** Add a second service in the same project, root directory `backend`, paste config from `backend/deploy/railway.dunning.json` or set:
 - **Cron schedule:** `0 4 * * *` (daily 4:00 UTC ≈ 9:30 AM IST)
 - **Start command:** `/opt/venv/bin/python -m app.tasks.dunning`
 - Copy the same env vars as the API service (Supabase, SendGrid)
@@ -82,9 +82,9 @@ Apply migration **017** (`017_alerts.sql`) on Supabase.
 ### Railway cron / worker services
 | Service | Config | Schedule / command |
 |---------|--------|-------------------|
-| Dunning | `railway.dunning.json` | Daily `python -m app.tasks.dunning` |
-| Alerts | `railway.alerts.json` | Daily `python -m app.tasks.alert_evaluator` |
-| Import worker | `railway.import_worker.json` | Every minute `python -m app.tasks.import_worker` |
+| Dunning | `backend/deploy/railway.dunning.json` | Daily `python -m app.tasks.dunning` |
+| Alerts | `backend/deploy/railway.alerts.json` | Daily `python -m app.tasks.alert_evaluator` |
+| Import worker | `backend/deploy/railway.import_worker.json` | Every minute `python -m app.tasks.import_worker` |
 
 ### E2E checklist
 [`.archive/sprint1/checklists/day6_e2e_checklist.md`](.archive/sprint1/checklists/day6_e2e_checklist.md)
@@ -99,8 +99,8 @@ Apply migration **018** (`018_day7_comms_teams_debrief.sql`) on Supabase.
 
 | Service | Config | Schedule / command | When to add |
 |---------|--------|-------------------|---------------|
-| Weekly debrief | `railway.weekly_debrief.json` | `30 1 * * 1` → `python -m app.tasks.weekly_debrief` | Day 14+ or after Railway upgrade |
-| Activation emails | `railway.activation_emails.json` | `0 8 * * *` → `python -m app.tasks.activation_emails` | Day 14+ or after Railway upgrade |
+| Weekly debrief | `backend/deploy/railway.weekly_debrief.json` | `30 1 * * 1` → `python -m app.tasks.weekly_debrief` | Day 14+ or after Railway upgrade |
+| Activation emails | `backend/deploy/railway.activation_emails.json` | `0 8 * * *` → `python -m app.tasks.activation_emails` | Day 14+ or after Railway upgrade |
 
 **Until crons are live**, use manual triggers:
 
