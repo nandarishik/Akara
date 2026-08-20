@@ -28,18 +28,18 @@ import Loader from "@/shared/ui/Loader";
 import ProfileDropdown from "@/shared/layout/ProfileDropdown";
 import AvatarPicker from "@/features/settings/components/AvatarPicker";
 import TeamSeatVisualizer, { buildSeatSlots } from "@/features/team/components/TeamSeatVisualizer";
-import { RevenueAreaChart } from "@/components/charts/akara/RevenueAreaChart";
-import { ZoneBarChart } from "@/components/charts/akara/ZoneBarChart";
-import { WeekdayBarChart, ProductMoverBarChart } from "@/components/charts/akara/BarCharts";
-import { QuotaRingChart } from "@/components/charts/akara/QuotaRingChart";
-import { PlanHealthGauge, ConfidenceGauge } from "@/components/charts/akara/GaugeCharts";
-import { LeakageFunnelChart } from "@/components/charts/akara/LeakageFunnelChart";
-import { ZoneRadarChart } from "@/components/charts/akara/ZoneRadarChart";
-import { SalesHeatmapChart } from "@/components/charts/akara/SalesHeatmapChart";
+import { RevenueAreaChart } from "@/shared/charts/composed/akara/RevenueAreaChart";
+import { ZoneBarChart } from "@/shared/charts/composed/akara/ZoneBarChart";
+import { WeekdayBarChart, ProductMoverBarChart } from "@/shared/charts/composed/akara/BarCharts";
+import { QuotaRingChart } from "@/shared/charts/composed/akara/QuotaRingChart";
+import { PlanHealthGauge, ConfidenceGauge } from "@/shared/charts/composed/akara/GaugeCharts";
+import { LeakageFunnelChart } from "@/shared/charts/composed/akara/LeakageFunnelChart";
+import { ZoneRadarChart } from "@/shared/charts/composed/akara/ZoneRadarChart";
+import { SalesHeatmapChart } from "@/shared/charts/composed/akara/SalesHeatmapChart";
 import {
   MomentumProjectionChart,
   WeekdayPnLChart,
-} from "@/components/charts/akara/LineCharts";
+} from "@/shared/charts/composed/akara/LineCharts";
 import {
   fixtureAreaSeries,
   fixtureBarRows,

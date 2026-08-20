@@ -1,5 +1,5 @@
 import type { ZoneBreakdown } from "@/types/kpi";
-import { ZoneBarChart } from "@/components/charts/akara/ZoneBarChart";
+import { ZoneBarChart } from "@/shared/charts/composed/akara/ZoneBarChart";
 
 interface Props {
   data: ZoneBreakdown[];

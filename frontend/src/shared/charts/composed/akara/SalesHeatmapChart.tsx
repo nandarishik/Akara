@@ -10,8 +10,8 @@ import {
   HeatmapInteractionProvider,
   HeatmapInteractionBoundary,
   HEATMAP_DEFAULT_LEVEL_STYLES,
-} from "@/charts/heatmap";
-import type { HeatmapColumn } from "@/charts/heatmap/heatmap-context";
+} from "@/shared/charts/heatmap";
+import type { HeatmapColumn } from "@/shared/charts/heatmap/heatmap-context";
 import { toHeatmapColumns, type HeatmapCellRow } from "@/lib/charts/chartAdapters";
 import { CHART_LOADING_LABEL } from "@/lib/charts/chartTheme";
 

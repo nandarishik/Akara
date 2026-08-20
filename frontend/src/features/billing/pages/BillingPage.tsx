@@ -26,8 +26,8 @@ import {
 import { Badge } from "@/shared/ui/badge";
 import { PromoDismissCard } from "@/shared/PromoDismissCard";
 import { dismissSlot, isSlotDismissed, PLACEMENT_KEYS, SLOT_KEYS } from "@/lib/promoSlots";
-import { QuotaRingChart } from "@/components/charts/akara/QuotaRingChart";
-import { PlanHealthGauge } from "@/components/charts/akara/GaugeCharts";
+import { QuotaRingChart } from "@/shared/charts/composed/akara/QuotaRingChart";
+import { PlanHealthGauge } from "@/shared/charts/composed/akara/GaugeCharts";
 import { Input } from "@/shared/ui/input";
 import { Label } from "@/shared/ui/label";
 import { toast } from "@/shared/ui/toast";

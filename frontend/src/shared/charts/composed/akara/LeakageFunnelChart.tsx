@@ -1,4 +1,4 @@
-import { FunnelChart } from "@/charts";
+import { FunnelChart } from "@/shared/charts";
 import type { FunnelStageRow } from "@/lib/charts/chartAdapters";
 import { toLeakageFunnel } from "@/lib/charts/chartAdapters";
 import type { SchemeLeakageRow } from "@/features/reports/hooks/useReports";

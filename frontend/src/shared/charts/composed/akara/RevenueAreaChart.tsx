@@ -5,7 +5,7 @@ import {
   XAxis,
   ChartTooltip,
   AreaChartLoading,
-} from "@/charts";
+} from "@/shared/charts";
 import { formatINRCompact } from "@/lib/format";
 import {
   CHART_LOADING_LABEL,

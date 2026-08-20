@@ -1,7 +1,7 @@
-import type { HeatmapColumn } from "@/charts/heatmap/heatmap-context";
-import type { RadarData, RadarMetric } from "@/charts/radar-context";
-import type { RingData } from "@/charts/ring-context";
-import { buildProjectionPath } from "@/charts/projection-utils";
+import type { HeatmapColumn } from "@/shared/charts/heatmap/heatmap-context";
+import type { RadarData, RadarMetric } from "@/shared/charts/radar-context";
+import type { RingData } from "@/shared/charts/ring-context";
+import { buildProjectionPath } from "@/shared/charts/projection-utils";
 import type { UsageResponse } from "@/lib/api/billing";
 import { getUsagePct } from "@/lib/api/billing";
 import { toNum } from "@/lib/format";

@@ -1,5 +1,5 @@
 import type { RevenueByDate } from "@/types/kpi";
-import { RevenueAreaChart } from "@/components/charts/akara/RevenueAreaChart";
+import { RevenueAreaChart } from "@/shared/charts/composed/akara/RevenueAreaChart";
 
 interface Props {
   data: RevenueByDate[];

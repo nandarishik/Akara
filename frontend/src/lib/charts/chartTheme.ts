@@ -1,4 +1,4 @@
-import type { Margin } from "@/charts/chart-context";
+import type { Margin } from "@/shared/charts/chart-context";
 
 /** Shared chart chrome for AKARA matte-black surfaces */
 export const CHART_LOADING_LABEL = "Loading analytics…";

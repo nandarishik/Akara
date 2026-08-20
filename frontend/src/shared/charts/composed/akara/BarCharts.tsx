@@ -1,4 +1,4 @@
-import { BarChart, Bar, BarXAxis, Grid } from "@/charts";
+import { BarChart, Bar, BarXAxis, Grid } from "@/shared/charts";
 import { chartAspect, chartColors, chartMargins } from "@/lib/charts/chartTheme";
 import { toWeekdayBarSeries, toMoverBarSeries, toRouteBarSeries, type BarRow } from "@/lib/charts/chartAdapters";
 

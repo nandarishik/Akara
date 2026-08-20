@@ -1,4 +1,4 @@
-import { RadarChart, RadarGrid, RadarAxis, RadarLabels, RadarArea } from "@/charts";
+import { RadarChart, RadarGrid, RadarAxis, RadarLabels, RadarArea } from "@/shared/charts";
 import { toZoneRadar } from "@/lib/charts/chartAdapters";
 import type { ZoneBreakdown } from "@/types/kpi";
 

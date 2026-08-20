@@ -1,5 +1,5 @@
-import { RingChart, Ring, RingCenter } from "@/charts";
-import type { RingData } from "@/charts/ring-context";import { toBillingRings } from "@/lib/charts/chartAdapters";
+import { RingChart, Ring, RingCenter } from "@/shared/charts";
+import type { RingData } from "@/shared/charts/ring-context";import { toBillingRings } from "@/lib/charts/chartAdapters";
 import type { UsageResponse } from "@/lib/api/billing";
 
 interface Props {

@@ -1,4 +1,4 @@
-import { Gauge } from "@/charts";
+import { Gauge } from "@/shared/charts";
 import { chartColors } from "@/lib/charts/chartTheme";
 import { toBillingGauge } from "@/lib/charts/chartAdapters";
 import type { UsageResponse } from "@/lib/api/billing";

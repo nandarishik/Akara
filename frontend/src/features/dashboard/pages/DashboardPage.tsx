@@ -14,7 +14,7 @@ import {
 } from "lucide-react";
 import { useKPIs } from "@/features/dashboard/hooks/useKPIs";
 import { useSalesHeatmap } from "@/features/dashboard/hooks/useSalesHeatmap";
-import { ProductZoneMatrix } from "@/components/charts/akara/ProductZoneMatrix";
+import { ProductZoneMatrix } from "@/shared/charts/composed/akara/ProductZoneMatrix";
 import { toNum, formatINR as fmtINR } from "@/lib/format";
 import { RevenueTrendChart } from "@/features/dashboard/components/RevenueTrendChart";
 import { ZoneChart } from "@/features/dashboard/components/ZoneChart";

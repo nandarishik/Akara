@@ -22,8 +22,8 @@ import { SimulatorPlanGate } from "@/features/billing/components/PlanGate";
 import {
   ScenarioProjectionChart,
   ScenarioPnLChart,
-} from "@/components/charts/akara/LineCharts";
-import { ConfidenceGauge } from "@/components/charts/akara/GaugeCharts";
+} from "@/shared/charts/composed/akara/LineCharts";
+import { ConfidenceGauge } from "@/shared/charts/composed/akara/GaugeCharts";
 import { simulatorConfidenceScore } from "@/lib/charts/chartAdapters";
 import AnimatedNumber from "@/shared/ui/AnimatedNumber";
 import { KPISkeleton } from "@/shared/ui/ShimmerSkeleton";

@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { curveLinear } from "@visx/curve";
 
-import { LineChart, Line, Grid, XAxis, ChartTooltip } from "@/charts";
+import { LineChart, Line, Grid, XAxis, ChartTooltip } from "@/shared/charts";
 import { formatINRCompact } from "@/lib/format";
 import {
   chartAspect,

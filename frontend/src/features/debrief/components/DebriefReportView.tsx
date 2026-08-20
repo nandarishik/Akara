@@ -16,11 +16,11 @@ import {
 } from "lucide-react";
 import AnimatedNumber from "@/shared/ui/AnimatedNumber";
 import GlowSurfaceCard from "@/shared/ui/GlowSurfaceCard";
-import { WeekdayBarChart, ProductMoverBarChart } from "@/components/charts/akara/BarCharts";
+import { WeekdayBarChart, ProductMoverBarChart } from "@/shared/charts/composed/akara/BarCharts";
 import {
   DebriefMomentumProjectionChart,
   WeekdayPnLChart,
-} from "@/components/charts/akara/LineCharts";
+} from "@/shared/charts/composed/akara/LineCharts";
 import { GlassIcon } from "@/shared/effects/GlassIcon";
 import type { GlassIconColor } from "@/shared/effects/GlassIcons";
 import { DEBRIEF_METRIC_GLASS } from "@/lib/glassIconMap";

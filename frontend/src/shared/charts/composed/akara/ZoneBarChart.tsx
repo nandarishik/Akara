@@ -1,4 +1,4 @@
-import { BarChart, Bar, BarXAxis, BarYAxis, Grid, BarChartLoading } from "@/charts";
+import { BarChart, Bar, BarXAxis, BarYAxis, Grid, BarChartLoading } from "@/shared/charts";
 import {
   chartAspect,
   chartColors,

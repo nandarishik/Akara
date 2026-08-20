@@ -11,7 +11,7 @@ import {
   resolveProfitLossTooltipLabel,
   ProjectionLine,
   buildProjectionPath,
-} from "@/charts";
+} from "@/shared/charts";
 import { formatINRCompact } from "@/lib/format";
 import {
   chartAspect,

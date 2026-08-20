@@ -34,7 +34,7 @@ vi.mock("@/features/dashboard/components/ZoneChart", () => ({
   ZoneChart: () => <div data-testid="zone-chart" />,
 }));
 
-vi.mock("@/components/charts/akara/ProductZoneMatrix", () => ({
+vi.mock("@/shared/charts/composed/akara/ProductZoneMatrix", () => ({
   ProductZoneMatrix: () => <div data-testid="product-zone-matrix" />,
 }));
 
