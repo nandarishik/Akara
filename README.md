@@ -27,7 +27,9 @@ cp .env.example .env.local  # fill in your values
 npm run dev
 ```
 
-**Design system:** Dev-only component gallery at [`/gallery`](http://localhost:5173/gallery) — FireAI-inspired light tokens, `SurfaceCard`, pill `AkaraButton`. See `implentation/uirehaulday4.md` v2 addendum.
+**Design system:** Dev-only component gallery at [`/gallery`](http://localhost:5173/gallery) — FireAI-inspired light tokens, `SurfaceCard`, pill `AkaraButton`. Historical UI rehaul notes: `.archive/sprint2/uirehaulday4.md`.
+
+**Docs:** Active guides in [`docs/`](docs/) (`operations/`, `architecture/`, `development/`). Sprint history lives in [`.archive/`](.archive/).
 
 ### Database
 Migrations live in `supabase/migrations/`. Apply via Supabase SQL Editor or `supabase db push`.
@@ -40,7 +42,7 @@ cd backend && python scripts/verify_supabase.py
 
 ## Day 5 — Billing, Razorpay, GST, Dunning
 
-Full Razorpay setup: [`docs/razorpay_setup.md`](docs/razorpay_setup.md)
+Full Razorpay setup: [`docs/operations/razorpay-setup.md`](docs/operations/razorpay-setup.md)
 
 ### Migrations
 - **015** — GST invoices, dunning, billing details (applied)
@@ -71,7 +73,7 @@ python -m app.tasks.dunning
 - Optional: `HEALTHCHECKS_PING_URL` base URL; task pings `/dunning` on success
 
 ### E2E checklist
-[`docs/day5_e2e_checklist.md`](docs/day5_e2e_checklist.md)
+[`.archive/sprint1/checklists/day5_e2e_checklist.md`](.archive/sprint1/checklists/day5_e2e_checklist.md)
 
 ## Day 6 — Security, DPDP, Alerts
 
@@ -85,7 +87,7 @@ Apply migration **017** (`017_alerts.sql`) on Supabase.
 | Import worker | `railway.import_worker.json` | Every minute `python -m app.tasks.import_worker` |
 
 ### E2E checklist
-[`docs/day6_e2e_checklist.md`](docs/day6_e2e_checklist.md)
+[`.archive/sprint1/checklists/day6_e2e_checklist.md`](.archive/sprint1/checklists/day6_e2e_checklist.md)
 
 ## Day 7 — Comms, Teams, Debrief, Account Rights
 
@@ -124,4 +126,4 @@ When you add each cron service: **Root Directory = `backend`**, **Restart = Neve
 WhatsApp stays gated until Meta templates approved: `WHATSAPP_SENDS_ENABLED=false` (default).
 
 ### E2E checklist
-[`docs/day7_e2e_checklist.md`](docs/day7_e2e_checklist.md)
+[`.archive/sprint1/checklists/day7_e2e_checklist.md`](.archive/sprint1/checklists/day7_e2e_checklist.md)
