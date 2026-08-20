@@ -17,7 +17,7 @@ def _profile_supa():
     return supa
 
 
-@patch("app.api.routes.superadmin.billing.get_supabase_service_client")
+@patch("app.api.superadmin.billing.get_supabase_service_client")
 @patch("app.core.superadmin.get_supabase_service_client")
 def test_recent_payments(mock_core, mock_billing):
     mock_core.return_value = _profile_supa()
@@ -62,7 +62,7 @@ def test_recent_payments(mock_core, mock_billing):
         clear_auth_override()
 
 
-@patch("app.api.routes.superadmin.overview.get_supabase_service_client")
+@patch("app.api.superadmin.overview.get_supabase_service_client")
 @patch("app.core.superadmin.get_supabase_service_client")
 def test_overview_stats(mock_core, mock_overview):
     mock_core.return_value = _profile_supa()
@@ -95,7 +95,7 @@ def test_overview_stats(mock_core, mock_overview):
         clear_auth_override()
 
 
-@patch("app.api.routes.superadmin.usage.get_supabase_service_client")
+@patch("app.api.superadmin.usage.get_supabase_service_client")
 @patch("app.core.superadmin.get_supabase_service_client")
 def test_at_risk_tenants(mock_core, mock_usage):
     mock_core.return_value = _profile_supa()
@@ -141,7 +141,7 @@ def test_at_risk_tenants(mock_core, mock_usage):
         clear_auth_override()
 
 
-@patch("app.api.routes.superadmin.system.get_supabase_service_client")
+@patch("app.api.superadmin.system.get_supabase_service_client")
 @patch("app.core.superadmin.get_supabase_service_client")
 def test_cron_logs(mock_core, mock_system):
     mock_core.return_value = _profile_supa()

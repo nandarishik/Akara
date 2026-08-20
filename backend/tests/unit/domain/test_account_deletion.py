@@ -23,7 +23,7 @@ def authed_client() -> TestClient:
     app.dependency_overrides.pop(get_current_user, None)
 
 
-@patch("app.api.routes.account.get_supabase_service_client")
+@patch("app.api.v1.account.get_supabase_service_client")
 @patch("app.core.tenant.get_supabase_service_client")
 def test_delete_account_queues(mock_ctx, mock_account, authed_client):
     mock_ctx.return_value = _make_tenant_supa("pro")

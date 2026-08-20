@@ -23,7 +23,7 @@ def authed_client() -> TestClient:
     app.dependency_overrides.pop(get_current_user, None)
 
 
-@patch("app.api.routes.account.get_supabase_service_client")
+@patch("app.api.v1.account.get_supabase_service_client")
 @patch("app.core.tenant.get_supabase_service_client")
 def test_get_channels_whatsapp_gated(mock_ctx, mock_account, authed_client):
     mock_ctx.return_value = _make_tenant_supa("pro")
@@ -35,7 +35,7 @@ def test_get_channels_whatsapp_gated(mock_ctx, mock_account, authed_client):
     assert body["whatsapp_reason"] == "templates_not_ready"
 
 
-@patch("app.api.routes.account.get_supabase_service_client")
+@patch("app.api.v1.account.get_supabase_service_client")
 @patch("app.core.tenant.get_supabase_service_client")
 def test_update_preferences(mock_ctx, mock_account, authed_client):
     mock_ctx.return_value = _make_tenant_supa("pro")
@@ -55,7 +55,7 @@ def test_update_preferences(mock_ctx, mock_account, authed_client):
     assert resp.json()["preferences"]["email_debrief_enabled"] is False
 
 
-@patch("app.api.routes.account.get_supabase_service_client")
+@patch("app.api.v1.account.get_supabase_service_client")
 @patch("app.core.tenant.get_supabase_service_client")
 def test_export_account(mock_ctx, mock_account, authed_client):
     mock_ctx.return_value = _make_tenant_supa("pro")

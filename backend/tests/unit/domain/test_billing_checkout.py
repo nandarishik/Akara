@@ -7,9 +7,9 @@ from unittest.mock import patch
 from tests.api.test_billing_endpoint import _make_tenant_supa
 
 
-@patch("app.api.routes.billing.store_response")
-@patch("app.api.routes.billing.get_cached_response", return_value=None)
-@patch("app.api.routes.billing.create_checkout_session")
+@patch("app.api.v1.billing.store_response")
+@patch("app.api.v1.billing.get_cached_response", return_value=None)
+@patch("app.api.v1.billing.create_checkout_session")
 @patch("app.core.tenant.get_supabase_service_client")
 def test_create_checkout_session(
     mock_tenant_supa,

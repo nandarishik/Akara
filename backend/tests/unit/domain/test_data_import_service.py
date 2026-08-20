@@ -154,7 +154,7 @@ class TestAsyncImport:
         reason="HTTP integration tests need /data route paths and get_supabase_service_client mocks (Day 4 drift)"
     )
 
-    @patch("app.api.routes.data.supabase")
+    @patch("app.api.v1.data.supabase")
     def test_async_import_creation(self, mock_supabase, client, mock_auth_headers, sample_file_content):
         """Test creation of async import job."""
         # Mock successful job creation
@@ -182,7 +182,7 @@ class TestAsyncImport:
         assert "estimated_rows" in data
         assert data["status"] == "queued"
 
-    @patch("app.api.routes.data.supabase")
+    @patch("app.api.v1.data.supabase")
     def test_async_import_large_file_auto_detection(self, mock_supabase, client, mock_auth_headers):
         """Test that large files automatically use async processing."""
         # Create a large file (>5MB)
@@ -210,7 +210,7 @@ class TestAsyncImport:
         # Should automatically redirect to async processing
         assert response.status_code == 202
 
-    @patch("app.api.routes.data.supabase")
+    @patch("app.api.v1.data.supabase")
     def test_get_import_job_status(self, mock_supabase, client, mock_auth_headers):
         """Test getting import job status."""
         # Mock job status response
@@ -235,7 +235,7 @@ class TestAsyncImport:
         assert data["status"] == "processing"
         assert data["progress_pct"] == 75
 
-    @patch("app.api.routes.data.supabase")
+    @patch("app.api.v1.data.supabase")
     def test_get_import_job_not_found(self, mock_supabase, client, mock_auth_headers):
         """Test getting non-existent import job."""
         # Mock job not found
@@ -248,7 +248,7 @@ class TestAsyncImport:
 
         assert response.status_code == 404
 
-    @patch("app.api.routes.data.supabase")
+    @patch("app.api.v1.data.supabase")
     def test_list_import_jobs(self, mock_supabase, client, mock_auth_headers):
         """Test listing all import jobs for a tenant."""
         # Mock jobs list response
@@ -280,7 +280,7 @@ class TestAsyncImport:
         assert len(data["jobs"]) == 2
         assert data["jobs"][0]["status"] == "completed"
 
-    @patch("app.api.routes.data.supabase")
+    @patch("app.api.v1.data.supabase")
     def test_list_import_jobs_with_pagination(self, mock_supabase, client, mock_auth_headers):
         """Test listing import jobs with pagination."""
         # Mock paginated response
@@ -295,7 +295,7 @@ class TestAsyncImport:
         # Verify limit and offset were applied in the query chain
         mock_supabase.table.return_value.select.return_value.eq.return_value.order.return_value.limit.assert_called_with(10)
 
-    @patch("app.api.routes.data.supabase")
+    @patch("app.api.v1.data.supabase")
     def test_async_import_quota_check(self, mock_supabase, client, mock_auth_headers, sample_file_content):
         """Test that async import checks quota before creating job."""
         # Mock quota exceeded
@@ -366,7 +366,7 @@ class TestImportJobProcessing:
         assert fingerprint == hashlib.md5(fingerprint_data.encode()).hexdigest()  # Consistent
 
     @pytest.mark.skip(reason="Needs get_supabase_service_client mock refresh")
-    @patch("app.api.routes.data.supabase")
+    @patch("app.api.v1.data.supabase")
     def test_duplicate_detection_in_import(self, mock_supabase):
         """Test that duplicate rows are detected and skipped."""
         # Mock existing row check
@@ -466,7 +466,7 @@ class TestAsyncImportSecurity:
         """Test that malicious filenames are sanitized."""
         malicious_filename = "../../etc/passwd"
 
-        with patch("app.api.routes.data.supabase") as mock_supabase:
+        with patch("app.api.v1.data.supabase") as mock_supabase:
             mock_supabase.table.return_value.insert.return_value.execute.return_value.data = [{
                 "id": "job-789",
                 "filename": "passwd",  # Should be sanitized

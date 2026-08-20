@@ -2,12 +2,13 @@
 
 from fastapi import APIRouter
 
-from app.api.routes.superadmin import (
+from app.api.superadmin import (
     audit,
     billing,
     catalog,
     content,
     conversations,
+    copilot,
     data,
     impersonate,
     legal,
@@ -22,7 +23,6 @@ from app.api.routes.superadmin import (
     usage,
     users,
 )
-from app.api.routes import superadmin_copilot
 
 router = APIRouter(prefix="/superadmin", tags=["superadmin"])
 
@@ -44,4 +44,4 @@ router.include_router(audit.router)
 router.include_router(overview.router)
 router.include_router(usage.router)
 router.include_router(system.router)
-router.include_router(superadmin_copilot.router)
+router.include_router(copilot.router)

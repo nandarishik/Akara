@@ -32,7 +32,7 @@ def authed_admin_client() -> TestClient:
     app.dependency_overrides.pop(get_tenant_context, None)
 
 
-@patch("app.api.routes.data.get_supabase_service_client")
+@patch("app.api.v1.data.get_supabase_service_client")
 def test_cancel_import_job_success(mock_supa, authed_admin_client):
     job_id = str(uuid4())
     supa = MagicMock()
@@ -50,7 +50,7 @@ def test_cancel_import_job_success(mock_supa, authed_admin_client):
     assert res.json()["status"] == "cancelled"
 
 
-@patch("app.api.routes.data.get_supabase_service_client")
+@patch("app.api.v1.data.get_supabase_service_client")
 def test_cancel_import_job_not_found(mock_supa, authed_admin_client):
     job_id = str(uuid4())
     supa = MagicMock()
@@ -64,6 +64,6 @@ def test_cancel_import_job_not_found(mock_supa, authed_admin_client):
 
 
 def test_get_tenant_import_job_helper_exists():
-    from app.api.routes.data import _get_tenant_import_job
+    from app.api.v1.data import _get_tenant_import_job
 
     assert callable(_get_tenant_import_job)

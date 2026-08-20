@@ -86,8 +86,8 @@ def test_billing_usage_401_unauthenticated(client: TestClient):
 # ---------------------------------------------------------------------------
 
 
-@patch("app.api.routes.billing._get_current_usage")
-@patch("app.api.routes.billing.get_supabase_service_client")
+@patch("app.api.v1.billing._get_current_usage")
+@patch("app.api.v1.billing.get_supabase_service_client")
 @patch("app.core.tenant.get_supabase_service_client")
 def test_billing_usage_free_plan(
     mock_tenant_supa, mock_billing_supa, mock_get_usage, authed_client_free
@@ -117,8 +117,8 @@ def test_billing_usage_free_plan(
     assert data["features"]["simulator"] is False
 
 
-@patch("app.api.routes.billing._get_current_usage")
-@patch("app.api.routes.billing.get_supabase_service_client")
+@patch("app.api.v1.billing._get_current_usage")
+@patch("app.api.v1.billing.get_supabase_service_client")
 @patch("app.core.tenant.get_supabase_service_client")
 def test_billing_usage_pro_plan(
     mock_tenant_supa, mock_billing_supa, mock_get_usage, authed_client_pro
@@ -142,8 +142,8 @@ def test_billing_usage_pro_plan(
     assert data["features"]["scheme_leakage"] is False  # Business only
 
 
-@patch("app.api.routes.billing._get_current_usage")
-@patch("app.api.routes.billing.get_supabase_service_client")
+@patch("app.api.v1.billing._get_current_usage")
+@patch("app.api.v1.billing.get_supabase_service_client")
 @patch("app.core.tenant.get_supabase_service_client")
 def test_billing_usage_business_plan(
     mock_tenant_supa, mock_billing_supa, mock_get_usage, authed_client_business
@@ -174,8 +174,8 @@ def test_billing_usage_business_plan(
 # ---------------------------------------------------------------------------
 
 
-@patch("app.api.routes.billing._get_current_usage", return_value=make_mock_usage())
-@patch("app.api.routes.billing.get_supabase_service_client")
+@patch("app.api.v1.billing._get_current_usage", return_value=make_mock_usage())
+@patch("app.api.v1.billing.get_supabase_service_client")
 @patch("app.core.tenant.get_supabase_service_client")
 def test_billing_usage_has_all_required_fields(
     mock_tenant_supa, mock_billing_supa, mock_get_usage, authed_client_free

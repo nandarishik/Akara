@@ -58,7 +58,7 @@ def test_revenue_snapshot_upserts(mock_summary, mock_supa):
     supa.table.return_value.upsert.assert_called_once()
 
 
-@patch("app.api.routes.superadmin.billing.get_supabase_service_client")
+@patch("app.api.superadmin.billing.get_supabase_service_client")
 @patch("app.core.superadmin.get_supabase_service_client")
 def test_revenue_snapshots_endpoint(mock_core, mock_billing):
     profile_mock = MagicMock()

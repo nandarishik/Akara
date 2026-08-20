@@ -59,8 +59,8 @@ def _sudo_supa():
 
 
 @patch("app.core.superadmin.get_supabase_service_client")
-@patch("app.api.routes.superadmin.system.get_supabase_service_client")
-@patch("app.api.routes.system.get_supabase_service_client")
+@patch("app.api.superadmin.system.get_supabase_service_client")
+@patch("app.api.v1.system.get_supabase_service_client")
 def test_mutation_without_csrf_header_rejected(
     mock_public, mock_system, mock_core, authed_superadmin_client
 ):
@@ -81,8 +81,8 @@ def test_mutation_without_csrf_header_rejected(
 
 
 @patch("app.core.superadmin.get_supabase_service_client")
-@patch("app.api.routes.superadmin.system.get_supabase_service_client")
-@patch("app.api.routes.system.get_supabase_service_client")
+@patch("app.api.superadmin.system.get_supabase_service_client")
+@patch("app.api.v1.system.get_supabase_service_client")
 def test_mutation_with_mismatched_csrf_rejected(
     mock_public, mock_system, mock_core, authed_superadmin_client
 ):

@@ -77,7 +77,7 @@ def _target_tenant_supa(plan: str = "free", plan_status: str = "active"):
     return supa, tenants_table
 
 
-@patch("app.api.routes.superadmin.billing.get_supabase_service_client")
+@patch("app.api.superadmin.billing.get_supabase_service_client")
 @patch("app.core.superadmin.get_supabase_service_client")
 def test_manual_upgrade_requires_sudo(mock_core, mock_billing_supa, authed_superadmin_billing_client):
     mock_core.return_value = _superadmin_profile_supa()
@@ -92,8 +92,8 @@ def test_manual_upgrade_requires_sudo(mock_core, mock_billing_supa, authed_super
     assert response.status_code == 403
 
 
-@patch("app.api.routes.superadmin.billing.fetch_subscription_status")
-@patch("app.api.routes.superadmin.billing.get_supabase_service_client")
+@patch("app.api.superadmin.billing.fetch_subscription_status")
+@patch("app.api.superadmin.billing.get_supabase_service_client")
 @patch("app.core.superadmin.get_supabase_service_client")
 def test_reconcile_reports_mismatch(
     mock_core, mock_billing_supa, mock_fetch_sub, authed_superadmin_billing_client

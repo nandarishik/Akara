@@ -24,7 +24,7 @@ def authed_user_client() -> TestClient:
     app.dependency_overrides.pop(get_current_user, None)
 
 
-@patch("app.api.routes.auth.get_supabase_service_client")
+@patch("app.api.v1.auth.get_supabase_service_client")
 def test_auth_me_includes_impersonation_fields(mock_supa, authed_user_client):
     session_id = str(uuid4())
     expires = (datetime.now(UTC) + timedelta(minutes=10)).isoformat()

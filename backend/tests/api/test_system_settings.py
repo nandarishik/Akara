@@ -35,7 +35,7 @@ def authed_superadmin_client() -> TestClient:
     app.dependency_overrides.pop(get_current_user, None)
 
 
-@patch("app.api.routes.system.get_supabase_service_client")
+@patch("app.api.v1.system.get_supabase_service_client")
 def test_public_system_settings(mock_supa, client: TestClient):
     supa = MagicMock()
 
@@ -58,8 +58,8 @@ def test_public_system_settings(mock_supa, client: TestClient):
 
 
 @patch("app.core.superadmin.get_supabase_service_client")
-@patch("app.api.routes.superadmin.system.get_supabase_service_client")
-@patch("app.api.routes.system.get_supabase_service_client")
+@patch("app.api.superadmin.system.get_supabase_service_client")
+@patch("app.api.v1.system.get_supabase_service_client")
 def test_superadmin_patch_system_settings(
     mock_public, mock_admin_system, mock_core, authed_superadmin_client
 ):

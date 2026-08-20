@@ -5,13 +5,34 @@ from __future__ import annotations
 from datetime import UTC, datetime, timedelta
 
 from fastapi import APIRouter, Depends, Request
+from pydantic import BaseModel
 
 from app.core.rate_limit import ADMIN_READ_LIMIT, limiter
 from app.core.superadmin import SuperAdmin
 from app.core.tenant import get_supabase_service_client
-from app.api.routes.admin.security import DeliveryLogRow, SecuritySummaryResponse
 
 router = APIRouter(prefix="/security", tags=["superadmin-security"])
+
+
+class DeliveryLogRow(BaseModel):
+    id: str
+    channel: str
+    template: str
+    status: str
+    created_at: str
+    tenant_id: str | None = None
+    error_message: str | None = None
+
+
+class SecuritySummaryResponse(BaseModel):
+    alert_triggers_24h: int
+    last_alert_trigger_at: str | None
+    residency_note: str
+    delivery_logs_24h: int = 0
+    whatsapp_skipped_24h: int = 0
+    activation_pending_day1: int = 0
+    activation_pending_day3: int = 0
+    recent_deliveries: list[DeliveryLogRow] = []
 
 
 @router.get("/communications", response_model=SecuritySummaryResponse)

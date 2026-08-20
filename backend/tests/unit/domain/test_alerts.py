@@ -73,7 +73,7 @@ def _alerts_supa(existing_count: int = 0):
     return supa
 
 
-@patch("app.api.routes.alerts.get_supabase_service_client")
+@patch("app.api.v1.alerts.get_supabase_service_client")
 @patch("app.core.tenant.get_supabase_service_client")
 def test_create_alert_pro(mock_ctx, mock_alerts, authed_pro_client):
     mock_ctx.return_value = _make_tenant_supa("pro")

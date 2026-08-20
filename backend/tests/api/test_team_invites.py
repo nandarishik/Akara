@@ -72,9 +72,9 @@ def _team_supa():
     return supa
 
 
-@patch("app.api.routes.team.get_supabase_service_client")
+@patch("app.api.v1.team.get_supabase_service_client")
 @patch("app.core.tenant.get_supabase_service_client")
-@patch("app.api.routes.team._send_invite_email")
+@patch("app.api.v1.team._send_invite_email")
 def test_create_invite_pro(mock_email, mock_ctx, mock_team, authed_pro_admin):
     mock_ctx.return_value = _make_tenant_supa("pro")
     mock_team.return_value = _team_supa()
@@ -88,7 +88,7 @@ def test_create_invite_pro(mock_email, mock_ctx, mock_team, authed_pro_admin):
     mock_email.assert_called_once()
 
 
-@patch("app.api.routes.team.get_supabase_service_client")
+@patch("app.api.v1.team.get_supabase_service_client")
 @patch("app.core.tenant.get_supabase_service_client")
 def test_list_members(mock_ctx, mock_team, authed_pro_admin):
     mock_ctx.return_value = _make_tenant_supa("pro")
@@ -99,7 +99,7 @@ def test_list_members(mock_ctx, mock_team, authed_pro_admin):
     assert isinstance(resp.json(), list)
 
 
-@patch("app.api.routes.team.get_supabase_service_client")
+@patch("app.api.v1.team.get_supabase_service_client")
 @patch("app.core.tenant.get_supabase_service_client")
 def test_seat_limit_402(mock_ctx, mock_team, authed_pro_admin):
     mock_ctx.return_value = _make_tenant_supa("pro")
@@ -131,9 +131,9 @@ def test_seat_limit_402(mock_ctx, mock_team, authed_pro_admin):
     assert resp.status_code == 402
 
 
-@patch("app.api.routes.team.get_supabase_service_client")
+@patch("app.api.v1.team.get_supabase_service_client")
 @patch("app.core.tenant.get_supabase_service_client")
-@patch("app.api.routes.team._send_invite_email")
+@patch("app.api.v1.team._send_invite_email")
 def test_resend_invite_extends_expiry(mock_email, mock_ctx, mock_team, authed_pro_admin):
     mock_ctx.return_value = _make_tenant_supa("pro")
     supa = _team_supa()

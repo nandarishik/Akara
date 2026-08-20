@@ -5,7 +5,7 @@ from __future__ import annotations
 from unittest.mock import patch
 from uuid import uuid4
 
-from app.api.routes.superadmin.system import CRON_TASKS
+from app.api.superadmin.system import CRON_TASKS
 from tests.superadmin.superadmin_helpers import (
     QaMatrixSupabase,
     clear_auth_override,
@@ -20,7 +20,7 @@ def test_founder_brief_in_cron_tasks():
     assert "revenue_snapshot" in CRON_TASKS
 
 
-@patch("app.api.routes.superadmin.system.record_operation", return_value={"id": "audit-1"})
+@patch("app.api.superadmin.system.record_operation", return_value={"id": "audit-1"})
 def test_manual_founder_brief_trigger(mock_audit):
     session_id = uuid4()
     supa = QaMatrixSupabase(sudo_session=sudo_session_row(session_id=session_id))

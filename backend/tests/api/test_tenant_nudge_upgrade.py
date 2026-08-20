@@ -17,7 +17,7 @@ from tests.superadmin.superadmin_helpers import (
 
 
 @patch("app.domain.billing.email._send", return_value=True)
-@patch("app.api.routes.superadmin.tenants.record_operation", return_value={"id": "audit-1"})
+@patch("app.api.superadmin.tenants.record_operation", return_value={"id": "audit-1"})
 def test_nudge_upgrade_sends_email(mock_audit, mock_send):
     session_id = uuid4()
     supa = QaMatrixSupabase(

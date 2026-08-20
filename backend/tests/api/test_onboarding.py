@@ -122,8 +122,8 @@ def test_onboarding_setup_creates_tenant():
 
     with (
         _override_auth(),
-        patch("app.api.routes.onboarding.get_supabase_service_client", return_value=mock_db),
-        patch("app.api.routes.onboarding._verify_turnstile", new_callable=AsyncMock, return_value=True),
+        patch("app.api.v1.onboarding.get_supabase_service_client", return_value=mock_db),
+        patch("app.api.v1.onboarding._verify_turnstile", new_callable=AsyncMock, return_value=True),
     ):
         resp = client.post(
             "/onboarding/setup",
@@ -146,8 +146,8 @@ def test_onboarding_setup_is_idempotent():
 
     with (
         _override_auth(),
-        patch("app.api.routes.onboarding.get_supabase_service_client", return_value=mock_db),
-        patch("app.api.routes.onboarding._verify_turnstile", new_callable=AsyncMock, return_value=True),
+        patch("app.api.v1.onboarding.get_supabase_service_client", return_value=mock_db),
+        patch("app.api.v1.onboarding._verify_turnstile", new_callable=AsyncMock, return_value=True),
     ):
         resp = client.post(
             "/onboarding/setup",
@@ -193,8 +193,8 @@ def test_onboarding_setup_disposable_email_blocked():
 
     with (
         _override_auth(email="user@mailinator.com"),
-        patch("app.api.routes.onboarding.get_supabase_service_client", return_value=mock_db),
-        patch("app.api.routes.onboarding._verify_turnstile", new_callable=AsyncMock, return_value=True),
+        patch("app.api.v1.onboarding.get_supabase_service_client", return_value=mock_db),
+        patch("app.api.v1.onboarding._verify_turnstile", new_callable=AsyncMock, return_value=True),
     ):
         resp = client.post("/onboarding/setup", json={"company_name": "Test"})
 
@@ -214,9 +214,9 @@ def test_onboarding_setup_turnstile_failure():
 
     with (
         _override_auth(),
-        patch("app.api.routes.onboarding.get_supabase_service_client", return_value=mock_db),
-        patch("app.api.routes.onboarding._verify_turnstile", new_callable=AsyncMock, return_value=False),
-        patch("app.api.routes.onboarding.settings") as mock_settings,
+        patch("app.api.v1.onboarding.get_supabase_service_client", return_value=mock_db),
+        patch("app.api.v1.onboarding._verify_turnstile", new_callable=AsyncMock, return_value=False),
+        patch("app.api.v1.onboarding.settings") as mock_settings,
     ):
         mock_settings.turnstile_secret_key = "real-secret-key"
         resp = client.post(
@@ -240,7 +240,7 @@ def test_onboarding_complete_sets_flag():
 
     with (
         _override_auth(),
-        patch("app.api.routes.onboarding.get_supabase_service_client", return_value=mock_db),
+        patch("app.api.v1.onboarding.get_supabase_service_client", return_value=mock_db),
     ):
         resp = client.post("/auth/onboarding-complete")
 

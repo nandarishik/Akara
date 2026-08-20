@@ -39,8 +39,8 @@ def _profile_supa(role: str):
 
 
 @patch("app.core.superadmin.get_supabase_service_client")
-@patch("app.api.routes.superadmin.sudo.verify_superadmin_password", return_value=True)
-@patch("app.api.routes.superadmin.sudo.create_sudo_session")
+@patch("app.api.superadmin.sudo.verify_superadmin_password", return_value=True)
+@patch("app.api.superadmin.sudo.create_sudo_session")
 def test_sudo_start_sets_cookies(mock_create, _mock_pw, mock_supa, authed_superadmin_client):
     mock_supa.return_value = _profile_supa("superadmin")
     session_id = uuid4()

@@ -15,24 +15,9 @@ except ImportError:
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api.routes import account as account_router
-from app.api.routes import alerts as alerts_router
-from app.api.routes import auth as auth_router
-from app.api.routes import billing as billing_router
-from app.api.routes import conversations as conversations_router
-from app.api.routes import copilot as copilot_router
-from app.api.routes import data as data_router
-from app.api.routes import debrief as debrief_router
-from app.api.routes import health
-from app.api.routes import kpi as kpi_router
-from app.api.routes import marketing as marketing_router
-from app.api.routes import public_routes as public_router
-from app.api.routes import onboarding as onboarding_router
-from app.api.routes import reports as reports_router
-from app.api.routes import simulator as simulator_router
-from app.api.routes import team as team_router
-from app.api.routes import system as system_router
-from app.api.routes.superadmin import router as superadmin_router
+from app.api.internal import router as internal_router
+from app.api.superadmin import router as superadmin_router
+from app.api.v1.router import router as v1_router
 from app.core.config import settings
 from app.core.errors import AkaraHTTPException, akara_exception_handler
 from app.core.middleware import RequestIDMiddleware
@@ -128,21 +113,6 @@ app.add_exception_handler(AkaraHTTPException, akara_exception_handler)  # type: 
 # ---------------------------------------------------------------------------
 # Routers
 # ---------------------------------------------------------------------------
-app.include_router(health.router)
-app.include_router(auth_router.router)
-app.include_router(billing_router.router)
-app.include_router(onboarding_router.router)
-app.include_router(marketing_router.router)
-app.include_router(public_router.router)
-app.include_router(alerts_router.router)
-app.include_router(copilot_router.router)
-app.include_router(conversations_router.router)
-app.include_router(kpi_router.router)
-app.include_router(data_router.router)
-app.include_router(reports_router.router)
-app.include_router(debrief_router.router)
-app.include_router(team_router.router)
-app.include_router(account_router.router)
-app.include_router(simulator_router.router)
-app.include_router(system_router.router)
+app.include_router(v1_router)
 app.include_router(superadmin_router)
+app.include_router(internal_router)

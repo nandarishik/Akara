@@ -16,7 +16,7 @@ from app.core.cron_ping import record_cron_run
 from app.core.rate_limit import ADMIN_READ_LIMIT, ADMIN_WRITE_LIMIT, limiter
 from app.core.superadmin import SuperAdmin, SudoCtx, request_actor_meta, require_csrf
 from app.core.tenant import get_supabase_service_client
-from app.api.routes.system import _load_setting
+from app.api.v1.system import _load_setting
 from app.domain.superadmin.audit import record_operation
 from app.domain.superadmin.mutations import SuperadminMutation, dry_run_response
 

@@ -8,7 +8,7 @@ from tests.conftest import TENANT_FREE
 from tests.superadmin.superadmin_helpers import clear_auth_override, make_superadmin_client
 
 
-@patch("app.api.routes.superadmin.billing.get_supabase_service_client")
+@patch("app.api.superadmin.billing.get_supabase_service_client")
 @patch("app.core.superadmin.get_supabase_service_client")
 def test_costs_tenants_shape(mock_core, mock_billing):
     profile_mock = MagicMock()

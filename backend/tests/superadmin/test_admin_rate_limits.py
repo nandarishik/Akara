@@ -17,7 +17,7 @@ def superadmin_client() -> TestClient:
     clear_auth_override()
 
 
-@patch("app.api.routes.superadmin.billing.get_supabase_service_client")
+@patch("app.api.superadmin.billing.get_supabase_service_client")
 @patch("app.core.superadmin.get_supabase_service_client")
 def test_admin_billing_read_rate_limit(mock_sa_supa, mock_billing_supa, superadmin_client):
     mock_sa_supa.return_value = profile_only_supabase("superadmin")

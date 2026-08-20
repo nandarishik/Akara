@@ -41,7 +41,7 @@ def non_superadmin_client() -> TestClient:
 # ── Sudo session matrix ───────────────────────────────────────────────────────
 
 
-@patch("app.api.routes.superadmin.system.get_supabase_service_client")
+@patch("app.api.superadmin.system.get_supabase_service_client")
 @patch("app.core.superadmin.get_supabase_service_client")
 def test_stale_sudo_session_rejected(mock_core, mock_system, superadmin_client: TestClient):
     session_id = uuid4()
@@ -66,7 +66,7 @@ def test_stale_sudo_session_rejected(mock_core, mock_system, superadmin_client: 
     assert body["code"] == "SUDO_EXPIRED"
 
 
-@patch("app.api.routes.superadmin.system.get_supabase_service_client")
+@patch("app.api.superadmin.system.get_supabase_service_client")
 @patch("app.core.superadmin.get_supabase_service_client")
 def test_sudo_session_wrong_user_rejected(mock_core, mock_system, superadmin_client: TestClient):
     session_id = uuid4()
@@ -94,7 +94,7 @@ def test_sudo_session_wrong_user_rejected(mock_core, mock_system, superadmin_cli
 
 
 @patch("app.core.superadmin.get_supabase_service_client")
-@patch("app.api.routes.superadmin.sudo.get_supabase_service_client")
+@patch("app.api.superadmin.sudo.get_supabase_service_client")
 def test_sudo_status_inactive_when_expired(
     mock_route_supa, mock_core_supa, superadmin_client: TestClient
 ):
@@ -143,7 +143,7 @@ def test_expected_version_mismatch_raises_conflict():
     assert exc.value.code == "CONFLICT"
 
 
-@patch("app.api.routes.superadmin.tenants.get_supabase_service_client")
+@patch("app.api.superadmin.tenants.get_supabase_service_client")
 @patch("app.core.superadmin.get_supabase_service_client")
 def test_tenant_patch_version_mismatch_returns_409(
     mock_core, mock_tenants, superadmin_client: TestClient
@@ -173,7 +173,7 @@ def test_tenant_patch_version_mismatch_returns_409(
     assert response.json()["code"] == "CONFLICT"
 
 
-@patch("app.api.routes.superadmin.tenants.get_supabase_service_client")
+@patch("app.api.superadmin.tenants.get_supabase_service_client")
 @patch("app.core.superadmin.get_supabase_service_client")
 @patch("app.domain.superadmin.audit.get_supabase_service_client")
 def test_tenant_patch_update_race_returns_409(
@@ -208,7 +208,7 @@ def test_tenant_patch_update_race_returns_409(
 # ── Impersonation expiry ──────────────────────────────────────────────────────
 
 
-@patch("app.api.routes.auth.get_supabase_service_client")
+@patch("app.api.v1.auth.get_supabase_service_client")
 def test_auth_me_omits_impersonation_when_session_expired(
     mock_supa, non_superadmin_client: TestClient
 ):
@@ -237,7 +237,7 @@ def test_auth_me_omits_impersonation_when_session_expired(
     assert body["impersonation_session_id"] is None
 
 
-@patch("app.api.routes.auth.get_supabase_service_client")
+@patch("app.api.v1.auth.get_supabase_service_client")
 def test_auth_me_omits_impersonation_when_no_active_session(
     mock_supa, non_superadmin_client: TestClient
 ):
@@ -265,7 +265,7 @@ def test_auth_me_omits_impersonation_when_no_active_session(
     assert body.get("impersonation_session_id") is None
 
 
-@patch("app.api.routes.auth.get_supabase_service_client")
+@patch("app.api.v1.auth.get_supabase_service_client")
 def test_auth_me_includes_active_impersonation_before_expiry(
     mock_supa, non_superadmin_client: TestClient
 ):
@@ -316,7 +316,7 @@ def test_read_endpoints_return_404_for_non_superadmin(
 def test_read_endpoints_accessible_for_superadmin(method: str, path: str, superadmin_client: TestClient):
     supa = QaMatrixSupabase()
     billing_patch = patch(
-        "app.api.routes.superadmin.billing.fetch_subscription_status",
+        "app.api.superadmin.billing.fetch_subscription_status",
         return_value={
             "has_subscription": False,
             "plan": "free",
@@ -357,7 +357,7 @@ def test_write_endpoints_reject_without_sudo(
 # ── Destructive confirmation + audit completeness ─────────────────────────────
 
 
-@patch("app.api.routes.superadmin.tenants.get_supabase_service_client")
+@patch("app.api.superadmin.tenants.get_supabase_service_client")
 @patch("app.core.superadmin.get_supabase_service_client")
 def test_tenant_wipe_requires_exact_confirm_phrase(
     mock_core, mock_tenants, superadmin_client: TestClient

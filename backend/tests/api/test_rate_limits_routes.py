@@ -32,7 +32,7 @@ def authed_admin_client() -> TestClient:
     app.dependency_overrides.pop(get_tenant_context, None)
 
 
-@patch("app.api.routes.auth.get_supabase_service_client")
+@patch("app.api.v1.auth.get_supabase_service_client")
 def test_auth_consent_status_rate_limit_429(mock_supa, authed_admin_client):
     supa = MagicMock()
     consent_chain = MagicMock()
@@ -48,13 +48,13 @@ def test_auth_consent_status_rate_limit_429(mock_supa, authed_admin_client):
     assert last == 429
 
 
-@patch("app.api.routes.billing._get_current_usage", return_value=make_mock_usage())
-@patch("app.api.routes.billing.get_supabase_service_client")
+@patch("app.api.v1.billing._get_current_usage", return_value=make_mock_usage())
+@patch("app.api.v1.billing.get_supabase_service_client")
 @patch("app.core.tenant.get_supabase_service_client")
 def test_billing_subscription_rate_limit(mock_ctx, mock_billing, mock_usage, authed_admin_client):
     mock_ctx.return_value = _make_tenant_supa("free")
 
-    with patch("app.api.routes.billing.fetch_subscription_status", return_value={"has_subscription": False, "plan": "free", "plan_status": "active"}):
+    with patch("app.api.v1.billing.fetch_subscription_status", return_value={"has_subscription": False, "plan": "free", "plan_status": "active"}):
         last = 200
         for _ in range(31):
             last = authed_admin_client.get("/billing/subscription").status_code

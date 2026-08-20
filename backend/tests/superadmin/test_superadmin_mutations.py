@@ -49,7 +49,7 @@ def test_short_reason_rejected(mock_supa, authed_superadmin_client):
     assert response.status_code in (403, 422)
 
 
-@patch("app.api.routes.superadmin.tenants.get_supabase_service_client")
+@patch("app.api.superadmin.tenants.get_supabase_service_client")
 @patch("app.core.superadmin.get_supabase_service_client")
 def test_tenant_delete_wrong_confirm_rejected(mock_core, mock_tenants, authed_superadmin_client):
     tenant_row = {"id": str(TENANT_FREE), "name": "Acme Corp", "version": 1}

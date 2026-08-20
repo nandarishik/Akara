@@ -7,7 +7,7 @@ from unittest.mock import MagicMock, patch
 from tests.superadmin.superadmin_helpers import clear_auth_override, make_superadmin_client
 
 
-@patch("app.api.routes.superadmin.reports.get_supabase_service_client")
+@patch("app.api.superadmin.reports.get_supabase_service_client")
 @patch("app.core.superadmin.get_supabase_service_client")
 def test_list_broadcast_history(mock_core, mock_reports):
     profile_mock = MagicMock()
