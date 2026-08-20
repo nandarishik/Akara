@@ -10,7 +10,7 @@ Also includes tests for async import job creation, tracking, and processing.
 
 import json
 from datetime import date, datetime
-from unittest.mock import Mock, patch
+from unittest.mock import MagicMock, Mock, patch
 
 import pytest
 from fastapi.testclient import TestClient
@@ -496,6 +496,103 @@ class TestAsyncImportSecurity:
 
         # Should reject non-CSV content
         assert response.status_code == 400
+
+
+class TestImportRows:
+    """POST /data/sync depends on DataImportService.import_rows()."""
+
+    def _client(self):
+        supabase = MagicMock()
+        supabase.table.return_value.insert.return_value.execute.return_value = MagicMock(data=[])
+        return supabase
+
+    def test_import_rows_writes_sales_data(self):
+        from uuid import UUID
+
+        from app.domain.data_import.service import DataImportService
+
+        supabase = self._client()
+        tenant_id = UUID("00000000-0000-0000-0000-000000000001")
+        service = DataImportService(supabase=supabase)
+
+        result = service.import_rows(
+            rows=[
+                {
+                    "invoice_date": "2026-01-15",
+                    "invoice_number": "INV-1",
+                    "party_name": "Sharma Traders",
+                    "total_amount": 1500,
+                    "cashier": "Ravi",
+                }
+            ],
+            tenant_id=tenant_id,
+            source_type="primary",
+            source_hint="json_sync",
+        )
+
+        assert result.rows_inserted == 1
+        assert result.rows_skipped == 0
+        assert result.errors == []
+        assert result.import_id
+
+        table_names = [c.args[0] for c in supabase.table.call_args_list]
+        assert "sales_data" in table_names
+        assert "generated_reports" in table_names
+
+        sales_insert = supabase.table.return_value.insert.call_args_list[0].args[0]
+        assert len(sales_insert) == 1
+        record = sales_insert[0]
+        assert record["tenant_id"] == str(tenant_id)
+        assert record["invoice_number"] == "INV-1"
+        assert record["party_name"] == "Sharma Traders"
+        assert record["total_amount"] == 1500.0
+        assert record["raw_data"]["cashier"] == "Ravi"
+
+    def test_import_rows_empty_list_does_not_write(self):
+        from uuid import UUID
+
+        from app.domain.data_import.service import DataImportService
+
+        supabase = self._client()
+        service = DataImportService(supabase=supabase)
+        result = service.import_rows(
+            rows=[],
+            tenant_id=UUID("00000000-0000-0000-0000-000000000001"),
+        )
+        assert result.rows_inserted == 0
+        supabase.table.assert_not_called()
+
+    def test_import_rows_scheme_uses_scheme_master(self):
+        from uuid import UUID
+
+        from app.domain.data_import.service import DataImportService
+
+        supabase = self._client()
+        service = DataImportService(supabase=supabase)
+        result = service.import_rows(
+            rows=[{"scheme_name": "Q1 Bonus", "party_name": "A", "claimed_amount": 100}],
+            tenant_id=UUID("00000000-0000-0000-0000-000000000001"),
+            source_type="scheme",
+        )
+        assert result.rows_inserted == 1
+        assert supabase.table.call_args_list[0].args[0] == "scheme_master"
+
+    def test_import_rows_records_batch_error(self):
+        from uuid import UUID
+
+        from app.domain.data_import.service import DataImportService
+
+        supabase = MagicMock()
+        supabase.table.return_value.insert.return_value.execute.side_effect = RuntimeError("db down")
+        service = DataImportService(supabase=supabase)
+        result = service.import_rows(
+            rows=[{"invoice_number": "INV-1", "total_amount": 10}],
+            tenant_id=UUID("00000000-0000-0000-0000-000000000001"),
+        )
+        assert result.rows_inserted == 0
+        assert result.rows_skipped == 1
+        assert result.errors
+        assert "db down" in result.errors[0]
 
 
 if __name__ == "__main__":

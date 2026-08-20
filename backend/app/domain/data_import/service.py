@@ -135,62 +135,81 @@ class DataImportService:
             return SecondarySalesParser(sheet_name=sheet_name).parse(file_content, filename)
         return SchemeDataParser().parse(file_content, filename)
 
-    def import_dataframe(
+    def _enrich_row(
         self,
-        df,
+        row: dict,
         tenant_id: UUID,
         source_type: SourceType,
-        filename: str,
-        sheet_name: str | int | None = None,
+        import_id: uuid_lib.UUID,
+        import_job_id: str | None,
+        data_source: str | None,
+    ) -> dict:
+        if source_type == "scheme":
+            record: dict = {
+                "tenant_id": str(tenant_id),
+                "scheme_name": _safe_str(row.get("scheme_name")),
+                "party_name": _safe_str(row.get("party_name")),
+                "product_name": _safe_str(row.get("product_name")),
+                "product_group": _safe_str(row.get("product_group")),
+                "discount_pct": _safe_float(row.get("discount_pct", 0)),
+                "claimed_amount": _safe_float(row.get("claimed_amount", 0)),
+                "scheme_start": _safe_str(row.get("scheme_start")) or None,
+                "scheme_end": _safe_str(row.get("scheme_end")) or None,
+                "raw_data": _sanitize_for_json(_build_raw_data(row)),
+            }
+        else:
+            record = _enrich_primary(row, tenant_id)
+            if source_type == "secondary" and data_source:
+                record["data_source"] = data_source
+        record["import_id"] = str(import_id)
+        if import_job_id:
+            record["import_job_id"] = import_job_id
+        return record
+
+    def _insert_records(
+        self,
+        records: list[dict],
+        tenant_id: UUID,
+        source_type: SourceType,
+        title: str,
         import_job_id: str | None = None,
+        data_source: str | None = None,
+        extra_metadata: dict | None = None,
     ) -> ImportResult:
-        """Insert a pre-parsed DataFrame. Used after quota checks on actual row count."""
         errors: list[str] = []
         warnings: list[str] = []
         rows_inserted = 0
         rows_skipped = 0
         import_id = uuid_lib.uuid4()
+        table_name = _TABLE_MAP[source_type]
 
-        records = df.to_dict(orient="records")
         for i in range(0, len(records), _BATCH_SIZE):
             batch = records[i : i + _BATCH_SIZE]
-            enriched = []
-            for row in batch:
+            enriched: list[dict] = []
+            for j, row in enumerate(batch):
                 try:
-                    if source_type == "scheme":
-                        record = {
-                            "tenant_id": str(tenant_id),
-                            "scheme_name": str(row.get("scheme_name", "")),
-                            "party_name": str(row.get("party_name", "")),
-                            "product_name": str(row.get("product_name", "")),
-                            "product_group": str(row.get("product_group", "")),
-                            "discount_pct": float(row.get("discount_pct", 0)),
-                            "claimed_amount": float(row.get("claimed_amount", 0)),
-                            "scheme_start": str(row.get("scheme_start", "")) or None,
-                            "scheme_end": str(row.get("scheme_end", "")) or None,
-                            "raw_data": row,
-                        }
-                    elif source_type == "secondary":
-                        record = _enrich_primary(row, tenant_id)
-                        record["data_source"] = "manual_upload"
-                    else:
-                        record = _enrich_primary(row, tenant_id)
-                    record["import_id"] = str(import_id)
-                    if import_job_id:
-                        record["import_job_id"] = import_job_id
-                    enriched.append(record)
+                    enriched.append(
+                        self._enrich_row(
+                            row,
+                            tenant_id,
+                            source_type,
+                            import_id,
+                            import_job_id,
+                            data_source,
+                        )
+                    )
                 except (TypeError, ValueError) as exc:
                     rows_skipped += 1
-                    warnings.append(f"Row {i}: {exc}")
-                    continue
+                    warnings.append(f"Row {i + j}: {exc}")
+
+            if not enriched:
+                continue
 
             try:
-                table_name = _TABLE_MAP[source_type]
                 self._supabase.table(table_name).insert(enriched).execute()
                 rows_inserted += len(enriched)
             except Exception as exc:
                 err_msg = str(exc)
-                # Retry without import_job_id if column missing (partial 011 migration)
                 if import_job_id and "import_job_id" in err_msg.lower():
                     for rec in enriched:
                         rec.pop("import_job_id", None)
@@ -204,19 +223,20 @@ class DataImportService:
                 rows_skipped += len(enriched)
 
         if rows_inserted > 0:
+            metadata = {
+                "import_id": str(import_id),
+                "import_job_id": import_job_id,
+                "source_type": source_type,
+                "rows_inserted": rows_inserted,
+                "rows_skipped": rows_skipped,
+            }
+            if extra_metadata:
+                metadata.update(extra_metadata)
             self._supabase.table("generated_reports").insert({
-                "tenant_id":   str(tenant_id),
+                "tenant_id": str(tenant_id),
                 "report_type": "csv_import",
-                "title":       filename,
-                "metadata": {
-                    "import_id":     str(import_id),
-                    "import_job_id": import_job_id,
-                    "source_type":   source_type,
-                    "rows_inserted": rows_inserted,
-                    "rows_skipped":  rows_skipped,
-                    "filename":      filename,
-                    "sheet_name":    sheet_name,
-                },
+                "title": title,
+                "metadata": metadata,
             }).execute()
 
         return ImportResult(
@@ -225,6 +245,52 @@ class DataImportService:
             errors=errors,
             warnings=warnings,
             import_id=str(import_id),
+        )
+
+    def import_dataframe(
+        self,
+        df,
+        tenant_id: UUID,
+        source_type: SourceType,
+        filename: str,
+        sheet_name: str | int | None = None,
+        import_job_id: str | None = None,
+    ) -> ImportResult:
+        """Insert a pre-parsed DataFrame. Used after quota checks on actual row count."""
+        data_source = "manual_upload" if source_type == "secondary" else None
+        return self._insert_records(
+            records=df.to_dict(orient="records"),
+            tenant_id=tenant_id,
+            source_type=source_type,
+            title=filename,
+            import_job_id=import_job_id,
+            data_source=data_source,
+            extra_metadata={"filename": filename, "sheet_name": sheet_name},
+        )
+
+    def import_rows(
+        self,
+        rows: list[dict],
+        tenant_id: UUID,
+        source_type: SourceType = "primary",
+        import_job_id: str | None = None,
+        source_hint: str = "sync",
+    ) -> ImportResult:
+        """Insert pre-normalised rows from agent sync or JSON push.
+
+        Rows should already use canonical column names. Extra keys go into
+        raw_data JSONB via _build_raw_data(). Shares the same enrich + batch
+        insert path as import_dataframe().
+        """
+        data_source = source_hint if source_type == "secondary" else None
+        return self._insert_records(
+            records=rows,
+            tenant_id=tenant_id,
+            source_type=source_type,
+            title=f"Sync import ({source_hint})",
+            import_job_id=import_job_id,
+            data_source=data_source,
+            extra_metadata={"source_hint": source_hint},
         )
 
     def import_file(

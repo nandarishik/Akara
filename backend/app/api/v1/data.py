@@ -332,6 +332,7 @@ async def sync_data(
         rows=body.rows,
         tenant_id=tenant.tenant_id,
         source_type=body.source_type,
+        source_hint="json_sync",
     )
 
     # Increment usage for API sync imports
