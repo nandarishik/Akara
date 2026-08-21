@@ -1,4 +1,8 @@
-"""Akara Connect domain package (scaffold).
+"""Akara Connect domain package.
 
-Future home for agent JWT auth, sync engine, mapping memory, and source adapters.
+Agent JWT / sync engine still to come. Mapping memory is the first persistence helper.
 """
+
+from app.domain.connect.mapping_memory import MappingMemory, fingerprint_headers
+
+__all__ = ["MappingMemory", "fingerprint_headers"]

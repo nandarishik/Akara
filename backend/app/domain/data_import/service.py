@@ -5,8 +5,10 @@ from datetime import date, datetime
 from typing import Any, Literal
 from uuid import UUID
 
+from pydantic import ValidationError
 from supabase import Client
 
+from app.domain.data.canonical import PrimarySaleRecord, SchemeRecord
 from app.domain.data_import.models import ImportResult
 from app.domain.data_import.parser import (
     SalesDataParser,
@@ -84,29 +86,28 @@ def _build_raw_data(row: dict) -> dict:
 
 
 def _enrich_primary(row: dict, tenant_id: UUID) -> dict:
-    record: dict = {
-        "tenant_id": str(tenant_id),
-        "invoice_date": str(row.get("invoice_date", "")),
-        "invoice_number": str(row.get("invoice_number", "")),
-        "party_name": str(row.get("party_name", "")),
-        "party_city": str(row.get("party_city", "")),
-        "party_zone": str(row.get("party_zone", "")),
-        "route": str(row.get("route", "")),
-        "product_name": str(row.get("product_name", "")),
-        "product_group": str(row.get("product_group", "")),
-        "product_category": str(row.get("product_category", "")),
-        "hsn_code": str(row.get("hsn_code", "")),
-        "quantity": _safe_float(row.get("quantity", 0)),
-        "gross_amount": _safe_float(row.get("gross_amount", 0)),
-        "discount_amount": _safe_float(row.get("discount_amount", 0)),
-        "net_amount": _safe_float(row.get("net_amount", 0)),
-        "tax_amount": _safe_float(row.get("tax_amount", 0)),
-        "total_amount": _safe_float(row.get("total_amount", 0)),
+    payload: dict[str, Any] = {
+        "tenant_id": tenant_id,
+        "invoice_date": row.get("invoice_date", ""),
+        "invoice_number": row.get("invoice_number", ""),
+        "party_name": row.get("party_name", ""),
+        "party_city": row.get("party_city", ""),
+        "party_zone": row.get("party_zone", ""),
+        "route": row.get("route", ""),
+        "product_name": row.get("product_name", ""),
+        "product_group": row.get("product_group", ""),
+        "product_category": row.get("product_category", ""),
+        "hsn_code": row.get("hsn_code", ""),
+        "quantity": row.get("quantity", 0),
+        "gross_amount": row.get("gross_amount", 0),
+        "discount_amount": row.get("discount_amount", 0),
+        "net_amount": row.get("net_amount", 0),
+        "tax_amount": row.get("tax_amount", 0),
+        "total_amount": row.get("total_amount", 0),
+        "outstanding_amount": row.get("outstanding_amount"),
         "raw_data": _sanitize_for_json(_build_raw_data(row)),
     }
-    if row.get("outstanding_amount") is not None:
-        record["outstanding_amount"] = _safe_float(row["outstanding_amount"])
-    return record
+    return PrimarySaleRecord.model_validate(payload).to_insert_dict()
 
 
 class DataImportService:
@@ -144,27 +145,32 @@ class DataImportService:
         import_job_id: str | None,
         data_source: str | None,
     ) -> dict:
-        if source_type == "scheme":
-            record: dict = {
-                "tenant_id": str(tenant_id),
-                "scheme_name": _safe_str(row.get("scheme_name")),
-                "party_name": _safe_str(row.get("party_name")),
-                "product_name": _safe_str(row.get("product_name")),
-                "product_group": _safe_str(row.get("product_group")),
-                "discount_pct": _safe_float(row.get("discount_pct", 0)),
-                "claimed_amount": _safe_float(row.get("claimed_amount", 0)),
-                "scheme_start": _safe_str(row.get("scheme_start")) or None,
-                "scheme_end": _safe_str(row.get("scheme_end")) or None,
-                "raw_data": _sanitize_for_json(_build_raw_data(row)),
-            }
-        else:
-            record = _enrich_primary(row, tenant_id)
-            if source_type == "secondary" and data_source:
-                record["data_source"] = data_source
-        record["import_id"] = str(import_id)
-        if import_job_id:
-            record["import_job_id"] = import_job_id
-        return record
+        try:
+            if source_type == "scheme":
+                record = SchemeRecord.model_validate({
+                    "tenant_id": tenant_id,
+                    "scheme_name": row.get("scheme_name"),
+                    "party_name": row.get("party_name"),
+                    "product_name": row.get("product_name"),
+                    "product_group": row.get("product_group"),
+                    "discount_pct": row.get("discount_pct", 0),
+                    "claimed_amount": row.get("claimed_amount", 0),
+                    "scheme_start": row.get("scheme_start"),
+                    "scheme_end": row.get("scheme_end"),
+                    "raw_data": _sanitize_for_json(_build_raw_data(row)),
+                    "import_id": str(import_id),
+                    "import_job_id": import_job_id,
+                }).to_insert_dict()
+            else:
+                record = _enrich_primary(row, tenant_id)
+                record["import_id"] = str(import_id)
+                if import_job_id:
+                    record["import_job_id"] = import_job_id
+                if source_type == "secondary":
+                    record["data_source"] = data_source or "manual_upload"
+            return record
+        except (TypeError, ValueError, ValidationError) as exc:
+            raise ValueError(str(exc)) from exc
 
     def _insert_records(
         self,
