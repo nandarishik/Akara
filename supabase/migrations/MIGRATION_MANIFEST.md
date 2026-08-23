@@ -34,6 +34,8 @@
 | 025 | `025_day10_omnipotence_1_4.sql` | 10 | plan_catalog, billing ledger, CMS, legal/consent |
 | 026 | `026_day10_gap_closure.sql` | 10 | placement_events, plan_price_migrations, ledger evidence |
 | 027 | `027_day10_finish.sql` | 10 | placement seeds, hero CMS normalize, legal metadata, contract fields |
+| 028 | `028_connect_infrastructure.sql` | — | connections, mapping_memory, sync_log for Akara Connect |
+| 029 | `029_import_preview_mapping.sql` | — | import_jobs 'preview'/'cancelled' status, import_mapping JSONB |
 
 ## Archived (superseded — not in CI sequence)
 

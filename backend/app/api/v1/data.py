@@ -159,7 +159,9 @@ async def import_data(
 
     supa = get_supabase_service_client()
 
-    # Create import job record before importing
+    # Create the import job as 'processing' BEFORE importing, so a crash
+    # mid-import leaves an accurate, retryable record — not a false 'completed'.
+    # Finalized to 'completed'/'failed' after the import actually runs.
     import_job_id: str | None = None
     try:
         job_result = supa.table("import_jobs").insert({
@@ -167,30 +169,38 @@ async def import_data(
             "user_id":     str(user.user_id),
             "source_type": str(source_type),
             "filename":    filename,
-            "status":      "completed",
+            "status":      "processing",
         }).execute()
         if job_result.data:
             import_job_id = job_result.data[0]["id"]
     except Exception as exc:
         logger.warning("Failed to create import_job record: %s", exc)
 
+    # Tag inserted rows with import_job_id so "Undo import" can delete them.
     result = service.import_file(
         file_content=content,
         filename=filename,
         tenant_id=tenant.tenant_id,
         source_type=source_type,
         sheet_name=sheet_name,
+        import_job_id=import_job_id,
     )
 
     rows_inserted = result.rows_inserted or 0
 
-    # Update import_job with actual row count
+    # Finalize the job: real outcome + row counts. Hard errors (parse failure or
+    # every batch rejected) → 'failed'; skipped rows are warnings, not failures.
     if import_job_id:
+        job_update: dict = {
+            "rows_inserted": rows_inserted,
+            "rows_skipped":  result.rows_skipped or 0,
+            "status":        "failed" if result.errors else "completed",
+            "completed_at":  datetime.now(UTC).isoformat(),
+        }
+        if result.errors:
+            job_update["error_message"] = "; ".join(result.errors)[:1000]
         try:
-            supa.table("import_jobs").update({
-                "rows_inserted": rows_inserted,
-                "rows_skipped":  result.rows_skipped or 0,
-            }).eq("id", import_job_id).execute()
+            supa.table("import_jobs").update(job_update).eq("id", import_job_id).execute()
         except Exception as exc:
             logger.warning("Failed to update import_job rows: %s", exc)
 

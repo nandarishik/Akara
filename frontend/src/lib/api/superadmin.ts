@@ -42,6 +42,32 @@ export async function superadminFetch<T>(
   return res.json() as Promise<T>;
 }
 
+/**
+ * Multipart sibling of superadminFetch for file uploads.
+ *
+ * superadminFetch force-sets Content-Type: application/json on every non-GET,
+ * which breaks multipart (the browser must set its own `multipart/…; boundary=`).
+ * This helper reuses the same auth + CSRF + credentials but lets the browser
+ * own Content-Type. Kept here so it can share the module-private csrfFromCookie.
+ */
+export async function superadminUpload<T>(path: string, formData: FormData): Promise<T> {
+  const token = await getToken();
+  const headers: Record<string, string> = { Authorization: `Bearer ${token}` };
+  const csrf = csrfFromCookie();
+  if (csrf) headers["X-CSRF-Token"] = csrf;
+  const res = await fetch(`${BASE}${path}`, {
+    method: "POST",
+    credentials: "include",
+    headers,
+    body: formData,
+  });
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`API ${res.status}: ${text}`);
+  }
+  return res.json() as Promise<T>;
+}
+
 export interface SudoStatus {
   active: boolean;
   expires_at: string | null;
@@ -273,6 +299,66 @@ export interface DataSummary {
   last_import_at: string | null;
 }
 
+// ── Assisted CSV import (preview → confirm mapping → commit) ──────────────────
+export type ImportSourceType = "primary" | "secondary" | "scheme";
+
+export interface ImportMappingReport {
+  source_type: string;
+  headers: string[];
+  mapped: { source: string; normalized: string; canonical: string; via: "alias" | "override" }[];
+  unmapped: { source: string; normalized: string }[];
+  canonical_fields: string[];
+  required: string[];
+  missing_required: string[];
+  resolved_mapping: Record<string, string>;
+}
+
+export interface ImportPreviewResponse {
+  ok: boolean;
+  job_id: string;
+  filename: string;
+  source_type: ImportSourceType;
+  sheet: string | number | null;
+  fingerprint: string;
+  remembered_mapping_applied: boolean;
+  total_rows: number;
+  importable_rows: number;
+  dropped_rows: number;
+  parse_error: string | null;
+  can_commit: boolean;
+  mapping: ImportMappingReport;
+  sample_rows: Record<string, unknown>[];
+}
+
+export interface ImportCommitResponse {
+  ok: boolean;
+  job_id: string;
+  status: "completed" | "failed";
+  source_type: ImportSourceType;
+  rows_inserted: number;
+  rows_skipped: number;
+  errors: string[];
+  warnings: string[];
+  import_id: string | null;
+  mapping_remembered: boolean;
+  audit?: unknown;
+}
+
+export interface ImportCommitEstimate {
+  ok: boolean;
+  dry_run: boolean;
+  action: string;
+  impact: {
+    job_id: string;
+    source_type: ImportSourceType;
+    total_rows: number;
+    importable_rows: number;
+    dropped_rows: number;
+    parse_error: string | null;
+    mapping: ImportMappingReport;
+  };
+}
+
 type MutationBody = Record<string, unknown> & { reason: string; dry_run?: boolean };
 
 function auditQuery(filters: AuditFilters = {}): string {
@@ -391,6 +477,30 @@ export const sa = {
   dataPreview: (id: string) =>
     superadminFetch<{ rows: Record<string, unknown>[] }>(
       `/superadmin/tenants/${id}/data/preview`,
+    ),
+  importPreview: (
+    id: string,
+    opts: { file: File; source_type?: ImportSourceType; sheet_name?: string; overrides?: Record<string, string> },
+  ) => {
+    const fd = new FormData();
+    fd.append("file", opts.file);
+    fd.append("source_type", opts.source_type ?? "primary");
+    if (opts.sheet_name) fd.append("sheet_name", opts.sheet_name);
+    if (opts.overrides && Object.keys(opts.overrides).length > 0) {
+      fd.append("overrides", JSON.stringify(opts.overrides));
+    }
+    return superadminUpload<ImportPreviewResponse>(
+      `/superadmin/tenants/${id}/data/import/preview`,
+      fd,
+    );
+  },
+  importCommit: (
+    id: string,
+    body: MutationBody & { job_id: string; overrides?: Record<string, string> | null },
+  ) =>
+    superadminFetch<ImportCommitResponse & ImportCommitEstimate>(
+      `/superadmin/tenants/${id}/data/import/commit`,
+      { method: "POST", body: JSON.stringify(body) },
     ),
   manualUpgrade: (
     id: string,

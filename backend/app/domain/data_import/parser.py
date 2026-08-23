@@ -20,6 +20,7 @@ from __future__ import annotations
 
 import logging
 import re
+from typing import Any
 
 import pandas as pd
 
@@ -427,15 +428,46 @@ _PRIMARY_KNOWN_COLS: set[str] = {
 }
 
 
-def _normalize_columns(df: pd.DataFrame, aliases: dict[str, str]) -> pd.DataFrame:
+def _merge_aliases(
+    aliases: dict[str, str], overrides: dict[str, str] | None
+) -> dict[str, str]:
+    """
+    Merge user/tenant column overrides onto the built-in alias dict.
+
+    Precedence (highest first): override > built-in alias > unmapped.
+    Override keys are raw source headers (normalised here with _norm), so
+    callers pass what the user sees. An override whose value is a non-empty
+    canonical field name force-maps that header; an empty value force-*unmaps*
+    it (drops any built-in alias so the column falls through to raw_data).
+    """
+    if not overrides:
+        return aliases
+    merged = dict(aliases)
+    for raw_key, target in overrides.items():
+        nk = _norm(str(raw_key))
+        if not nk:
+            continue
+        t = str(target).strip() if target is not None else ""
+        if t:
+            merged[nk] = t          # force-map (override wins over alias)
+        else:
+            merged.pop(nk, None)    # force-unmap → column falls into raw_data
+    return merged
+
+
+def _normalize_columns(
+    df: pd.DataFrame,
+    aliases: dict[str, str],
+    overrides: dict[str, str] | None = None,
+) -> pd.DataFrame:
     """
     1. Normalise every column name with _norm()
-    2. Apply alias mapping
+    2. Apply alias mapping (with any overrides merged on top)
     3. Coalesce duplicate column names (first non-null wins)
     """
     df = df.copy()
     df.columns = [_norm(str(c)) for c in df.columns]
-    df = df.rename(columns=aliases)
+    df = df.rename(columns=_merge_aliases(aliases, overrides))
 
     seen: set[str] = set()
     dupes: dict[str, list[int]] = {}
@@ -497,19 +529,128 @@ def _filter_section_and_blank_rows(df: pd.DataFrame) -> pd.DataFrame:
     return df.loc[mask].reset_index(drop=True)
 
 
+# ── source_type → (aliases, required, numeric) lookup ─────────────────────────
+_ALIASES_BY_SOURCE: dict[str, dict[str, str]] = {
+    "primary": COLUMN_ALIASES,
+    "secondary": SECONDARY_COLUMN_ALIASES,
+    "scheme": SCHEME_COLUMN_ALIASES,
+}
+_REQUIRED_BY_SOURCE: dict[str, set[str]] = {
+    "primary": REQUIRED_COLUMNS,
+    "secondary": SECONDARY_REQUIRED_COLUMNS,
+    "scheme": SCHEME_REQUIRED_COLUMNS,
+}
+
+
+def _read_source_frame(
+    file_content: bytes,
+    filename: str,
+    source_type: str = "primary",
+    sheet_name: str | int | None = None,
+) -> tuple[pd.DataFrame, str | int | None]:
+    """
+    Read raw upload bytes into a DataFrame with ORIGINAL (un-normalised) headers,
+    auto-selecting the best sales sheet for Excel primary/secondary uploads.
+    Returns (df, sheet_used). Single source of truth for sheet selection so the
+    preview report and the actual import parse agree on which sheet was read.
+    """
+    sheet = sheet_name
+    if (
+        sheet is None
+        and source_type in ("primary", "secondary")
+        and filename.lower().endswith((".xlsx", ".xls"))
+    ):
+        sheet = best_sales_sheet(file_content, filename)
+        if sheet:
+            logger.info("Auto-selected sheet '%s' for %s", sheet, filename)
+    df = read_file_smart(file_content, filename, sheet_name=sheet)
+    return df, sheet
+
+
+def analyze_columns(
+    headers: list[str],
+    source_type: str = "primary",
+    overrides: dict[str, str] | None = None,
+) -> dict[str, Any]:
+    """
+    Produce a source→canonical mapping report for a set of raw column headers,
+    WITHOUT importing anything. Powers the assisted-onboarding preview so the
+    operator can see and override how each column will be interpreted.
+
+    Returns a UI-ready dict:
+      - mapped:           [{source, normalized, canonical, via}]  (via = alias|override)
+      - unmapped:         [{source, normalized}]                  (→ raw_data JSONB)
+      - canonical_fields: sorted distinct canonical targets covered
+      - required:         required canonical fields for this source_type
+      - missing_required: required fields not covered (with primary amount fallback)
+    """
+    aliases = _ALIASES_BY_SOURCE.get(source_type, COLUMN_ALIASES)
+    required = _REQUIRED_BY_SOURCE.get(source_type, REQUIRED_COLUMNS)
+    merged = _merge_aliases(aliases, overrides)
+    norm_overrides = {
+        _norm(str(k)): (str(v).strip() if v is not None else "")
+        for k, v in (overrides or {}).items()
+    }
+
+    mapped: list[dict[str, str]] = []
+    unmapped: list[dict[str, str]] = []
+    canonical_present: set[str] = set()
+    seen_norm: set[str] = set()
+
+    for h in headers:
+        nk = _norm(str(h))
+        if not nk or nk in seen_norm:
+            continue
+        seen_norm.add(nk)
+        target = merged.get(nk)
+        if target:
+            via = "override" if norm_overrides.get(nk) else "alias"
+            mapped.append(
+                {"source": str(h), "normalized": nk, "canonical": target, "via": via}
+            )
+            canonical_present.add(target)
+        else:
+            unmapped.append({"source": str(h), "normalized": nk})
+
+    missing = set(required) - canonical_present
+    # Mirror SalesDataParser's amount fallback: primary total_amount can be
+    # derived from net_amount or gross_amount, so it is not truly "missing".
+    if (
+        "total_amount" in missing
+        and source_type == "primary"
+        and ("net_amount" in canonical_present or "gross_amount" in canonical_present)
+    ):
+        missing.discard("total_amount")
+
+    return {
+        "source_type": source_type,
+        "headers": [str(h) for h in headers],
+        "mapped": mapped,
+        "unmapped": unmapped,
+        "canonical_fields": sorted(canonical_present),
+        "required": sorted(required),
+        "missing_required": sorted(missing),
+        # Full normalized_source → canonical map for every mapped column.
+        # Persisted to mapping_memory on commit so this exact file shape
+        # reproduces deterministically on the next upload.
+        "resolved_mapping": {m["normalized"]: m["canonical"] for m in mapped},
+    }
+
+
 class SalesDataParser:
-    def __init__(self, sheet_name: str | int | None = None) -> None:
+    def __init__(
+        self,
+        sheet_name: str | int | None = None,
+        overrides: dict[str, str] | None = None,
+    ) -> None:
         self._sheet_name = sheet_name
+        self._overrides = overrides
 
     def parse(self, file_content: bytes, filename: str) -> pd.DataFrame:
-        sheet = self._sheet_name
-        if sheet is None and filename.lower().endswith((".xlsx", ".xls")):
-            sheet = best_sales_sheet(file_content, filename)
-            if sheet:
-                logger.info("Auto-selected sheet '%s' for %s", sheet, filename)
-
-        df = read_file_smart(file_content, filename, sheet_name=sheet)
-        df = _normalize_columns(df, COLUMN_ALIASES)
+        df, sheet = _read_source_frame(
+            file_content, filename, "primary", self._sheet_name
+        )
+        df = _normalize_columns(df, COLUMN_ALIASES, self._overrides)
 
         # Amount-column fallbacks:
         # Petpooja item sheets have NET SALES (→ net_amount) but no bill_amt.
@@ -539,15 +680,19 @@ class SalesDataParser:
 
 
 class SecondarySalesParser:
-    def __init__(self, sheet_name: str | int | None = None) -> None:
+    def __init__(
+        self,
+        sheet_name: str | int | None = None,
+        overrides: dict[str, str] | None = None,
+    ) -> None:
         self._sheet_name = sheet_name
+        self._overrides = overrides
 
     def parse(self, file_content: bytes, filename: str) -> pd.DataFrame:
-        sheet = self._sheet_name
-        if sheet is None and filename.lower().endswith((".xlsx", ".xls")):
-            sheet = best_sales_sheet(file_content, filename)
-        df = read_file_smart(file_content, filename, sheet_name=sheet)
-        df = _normalize_columns(df, SECONDARY_COLUMN_ALIASES)
+        df, _sheet = _read_source_frame(
+            file_content, filename, "secondary", self._sheet_name
+        )
+        df = _normalize_columns(df, SECONDARY_COLUMN_ALIASES, self._overrides)
         df = _validate_required(df, SECONDARY_REQUIRED_COLUMNS)
         df["invoice_date"] = pd.to_datetime(df["invoice_date"], errors="coerce").dt.date
         df = df.dropna(subset=["invoice_date"])
@@ -555,9 +700,12 @@ class SecondarySalesParser:
 
 
 class SchemeDataParser:
+    def __init__(self, overrides: dict[str, str] | None = None) -> None:
+        self._overrides = overrides
+
     def parse(self, file_content: bytes, filename: str) -> pd.DataFrame:
         df = read_file_smart(file_content, filename)
-        df = _normalize_columns(df, SCHEME_COLUMN_ALIASES)
+        df = _normalize_columns(df, SCHEME_COLUMN_ALIASES, self._overrides)
         df = _validate_required(df, SCHEME_REQUIRED_COLUMNS)
         for date_col in ("scheme_start", "scheme_end"):
             if date_col in df.columns:

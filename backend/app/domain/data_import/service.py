@@ -128,13 +128,22 @@ class DataImportService:
         filename: str,
         source_type: SourceType = "primary",
         sheet_name: str | int | None = None,
+        overrides: dict[str, str] | None = None,
     ):
-        """Parse upload bytes into a DataFrame. Raises ValueError on bad format."""
+        """Parse upload bytes into a DataFrame. Raises ValueError on bad format.
+
+        `overrides` (normalized_source → canonical) take precedence over the
+        built-in alias dict, enabling assisted-onboarding confirmed mappings.
+        """
         if source_type == "primary":
-            return SalesDataParser(sheet_name=sheet_name).parse(file_content, filename)
+            return SalesDataParser(sheet_name=sheet_name, overrides=overrides).parse(
+                file_content, filename
+            )
         if source_type == "secondary":
-            return SecondarySalesParser(sheet_name=sheet_name).parse(file_content, filename)
-        return SchemeDataParser().parse(file_content, filename)
+            return SecondarySalesParser(sheet_name=sheet_name, overrides=overrides).parse(
+                file_content, filename
+            )
+        return SchemeDataParser(overrides=overrides).parse(file_content, filename)
 
     def _enrich_row(
         self,
@@ -307,9 +316,12 @@ class DataImportService:
         source_type: SourceType = "primary",
         sheet_name: str | int | None = None,
         import_job_id: str | None = None,
+        overrides: dict[str, str] | None = None,
     ) -> ImportResult:
         try:
-            df = self.parse_dataframe(file_content, filename, source_type, sheet_name)
+            df = self.parse_dataframe(
+                file_content, filename, source_type, sheet_name, overrides
+            )
         except ValueError as exc:
             return ImportResult(
                 rows_inserted=0,

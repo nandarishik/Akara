@@ -4,6 +4,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { ChevronDown, ChevronRight } from "lucide-react";
 
 import { AdminDrawer } from "@/features/superadmin/components/AdminDrawer";
+import { AssistedImportPanel } from "@/features/superadmin/components/AssistedImportPanel";
 import { ConfirmDialog } from "@/features/superadmin/components/ConfirmDialog";
 import { MutationReasonField } from "@/features/superadmin/components/MutationReasonField";
 import { Button } from "@/shared/ui/button";
@@ -24,7 +25,7 @@ const FEATURE_KEYS = [
   "api_keys",
 ] as const;
 
-type Tab = "overview" | "plan" | "features" | "quota" | "billing" | "data" | "danger";
+type Tab = "overview" | "plan" | "features" | "quota" | "billing" | "data" | "import" | "danger";
 
 interface TenantDrawerProps {
   tenantId: string | null;
@@ -318,6 +319,7 @@ export function TenantDrawer({ tenantId, onClose, initialTab }: TenantDrawerProp
     { id: "quota", label: "Quota" },
     { id: "billing", label: "Billing" },
     { id: "data", label: "Data" },
+    { id: "import", label: "Import" },
     { id: "danger", label: "Danger" },
   ];
 
@@ -838,6 +840,16 @@ export function TenantDrawer({ tenantId, onClose, initialTab }: TenantDrawerProp
                 <p className="text-xs text-sa-muted">No preview rows</p>
               )}
             </div>
+          )}
+
+          {tab === "import" && (
+            <AssistedImportPanel
+              tenantId={tenantId}
+              reason={reason}
+              reasonOk={reasonOk}
+              onStatus={setStatus}
+              onCommitted={invalidate}
+            />
           )}
 
           {tab === "danger" && tenant && (

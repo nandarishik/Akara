@@ -4,19 +4,25 @@ from __future__ import annotations
 
 import csv
 import io
+import json
 import logging
-from typing import Any
+from typing import Any, NoReturn
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, Query, Request, Response
+from fastapi import APIRouter, Depends, File, Form, Query, Request, Response, UploadFile
 from pydantic import BaseModel, Field
 
 from app.core.errors import AkaraHTTPException
 from app.core.rate_limit import ADMIN_READ_LIMIT, ADMIN_WRITE_LIMIT, EXPORT_LIMIT, limiter
 from app.core.superadmin import SuperAdmin, SudoCtx, request_actor_meta, require_csrf
 from app.core.tenant import get_supabase_service_client
+from app.domain.data_import.preview import ImportPreviewError, ImportPreviewService
 from app.domain.superadmin.audit import record_operation
 from app.domain.superadmin.mutations import SuperadminMutation, dry_run_response
+
+# Map ImportPreviewError HTTP codes onto the shared AkaraHTTPException envelope.
+_PREVIEW_ERROR_CODES = {400: "VALIDATION_ERROR", 404: "NOT_FOUND", 409: "CONFLICT"}
+_VALID_SOURCE_TYPES: frozenset[str] = frozenset({"primary", "secondary", "scheme"})
 
 logger = logging.getLogger(__name__)
 
@@ -39,6 +45,47 @@ class DataSummary(BaseModel):
 class DeleteRowsBody(SuperadminMutation):
     date_before: str = Field(..., description="ISO date — delete rows older than this")
     table: str = "sales_data"
+
+
+class ImportCommitBody(SuperadminMutation):
+    """Confirm a previewed import. The file is already stashed under job_id."""
+
+    job_id: UUID
+    overrides: dict[str, str] | None = Field(
+        default=None,
+        description="Confirmed source→canonical mapping (normalized keys). "
+        "Overrides the mapping captured at preview; omit to reuse it.",
+    )
+
+
+def _raise_preview_http(exc: ImportPreviewError) -> NoReturn:
+    """Translate a domain ImportPreviewError into the shared HTTP error envelope."""
+    raise AkaraHTTPException(
+        status_code=exc.status_code,
+        code=_PREVIEW_ERROR_CODES.get(exc.status_code, "INTERNAL_ERROR"),
+        message=exc.message,
+    ) from exc
+
+
+def _parse_overrides_form(raw: str | None) -> dict[str, str] | None:
+    """Parse the multipart `overrides` field (JSON object) into a str→str dict."""
+    if raw is None or not raw.strip():
+        return None
+    try:
+        parsed = json.loads(raw)
+    except (ValueError, TypeError) as exc:
+        raise AkaraHTTPException(
+            status_code=400,
+            code="VALIDATION_ERROR",
+            message="overrides must be a JSON object of {source_column: canonical_field}",
+        ) from exc
+    if not isinstance(parsed, dict):
+        raise AkaraHTTPException(
+            status_code=400,
+            code="VALIDATION_ERROR",
+            message="overrides must be a JSON object",
+        )
+    return {str(k): ("" if v is None else str(v)) for k, v in parsed.items()}
 
 
 def _get_tenant_or_404(tenant_id: UUID) -> dict[str, Any]:
@@ -284,3 +331,119 @@ def delete_data_rows(
         **meta,
     )
     return {"ok": True, "rows_deleted": to_delete, "audit": audit}
+
+
+# ── Assisted CSV onboarding (preview → confirm mapping → commit) ───────────────
+# Superadmin-first flow. Preview parses + stashes the file and returns a
+# source→canonical mapping report; commit re-parses the stashed file with the
+# confirmed overrides and imports it, remembering the mapping for this tenant.
+# Founder path: upload-count quota is NOT enforced (see ImportPreviewService).
+
+
+@router.post("/{tenant_id}/data/import/preview")
+@limiter.limit(ADMIN_WRITE_LIMIT)
+async def import_preview(
+    request: Request,
+    tenant_id: UUID,
+    admin: SudoCtx,
+    file: UploadFile = File(...),
+    source_type: str = Form("primary"),
+    sheet_name: str | None = Form(None),
+    overrides: str | None = Form(None),
+    _: None = Depends(require_csrf),
+) -> dict[str, Any]:
+    """Parse-and-stash a file, returning a mapping report for confirmation.
+
+    Does NOT write to the tenant's sales tables — it creates an `import_jobs`
+    row with status='preview' and stashes the bytes. Safe to call repeatedly.
+    """
+    _get_tenant_or_404(tenant_id)
+    if source_type not in _VALID_SOURCE_TYPES:
+        raise AkaraHTTPException(
+            status_code=400,
+            code="VALIDATION_ERROR",
+            message=f"source_type must be one of: {', '.join(sorted(_VALID_SOURCE_TYPES))}",
+        )
+    override_map = _parse_overrides_form(overrides)
+
+    content = await file.read()
+    if not content:
+        raise AkaraHTTPException(
+            status_code=400, code="VALIDATION_ERROR", message="Uploaded file is empty"
+        )
+
+    svc = ImportPreviewService(get_supabase_service_client())
+    try:
+        result = svc.build_preview(
+            file_content=content,
+            filename=file.filename or "upload.csv",
+            tenant_id=tenant_id,
+            user_id=admin.user_id,
+            source_type=source_type,  # type: ignore[arg-type]
+            sheet_name=sheet_name or None,
+            overrides=override_map,
+        )
+    except ImportPreviewError as exc:
+        _raise_preview_http(exc)
+
+    return {"ok": True, **result}
+
+
+@router.post("/{tenant_id}/data/import/commit")
+@limiter.limit(ADMIN_WRITE_LIMIT)
+def import_commit(
+    request: Request,
+    tenant_id: UUID,
+    body: ImportCommitBody,
+    admin: SudoCtx,
+    _: None = Depends(require_csrf),
+) -> dict[str, Any]:
+    """Commit a previewed import: re-parse the stashed file and insert rows.
+
+    `dry_run=true` re-parses for an impact estimate under the supplied overrides
+    without importing. Remembers the confirmed mapping on a successful commit.
+    """
+    _get_tenant_or_404(tenant_id)
+    svc = ImportPreviewService(get_supabase_service_client())
+    job_id = str(body.job_id)
+
+    if body.dry_run:
+        try:
+            impact = svc.estimate_commit(
+                job_id=job_id, tenant_id=tenant_id, overrides=body.overrides
+            )
+        except ImportPreviewError as exc:
+            _raise_preview_http(exc)
+        return dry_run_response(action="superadmin.data.import_commit", impact=impact)
+
+    try:
+        result = svc.commit_preview(
+            job_id=job_id, tenant_id=tenant_id, overrides=body.overrides
+        )
+    except ImportPreviewError as exc:
+        _raise_preview_http(exc)
+
+    meta = request_actor_meta(request)
+    audit = record_operation(
+        action="superadmin.data.import_commit",
+        actor_id=admin.user_id,
+        actor_email=admin.email,
+        reason=body.reason,
+        tenant_id=tenant_id,
+        before_state={"job_id": job_id, "status": "preview"},
+        after_state={
+            "status": result["status"],
+            "rows_inserted": result["rows_inserted"],
+            "rows_skipped": result["rows_skipped"],
+        },
+        operation_id=body.operation_id,
+        resource_type="data",
+        resource_id=job_id,
+        details={
+            "source_type": result.get("source_type"),
+            "mapping_remembered": result.get("mapping_remembered"),
+            "import_id": result.get("import_id"),
+        },
+        **meta,
+    )
+    return {"ok": True, **result, "audit": audit}
