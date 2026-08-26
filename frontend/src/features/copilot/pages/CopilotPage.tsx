@@ -147,7 +147,7 @@ export function CopilotPage() {
           [messageId]: rating === 1 ? "positive" : "negative",
         }));
         toast.success(
-          rating === 1 ? "Thanks for the feedback!" : "Thanks â€” we'll improve."
+          rating === 1 ? "Thanks for the feedback!" : "Thanks — we'll improve."
         );
       } else {
         toast.error("Failed to submit feedback");
@@ -231,7 +231,7 @@ export function CopilotPage() {
 
         {connectionStatus === "disconnected" && (
           <div className="mt-3 rounded-lg border border-amber-400/30 bg-amber-400/10 px-3 py-2 text-xs text-amber-200">
-            AI is temporarily unavailable. Your dashboard and data still work â€” try again in a few minutes.
+            AI is temporarily unavailable. Your dashboard and data still work — try again in a few minutes.
           </div>
         )}
 
@@ -241,7 +241,7 @@ export function CopilotPage() {
               slotKey={PLACEMENT_KEYS.F}
               title="See Copilot in action"
               description="Watch a 2-minute demo of revenue questions, route analysis, and debrief follow-ups."
-              ctaLabel="View demo â†’"
+              ctaLabel="View demo →"
               ctaTo="/reports"
               accent="blue"
               onDismiss={() => {
@@ -272,7 +272,7 @@ export function CopilotPage() {
               </div>
             </div>
             <span className="text-text-muted shrink-0 hidden sm:inline">
-              {questionsLeft} left Â· {getMonthResetDate()}
+              {questionsLeft} left · {getMonthResetDate()}
             </span>
             {quotaLevel === "critical" || quotaLevel === "blocked" ? (
               <Link to="/upgrade" className="text-[#03B3C3] font-semibold shrink-0 hover:underline">
@@ -293,7 +293,7 @@ export function CopilotPage() {
       />
 
       <div className="flex flex-1 min-h-0">
-        {/* Conversation sidebar â€” desktop only */}
+        {/* Conversation sidebar — desktop only */}
         <div className="hidden md:flex w-64 lg:w-72 border-r border-white/10 bg-[#0a0a0a]/60 flex-col shrink-0">
           <div className="px-4 py-3 border-b border-white/10">
             <div className="flex items-center gap-2 text-sm font-medium text-white/70">
@@ -330,7 +330,7 @@ export function CopilotPage() {
                   </p>
                   <p className="text-xs mt-0.5 truncate text-white/40">
                     {new Date(conv.updated_at ?? conv.created_at).toLocaleDateString()}
-                    {conv.message_count > 0 && ` Â· ${conv.message_count} msgs`}
+                    {conv.message_count > 0 && ` · ${conv.message_count} msgs`}
                   </p>
                 </button>
               ))
@@ -403,7 +403,7 @@ export function CopilotPage() {
                           )}
                         </>
                       ) : m.streaming ? (
-                        <span className="text-white/40">â€¦</span>
+                        <span className="text-white/40">…</span>
                       ) : null}
                       {m.role === "assistant" && !m.streaming && m.content && (
                         <div className="mt-3 pt-2 border-t border-white/10 flex gap-2">
@@ -473,7 +473,7 @@ export function CopilotPage() {
                   slotKey={PLACEMENT_KEYS.L}
                   title="Monthly Copilot quota reached"
                   description="Upgrade to Pro for 500 questions/month and unlock scheme leakage reports."
-                  ctaLabel="Upgrade plan â†’"
+                  ctaLabel="Upgrade plan →"
                   ctaTo="/upgrade"
                   accent="amber"
                   onDismiss={() => dismissSlot(SLOT_KEYS.L)}
@@ -486,7 +486,7 @@ export function CopilotPage() {
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={handleKeyDown}
-                placeholder="Ask about your revenue, orders, customersâ€¦"
+                placeholder="Ask about your revenue, orders, customers…"
                 rows={1}
                 className="resize-none min-h-[44px] max-h-32 flex-1 bg-white/5 border-white/15 text-white placeholder:text-white/35"
                 disabled={isStreaming || connectionStatus === "disconnected"}
@@ -501,7 +501,7 @@ export function CopilotPage() {
               </GlowCTAButton>
             </div>
             <p className="text-xs text-center mt-2 max-w-3xl mx-auto text-white/40">
-              Enter to send Â· Shift+Enter for new line
+              Enter to send · Shift+Enter for new line
             </p>
           </div>
         </div>

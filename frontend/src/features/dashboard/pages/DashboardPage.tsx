@@ -108,7 +108,7 @@ export function DashboardPage() {
           <h1 className="text-display text-2xl">Dashboard</h1>
           <div className="flex items-center gap-2 mt-1">
             <Calendar className="h-3.5 w-3.5 text-text-muted" />
-            <p className="text-caption">{start} â†’ {end}</p>
+            <p className="text-caption">{start} → {end}</p>
           </div>
         </div>
         <Select value={period} onValueChange={setPeriod}>
@@ -129,7 +129,7 @@ export function DashboardPage() {
           slotKey={PLACEMENT_KEYS.D}
           title="Welcome to AKARA Mission Control"
           description="Import your first file to unlock KPIs, zone charts, and weekly debriefs."
-          ctaLabel="Import data â†’"
+          ctaLabel="Import data →"
           ctaTo="/data"
           accent="blue"
           onDismiss={() => {
@@ -162,7 +162,7 @@ export function DashboardPage() {
               </div>
             </div>
             <Link to="/data" className="text-sm font-semibold text-accent hover:underline shrink-0">
-              Import â†’
+              Import →
             </Link>
           </div>
         </GlowSurfaceCard>
@@ -227,7 +227,7 @@ export function DashboardPage() {
                 to="/settings?focus=whatsapp"
                 className="text-sm font-semibold text-accent hover:underline"
               >
-                Add WhatsApp number â†’
+                Add WhatsApp number →
               </Link>
               <button
                 type="button"
@@ -283,7 +283,7 @@ export function DashboardPage() {
       <GlowSurfaceCard>
         <div className="flex items-center gap-2 mb-5">
           <BarChart3 className="h-4 w-4 text-accent" />
-          <h2 className="text-h2">Product Ã— Zone Activity</h2>
+          <h2 className="text-h2">Product × Zone Activity</h2>
         </div>
         <ProductZoneMatrix
           rows={(heatmapData?.cells ?? []).map((c) => ({
@@ -375,7 +375,7 @@ export function DashboardPage() {
             ))}
           </div>
           <p className="text-xs text-amber-300 font-medium mt-4 pt-3 border-t border-white/10">
-            Total: â‚¹{data!.outstanding_parties.reduce((s, p) => s + toNum(p.outstanding_amount), 0).toLocaleString()} across {data!.outstanding_parties.length} parties
+            Total: ₹{data!.outstanding_parties.reduce((s, p) => s + toNum(p.outstanding_amount), 0).toLocaleString()} across {data!.outstanding_parties.length} parties
           </p>
         </GlowSurfaceCard>
       )}

@@ -30,7 +30,7 @@ const PADDING = {
 };
 
 /**
- * Dark BorderGlow card â€” spec defaults (#0a0a0a, purple/pink/cyan mesh).
+ * Dark BorderGlow card — spec defaults (#0a0a0a, purple/pink/cyan mesh).
  * Drop-in replacement for SurfaceCard across product pages.
  */
 export default function GlowSurfaceCard({
@@ -84,5 +84,5 @@ export function GlowSurfacePanel({
   );
 }
 
-/** @deprecated Use GlowSurfaceCard â€” kept for gradual migration */
+/** @deprecated Use GlowSurfaceCard — kept for gradual migration */
 export { GlowSurfacePanel as SurfacePanel };

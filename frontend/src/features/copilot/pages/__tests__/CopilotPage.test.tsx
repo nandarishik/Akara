@@ -1,5 +1,5 @@
 /**
- * CopilotPage smoke tests â€” render with mocked chat hooks.
+ * CopilotPage smoke tests — render with mocked chat hooks.
  */
 
 import { render, screen } from "@testing-library/react";

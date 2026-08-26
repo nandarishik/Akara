@@ -49,7 +49,7 @@ function DeltaBadge({
         className
       )}
     >
-      <span>{isPositive ? "â†—" : isNeutral ? "â†’" : "â†˜"}</span>
+      <span>{isPositive ? "↗" : isNeutral ? "→" : "↘"}</span>
       <span>
         {isPositive ? "+" : ""}
         {change.percentage.toFixed(1)}%

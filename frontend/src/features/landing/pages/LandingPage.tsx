@@ -1,5 +1,5 @@
 /**
- * LandingPage â€” AKARA marketing
+ * LandingPage — AKARA marketing
  *
  * Hyperspeed hero, DecryptedText, MagicBento dashboard preview, PlanReflectiveCard pricing.
  */
@@ -95,15 +95,15 @@ export function LandingPage() {
   const displayPlans = publicPlans
   const slotAFallback = {
     title: "Launch promo",
-    body: "ðŸš€ Launching WhatsApp weekly briefs â€” get your data every Monday.",
-    cta_label: "Be the first â†’",
+    body: "🚀 Launching WhatsApp weekly briefs — get your data every Monday.",
+    cta_label: "Be the first →",
     cta_link: "/signup",
   }
   const { content: slotAContent, trackClick: trackSlotAClick } = usePlacementSlot(PLACEMENT_KEYS.A, slotAFallback)
   const [heroTitle, setHeroTitle] = useState<{ eyebrow?: string; headline?: string; headlineAccent?: string }>({})
   const [heroTagline, setHeroTagline] = useState("")
   const [faqs, setFaqs] = useState(FAQS)
-  const [seoTitle, setSeoTitle] = useState("AKARA â€” FMCG sales intelligence for India")
+  const [seoTitle, setSeoTitle] = useState("AKARA — FMCG sales intelligence for India")
   const [seoDescription, setSeoDescription] = useState(
     "Import Tally data, ask AI questions, and get weekly debriefs. Built for Indian FMCG distributors and brands.",
   )
@@ -204,12 +204,12 @@ export function LandingPage() {
     if (demoTab === "dashboard") setDashboardMounted(true)
   }, [demoTab])
   const typewriterText = useTypewriter(
-    demoTab === "ask" ? "à¤ªà¤¿à¤›à¤²à¥‡ à¤®à¤¹à¥€à¤¨à¥‡ à¤•à¤¿à¤¸ zone à¤•à¥€ revenue à¤¸à¤¬à¤¸à¥‡ à¤•à¤® à¤°à¤¹à¥€?" : "",
+    demoTab === "ask" ? "पिछले महीने किस zone की revenue सबसे कम रही?" : "",
     55
   )
   const aiResponse = useTypewriter(
     demoTab === "ask" && typewriterText.length > 30
-      ? "South zone had the lowest revenue at â‚¹4.2L â€” down 12% vs previous month. North zone led with â‚¹18.3L."
+      ? "South zone had the lowest revenue at ₹4.2L — down 12% vs previous month. North zone led with ₹18.3L."
       : "",
     30
   )
@@ -237,7 +237,7 @@ export function LandingPage() {
             <a href="#features" className="hover:text-[#03B3C3] transition-colors">Features</a>
             <a href="#pricing" className="hover:text-[#03B3C3] transition-colors">Pricing</a>
             <Link to="/login" className="hover:text-white transition-colors">Sign in</Link>
-            <GlowCTALink to="/signup" size="sm">Start free â†’</GlowCTALink>
+            <GlowCTALink to="/signup" size="sm">Start free →</GlowCTALink>
           </div>
           <button
             className="md:hidden p-2 text-white/80"
@@ -262,14 +262,14 @@ export function LandingPage() {
               <a href="#pricing" onClick={() => setNavOpen(false)}>Pricing</a>
               <Link to="/login" onClick={() => setNavOpen(false)}>Sign in</Link>
               <GlowCTALink to="/signup" onClick={() => setNavOpen(false)} className="w-full">
-                Start free â†’
+                Start free →
               </GlowCTALink>
             </nav>
           </div>
         </div>
       )}
 
-      {/* Hero â€” Hyperspeed + DecryptedText */}
+      {/* Hero — Hyperspeed + DecryptedText */}
       <section
         ref={heroRef}
         className="relative min-h-[min(92vh,880px)] overflow-hidden bg-black -mt-16 pt-16"
@@ -313,7 +313,7 @@ export function LandingPage() {
             </p>
             <div className="flex flex-col sm:flex-row gap-3 mb-8">
               <GlowCTALink to="/signup" size="lg">
-                Start free â€” no credit card â†’
+                Start free — no credit card →
               </GlowCTALink>
               <SecondaryButton
                 size="lg"
@@ -324,7 +324,7 @@ export function LandingPage() {
               </SecondaryButton>
             </div>
             <p className="text-xs text-white/45">
-              â‚¹18 Cr revenue analysed Â· 284 questions answered Â· 12 distributors
+              ₹18 Cr revenue analysed · 284 questions answered · 12 distributors
             </p>
             <p className="text-[11px] text-white/35 mt-3 hidden sm:block">
               Hold click or touch the background to speed up
@@ -335,16 +335,16 @@ export function LandingPage() {
             <div className="w-72 space-y-3 rounded-2xl border border-white/10 bg-black/40 backdrop-blur-md p-5 shadow-2xl">
               <div className="flex items-center gap-2 mb-3">
                 <div className="w-2 h-2 rounded-full bg-emerald-400" />
-                <span className="text-[11px] font-medium text-white/50">Monday brief Â· WhatsApp</span>
+                <span className="text-[11px] font-medium text-white/50">Monday brief · WhatsApp</span>
               </div>
               <div className="rounded-xl border border-[#03B3C3]/30 bg-[#03B3C3]/10 p-3 text-xs leading-relaxed text-white/90">
                 <p className="font-semibold text-[#03B3C3] mb-1.5">Weekly Summary</p>
-                Revenue â†‘ 8% vs last week<br />
-                Top SKU: Maggi 70g (â‚¹3.2L)<br />
-                Watch: South zone âˆ’12%
+                Revenue ↑ 8% vs last week<br />
+                Top SKU: Maggi 70g (₹3.2L)<br />
+                Watch: South zone −12%
               </div>
               <div className="rounded-lg border border-white/10 bg-white/5 p-3 text-xs text-white/70">
-                Outstanding: â‚¹2.4L across 7 parties
+                Outstanding: ₹2.4L across 7 parties
               </div>
               <div className="rounded-lg border border-white/10 bg-white/5 p-3 text-xs text-white/45">
                 Next brief: Monday, 8:00 AM
@@ -372,7 +372,7 @@ export function LandingPage() {
           )}
           <div className="px-6 py-4 flex justify-center bg-[#0a0a0a] border-t border-white/10">
             <GlowCTALink to="/signup" onClick={() => setDemoOpen(false)}>
-              Start free â†’
+              Start free →
             </GlowCTALink>
           </div>
         </div>
@@ -382,7 +382,7 @@ export function LandingPage() {
       <section className="py-14 border-b border-white/10 bg-[#0a0a0a]/50">
         <div className="max-w-4xl mx-auto px-5 grid grid-cols-3 gap-6 text-center">
           {[
-            ["â‚¹18 Cr+", "Revenue analysed"],
+            ["₹18 Cr+", "Revenue analysed"],
             ["284", "Questions answered"],
             ["12", "Active distributors"],
           ].map(([val, label]) => (
@@ -415,7 +415,7 @@ export function LandingPage() {
             Sound familiar?
           </h2>
           <p className="text-white/60 text-center mb-12 max-w-md mx-auto">
-            These are the problems AKARA solves â€” today, without a 3-month implementation.
+            These are the problems AKARA solves — today, without a 3-month implementation.
           </p>
           <div className="grid sm:grid-cols-2 gap-6 max-w-4xl mx-auto">
             {PAIN_CARDS.map((card) => {
@@ -485,7 +485,7 @@ export function LandingPage() {
                 </Suspense>
               )}
               <p className="text-center text-xs text-white/40 mt-4">
-                Interactive preview â€” hover tiles to explore
+                Interactive preview — hover tiles to explore
               </p>
             </div>
           )}
@@ -510,7 +510,7 @@ export function LandingPage() {
               { n: "1", title: "Import your data", desc: "Export from Tally or upload any CSV/Excel. Takes 2 minutes." },
               { n: "2", title: "Ask a question", desc: "Type in plain English or Hindi. No SQL, no formulas." },
               { n: "3", title: "Get instant answers", desc: "AKARA analyses your data and responds in seconds." },
-              { n: "4", title: "Get weekly brief", desc: "Every Monday on WhatsApp â€” key metrics, no login." },
+              { n: "4", title: "Get weekly brief", desc: "Every Monday on WhatsApp — key metrics, no login." },
             ].map((step) => (
               <div key={step.n} className="text-center">
                 <div className="w-10 h-10 rounded-full bg-[#03B3C3] text-[#0a0a0a] text-sm font-bold flex items-center justify-center mx-auto mb-4">
@@ -573,11 +573,11 @@ export function LandingPage() {
 
           <GlowSurfaceCard accent="blue" className="text-center">
             <p className="font-bold text-lg text-white mb-1">
-              Founders deal: First 50 customers get Business tier at Pro price â€” forever
+              Founders deal: First 50 customers get Business tier at Pro price — forever
             </p>
             <p className="text-white/50 text-sm mb-4">43 / 50 spots taken</p>
             <GlowCTALink to="/signup?plan=business&deal=founders">
-              Claim your spot â†’
+              Claim your spot →
             </GlowCTALink>
           </GlowSurfaceCard>
         </div>
@@ -639,7 +639,7 @@ export function LandingPage() {
                 <>
               <p className="text-white/60 text-sm mb-3">Analytics tips + product news</p>
               {captureStatus === "done" ? (
-                <p className="text-emerald-400 text-sm">âœ“ You&apos;re on the list!</p>
+                <p className="text-emerald-400 text-sm">✓ You&apos;re on the list!</p>
               ) : (
                 <form onSubmit={handleEmailCapture} className="flex flex-col gap-2">
                   <input
@@ -661,7 +661,7 @@ export function LandingPage() {
                     className="bg-white/5 border-white/10 text-white placeholder:text-white/40"
                   />
                   <GlowCTAButton type="submit" loading={captureStatus === "loading"} size="sm" className="w-full">
-                    Get updates â†’
+                    Get updates →
                   </GlowCTAButton>
                 </form>
               )}
@@ -681,7 +681,7 @@ export function LandingPage() {
           </div>
 
           <div className="border-t border-white/10 pt-8 flex flex-col sm:flex-row justify-between items-center gap-4 text-white/50 text-xs">
-            <p>Â© 2025 AKARA Analytics Pvt Ltd. All rights reserved.</p>
+            <p>© 2025 AKARA Analytics Pvt Ltd. All rights reserved.</p>
             <p>Not affiliated with FireAI or Ocheto. Complementary to both.</p>
           </div>
         </div>
@@ -691,7 +691,7 @@ export function LandingPage() {
         <div className="fixed bottom-0 left-0 right-0 z-40 bg-[#0a0a0a]/95 backdrop-blur border-t border-white/10 px-4 py-3 md:hidden">
           <div className="flex items-center gap-2">
             <GlowCTALink to="/signup" className="block flex-1">
-              Start free â†’
+              Start free →
             </GlowCTALink>
             <button
               type="button"
@@ -702,7 +702,7 @@ export function LandingPage() {
               className="text-white/50 hover:text-white px-2"
               aria-label="Dismiss sticky bar"
             >
-              Ã—
+              ×
             </button>
           </div>
         </div>

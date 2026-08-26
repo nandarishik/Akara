@@ -6,6 +6,8 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
+    "encoding:check": "node scripts/fix-mojibake.mjs",
+    "encoding:fix": "node scripts/fix-mojibake.mjs --write",
     "lint": "oxlint",
     "preview": "vite preview",
     "test": "vitest",

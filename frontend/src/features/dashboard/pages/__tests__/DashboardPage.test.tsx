@@ -1,5 +1,5 @@
 /**
- * DashboardPage smoke tests â€” render with mocked data hooks.
+ * DashboardPage smoke tests — render with mocked data hooks.
  */
 
 import { render, screen } from "@testing-library/react";

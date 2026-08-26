@@ -1,6 +1,6 @@
 /**
- * ResetPasswordPage â€” Sprint Phase 2, Day 3
- * FireAI light auth â€” AuthLayout + shared Input + AkaraButton.
+ * ResetPasswordPage — Sprint Phase 2, Day 3
+ * FireAI light auth — AuthLayout + shared Input + AkaraButton.
  * Reads access_token from URL hash, strength bar, success auto-redirect, expired-token error.
  */
 
@@ -124,7 +124,7 @@ export function ResetPasswordPage() {
             This reset link has expired or has already been used.
           </p>
           <Link to="/forgot-password" className="block">
-            <AkaraButton className="w-full">Request a new link â†’</AkaraButton>
+            <AkaraButton className="w-full">Request a new link →</AkaraButton>
           </Link>
           <p className="text-center text-sm text-text-muted mt-4">
             <Link to="/login" className="text-accent hover:underline">Back to sign in</Link>
@@ -194,7 +194,7 @@ export function ResetPasswordPage() {
             </div>
 
             <AkaraButton type="submit" loading={status === "loading"} className="w-full">
-              Set new password â†’
+              Set new password →
             </AkaraButton>
           </form>
         </>

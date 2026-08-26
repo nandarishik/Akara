@@ -51,7 +51,7 @@ export function MobileHistoryDrawer({
         </div>
         <div className="flex-1 overflow-y-auto p-2 space-y-1">
           {loading ? (
-            <p className="text-caption text-center py-6">Loadingâ€¦</p>
+            <p className="text-caption text-center py-6">Loading…</p>
           ) : conversations.length === 0 ? (
             <p className="text-caption text-center py-6 px-2">
               Past chats appear here after you send a message.
@@ -77,7 +77,7 @@ export function MobileHistoryDrawer({
                 </p>
                 <p className="text-caption text-xs mt-0.5 truncate">
                   {new Date(conv.updated_at ?? conv.created_at).toLocaleDateString()}
-                  {conv.message_count > 0 && ` Â· ${conv.message_count} msgs`}
+                  {conv.message_count > 0 && ` · ${conv.message_count} msgs`}
                 </p>
               </button>
             ))

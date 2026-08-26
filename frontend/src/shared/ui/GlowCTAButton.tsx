@@ -36,7 +36,7 @@ function InnerSpecular({
   onClick?: () => void;
   to?: string;
 }) {
-  const label = loading ? "Loadingâ€¦" : String(children);
+  const label = loading ? "Loading…" : String(children);
   const specularProps = {
     size,
     radius: 18,
@@ -137,7 +137,7 @@ export function GlowCTALink({
         onClick={onClick as () => void}
         className="w-full font-semibold"
       >
-        {loading ? "Loadingâ€¦" : String(children)}
+        {loading ? "Loading…" : String(children)}
       </SpecularButton>
     </GlowWrap>
   );

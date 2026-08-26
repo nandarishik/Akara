@@ -47,10 +47,10 @@ export function CronPage() {
   async function runTask(name: string) {
     if (!reasonOk) return;
     setRunning(name);
-    setRunStatus((s) => ({ ...s, [name]: "Triggeringâ€¦" }));
+    setRunStatus((s) => ({ ...s, [name]: "Triggering…" }));
     try {
       await sa.runCron(name, reason.trim());
-      setRunStatus((s) => ({ ...s, [name]: "Triggered â€” check back in ~30s" }));
+      setRunStatus((s) => ({ ...s, [name]: "Triggered — check back in ~30s" }));
       setTimeout(() => void loadTasks(), 3000);
     } catch (e) {
       setRunStatus((s) => ({
@@ -79,15 +79,15 @@ export function CronPage() {
     if (!details) return null;
     const text = (details.text as string | undefined) ?? (details.brief_text as string | undefined);
     if (!text) return null;
-    return text.length > 200 ? `${text.slice(0, 197)}â€¦` : text;
+    return text.length > 200 ? `${text.slice(0, 197)}…` : text;
   }
 
   function detailsSummary(details: Record<string, unknown> | undefined): string {
-    if (!details || Object.keys(details).length === 0) return "â€”";
+    if (!details || Object.keys(details).length === 0) return "—";
     const snippet = founderBriefSnippet(details);
     if (snippet) return snippet;
     const raw = JSON.stringify(details);
-    return raw.length > 100 ? `${raw.slice(0, 97)}â€¦` : raw;
+    return raw.length > 100 ? `${raw.slice(0, 97)}…` : raw;
   }
 
   return (
@@ -124,7 +124,7 @@ export function CronPage() {
                 <td className="p-3 text-xs text-sa-muted whitespace-nowrap">
                   {task.last_run
                     ? new Date(task.last_run).toLocaleString("en-IN")
-                    : "â€”"}
+                    : "—"}
                 </td>
                 <td className="p-3 text-xs text-sa-muted max-w-xs">
                   {task.task_name === "founder_brief" && founderBriefSnippet(task.details) ? (
@@ -142,7 +142,7 @@ export function CronPage() {
                     disabled={!reasonOk || running === task.task_name}
                     onClick={() => void runTask(task.task_name)}
                   >
-                    {running === task.task_name ? "Runningâ€¦" : "Run"}
+                    {running === task.task_name ? "Running…" : "Run"}
                   </button>
                   <button
                     type="button"
@@ -161,7 +161,7 @@ export function CronPage() {
             )}
             {loading && (
               <tr>
-                <td colSpan={5} className="p-4 text-sa-muted">Loading cron tasksâ€¦</td>
+                <td colSpan={5} className="p-4 text-sa-muted">Loading cron tasks…</td>
               </tr>
             )}
           </tbody>
@@ -187,7 +187,7 @@ export function CronPage() {
             </button>
           </div>
           {logsLoading ? (
-            <p className="text-sm text-sa-muted">Loading logsâ€¦</p>
+            <p className="text-sm text-sa-muted">Loading logs…</p>
           ) : logs.length === 0 ? (
             <p className="text-sm text-sa-muted">No log entries</p>
           ) : (
@@ -196,12 +196,12 @@ export function CronPage() {
                 <li key={i} className="border-b border-sa-border pb-2">
                   <div className="flex justify-between gap-2">
                     <span className={log.status === "failed" ? "text-red-400" : ""}>
-                      {log.status ?? "â€”"}
+                      {log.status ?? "—"}
                     </span>
                     <span className="text-sa-muted shrink-0">
                       {log.finished_at
                         ? new Date(log.finished_at).toLocaleString("en-IN")
-                        : "â€”"}
+                        : "—"}
                     </span>
                   </div>
                   <p className="text-sa-muted mt-1 font-mono text-[10px] whitespace-pre-wrap">

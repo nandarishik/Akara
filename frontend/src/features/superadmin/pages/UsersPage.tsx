@@ -220,7 +220,7 @@ export function UsersPage() {
         </div>
         <div>
           <Label className="text-xs text-text-muted">Search email / name</Label>
-          <Input className="mt-1" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Searchâ€¦" />
+          <Input className="mt-1" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search…" />
         </div>
         <MutationReasonField value={reason} onChange={setReason} />
       </GlowSurfaceCard>
@@ -260,12 +260,12 @@ export function UsersPage() {
               {users.map((u) => (
                 <TableRow key={u.id}>
                   <TableCell>
-                    <p className="font-medium">{u.display_name || "â€”"}</p>
+                    <p className="font-medium">{u.display_name || "—"}</p>
                     <p className="text-xs text-text-muted">{u.email || u.id.slice(0, 8)}</p>
                   </TableCell>
-                  <TableCell className="text-sm">{u.tenant_name || "â€”"}</TableCell>
+                  <TableCell className="text-sm">{u.tenant_name || "—"}</TableCell>
                   <TableCell>
-                    <Badge variant="outline" className="capitalize">{u.plan || "â€”"}</Badge>
+                    <Badge variant="outline" className="capitalize">{u.plan || "—"}</Badge>
                   </TableCell>
                   <TableCell>
                     <Badge variant={isSuspended(u) ? "destructive" : "secondary"}>

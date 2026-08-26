@@ -2,6 +2,7 @@ from datetime import date
 from uuid import UUID
 
 from app.infra.schema.discovery import SchemaDiscovery
+from app.api.superadmin.control_plane import resolve_published_prompt
 
 # ── Industry-specific addendum registry ──────────────────────────────────────
 
@@ -164,9 +165,20 @@ Selected languages: English and {name} ({script}).
         end_date: str,
     ) -> str:
         schema_context = self._schema.get_schema_context(tenant_id)
-        return (
+        checked_in = (
             f"You are AKARA Copilot, analytics assistant for {tenant_name}.\n"
             f"Today's date: {date.today().isoformat()}\n"
             f"Data available: {start_date} to {end_date}\n\n"
             f"Database schema:\n{schema_context}\n"
         )
+        prompt, _used_fallback = resolve_published_prompt("copilot.system", checked_in)
+        replacements = {
+            "{tenant_name}": tenant_name,
+            "{today}": date.today().isoformat(),
+            "{start_date}": start_date,
+            "{end_date}": end_date,
+            "{schema_context}": schema_context,
+        }
+        for marker, value in replacements.items():
+            prompt = prompt.replace(marker, value)
+        return prompt

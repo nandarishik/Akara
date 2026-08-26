@@ -36,7 +36,7 @@ export function PrivacyPage() {
         ) : (
           <>
             <h1 className="text-3xl font-bold text-white">Privacy Policy</h1>
-            <p className="text-white/50">Last updated: July 2026 Â· Version {version}</p>
+            <p className="text-white/50">Last updated: July 2026 · Version {version}</p>
             <h2>Information We Collect</h2>
             <p>
               AKARA collects account information (name, email), sales data you upload,

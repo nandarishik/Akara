@@ -10,7 +10,7 @@ type PageLoaderProps = {
 };
 
 export default function PageLoader({
-  title = "Loading AKARAâ€¦",
+  title = "Loading AKARA…",
   subtitle,
   size = "md",
   className,

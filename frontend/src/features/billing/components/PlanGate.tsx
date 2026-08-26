@@ -1,5 +1,5 @@
 /**
- * PlanGate â€” unified light overlay for Pro/Business features.
+ * PlanGate — unified light overlay for Pro/Business features.
  */
 
 import { Lock } from "lucide-react";
@@ -25,7 +25,7 @@ interface PlanGateProps {
 }
 
 const PLAN_LABELS = { pro: "Pro", business: "Business" } as const;
-const PLAN_PRICES = { pro: "â‚¹7,999/month", business: "â‚¹13,999/month" } as const;
+const PLAN_PRICES = { pro: "₹7,999/month", business: "₹13,999/month" } as const;
 
 export function PlanGate({
   feature,
@@ -69,7 +69,7 @@ export function PlanGate({
           <p className="mt-2 text-body text-sm">{displayDesc}</p>
           <p className="mt-1 text-caption">{price}</p>
           <Link to="/upgrade" className="inline-block mt-6">
-            <AkaraButton>Upgrade to {PLAN_LABELS[requiredPlan]} â†’</AkaraButton>
+            <AkaraButton>Upgrade to {PLAN_LABELS[requiredPlan]} →</AkaraButton>
           </Link>
         </GlowSurfaceCard>
       </div>

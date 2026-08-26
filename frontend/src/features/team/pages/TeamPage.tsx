@@ -135,7 +135,7 @@ export function TeamPage({ embedded = false }: TeamPageProps) {
       )}
 
       {loading ? (
-        <PageLoader title="Loading teamâ€¦" subtitle="" minHeight="min-h-[240px]" />
+        <PageLoader title="Loading team…" subtitle="" minHeight="min-h-[240px]" />
       ) : (
         <>
           <TeamSeatVisualizer
@@ -171,7 +171,7 @@ export function TeamPage({ embedded = false }: TeamPageProps) {
               </GlowCTAButton>
             </div>
             {atSeatLimit && (
-              <p className="text-xs text-amber-700">Seat limit reached â€” cancel a pending invite or upgrade.</p>
+              <p className="text-xs text-amber-700">Seat limit reached — cancel a pending invite or upgrade.</p>
             )}
             {error && <p className="text-sm text-red-600">{error}</p>}
           </GlowSurfaceCard>

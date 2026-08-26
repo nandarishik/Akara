@@ -34,10 +34,10 @@ import { toast } from "@/shared/ui/toast";
 const BASE = import.meta.env.VITE_API_BASE_URL as string;
 
 function formatINR(v: number) {
-  if (v >= 1_00_00_000) return `â‚¹${(v / 1_00_00_000).toFixed(2)}Cr`;
-  if (v >= 1_00_000) return `â‚¹${(v / 1_00_000).toFixed(1)}L`;
-  if (v >= 1_000) return `â‚¹${(v / 1_000).toFixed(1)}K`;
-  return `â‚¹${v.toFixed(0)}`;
+  if (v >= 1_00_00_000) return `₹${(v / 1_00_00_000).toFixed(2)}Cr`;
+  if (v >= 1_00_000) return `₹${(v / 1_00_000).toFixed(1)}L`;
+  if (v >= 1_000) return `₹${(v / 1_000).toFixed(1)}K`;
+  return `₹${v.toFixed(0)}`;
 }
 
 async function downloadReport(reportId: string, title: string) {
@@ -159,7 +159,7 @@ export function ReportsPage() {
 
         {!hasRealZones ? (
           <EmptyState
-            icon={<span className="text-2xl">ðŸ“­</span>}
+            icon={<span className="text-2xl">📭</span>}
             title="No route data yet"
             description="Import sales data with zone or route columns to see performance analytics here."
             primaryAction={{ label: "Import data", href: "/data" }}
@@ -192,11 +192,11 @@ export function ReportsPage() {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-emerald-300 font-medium">Top Performer</p>
-                    <p className="text-emerald-400/80 text-sm">{topRoute?.route ?? "â€”"}</p>
+                    <p className="text-emerald-400/80 text-sm">{topRoute?.route ?? "—"}</p>
                   </div>
                   <div className="text-right">
                     <div className="text-lg font-bold text-emerald-300">
-                      {topRoute ? `${topRoute.efficiency}%` : "â€”"}
+                      {topRoute ? `${topRoute.efficiency}%` : "—"}
                     </div>
                     <div className="text-xs text-emerald-400/80">share</div>
                   </div>
@@ -272,7 +272,7 @@ export function ReportsPage() {
               </p>
             </div>
             <div className="flex items-center gap-3 shrink-0">
-              <GlowCTAButton size="sm" to="/billing">Upgrade to Business â†’</GlowCTAButton>
+              <GlowCTAButton size="sm" to="/billing">Upgrade to Business →</GlowCTAButton>
               <button
                 type="button"
                 className="text-xs text-text-muted hover:underline"
@@ -293,7 +293,7 @@ export function ReportsPage() {
         requiredPlan="business"
         title="Scheme Leakage Detection"
         description="See exactly how much scheme money was claimed vs actual offtake."
-        priceHint="From â‚¹13,999/month"
+        priceHint="From ₹13,999/month"
       >
       {hasLeakage && (
         <GlowSurfaceCard padding="md" accent="red" className="relative overflow-hidden">
@@ -353,12 +353,12 @@ export function ReportsPage() {
                         <p className="font-medium text-red-200">{row.party_name}</p>
                         <div className="flex items-center gap-2 text-xs">
                           <span className="text-red-300/80">{row.scheme_name}</span>
-                          <span className="text-red-400/60">â€¢</span>
+                          <span className="text-red-400/60">•</span>
                           <span className="text-red-300/80">{row.product_name}</span>
                         </div>
                         <div className="flex items-center gap-2 text-xs text-red-400/70">
                           <Calendar className="h-3 w-3" />
-                          <span>{row.scheme_start} â†’ {row.scheme_end}</span>
+                          <span>{row.scheme_start} → {row.scheme_end}</span>
                         </div>
                       </div>
                       <div className="text-right shrink-0 ml-4">

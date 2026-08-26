@@ -9,6 +9,9 @@ from app.api.superadmin import (
     content,
     conversations,
     copilot,
+    day11,
+    ai_control,
+    templates_control,
     data,
     impersonate,
     legal,
@@ -45,3 +48,6 @@ router.include_router(overview.router)
 router.include_router(usage.router)
 router.include_router(system.router)
 router.include_router(copilot.router)
+router.include_router(day11.router)
+router.include_router(ai_control.router)
+router.include_router(templates_control.router)

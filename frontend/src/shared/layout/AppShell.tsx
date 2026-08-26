@@ -153,13 +153,13 @@ export function AppShell() {
                 onClick={() => dismissSlot(SLOT_KEYS.M)}
                 aria-label="Dismiss plan badge"
               >
-                Ã—
+                ×
               </button>
             </div>
           )}
           {plan === "free" && (
             <GlowCTALink to="/upgrade" size="sm" className="w-full block" onClick={closeSidebar}>
-              Upgrade to Pro â†’
+              Upgrade to Pro →
             </GlowCTALink>
           )}
         </div>

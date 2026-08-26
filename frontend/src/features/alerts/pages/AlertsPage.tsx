@@ -184,7 +184,7 @@ export function AlertsPage() {
                     {metricLabel(a.metric)} {a.condition} {a.threshold}
                   </td>
                   <td className="p-3 text-text-muted">
-                    {a.last_triggered ? new Date(a.last_triggered).toLocaleString() : "â€”"}
+                    {a.last_triggered ? new Date(a.last_triggered).toLocaleString() : "—"}
                   </td>
                   <td className="p-3">
                     <button type="button" onClick={() => toggleActive(a)} className="text-accent text-xs underline">

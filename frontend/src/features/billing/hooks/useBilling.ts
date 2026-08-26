@@ -1,5 +1,5 @@
 /**
- * useBilling â€” React Query hook for GET /billing/usage.
+ * useBilling — React Query hook for GET /billing/usage.
  */
 
 import { useQuery } from "@tanstack/react-query";

@@ -1,6 +1,6 @@
 /**
- * SignUpPage â€” Sprint Phase 2, Day 3
- * FireAI light auth â€” AuthLayout + shared Input + AkaraButton.
+ * SignUpPage — Sprint Phase 2, Day 3
+ * FireAI light auth — AuthLayout + shared Input + AkaraButton.
  * All fields, 4-segment strength bar, 2 consent checkboxes, Turnstile, social proof.
  */
 
@@ -72,7 +72,7 @@ function mapSignUpError(message: string): {
   return { field: "form", message: message }
 }
 
-// â”€â”€ Password strength â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Password strength ────────────────────────────────────────────────────────
 
 type Strength = 0 | 1 | 2 | 3 | 4
 
@@ -126,7 +126,7 @@ function PasswordStrengthBar({ strength }: { strength: Strength }) {
   )
 }
 
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─────────────────────────────────────────────────────────────────────────────
 
 export function SignUpPage() {
   const { signUp } = useAuth()
@@ -223,13 +223,13 @@ export function SignUpPage() {
     <PremiumAuthLayout subtitle="Create your free account">
       <PageSEO
         title="Sign up"
-        description="Create your free AKARA account â€” import sales data and unlock AI copilot insights for Indian FMCG."
+        description="Create your free AKARA account — import sales data and unlock AI copilot insights for Indian FMCG."
         path="/signup"
         noindex
       />
       {loading && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#0a0a0a]/80 backdrop-blur-sm">
-          <PageLoader title="Creating your accountâ€¦" subtitle="" minHeight="min-h-0" />
+          <PageLoader title="Creating your account…" subtitle="" minHeight="min-h-0" />
         </div>
       )}
       <form onSubmit={handleSubmit} className="space-y-4" noValidate>
@@ -249,12 +249,12 @@ export function SignUpPage() {
             aria-required="true"
             className={emailError ? "border-red-500/50 bg-red-500/10" : undefined}
           />
-          <p className="text-xs text-text-muted">Use your work email â€” we&apos;ll send the weekly brief here</p>
+          <p className="text-xs text-text-muted">Use your work email — we&apos;ll send the weekly brief here</p>
           {emailError && (
             <p id="email-error" className="text-xs text-red-600" role="alert">
               {emailError}{" "}
               {emailError.includes("already registered") && (
-                <Link to="/login" className="underline">Sign in â†’</Link>
+                <Link to="/login" className="underline">Sign in →</Link>
               )}
             </p>
           )}
@@ -330,7 +330,7 @@ export function SignUpPage() {
           </Label>
           <div className="flex">
             <span className="inline-flex items-center px-3 border border-r-0 border-surface-border rounded-l-md bg-surface-raised text-text-secondary text-sm">
-              ðŸ‡®ðŸ‡³ +91
+              🇮🇳 +91
             </span>
             <Input
               id="whatsapp"
@@ -402,7 +402,7 @@ export function SignUpPage() {
         )}
 
         <AkaraButton type="submit" disabled={!canSubmit || loading} loading={loading} className="w-full mt-2">
-          Create free account â†’
+          Create free account →
         </AkaraButton>
       </form>
 
@@ -412,7 +412,7 @@ export function SignUpPage() {
       </p>
 
       <p className="text-xs text-center text-text-muted mt-6 border-t border-white/10 pt-4">
-        â‚¹18 Cr revenue analysed Â· 284 questions answered Â· 12 distributors
+        ₹18 Cr revenue analysed · 284 questions answered · 12 distributors
       </p>
     </PremiumAuthLayout>
   )

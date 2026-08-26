@@ -1,5 +1,5 @@
 /**
- * DataPage smoke tests â€” render with mocked auth and billing hooks.
+ * DataPage smoke tests — render with mocked auth and billing hooks.
  */
 
 import { render, screen } from "@testing-library/react";

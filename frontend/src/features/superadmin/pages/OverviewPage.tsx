@@ -103,13 +103,13 @@ export function OverviewPage() {
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-6">
         <Kpi
           label="MRR"
-          value={revenue ? `â‚¹${revenue.mrr_inr.toLocaleString("en-IN")}` : "â€”"}
+          value={revenue ? `₹${revenue.mrr_inr.toLocaleString("en-IN")}` : "—"}
           delta={revenue?.mrr_mom_pct != null ? <DeltaBadge value={revenue.mrr_mom_pct} /> : null}
         />
-        <Kpi label="ARR" value={revenue ? `â‚¹${revenue.arr_inr.toLocaleString("en-IN")}` : "â€”"} />
+        <Kpi label="ARR" value={revenue ? `₹${revenue.arr_inr.toLocaleString("en-IN")}` : "—"} />
         <Kpi
           label="Active tenants"
-          value={activeTenants != null ? String(activeTenants) : "â€”"}
+          value={activeTenants != null ? String(activeTenants) : "—"}
           delta={
             revenue?.active_tenants_delta != null && revenue.active_tenants_delta !== 0 ? (
               <span
@@ -125,15 +125,15 @@ export function OverviewPage() {
         />
         <Kpi
           label="Margin est."
-          value={revenue ? `${revenue.estimated_gross_margin_pct}%` : "â€”"}
+          value={revenue ? `${revenue.estimated_gross_margin_pct}%` : "—"}
           delta={
             revenue?.margin_delta_pp != null ? (
               <DeltaPpBadge value={revenue.margin_delta_pp} />
             ) : null
           }
         />
-        <Kpi label="LLM cost (mo)" value={costs ? `$${costs.total_cost_usd_this_month.toFixed(2)}` : "â€”"} />
-        <Kpi label="Questions today" value={stats != null ? String(stats.questions_today) : "â€”"} />
+        <Kpi label="LLM cost (mo)" value={costs ? `$${costs.total_cost_usd_this_month.toFixed(2)}` : "—"} />
+        <Kpi label="Questions today" value={stats != null ? String(stats.questions_today) : "—"} />
       </div>
 
       {stats && (
@@ -176,7 +176,7 @@ export function OverviewPage() {
               <Link to="/superadmin/users" className="text-sa-accent hover:underline">
                 Users
               </Link>
-              <span className="text-sa-muted">Â·</span>
+              <span className="text-sa-muted">·</span>
               <Link to="/superadmin/cron" className="text-sa-accent hover:underline">
                 Cron
               </Link>
@@ -201,7 +201,7 @@ export function OverviewPage() {
                   className="hover:underline text-left"
                   onClick={() => navigate(`/superadmin/tenants?open=${t.id}`)}
                 >
-                  â‰¥80% quota: {t.name} ({t.copilot_calls_this_month}/{t.copilot_limit})
+                  ≥80% quota: {t.name} ({t.copilot_calls_this_month}/{t.copilot_limit})
                 </button>
               </li>
             ))}
@@ -243,7 +243,7 @@ export function OverviewPage() {
                     <span className="text-sa-muted truncate block">
                       {[a.tenant_name, a.tenant_plan?.toUpperCase(), a.actor_email]
                         .filter(Boolean)
-                        .join(" Â· ")}
+                        .join(" · ")}
                     </span>
                   )}
                 </div>

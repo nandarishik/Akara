@@ -22,6 +22,9 @@ class Settings(BaseSettings):
     supabase_pooler_url: str = ""
     # Direct Postgres URI for async workers (asyncpg). Prefer pooler in production.
     supabase_db_url: str = ""
+    # Dedicated least-privilege Postgres connection for the superadmin Query Console.
+    # It must point at a role with SELECT-only grants; never use the service role here.
+    query_readonly_db_url: str = ""
     # Supabase Storage bucket for async import uploads (default matches common project setup).
     supabase_imports_bucket: str = "storage"
 

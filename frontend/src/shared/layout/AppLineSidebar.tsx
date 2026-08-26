@@ -33,7 +33,7 @@ function buildNavEntries(
 
   for (const item of [...primary, ...secondary]) {
     const isLocked = item.feature && features ? !features[item.feature as keyof typeof features] : false;
-    labels.push(isLocked ? `${item.label} ðŸ”’` : item.label);
+    labels.push(isLocked ? `${item.label} 🔒` : item.label);
     paths.push(item.to);
     locked.push(!!isLocked);
   }
@@ -64,7 +64,7 @@ export default function AppLineSidebar({ onNavigate, className }: Props) {
       activeIndex={activeIndex}
       className={className}
       onItemClick={(index, label) => {
-        const cleanLabel = label.replace(" ðŸ”’", "");
+        const cleanLabel = label.replace(" 🔒", "");
         if (locked[index]) return;
         const path = navLabelToPath(cleanLabel) ?? paths[index];
         if (path) {

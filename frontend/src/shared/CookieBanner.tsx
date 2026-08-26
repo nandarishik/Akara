@@ -1,5 +1,5 @@
 /**
- * CookieBanner â€” minimal light bar (DPDP / analytics consent).
+ * CookieBanner — minimal light bar (DPDP / analytics consent).
  */
 
 import { useState } from "react";

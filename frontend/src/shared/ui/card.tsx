@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils"
 import { Badge } from "@/shared/ui/badge"
 import { Skeleton } from "@/shared/ui/skeleton"
 
-/* â”€â”€â”€ Base shadcn Card primitives â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ─── Base shadcn Card primitives ─────────────────────────────────────────── */
 
 const Card = React.forwardRef<
   HTMLDivElement,
@@ -83,7 +83,7 @@ const CardFooter = React.forwardRef<
 ))
 CardFooter.displayName = "CardFooter"
 
-/* â”€â”€â”€ AKARA card variants â€” UI Bible Â§1.4 â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ─── AKARA card variants — UI Bible §1.4 ────────────────────────────────── */
 
 type KPIAccent = "brand" | "amber" | "success" | "danger" | "info"
 
@@ -198,7 +198,7 @@ function PlanCard({
           {features.map((feature) => (
             <li key={feature} className="flex items-start gap-2">
               <span className="text-success" aria-hidden="true">
-                âœ“
+                ✓
               </span>
               {feature}
             </li>
@@ -254,7 +254,7 @@ function LockedCard({
             to={upgradeHref}
             className="mt-4 text-sm font-semibold text-brand hover:text-brand-light hover:underline"
           >
-            {upgradeLabel} â†’
+            {upgradeLabel} →
           </Link>
         </div>
       </div>

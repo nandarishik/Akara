@@ -1,8 +1,8 @@
 /**
  * ProtectedRoute -- Sprint Phase 2, Day 3
  * Extended with two redirect checks:
- *  1. Email not verified â†’ /verify-email
- *  2. tenant_id is null  â†’ /onboarding
+ *  1. Email not verified → /verify-email
+ *  2. tenant_id is null  → /onboarding
  */
 
 import { Navigate, Outlet, useLocation } from "react-router-dom"
@@ -20,18 +20,18 @@ export function ProtectedRoute() {
     )
   }
 
-  // Not authenticated â†’ login
+  // Not authenticated → login
   if (!session) {
     return <Navigate to="/login" replace />
   }
 
-  // Email not verified â†’ verification pending page
+  // Email not verified → verification pending page
   if (!session.user.email_confirmed_at) {
     return <Navigate to="/verify-email" replace />
   }
 
-  // Authenticated but no tenant yet â†’ must complete onboarding
-  // Allow /onboarding itself to render (avoid redirect loop â†’ blank page)
+  // Authenticated but no tenant yet → must complete onboarding
+  // Allow /onboarding itself to render (avoid redirect loop → blank page)
   if (!user?.tenantId && location.pathname !== "/onboarding") {
     return <Navigate to="/onboarding" replace />
   }

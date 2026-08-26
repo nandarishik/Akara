@@ -61,7 +61,7 @@ function QuotaBar({
   limit: number;
 }) {
   const pct = quotaPct(used, limit);
-  const displayLimit = limit === -1 ? "âˆž" : limit.toLocaleString("en-IN");
+  const displayLimit = limit === -1 ? "∞" : limit.toLocaleString("en-IN");
   const barColor =
     pct >= 100 ? "bg-red-500" : pct >= 80 ? "bg-amber-500" : "bg-sa-accent";
 
@@ -332,7 +332,7 @@ export function TenantDrawer({ tenantId, onClose, initialTab }: TenantDrawerProp
         open={!!tenantId}
         onClose={onClose}
         title={tenant?.name ?? "Tenant"}
-        description={tenant ? `${tenant.slug} Â· ${tenant.plan} Â· ${tenant.plan_status}` : undefined}
+        description={tenant ? `${tenant.slug} · ${tenant.plan} · ${tenant.plan_status}` : undefined}
         width="lg"
         footer={
           <div className="flex flex-wrap gap-2">
@@ -474,7 +474,7 @@ export function TenantDrawer({ tenantId, onClose, initialTab }: TenantDrawerProp
                     <p className="text-emerald-400">Margin: {opsDetail.margin_pct}%</p>
                   )}
                   <p className="text-sa-muted">
-                    {tenantCost.copilot_calls_used} questions Â· retention {tenantCost.retention_days}d
+                    {tenantCost.copilot_calls_used} questions · retention {tenantCost.retention_days}d
                   </p>
                 </div>
               )}
@@ -485,7 +485,7 @@ export function TenantDrawer({ tenantId, onClose, initialTab }: TenantDrawerProp
                   <ul className="space-y-1 max-h-32 overflow-y-auto text-sa-muted">
                     {opsDetail.delivery_events.map((ev, i) => (
                       <li key={i}>
-                        <span className="text-sa-text">{ev.action}</span> Â·{" "}
+                        <span className="text-sa-text">{ev.action}</span> ·{" "}
                         {formatRelative(ev.created_at)}
                       </li>
                     ))}
@@ -499,11 +499,11 @@ export function TenantDrawer({ tenantId, onClose, initialTab }: TenantDrawerProp
                   <p>
                     {debriefStatus.debrief_count} lifetime
                     {debriefStatus.last_debrief_at &&
-                      ` Â· last ${formatRelative(debriefStatus.last_debrief_at)}`}
+                      ` · last ${formatRelative(debriefStatus.last_debrief_at)}`}
                   </p>
                   <p className="text-sa-muted">
-                    Email: {debriefStatus.last_email_status ?? "â€”"} Â· WhatsApp:{" "}
-                    {debriefStatus.last_whatsapp_status ?? "â€”"}
+                    Email: {debriefStatus.last_email_status ?? "—"} · WhatsApp:{" "}
+                    {debriefStatus.last_whatsapp_status ?? "—"}
                   </p>
                 </div>
               )}
@@ -654,7 +654,7 @@ export function TenantDrawer({ tenantId, onClose, initialTab }: TenantDrawerProp
                           onClick={() => clearFeatureOverride(key)}
                           title="Reset to plan default"
                         >
-                          â†º
+                          ↺
                         </button>
                       )}
                       <button
@@ -751,7 +751,7 @@ export function TenantDrawer({ tenantId, onClose, initialTab }: TenantDrawerProp
                   <p className="font-medium">Razorpay status</p>
                   <p>
                     {razorpay.has_subscription
-                      ? `Active Â· ${String(razorpay.subscription_status ?? razorpay.razorpay_status ?? "â€”")}`
+                      ? `Active · ${String(razorpay.subscription_status ?? razorpay.razorpay_status ?? "—")}`
                       : "No subscription"}
                   </p>
                   {(tenant?.trial_ends_at ?? razorpay.trial_ends_at) != null && (
@@ -771,14 +771,14 @@ export function TenantDrawer({ tenantId, onClose, initialTab }: TenantDrawerProp
                     <span className="text-sa-muted capitalize">{String(ev.type)}</span>{" "}
                     {ev.type === "invoice" && (
                       <>
-                        {String(ev.invoice_number ?? "")} Â· â‚¹
-                        {Number(ev.total_amount ?? 0).toLocaleString("en-IN")} Â·{" "}
+                        {String(ev.invoice_number ?? "")} · ₹
+                        {Number(ev.total_amount ?? 0).toLocaleString("en-IN")} ·{" "}
                         {String(ev.status ?? "")}
                       </>
                     )}
                     {ev.type === "dunning" && (
                       <>
-                        Day {String(ev.day_offset ?? "")} Â· {String(ev.channel ?? "")} Â·{" "}
+                        Day {String(ev.day_offset ?? "")} · {String(ev.channel ?? "")} ·{" "}
                         {String(ev.status ?? "")}
                       </>
                     )}
@@ -802,8 +802,8 @@ export function TenantDrawer({ tenantId, onClose, initialTab }: TenantDrawerProp
                   <div>
                     Date range:{" "}
                     {dataSummary.oldest_record_date
-                      ? `${dataSummary.oldest_record_date} â€“ ${dataSummary.newest_record_date ?? "â€”"}`
-                      : "â€”"}
+                      ? `${dataSummary.oldest_record_date} – ${dataSummary.newest_record_date ?? "—"}`
+                      : "—"}
                   </div>
                   <div>Last import: {formatRelative(dataSummary.last_import_at)}</div>
                 </div>
@@ -1002,7 +1002,7 @@ function PlanAssignmentSection({
     setLoading(true);
     try {
       await sa.assignPlan(tenantId, buildPayload(true));
-      onStatus("Dry run OK â€” review impact before applying assignment");
+      onStatus("Dry run OK — review impact before applying assignment");
     } catch (e) {
       onStatus(e instanceof Error ? e.message : "Dry run failed");
     } finally {

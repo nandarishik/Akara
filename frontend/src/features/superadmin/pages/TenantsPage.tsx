@@ -243,7 +243,7 @@ export function TenantsPage() {
                 <TableCell>
                   <div className="tabular-nums">
                     {t.copilot_calls_this_month}/
-                    {t.copilot_limit === -1 ? "âˆž" : t.copilot_limit}
+                    {t.copilot_limit === -1 ? "∞" : t.copilot_limit}
                   </div>
                   <div className="text-xs text-muted-foreground tabular-nums">
                     {t.questions_today} today

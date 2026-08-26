@@ -83,7 +83,7 @@ export function SudoGate({ children }: { children: ReactNode }) {
             </div>
             {error && <p className="mt-2 text-sm text-red-400">{error}</p>}
             <Button type="submit" disabled={submitting || !password} className="mt-4 w-full">
-              {submitting ? "Verifyingâ€¦" : "Continue to superadmin"}
+              {submitting ? "Verifying…" : "Continue to superadmin"}
             </Button>
           </form>
         </div>

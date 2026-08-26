@@ -24,6 +24,10 @@ import {
   Package,
   FileText,
   Scale,
+  Database,
+  Terminal,
+  Workflow,
+  ShieldCheck,
 } from "lucide-react";
 import { GlassIcon } from "@/shared/effects/GlassIcon";
 import DarkMeshBackground from "@/shared/effects/DarkMeshBackground";
@@ -74,7 +78,13 @@ const NAV_GROUPS: { label: string; items: NavItem[] }[] = [
   {
     label: "Product",
     items: [
+      { href: "/superadmin/ai-control", label: "AI Control Room", icon: ShieldCheck, color: "purple" },
       { href: "/superadmin/ai", label: "AI Briefing", icon: Bot, color: "purple" },
+      { href: "/superadmin/control-plane", label: "Control Plane", icon: Database, color: "blue" },
+      { href: "/superadmin/data-studio", label: "Data Studio", icon: Database, color: "blue" },
+      { href: "/superadmin/query-console", label: "Query Console", icon: Terminal, color: "indigo" },
+      { href: "/superadmin/runbooks", label: "Runbooks", icon: Workflow, color: "orange" },
+      { href: "/superadmin/templates", label: "Message Templates", icon: Mail, color: "green" },
       { href: "/superadmin/content", label: "Content & Media", icon: FileText, color: "orange" },
       { href: "/superadmin/legal", label: "Legal & Changelog", icon: Scale, color: "indigo" },
     ],
@@ -152,7 +162,7 @@ export function SuperadminShell() {
       <aside className="flex w-14 shrink-0 flex-col border-r border-sa-border bg-sa-surface">
         <div className="flex h-14 items-center justify-center border-b border-sa-border">
           <span className="text-lg" title="AKARA Ops">
-            ðŸ”®
+            🔮
           </span>
         </div>
         <nav className="flex flex-1 flex-col items-center gap-1 overflow-y-auto py-2">
@@ -211,7 +221,7 @@ export function SuperadminShell() {
                 {attentionCount} needs attention
               </Link>
             )}
-            <span className="hidden text-xs text-sa-muted sm:inline">âŒ˜K command palette</span>
+            <span className="hidden text-xs text-sa-muted sm:inline">⌘K command palette</span>
             <span className="truncate text-sm text-sa-muted">{user?.email ?? session.user.email}</span>
           </div>
         </header>

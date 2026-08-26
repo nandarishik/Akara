@@ -116,7 +116,7 @@ export default function EmptyState({
 export function DashboardEmptyState() {
   return (
     <EmptyState
-      icon={<span className="text-2xl">ðŸ“Š</span>}
+      icon={<span className="text-2xl">📊</span>}
       title="Your dashboard awaits data"
       description="Import your first sales file to unlock insights and live KPIs."
       primaryAction={{ label: "Import Data", href: "/data" }}
@@ -127,7 +127,7 @@ export function DashboardEmptyState() {
 export function CopilotEmptyState() {
   return (
     <EmptyState
-      icon={<span className="text-2xl">âœ¦</span>}
+      icon={<span className="text-2xl">✦</span>}
       title="Ask AKARA anything"
       description="Your AI copilot is ready to analyze data and answer questions."
       primaryAction={{ label: "Start conversation", href: "/copilot" }}
@@ -153,7 +153,7 @@ export function NoDataEmptyState({
   return (
     <EmptyState
       variant={variant}
-      icon={icon ?? (variant === "folder" ? <span className="text-lg">ðŸ“„</span> : <span className="text-2xl">ðŸ“­</span>)}
+      icon={icon ?? (variant === "folder" ? <span className="text-lg">📄</span> : <span className="text-2xl">📭</span>)}
       title={title}
       description={description}
       {...(onAction && {

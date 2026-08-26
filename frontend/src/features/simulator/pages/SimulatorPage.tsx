@@ -51,8 +51,8 @@ function parseApiError(err: Error): string {
   } catch {
     /* use raw body */
   }
-  if (status === "403") return "Simulator requires Pro or Business â€” upgrade in Billing.";
-  if (status === "402") return "Plan limit reached â€” check Billing.";
+  if (status === "403") return "Simulator requires Pro or Business — upgrade in Billing.";
+  if (status === "402") return "Plan limit reached — check Billing.";
   return body || err.message;
 }
 
@@ -79,10 +79,10 @@ interface SimResult {
 function formatINR(v: number) {
   const abs = Math.abs(v);
   const prefix = v < 0 ? "-" : "";
-  if (abs >= 1_00_00_000) return `${prefix}â‚¹${(abs / 1_00_00_000).toFixed(2)}Cr`;
-  if (abs >= 1_00_000) return `${prefix}â‚¹${(abs / 1_00_000).toFixed(2)}L`;
-  if (abs >= 1_000) return `${prefix}â‚¹${(abs / 1_000).toFixed(1)}K`;
-  return `${prefix}â‚¹${abs.toFixed(0)}`;
+  if (abs >= 1_00_00_000) return `${prefix}₹${(abs / 1_00_00_000).toFixed(2)}Cr`;
+  if (abs >= 1_00_000) return `${prefix}₹${(abs / 1_00_000).toFixed(2)}L`;
+  if (abs >= 1_000) return `${prefix}₹${(abs / 1_000).toFixed(1)}K`;
+  return `${prefix}₹${abs.toFixed(0)}`;
 }
 
 function ScenarioSlider({
@@ -242,7 +242,7 @@ export function SimulatorPage() {
             <div className="flex items-start gap-3">
               <AlertCircle className="h-5 w-5 text-amber-400 mt-0.5 shrink-0" />
               <div>
-                <p className="text-amber-200 font-medium">Limited data â€” projections may be noisy</p>
+                <p className="text-amber-200 font-medium">Limited data — projections may be noisy</p>
                 <p className="text-amber-300/80 text-sm mt-1">
                   Found {dataDays} distinct day{dataDays !== 1 ? "s" : ""} of sales in the last 30 days.
                   Import more days for tighter confidence ranges (7+ recommended).
@@ -414,7 +414,7 @@ export function SimulatorPage() {
 
               {!canRun && baseline && (
                 <p className="text-xs text-caption text-center">
-                  No revenue in the last 30 days â€” upload data first.
+                  No revenue in the last 30 days — upload data first.
                 </p>
               )}
 
@@ -552,7 +552,7 @@ export function SimulatorPage() {
                   <div className="text-center">
                     <p className="text-caption text-xs mb-1">95% Confidence Range</p>
                     <div className="font-medium text-sm">
-                      {formatINR(result.confidence_interval_lower)} â€“ {formatINR(result.confidence_interval_upper)}
+                      {formatINR(result.confidence_interval_lower)} – {formatINR(result.confidence_interval_upper)}
                     </div>
                   </div>
                 </GlowSurfaceCard>

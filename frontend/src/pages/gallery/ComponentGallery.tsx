@@ -109,7 +109,7 @@ export default function ComponentGallery() {
         <header>
           <h1 className="text-display font-display">AKARA Design System</h1>
           <p className="mt-2 text-body">
-            FireAI-inspired light product â€” pills, white cards, token colors.
+            FireAI-inspired light product — pills, white cards, token colors.
           </p>
         </header>
 
@@ -196,9 +196,9 @@ export default function ComponentGallery() {
                 <PlanReflectiveCard
                   plan={{
                     name: "Pro",
-                    price: "â‚¹7,999",
+                    price: "₹7,999",
                     period: "/month",
-                    cta: "Upgrade to Pro â†’",
+                    cta: "Upgrade to Pro →",
                     popular: true,
                     features: ["Unlimited copilot", "Morning brief", "Scheme leakage"],
                     badgeText: PLAN_REFLECTIVE_META.Pro.badgeText,
@@ -322,7 +322,7 @@ export default function ComponentGallery() {
               <AITextLoading compact />
             </div>
             <div className="rounded-xl border border-white/10 bg-[#0a0a0a] p-6 flex justify-center">
-              <Loader size="sm" title="Loadingâ€¦" subtitle="" />
+              <Loader size="sm" title="Loading…" subtitle="" />
             </div>
             <div className="rounded-xl border border-white/10 bg-[#0a0a0a] p-6 max-w-xs">
               <ProfileDropdown
@@ -348,38 +348,38 @@ export default function ComponentGallery() {
           <h2 className="text-h2">Analytics charts (Bklit)</h2>
           <div className="grid gap-4 lg:grid-cols-2">
             <GlowSurfaceCard padding="md">
-              <h3 className="text-sm font-medium mb-3">Area â€” revenue trend</h3>
+              <h3 className="text-sm font-medium mb-3">Area — revenue trend</h3>
               <div className="h-[220px]">
                 <RevenueAreaChart data={fixtureAreaSeries} />
               </div>
             </GlowSurfaceCard>
             <GlowSurfaceCard padding="md">
-              <h3 className="text-sm font-medium mb-3">Bar â€” zones</h3>
+              <h3 className="text-sm font-medium mb-3">Bar — zones</h3>
               <div className="h-[220px]">
                 <ZoneBarChart data={fixtureBarRows} />
               </div>
             </GlowSurfaceCard>
             <GlowSurfaceCard padding="md">
-              <h3 className="text-sm font-medium mb-3">Funnel â€” scheme leakage</h3>
+              <h3 className="text-sm font-medium mb-3">Funnel — scheme leakage</h3>
               <div className="h-[240px]">
                 <LeakageFunnelChart stages={fixtureFunnel} />
               </div>
             </GlowSurfaceCard>
             <GlowSurfaceCard padding="md">
-              <h3 className="text-sm font-medium mb-3">Radar â€” zone comparison</h3>
+              <h3 className="text-sm font-medium mb-3">Radar — zone comparison</h3>
               <div className="h-[280px]">
                 <ZoneRadarChart zones={fixtureZones} />
               </div>
             </GlowSurfaceCard>
             <GlowSurfaceCard padding="md">
-              <h3 className="text-sm font-medium mb-3">Ring + gauge â€” billing</h3>
+              <h3 className="text-sm font-medium mb-3">Ring + gauge — billing</h3>
               <div className="grid gap-4 sm:grid-cols-2 h-[260px]">
                 <QuotaRingChart usage={fixtureUsage} />
                 <PlanHealthGauge usage={fixtureUsage} />
               </div>
             </GlowSurfaceCard>
             <GlowSurfaceCard padding="md">
-              <h3 className="text-sm font-medium mb-3">Heatmap â€” product Ã— zone</h3>
+              <h3 className="text-sm font-medium mb-3">Heatmap — product × zone</h3>
               <div className="h-[240px]">
                 <SalesHeatmapChart rows={fixtureHeatmapRows} />
               </div>
@@ -402,7 +402,7 @@ export default function ComponentGallery() {
               </div>
             </GlowSurfaceCard>
             <GlowSurfaceCard padding="md">
-              <h3 className="text-sm font-medium mb-3">Bar â€” weekday + movers</h3>
+              <h3 className="text-sm font-medium mb-3">Bar — weekday + movers</h3>
               <div className="space-y-4">
                 <WeekdayBarChart pulse={fixtureWeekdayPulse} className="h-[120px]" />
                 <ProductMoverBarChart movers={fixtureMovers} className="h-[120px]" />
@@ -418,10 +418,10 @@ export default function ComponentGallery() {
         <section className="space-y-4">
           <h2 className="text-h2">Legacy KPICard / PlanCard</h2>
           <div className="grid md:grid-cols-2 gap-4">
-            <KPICard label="Revenue" value="â‚¹12.4L" change="+8.2%" changeVariant="positive" />
+            <KPICard label="Revenue" value="₹12.4L" change="+8.2%" changeVariant="positive" />
             <PlanCard
               name="Pro"
-              price="â‚¹7,999"
+              price="₹7,999"
               popular
               features={["500 copilot questions", "Simulator"]}
               cta={<AkaraButton size="sm">Choose Pro</AkaraButton>}

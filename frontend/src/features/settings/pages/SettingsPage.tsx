@@ -240,7 +240,7 @@ export function SettingsPage() {
     setTestEmailMsg("");
     try {
       await apiFetch("/account/preferences/test-email", { method: "POST" });
-      setTestEmailMsg("Test email sent â€” check your inbox.");
+      setTestEmailMsg("Test email sent — check your inbox.");
     } catch (e) {
       const raw = e instanceof Error ? e.message : "Send failed";
       const match = raw.match(/^API \d+: (.+)$/);
@@ -263,7 +263,7 @@ export function SettingsPage() {
     setTestWhatsAppMsg("");
     try {
       const res = await apiFetch<{ status: string; message?: string }>("/account/preferences/test-whatsapp", { method: "POST" });
-      setTestWhatsAppMsg(res.message || (res.status === "skipped" ? "WhatsApp not live yet â€” logged as skipped." : "Test WhatsApp sent."));
+      setTestWhatsAppMsg(res.message || (res.status === "skipped" ? "WhatsApp not live yet — logged as skipped." : "Test WhatsApp sent."));
     } catch (e) {
       setTestWhatsAppMsg(e instanceof Error ? e.message : "Send failed");
     }
@@ -373,7 +373,7 @@ export function SettingsPage() {
           {error && <p className="text-sm text-red-600 flex items-center gap-1"><AlertCircle className="h-4 w-4" />{error}</p>}
           {saved && <p className="text-sm text-emerald-600 flex items-center gap-1"><CheckCircle className="h-4 w-4" />Saved!</p>}
           <AkaraButton onClick={handleSaveProfile} disabled={saving} size="sm">
-            {saving ? "Savingâ€¦" : "Save profile"}
+            {saving ? "Saving…" : "Save profile"}
           </AkaraButton>
         </GlowSurfaceCard>
       )}
@@ -403,13 +403,13 @@ export function SettingsPage() {
             <Toggle
               checked={prefs.email_morning_brief_enabled}
               onChange={(v) => patchPrefs({ email_morning_brief_enabled: v })}
-              label="Morning brief â€” email channel"
+              label="Morning brief — email channel"
             />
             <Toggle
               checked={prefs.whatsapp_morning_brief_enabled}
               disabled={whatsappLocked || !phone}
               onChange={(v) => patchPrefs({ whatsapp_morning_brief_enabled: v })}
-              label="Morning brief â€” WhatsApp"
+              label="Morning brief — WhatsApp"
               description={whatsappLocked ? "WhatsApp activates when templates are approved" : undefined}
             />
             <div className="pt-2">
@@ -494,7 +494,7 @@ export function SettingsPage() {
           <h2 className="text-base font-semibold">Billing</h2>
           <p className="text-sm text-text-secondary mt-2">Manage plan, invoices, and payment methods.</p>
           <Link to="/billing" className="inline-block mt-4">
-            <AkaraButton variant="secondary" size="sm">Open Billing & Usage â†’</AkaraButton>
+            <AkaraButton variant="secondary" size="sm">Open Billing & Usage →</AkaraButton>
           </Link>
         </GlowSurfaceCard>
       )}
@@ -514,7 +514,7 @@ export function SettingsPage() {
                 </li>
               ))}
               {sessions.length === 0 && (
-                <li className="px-3 py-2 text-sm text-text-muted">Loading sessionsâ€¦</li>
+                <li className="px-3 py-2 text-sm text-text-muted">Loading sessions…</li>
               )}
             </ul>
             <AkaraButton
@@ -547,7 +547,7 @@ export function SettingsPage() {
         <GlowSurfaceCard className="text-center py-8 space-y-3">
           <KeyRound className="h-8 w-8 mx-auto text-text-muted" />
           <h2 className="font-semibold">API Keys</h2>
-          <p className="text-sm text-text-secondary">Coming soon â€” Day 13</p>
+          <p className="text-sm text-text-secondary">Coming soon — Day 13</p>
         </GlowSurfaceCard>
       )}
 
@@ -560,7 +560,7 @@ export function SettingsPage() {
             <Download className="h-4 w-4 mr-1" /> Export my data (JSON)
           </AkaraButton>
           <div className="space-y-2 pt-2 border-t border-white/10">
-            <Label htmlFor="confirmEmail">Delete account â€” type your email to confirm</Label>
+            <Label htmlFor="confirmEmail">Delete account — type your email to confirm</Label>
             <Input id="confirmEmail" value={deleteEmail} onChange={(e) => setDeleteEmail(e.target.value)} placeholder={user?.email} className="max-w-sm" />
             <p className="text-xs text-text-muted">Deletion is queued and processed asynchronously (DPDP).</p>
             <AkaraButton size="sm" onClick={handleDelete} disabled={deleteEmail.toLowerCase() !== (user?.email || "").toLowerCase()}>

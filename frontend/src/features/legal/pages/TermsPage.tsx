@@ -5,7 +5,7 @@ import { fetchPublicLegal } from "@/lib/api/public";
 const FALLBACK = (
   <>
     <h1 className="text-3xl font-bold text-white">Terms of Service</h1>
-    <p className="text-white/50">Last updated: July 2026 Â· Version 1.0</p>
+    <p className="text-white/50">Last updated: July 2026 · Version 1.0</p>
     <h2>Acceptance</h2>
     <p>
       By creating an AKARA account you agree to these Terms and our Privacy Policy.

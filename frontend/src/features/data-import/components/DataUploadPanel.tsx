@@ -120,7 +120,7 @@ export function DataUploadPanel({
         <p className="mt-1.5 text-xs text-text-muted">
           {file
             ? `${(file.size / 1024 / 1024).toFixed(2)} MB`
-            : ".xlsx, .xls, .csv Â· up to 50 MB"}
+            : ".xlsx, .xls, .csv · up to 50 MB"}
         </p>
         <input
           ref={inputRef}
@@ -148,7 +148,7 @@ export function DataUploadPanel({
       {uploading && (
         <div className="space-y-2">
           <div className="flex justify-between text-xs text-text-secondary">
-            <span>Uploadingâ€¦</span>
+            <span>Uploading…</span>
             <span>{progress}%</span>
           </div>
           <div className="h-1.5 w-full rounded-full bg-surface-raised overflow-hidden">
@@ -162,7 +162,7 @@ export function DataUploadPanel({
 
       {uploadDisabled && (
         <p className="text-xs text-amber-700 text-center">
-          Daily upload limit reached â€” resets at midnight IST
+          Daily upload limit reached — resets at midnight IST
         </p>
       )}
 
@@ -175,7 +175,7 @@ export function DataUploadPanel({
         {uploading ? (
           <>
             <Loader2 className="h-4 w-4 animate-spin" />
-            {useAsync ? "Queueingâ€¦" : "Importingâ€¦"}
+            {useAsync ? "Queueing…" : "Importing…"}
           </>
         ) : (
           <>
@@ -201,7 +201,7 @@ export function DataUploadPanel({
             <div className="flex items-center gap-2 text-emerald-800">
               <PlayCircle className="h-5 w-5 shrink-0" />
               <span>
-                Queued â€” job <code className="text-xs bg-white/60 px-1 rounded">{result.job_id.slice(0, 8)}â€¦</code>
+                Queued — job <code className="text-xs bg-white/60 px-1 rounded">{result.job_id.slice(0, 8)}…</code>
               </span>
             </div>
           ) : (
@@ -209,7 +209,7 @@ export function DataUploadPanel({
               <CheckCircle className="h-5 w-5 shrink-0" />
               <span>
                 <AnimatedNumber value={result.rows_inserted} /> rows imported
-                {result.rows_skipped > 0 && ` Â· ${result.rows_skipped} skipped`}
+                {result.rows_skipped > 0 && ` · ${result.rows_skipped} skipped`}
               </span>
             </div>
           )}

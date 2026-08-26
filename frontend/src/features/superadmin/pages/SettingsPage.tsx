@@ -145,7 +145,7 @@ export function SuperadminSettingsPage() {
             ))}
           </ul>
         ) : (
-          !healthError && <p className="text-sm text-sa-muted">Loading env checksâ€¦</p>
+          !healthError && <p className="text-sm text-sa-muted">Loading env checks…</p>
         )}
       </section>
 
@@ -173,7 +173,7 @@ export function SuperadminSettingsPage() {
             )}
           </ul>
         ) : (
-          !healthError && <p className="text-sm text-sa-muted">Loading health checksâ€¦</p>
+          !healthError && <p className="text-sm text-sa-muted">Loading health checks…</p>
         )}
       </section>
 
@@ -193,7 +193,7 @@ function EnvFlag({ value }: { value: string }) {
         ok ? "text-emerald-400" : missing ? "text-sa-muted" : warn ? "text-amber-400" : "text-sa-muted"
       }`}
     >
-      {ok ? "âœ“ configured" : missing ? "âœ— not set" : value}
+      {ok ? "✓ configured" : missing ? "✗ not set" : value}
     </span>
   );
 }

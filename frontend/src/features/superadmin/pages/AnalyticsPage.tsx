@@ -105,13 +105,13 @@ export function SuperadminAnalyticsPage() {
       <div className="grid gap-4 sm:grid-cols-3">
         <StatCard
           label="MRR"
-          value={revenue ? `â‚¹${revenue.mrr_inr.toLocaleString("en-IN")}` : "â€”"}
+          value={revenue ? `₹${revenue.mrr_inr.toLocaleString("en-IN")}` : "—"}
           delta={revenue?.mrr_mom_pct != null ? <DeltaBadge value={revenue.mrr_mom_pct} /> : null}
         />
-        <StatCard label="Total tenants" value={String(totalTenants || "â€”")} />
+        <StatCard label="Total tenants" value={String(totalTenants || "—")} />
         <StatCard
           label="Gross margin est."
-          value={revenue ? `${revenue.estimated_gross_margin_pct}%` : "â€”"}
+          value={revenue ? `${revenue.estimated_gross_margin_pct}%` : "—"}
           delta={
             revenue?.margin_delta_pp != null ? (
               <DeltaPpBadge value={revenue.margin_delta_pp} />
@@ -138,10 +138,10 @@ export function SuperadminAnalyticsPage() {
                 <tr key={row.plan} className="border-t border-sa-border">
                   <td className="p-3 capitalize">{row.plan}</td>
                   <td className="p-3 tabular-nums">{row.count}</td>
-                  <td className="p-3 tabular-nums">â‚¹{row.mrr.toLocaleString("en-IN")}</td>
+                  <td className="p-3 tabular-nums">₹{row.mrr.toLocaleString("en-IN")}</td>
                   <td className="p-3 tabular-nums">${row.llmUsd.toFixed(2)}</td>
                   <td className="p-3 tabular-nums">
-                    {row.marginPct != null ? `${row.marginPct}%` : "â€”"}
+                    {row.marginPct != null ? `${row.marginPct}%` : "—"}
                   </td>
                 </tr>
               ))}
@@ -154,7 +154,7 @@ export function SuperadminAnalyticsPage() {
         <h3 className="font-medium mb-2">MRR trend (6 months)</h3>
         <div className="rounded-lg border border-sa-border bg-sa-raised p-4 h-52">
           {chartData.length === 0 ? (
-            <p className="text-sm text-sa-muted">{loading ? "Loadingâ€¦" : "No snapshot data"}</p>
+            <p className="text-sm text-sa-muted">{loading ? "Loading…" : "No snapshot data"}</p>
           ) : (
             <LineChart
               data={chartData as unknown as Record<string, unknown>[]}
@@ -198,7 +198,7 @@ export function SuperadminAnalyticsPage() {
                   className="hover:underline"
                   onClick={() => navigate(`/superadmin/tenants?open=${t.tenant_id}`)}
                 >
-                  {t.tenant_name} â€” ${t.cost_usd_this_month.toFixed(2)} USD ({t.plan})
+                  {t.tenant_name} — ${t.cost_usd_this_month.toFixed(2)} USD ({t.plan})
                 </button>
               </li>
             ))}
@@ -230,8 +230,8 @@ export function SuperadminAnalyticsPage() {
                     {new Date(p.created_at).toLocaleDateString("en-IN")}
                   </td>
                   <td className="p-3">{p.tenant_name ?? p.tenant_id.slice(0, 8)}</td>
-                  <td className="p-3 text-xs font-mono">{p.invoice_number ?? "â€”"}</td>
-                  <td className="p-3 tabular-nums">â‚¹{p.amount_inr.toLocaleString("en-IN")}</td>
+                  <td className="p-3 text-xs font-mono">{p.invoice_number ?? "—"}</td>
+                  <td className="p-3 tabular-nums">₹{p.amount_inr.toLocaleString("en-IN")}</td>
                   <td className="p-3 capitalize text-xs">{p.status}</td>
                 </tr>
               ))}
@@ -254,7 +254,7 @@ export function SuperadminAnalyticsPage() {
               <span className="tabular-nums">${usd.toFixed(4)}</span>
             </div>
           ))}
-        {!costs && <p className="text-sa-muted">Loadingâ€¦</p>}
+        {!costs && <p className="text-sa-muted">Loading…</p>}
       </div>
     </div>
   );

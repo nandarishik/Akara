@@ -4,8 +4,8 @@ export const AKARA_DASHBOARD_BENTO = [
   {
     color: "#0a0a0a",
     label: "Revenue",
-    title: "â‚¹18.3L this week",
-    description: "+8% vs last week Â· North zone leading",
+    title: "₹18.3L this week",
+    description: "+8% vs last week · North zone leading",
   },
   {
     color: "#0a0a0a",
@@ -17,25 +17,25 @@ export const AKARA_DASHBOARD_BENTO = [
     color: "#0a0a0a",
     label: "Zones",
     title: "South underperforming",
-    description: "âˆ’12% WoW Â· drill down by region",
+    description: "−12% WoW · drill down by region",
   },
   {
     color: "#0a0a0a",
     label: "SKUs",
     title: "Top mover: Maggi 70g",
-    description: "â‚¹3.2L Â· scheme ROI tracked",
+    description: "₹3.2L · scheme ROI tracked",
   },
   {
     color: "#0a0a0a",
     label: "Debrief",
     title: "Weekly brief",
-    description: "Monday WhatsApp summary Â· no login",
+    description: "Monday WhatsApp summary · no login",
   },
   {
     color: "#0a0a0a",
     label: "Copilot",
     title: "Ask anything",
-    description: "Hindi or English Â· answers in seconds",
+    description: "Hindi or English · answers in seconds",
   },
 ];
 

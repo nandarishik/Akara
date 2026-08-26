@@ -123,6 +123,9 @@ const SuperadminSettingsPage = React.lazy(() =>
 const SuperadminAiPage = React.lazy(() =>
   import("@/features/superadmin/pages/AiPage").then((m) => ({ default: m.SuperadminAiPage }))
 )
+const ControlPlanePage = React.lazy(() =>
+  import("@/features/superadmin/pages/ControlPlanePage").then((m) => ({ default: m.ControlPlanePage }))
+)
 const PlansPage = React.lazy(() =>
   import("@/features/superadmin/pages/PlansPage").then((m) => ({ default: m.PlansPage }))
 )
@@ -198,6 +201,12 @@ export function AppRouter() {
               <Route path="audit" element={<SuperadminAuditPage />} />
               <Route path="settings" element={<SuperadminSettingsPage />} />
               <Route path="ai" element={<SuperadminAiPage />} />
+              <Route path="control-plane" element={<ControlPlanePage />} />
+              <Route path="data-studio" element={<ControlPlanePage defaultTab="studio" />} />
+              <Route path="query-console" element={<ControlPlanePage defaultTab="query" />} />
+              <Route path="runbooks" element={<ControlPlanePage defaultTab="runbooks" />} />
+              <Route path="ai-control" element={<ControlPlanePage defaultTab="ai" />} />
+              <Route path="templates" element={<ControlPlanePage defaultTab="templates" />} />
               <Route path="costs" element={<Navigate to="/superadmin/revenue" replace />} />
               <Route path="ops" element={<Navigate to="/superadmin/settings" replace />} />
             </Route>

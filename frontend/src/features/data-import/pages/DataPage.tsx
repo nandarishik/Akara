@@ -70,7 +70,7 @@ const SOURCE_COPY: Record<
 > = {
   primary: {
     title: "Primary sales",
-    subtitle: "Dispatch invoices from Tally or your ERP â€” what you shipped to distributors.",
+    subtitle: "Dispatch invoices from Tally or your ERP — what you shipped to distributors.",
     columns: [
       "invoice_date",
       "invoice_number",
@@ -91,7 +91,7 @@ const SOURCE_COPY: Record<
   },
   secondary: {
     title: "Secondary sales",
-    subtitle: "DMS offtake from Bizom, Botree, FieldAssist â€” what retailers actually bought.",
+    subtitle: "DMS offtake from Bizom, Botree, FieldAssist — what retailers actually bought.",
     columns: [
       "invoice_date",
       "party_name",
@@ -105,7 +105,7 @@ const SOURCE_COPY: Record<
   },
   scheme: {
     title: "Scheme master",
-    subtitle: "Distributor scheme claims â€” used to detect leakage vs secondary offtake.",
+    subtitle: "Distributor scheme claims — used to detect leakage vs secondary offtake.",
     columns: [
       "scheme_name",
       "party_name",
@@ -312,7 +312,7 @@ export function DataPage() {
   ) {
     const r = await uploadFile(file, sourceType, useAsync, onProgress);
     if ("job_id" in r) {
-      toast.success("File queued â€” see import history below.");
+      toast.success("File queued — see import history below.");
     } else {
       toast.success(`${r.rows_inserted} rows imported.`);
     }
@@ -382,7 +382,7 @@ export function DataPage() {
                 Import center
               </h1>
               <p className="text-sm text-text-secondary mt-2 max-w-lg leading-relaxed">
-                Upload sales files â€” AKARA maps columns automatically and powers your dashboard,
+                Upload sales files — AKARA maps columns automatically and powers your dashboard,
                 copilot, and weekly debrief.
               </p>
             </div>
@@ -458,7 +458,7 @@ export function DataPage() {
           })}
         </div>
 
-        {/* Upload area â€” single panel */}
+        {/* Upload area — single panel */}
         <GlowSurfaceCard padding="lg" hover={false} className="shadow-card">
           {activeLocked ? (
             <div className="text-center py-12 px-4">
@@ -470,7 +470,7 @@ export function DataPage() {
                 Secondary DMS offtake and scheme master imports unlock on Pro and Business plans.
               </p>
               <div className="inline-block mt-6">
-                <GlowCTAButton size="sm" to="/upgrade">View plans â†’</GlowCTAButton>
+                <GlowCTAButton size="sm" to="/upgrade">View plans →</GlowCTAButton>
               </div>
             </div>
           ) : (
@@ -493,7 +493,7 @@ export function DataPage() {
             slotKey={PLACEMENT_KEYS.G}
             title="Unlock secondary sales & scheme analysis"
             description="Pro plan adds DMS offtake imports and scheme leakage detection."
-            ctaLabel="Upgrade to Pro â†’"
+            ctaLabel="Upgrade to Pro →"
             ctaTo="/upgrade"
             accent="green"
             onDismiss={() => {
@@ -540,9 +540,9 @@ export function DataPage() {
                         hour: "2-digit",
                         minute: "2-digit",
                       })}
-                      {" Â· "}
+                      {" · "}
                       {(job.file_size / 1024 / 1024).toFixed(1)} MB
-                      {" Â· "}
+                      {" · "}
                       <span className="capitalize">{job.source_type}</span>
                     </p>
                   </div>

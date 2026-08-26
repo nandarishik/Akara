@@ -1,7 +1,7 @@
 /**
- * OnboardingPage â€” Sprint Phase 2, Day 3
- * FireAI light auth â€” AuthLayout + shared Input + AkaraButton.
- * Mandatory 3-step wizard: business details â†’ file upload â†’ success.
+ * OnboardingPage — Sprint Phase 2, Day 3
+ * FireAI light auth — AuthLayout + shared Input + AkaraButton.
+ * Mandatory 3-step wizard: business details → file upload → success.
  */
 
 import { useEffect, useRef, useState } from "react"
@@ -79,7 +79,7 @@ export function OnboardingPage() {
           sessionStorage.removeItem(ONBOARDING_STEP_KEY)
         }
       } catch {
-        // ignore â€” user stays on default step
+        // ignore — user stays on default step
       }
     })()
   }, []) // eslint-disable-line react-hooks/exhaustive-deps -- restore once on mount
@@ -173,7 +173,7 @@ export function OnboardingPage() {
       const data = await res.json()
       setUploadResult({
         rows: data.rows_inserted ?? 0,
-        dateRange: data.date_range ?? "â€”",
+        dateRange: data.date_range ?? "—",
         zones: data.zones ?? 0,
       })
       setUploadStatus("done")
@@ -218,7 +218,7 @@ export function OnboardingPage() {
               className="mb-4 text-text-muted hover:text-accent text-sm font-medium"
               onClick={() => setStep((step - 1) as 1 | 2 | 3)}
             >
-              â† Back
+              ← Back
             </button>
           )}
           <ProgressDots step={step} />
@@ -227,13 +227,13 @@ export function OnboardingPage() {
     >
       {loading && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#0a0a0a]/80 backdrop-blur-sm">
-          <PageLoader title="Setting up your businessâ€¦" subtitle="" minHeight="min-h-0" />
+          <PageLoader title="Setting up your business…" subtitle="" minHeight="min-h-0" />
         </div>
       )}
       {step === 1 && (
         <>
           <div className="text-center mb-6">
-            <span className="text-5xl" aria-hidden="true">ðŸ­</span>
+            <span className="text-5xl" aria-hidden="true">🏭</span>
           </div>
           <h1 className="text-2xl font-extrabold text-text-primary text-center mb-1">Tell us about your business</h1>
           <p className="text-text-muted text-center mb-8 text-sm">So AKARA speaks your language from day one.</p>
@@ -275,10 +275,10 @@ export function OnboardingPage() {
             <div className="space-y-1.5">
               <Label htmlFor="ob-currency" className="text-text-secondary">Currency</Label>
               <select id="ob-currency" value={currency} onChange={(e) => setCurrency(e.target.value)} className={SELECT_CLASS}>
-                <option value="INR">â‚¹ INR â€” Indian Rupee</option>
-                <option value="USD">$ USD â€” US Dollar</option>
-                <option value="AED">AED â€” UAE Dirham</option>
-                <option value="GBP">Â£ GBP â€” British Pound</option>
+                <option value="INR">₹ INR — Indian Rupee</option>
+                <option value="USD">$ USD — US Dollar</option>
+                <option value="AED">AED — UAE Dirham</option>
+                <option value="GBP">£ GBP — British Pound</option>
               </select>
             </div>
 
@@ -297,11 +297,11 @@ export function OnboardingPage() {
               </Label>
               <select id="ob-revenue" value={monthlyRevenue} onChange={(e) => setMonthlyRevenue(e.target.value)} className={SELECT_CLASS}>
                 <option value="">Prefer not to say</option>
-                <option value="lt_1cr">Less than â‚¹1 Cr</option>
-                <option value="1_10cr">â‚¹1â€“10 Cr</option>
-                <option value="10_50cr">â‚¹10â€“50 Cr</option>
-                <option value="50_200cr">â‚¹50â€“200 Cr</option>
-                <option value="gt_200cr">More than â‚¹200 Cr</option>
+                <option value="lt_1cr">Less than ₹1 Cr</option>
+                <option value="1_10cr">₹1–10 Cr</option>
+                <option value="10_50cr">₹10–50 Cr</option>
+                <option value="50_200cr">₹50–200 Cr</option>
+                <option value="gt_200cr">More than ₹200 Cr</option>
               </select>
             </div>
           </div>
@@ -309,7 +309,7 @@ export function OnboardingPage() {
           {error && <p className="text-sm text-red-600 mt-4" role="alert">{error}</p>}
 
           <AkaraButton onClick={handleStep1} loading={loading} className="w-full mt-6">
-            Continue â†’
+            Continue →
           </AkaraButton>
         </>
       )}
@@ -317,11 +317,11 @@ export function OnboardingPage() {
       {step === 2 && (
         <>
           <div className="text-center mb-6">
-            <span className="text-5xl" aria-hidden="true">ðŸ“‚</span>
+            <span className="text-5xl" aria-hidden="true">📂</span>
           </div>
           <h1 className="text-2xl font-extrabold text-text-primary text-center mb-1">Import your sales data</h1>
           <p className="text-text-muted text-center mb-2 text-sm">
-            Export from Tally: Gateway â†’ Export Data â†’ Sales Register. Or drag your Excel file.
+            Export from Tally: Gateway → Export Data → Sales Register. Or drag your Excel file.
           </p>
 
           {uploadStatus === "idle" && !file && (
@@ -339,10 +339,10 @@ export function OnboardingPage() {
               tabIndex={0}
               onKeyDown={(e) => e.key === "Enter" && fileInputRef.current?.click()}
             >
-              <div className="text-4xl mb-3">ðŸ“¤</div>
+              <div className="text-4xl mb-3">📤</div>
               <p className="font-semibold text-text-primary">Drop your CSV or Excel file here</p>
               <p className="text-sm text-text-muted mt-1">or click to browse</p>
-              <p className="text-xs text-text-muted mt-3">Supported: .xlsx, .xls, .csv Â· Max 20MB</p>
+              <p className="text-xs text-text-muted mt-3">Supported: .xlsx, .xls, .csv · Max 20MB</p>
             </div>
           )}
 
@@ -365,7 +365,7 @@ export function OnboardingPage() {
                 <button className="text-text-muted hover:text-red-500 text-xs" onClick={() => setFile(null)}>Remove</button>
               </div>
               <AkaraButton onClick={handleUpload} className="w-full">
-                Start import â†’
+                Start import →
               </AkaraButton>
             </div>
           )}
@@ -384,15 +384,15 @@ export function OnboardingPage() {
 
           {uploadStatus === "done" && uploadResult && (
             <div className="mt-6 text-center">
-              <div className="text-4xl mb-3">âœ…</div>
+              <div className="text-4xl mb-3">✅</div>
               <p className="font-bold text-text-primary">{uploadResult.rows.toLocaleString("en-IN")} rows imported from {file?.name}</p>
-              {uploadResult.dateRange !== "â€”" && (
+              {uploadResult.dateRange !== "—" && (
                 <p className="text-sm text-text-muted mt-1">
-                  Dates: {uploadResult.dateRange} Â· {uploadResult.zones} zones
+                  Dates: {uploadResult.dateRange} · {uploadResult.zones} zones
                 </p>
               )}
               <AkaraButton onClick={() => setStep(3)} className="w-full mt-6">
-                See your dashboard â†’
+                See your dashboard →
               </AkaraButton>
             </div>
           )}
@@ -408,7 +408,7 @@ export function OnboardingPage() {
 
           <div className="mt-6 text-center">
             <GhostButton type="button" onClick={handleSkip} className="text-sm">
-              Skip for now â€” explore with sample data
+              Skip for now — explore with sample data
             </GhostButton>
           </div>
         </>
@@ -417,7 +417,7 @@ export function OnboardingPage() {
       {step === 3 && (
         <>
           <div className="text-center mb-6">
-            <span className="text-6xl mb-2 inline-block">ðŸŽ‰</span>
+            <span className="text-6xl mb-2 inline-block">🎉</span>
           </div>
 
           <h1 className="text-2xl font-extrabold text-text-primary text-center mb-2">You&apos;re all set!</h1>
@@ -425,9 +425,9 @@ export function OnboardingPage() {
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-8">
             {[
-              { icon: "ðŸ“Š", title: "Ask anything", desc: "Type any question about your sales" },
-              { icon: "ðŸ“±", title: "WhatsApp brief", desc: "Add your number in Settings" },
-              { icon: "ðŸ””", title: "Set alerts", desc: "Get notified when KPIs drop (Pro)" },
+              { icon: "📊", title: "Ask anything", desc: "Type any question about your sales" },
+              { icon: "📱", title: "WhatsApp brief", desc: "Add your number in Settings" },
+              { icon: "🔔", title: "Set alerts", desc: "Get notified when KPIs drop (Pro)" },
             ].map((card) => (
               <GlowSurfaceCard key={card.title} padding="sm" className="text-center">
                 <p className="text-2xl mb-2">{card.icon}</p>
@@ -441,7 +441,7 @@ export function OnboardingPage() {
             <GlowSurfaceCard accent="blue" padding="sm" className="mb-6">
               <div className="flex items-start justify-between gap-3">
                 <div>
-                  <p className="font-semibold text-text-primary text-sm">ðŸ‘¥ Invite your team</p>
+                  <p className="font-semibold text-text-primary text-sm">👥 Invite your team</p>
                   <p className="text-xs text-text-muted mt-0.5">Add team members and collaborate. Available on Pro & Business plans.</p>
                 </div>
                 <button
@@ -449,14 +449,14 @@ export function OnboardingPage() {
                   className="text-text-muted hover:text-text-secondary flex-shrink-0"
                   aria-label="Dismiss"
                 >
-                  âœ•
+                  ✕
                 </button>
               </div>
             </GlowSurfaceCard>
           )}
 
           <AkaraButton onClick={handleComplete} loading={loading} size="lg" className="w-full">
-            Go to my dashboard â†’
+            Go to my dashboard →
           </AkaraButton>
         </>
       )}

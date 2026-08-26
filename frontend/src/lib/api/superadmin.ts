@@ -514,5 +514,29 @@ export const sa = {
   founderBriefHistory: (limit = 10) =>
     superadminFetch<{ items: FounderBriefRow[]; total: number }>(
       `/superadmin/copilot/founder-brief/history?limit=${limit}`,
-    ),
+  ),
+
+  dataStudioTables: () => superadminFetch<Array<Record<string, unknown>>>('/superadmin/data-studio/tables'),
+  dataStudioRows: (table: string, opts: { tenant_id?: string; filters?: Record<string, unknown>; page?: number; page_size?: number; sort?: string; direction?: 'asc' | 'desc' } = {}) => {
+    const p = new URLSearchParams();
+    if (opts.tenant_id) p.set('tenant_id', opts.tenant_id);
+    if (opts.filters) p.set('filters', JSON.stringify(opts.filters));
+    if (opts.page) p.set('page', String(opts.page));
+    if (opts.page_size) p.set('page_size', String(opts.page_size));
+    if (opts.sort) p.set('sort', opts.sort);
+    if (opts.direction) p.set('direction', opts.direction);
+    return superadminFetch<Record<string, unknown>>(`/superadmin/data-studio/${encodeURIComponent(table)}?${p}`);
+  },
+  dataStudioViews: () => superadminFetch<{ items: Record<string, unknown>[]; total: number }>('/superadmin/data-studio/views'),
+  querySchema: () => superadminFetch<Record<string, unknown>>('/superadmin/query/schema'),
+  queryHistory: () => superadminFetch<{ items: Record<string, unknown>[]; total: number }>('/superadmin/query/history'),
+  executeQuery: (body: { sql: string; params?: Record<string, unknown>; reason: string }) => superadminFetch<Record<string, unknown>>('/superadmin/query/execute', { method: 'POST', body: JSON.stringify(body) }),
+  runbooks: () => superadminFetch<{ items: Record<string, unknown>[] }>('/superadmin/runbooks'),
+  runbookDryRun: (name: string, body: { parameters: Record<string, unknown>; reason: string }) => superadminFetch<Record<string, unknown>>(`/superadmin/runbooks/${encodeURIComponent(name)}/dry-run`, { method: 'POST', body: JSON.stringify(body) }),
+  runbookExecute: (name: string, body: { parameters: Record<string, unknown>; reason: string; confirm?: string }) => superadminFetch<Record<string, unknown>>(`/superadmin/runbooks/${encodeURIComponent(name)}/execute`, { method: 'POST', body: JSON.stringify(body) }),
+  aiRequests: () => superadminFetch<{ items: Record<string, unknown>[]; total: number }>('/superadmin/ai/requests'),
+  aiPrompts: () => superadminFetch<{ items: Record<string, unknown>[]; total: number }>('/superadmin/ai/prompts'),
+  aiBudgets: (body: Record<string, unknown>) => superadminFetch<Record<string, unknown>>('/superadmin/ai/budgets', { method: 'PATCH', body: JSON.stringify(body) }),
+  templates: (channel?: string) => superadminFetch<{ items: Record<string, unknown>[]; total: number }>(`/superadmin/templates${channel ? `?channel=${encodeURIComponent(channel)}` : ''}`),
+  templatePreview: (key: string, sample_data: Record<string, unknown>) => superadminFetch<Record<string, unknown>>(`/superadmin/templates/${encodeURIComponent(key)}/preview`, { method: 'POST', body: JSON.stringify({ sample_data }) }),
 };

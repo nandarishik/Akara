@@ -1,6 +1,6 @@
 /**
- * LoginPage â€” Sprint Phase 2, Day 3
- * FireAI light auth â€” AuthLayout + shared Input + AkaraButton.
+ * LoginPage — Sprint Phase 2, Day 3
+ * FireAI light auth — AuthLayout + shared Input + AkaraButton.
  * Error states: wrong password, account locked, email not verified + resend.
  */
 
@@ -134,7 +134,7 @@ export function LoginPage() {
           <div className="text-sm text-amber-300 bg-amber-500/10 border border-amber-500/20 p-3 rounded-md" role="alert">
             <p>Please verify your email first.</p>
             {resendStatus === "sent" ? (
-              <p className="mt-1 text-emerald-600">âœ“ Verification email resent!</p>
+              <p className="mt-1 text-emerald-600">✓ Verification email resent!</p>
             ) : (
               <button
                 type="button"
@@ -142,14 +142,14 @@ export function LoginPage() {
                 disabled={resendStatus === "sending"}
                 className="mt-1 text-accent underline font-medium disabled:opacity-50"
               >
-                {resendStatus === "sending" ? "Sending..." : "Resend verification â†’"}
+                {resendStatus === "sending" ? "Sending..." : "Resend verification →"}
               </button>
             )}
           </div>
         )}
 
         <AkaraButton type="submit" loading={loading} className="w-full">
-          Sign in â†’
+          Sign in →
         </AkaraButton>
       </form>
 
@@ -162,7 +162,7 @@ export function LoginPage() {
         <p>
           <span className="text-text-muted">Don&apos;t have an account? </span>
           <Link to="/signup" className="text-accent font-medium hover:underline">
-            Start free â†’
+            Start free →
           </Link>
         </p>
       </div>

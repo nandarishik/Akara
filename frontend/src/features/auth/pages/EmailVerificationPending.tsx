@@ -1,6 +1,6 @@
 /**
- * EmailVerificationPending â€” Sprint Phase 2, Day 3
- * FireAI light auth â€” AuthLayout + AkaraButton.
+ * EmailVerificationPending — Sprint Phase 2, Day 3
+ * FireAI light auth — AuthLayout + AkaraButton.
  * Envelope icon, email shown, 60s resend countdown, cross-device callback.
  */
 
@@ -74,7 +74,7 @@ export function EmailVerificationPending() {
         </SecondaryButton>
 
         {resendStatus === "sent" && (
-          <p className="text-sm text-emerald-600 mb-3" role="status">âœ“ Verification email resent!</p>
+          <p className="text-sm text-emerald-600 mb-3" role="status">✓ Verification email resent!</p>
         )}
         {resendStatus === "error" && (
           <p className="text-sm text-red-600 mb-3" role="alert">Failed to resend. Please try again.</p>
@@ -84,12 +84,12 @@ export function EmailVerificationPending() {
           to="/signup"
           className="block text-sm text-text-muted hover:text-accent transition-colors mb-4"
         >
-          Use a different email â†’
+          Use a different email →
         </Link>
 
         <p className="text-sm text-text-muted">
           Already verified?{" "}
-          <Link to="/login" className="text-accent font-medium hover:underline">Sign in â†’</Link>
+          <Link to="/login" className="text-accent font-medium hover:underline">Sign in →</Link>
         </p>
       </div>
     </AuthLayout>

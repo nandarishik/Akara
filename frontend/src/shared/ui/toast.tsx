@@ -1,5 +1,5 @@
 /**
- * AKARA Toast â€” UI Bible Â§1.5
+ * AKARA Toast — UI Bible §1.5
  *
  * Built on top of the `sonner` library.
  * Re-exports a branded `toast` helper with AKARA styling.
@@ -10,17 +10,17 @@
  *
  * Usage anywhere:
  *   import { toast } from "@/shared/ui/toast"
- *   toast.success("Import complete â€” 4,231 rows loaded")
+ *   toast.success("Import complete — 4,231 rows loaded")
  *   toast.error("Something went wrong", { description: "Please try again" })
  *   toast.warning("80% of your monthly quota used")
  *   toast.info("Weekly debrief is ready")
- *   toast.loading("Uploading fileâ€¦")
+ *   toast.loading("Uploading file…")
  */
 
 // import { Toaster as Sonner } from "sonner"
 // import { toast as sonnerToast } from "sonner"
 
-// â”€â”€ Branded Toaster â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Branded Toaster ───────────────────────────────────────────────────────────
 
 export function Toaster() {
   return (
@@ -28,7 +28,7 @@ export function Toaster() {
   )
 }
 
-// â”€â”€ Typed wrapper â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Typed wrapper ─────────────────────────────────────────────────────────────
 
 type ToastOptions = {
   description?: string
@@ -38,24 +38,24 @@ type ToastOptions = {
 
 export const toast = {
   success: (message: string, opts?: ToastOptions) =>
-    console.log('ðŸŸ¢ Toast:', message, opts),
+    console.log('🟢 Toast:', message, opts),
 
   error: (message: string, opts?: ToastOptions) =>
-    console.error('ðŸ”´ Toast:', message, opts),
+    console.error('🔴 Toast:', message, opts),
 
   warning: (message: string, opts?: ToastOptions) =>
-    console.warn('ðŸŸ¡ Toast:', message, opts),
+    console.warn('🟡 Toast:', message, opts),
 
   info: (message: string, opts?: ToastOptions) =>
-    console.info('ðŸ”µ Toast:', message, opts),
+    console.info('🔵 Toast:', message, opts),
 
   loading: (message: string, opts?: ToastOptions): string | number => {
-    console.log('â³ Toast:', message, opts)
+    console.log('⏳ Toast:', message, opts)
     return 'loading'
   },
 
   dismiss: (id?: string | number) =>
-    console.log('âŒ Dismiss toast:', id),
+    console.log('❌ Dismiss toast:', id),
 
   promise: (promise: Promise<any>, _opts?: any) => promise,
 }

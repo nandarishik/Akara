@@ -8,6 +8,7 @@ import httpx
 
 from app.core.config import settings
 from app.infra.notifications.delivery_log import log_delivery
+from app.api.superadmin.templates_control import resolve_template
 
 logger = logging.getLogger(__name__)
 
@@ -43,11 +44,16 @@ async def send_whatsapp_template(
     if phone.startswith("91") and len(phone) > 10:
         phone = phone[2:]
 
+    controlled, used_fallback = resolve_template(
+        template_name,
+        {"provider_template": template_name, "variables": variables, "locale": "en-IN"},
+    )
+    provider_template = str(controlled.get("provider_template") or template_name)
     payload = {
         "token": settings.zaptilo_api_key,
         "to": phone,
-        "template": template_name,
-        "language": "en",
+        "template": provider_template,
+        "language": controlled.get("locale", "en"),
         "variables": variables,
     }
 

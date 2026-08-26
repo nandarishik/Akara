@@ -36,7 +36,7 @@ export function ConsentReacceptanceModal() {
         const body = (await res.json()) as ConsentStatus;
         setStatus(body);
       } catch {
-        // non-blocking â€” modal only when API confirms reaccept
+        // non-blocking — modal only when API confirms reaccept
       }
     }
     void load();

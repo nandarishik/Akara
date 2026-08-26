@@ -8,7 +8,7 @@ interface AuthLayoutProps {
   children: ReactNode;
   title?: string;
   subtitle?: string;
-  /** Card width â€” sm (login), md (signup), lg (onboarding) */
+  /** Card width — sm (login), md (signup), lg (onboarding) */
   size?: "sm" | "md" | "lg";
   /** Content rendered above the card (e.g. progress dots, back button) */
   above?: ReactNode;
@@ -22,7 +22,7 @@ const SIZE_CLASS = {
 };
 
 /**
- * AuthLayout â€” dark glow auth shell (mesh background + GlowSurfaceCard).
+ * AuthLayout — dark glow auth shell (mesh background + GlowSurfaceCard).
  */
 export function AuthLayout({
   children,

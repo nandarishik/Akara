@@ -26,10 +26,10 @@ export async function apiFetch<T>(
   if (!res.ok) {
     const errorText = await res.text();
     if (res.status === 401) {
-      toast.error("Session expired â€” please sign in again.");
+      toast.error("Session expired — please sign in again.");
     }
     if (res.status === 429) {
-      toast.error("Too many requests â€” please wait a minute and try again.");
+      toast.error("Too many requests — please wait a minute and try again.");
     }
     throw new Error(`API ${res.status}: ${errorText}`);
   }

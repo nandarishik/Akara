@@ -25,6 +25,7 @@ class SQLExecutor:
         query: str,
         params: dict | None = None,
         tenant_id: UUID | None = None,
+        max_rows: int = _MAX_ROWS,
     ) -> list[dict]:
         """
         Execute a SELECT query. Validates with SQLGuard first.
@@ -40,11 +41,11 @@ class SQLExecutor:
                 {"p_query": query, "p_params": params or {}},
             ).execute()
             rows = result.data or []
-            if len(rows) > _MAX_ROWS:
+            if len(rows) > max_rows:
                 logger.warning(
-                    "Query returned %d rows, truncating to %d", len(rows), _MAX_ROWS
+                    "Query returned %d rows, truncating to %d", len(rows), max_rows
                 )
-                rows = rows[:_MAX_ROWS]
+                rows = rows[:max_rows]
             return rows
         except Exception as exc:
             logger.error("SQL execution failed: %s", exc)

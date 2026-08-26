@@ -118,7 +118,7 @@ export function UpgradePage() {
       <div className="relative z-10 max-w-6xl mx-auto px-6 py-16">
         <div className="text-center mb-12">
           <Link to="/dashboard" className="text-sm text-[#03B3C3] hover:text-[#38bdf8]">
-            â† Back to app
+            ← Back to app
           </Link>
           <h1 className="mt-6 text-4xl font-bold text-white tracking-tight">
             Choose your plan
@@ -127,7 +127,7 @@ export function UpgradePage() {
             Start free, upgrade when you&apos;re ready. No long-term contracts.
           </p>
           <p className="mt-2 text-xs text-white/50">
-            GST invoice included Â· Cancel anytime Â· India data residency
+            GST invoice included · Cancel anytime · India data residency
           </p>
         </div>
 
@@ -187,7 +187,7 @@ export function UpgradePage() {
             <GlowSurfaceCard padding="lg">
               <PlanCard
                 name="Free"
-                price="â‚¹0"
+                price="₹0"
                 description="Try AKARA with your data"
                 current={currentPlan === "free"}
                 features={[

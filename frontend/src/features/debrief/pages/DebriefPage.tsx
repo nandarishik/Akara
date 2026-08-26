@@ -179,7 +179,7 @@ export function DebriefPage() {
           <p className="text-sm text-text-secondary">
             Your one lifetime weekly debrief has been sent. Upgrade to Pro for debriefs every Monday.
           </p>
-          <GlowCTAButton size="sm" to="/billing">Upgrade to Pro â†’</GlowCTAButton>
+          <GlowCTAButton size="sm" to="/billing">Upgrade to Pro →</GlowCTAButton>
         </GlowSurfaceCard>
       </ProductPageLayout>
     );
@@ -198,7 +198,7 @@ export function DebriefPage() {
               <h1 className="text-xl font-bold">Almost ready for your first debrief</h1>
               <p className="text-sm text-text-secondary">
                 You have {dataDays} day{dataDays === 1 ? "" : "s"} of sales data. Upload at least 7 days
-                to unlock your first weekly debrief â€” it generates next Monday at 7:00 AM IST.
+                to unlock your first weekly debrief — it generates next Monday at 7:00 AM IST.
               </p>
             </>
           ) : waitingForMonday ? (
@@ -219,10 +219,10 @@ export function DebriefPage() {
             </>
           )}
           <div className="flex flex-wrap gap-2 justify-center">
-            <GlowCTAButton size="sm" to="/data">Go to Data â†’</GlowCTAButton>
+            <GlowCTAButton size="sm" to="/data">Go to Data →</GlowCTAButton>
             {adminCanGenerate && (
               <GlowCTAButton size="sm" onClick={() => void generateDebrief()} disabled={generating} loading={generating}>
-                {generating ? "Generatingâ€¦" : "Generate debrief now"}
+                {generating ? "Generating…" : "Generate debrief now"}
               </GlowCTAButton>
             )}
             <AkaraButton variant="secondary" size="sm" onClick={() => loadReport()}>
@@ -243,8 +243,8 @@ export function DebriefPage() {
         {dataEndsBeforeDebriefWeek && (
           <GlowSurfaceCard accent="amber" padding="sm" hover={false}>
             <p className="text-sm text-amber-200">
-              This debrief covers {meta.week_start} â€“ {meta.week_end}, but your latest sale is{" "}
-              {meta.data_freshness?.slice(0, 10)} â€” KPIs may show â‚¹0 until you upload recent data
+              This debrief covers {meta.week_start} – {meta.week_end}, but your latest sale is{" "}
+              {meta.data_freshness?.slice(0, 10)} — KPIs may show ₹0 until you upload recent data
               and regenerate.
             </p>
           </GlowSurfaceCard>
@@ -253,7 +253,7 @@ export function DebriefPage() {
         {isStale && (
           <GlowSurfaceCard accent="amber" padding="sm" hover={false}>
             <p className="text-sm text-amber-200">
-              Data is {staleDays} days old â€” upload fresh sales for sharper insights.
+              Data is {staleDays} days old — upload fresh sales for sharper insights.
             </p>
           </GlowSurfaceCard>
         )}
@@ -290,7 +290,7 @@ export function DebriefPage() {
                   disabled={pdfLoading}
                 >
                   <Download className="h-4 w-4 mr-1" />
-                  {pdfLoading ? "â€¦" : "PDF"}
+                  {pdfLoading ? "…" : "PDF"}
                 </AkaraButton>
               )}
             </>
@@ -315,7 +315,7 @@ export function DebriefPage() {
                       : "bg-white/10 text-white/70 hover:bg-white/15 hover:text-white"
                   )}
                 >
-                  {item.week_start.slice(5)} â€“ {item.week_end.slice(5)}
+                  {item.week_start.slice(5)} – {item.week_end.slice(5)}
                 </button>
               ))}
             </div>

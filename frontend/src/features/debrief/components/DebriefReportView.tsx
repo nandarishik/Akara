@@ -352,7 +352,7 @@ export function DebriefReportView({
     ) : metrics.revenueKnown || safeMeta.momentum?.this_week_revenue === 0 ? (
       formatInrDisplay(metrics.thisWeekRevenue)
     ) : (
-      "â€”"
+      "—"
     );
 
   const ordersDisplay =
@@ -360,7 +360,7 @@ export function DebriefReportView({
       ? metrics.orders.toLocaleString("en-IN")
       : metrics.ordersKnown
         ? "0"
-        : "â€”";
+        : "—";
 
   const showWeekSnapshot =
     metrics.hasRevenueCompare || metrics.hasOrdersCompare || weekdayPulse.length > 0;
@@ -380,7 +380,7 @@ export function DebriefReportView({
               </p>
               <p className="text-sm text-text-muted mt-1.5 flex items-center gap-1.5">
                 <Calendar className="h-3.5 w-3.5" />
-                {safeMeta.week_start} â€“ {safeMeta.week_end}
+                {safeMeta.week_start} – {safeMeta.week_end}
               </p>
             </div>
             <div className="flex flex-wrap items-center gap-2">{headerActions}</div>
@@ -444,7 +444,7 @@ export function DebriefReportView({
             />
             <KpiTile
               label="Month pace"
-              value={monthFmt ?? "â€”"}
+              value={monthFmt ?? "—"}
               sub={safeMeta.momentum?.projection_note ?? "At this week's run-rate"}
               icon={<Target className="h-4 w-4" />}
               glassColor={DEBRIEF_METRIC_GLASS.month}
@@ -482,7 +482,7 @@ export function DebriefReportView({
         </div>
       </div>
 
-      {/* Week snapshot â€” always when we can derive or have chart data */}
+      {/* Week snapshot — always when we can derive or have chart data */}
       {showWeekSnapshot && (
         <div className="grid lg:grid-cols-2 gap-4">
           {(metrics.hasRevenueCompare || metrics.hasOrdersCompare) && (
@@ -583,7 +583,7 @@ export function DebriefReportView({
                 className="inline-flex items-center gap-1.5 rounded-full bg-red-50 text-red-800 px-3 py-1.5 text-xs font-medium ring-1 ring-red-100"
               >
                 <Phone className="h-3 w-3" />
-                {c.party} Â· quiet
+                {c.party} · quiet
               </span>
             ))}
             {winback.map((c) => (
@@ -592,7 +592,7 @@ export function DebriefReportView({
                 className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 text-emerald-800 px-3 py-1.5 text-xs font-medium ring-1 ring-emerald-100"
               >
                 <TrendingUp className="h-3 w-3" />
-                {c.party} Â· returned
+                {c.party} · returned
               </span>
             ))}
           </div>

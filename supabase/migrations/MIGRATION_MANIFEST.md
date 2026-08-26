@@ -34,6 +34,7 @@
 | 025 | `025_day10_omnipotence_1_4.sql` | 10 | plan_catalog, billing ledger, CMS, legal/consent |
 | 026 | `026_day10_gap_closure.sql` | 10 | placement_events, plan_price_migrations, ledger evidence |
 | 027 | `027_day10_finish.sql` | 10 | placement seeds, hero CMS normalize, legal metadata, contract fields |
+| 028 | `028_day11_control_plane.sql` | 11 | Data Studio, read-only Query Console, runbooks, AI controls, templates, delivery events |
 
 ## Archived (superseded — not in CI sequence)
 

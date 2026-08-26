@@ -1,6 +1,6 @@
 /**
- * ForgotPasswordPage â€” Sprint Phase 2, Day 3
- * FireAI light auth â€” AuthLayout + shared Input + AkaraButton.
+ * ForgotPasswordPage — Sprint Phase 2, Day 3
+ * FireAI light auth — AuthLayout + shared Input + AkaraButton.
  * Success state with checkmark, "Link valid for 1 hour", error "No account found".
  */
 
@@ -80,7 +80,7 @@ export function ForgotPasswordPage() {
             </div>
 
             <AkaraButton type="submit" loading={status === "loading"} className="w-full">
-              Send reset link â†’
+              Send reset link →
             </AkaraButton>
           </form>
 

@@ -81,7 +81,7 @@ export function CommandPalette() {
             if (r.magic_link) {
               window.open(r.magic_link, "_blank", "noopener,noreferrer");
             } else {
-              toast.error("Impersonation failed â€” no magic link returned");
+              toast.error("Impersonation failed — no magic link returned");
             }
           },
         });
@@ -152,13 +152,13 @@ export function CommandPalette() {
       >
         <input
           autoFocus
-          placeholder="Search tenants, users, or jump to sectionâ€¦"
+          placeholder="Search tenants, users, or jump to section…"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           className="w-full border-b border-sa-border bg-transparent px-4 py-3 text-sm text-sa-text outline-none"
         />
         <ul className="max-h-64 overflow-y-auto py-2">
-          {loading && <li className="px-4 py-2 text-sm text-sa-muted">Searchingâ€¦</li>}
+          {loading && <li className="px-4 py-2 text-sm text-sa-muted">Searching…</li>}
           {!loading &&
             results.map((item, i) => (
               <li key={`${item.kind}-${i}`}>

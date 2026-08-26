@@ -42,7 +42,7 @@ function UsageBar({
   limit: number;
 }) {
   const pct = getUsagePct(used, limit);
-  const displayLimit = limit === -1 ? "âˆž" : limit.toLocaleString("en-IN");
+  const displayLimit = limit === -1 ? "∞" : limit.toLocaleString("en-IN");
   return (
     <div className="space-y-1">
       <div className="flex justify-between text-xs text-text-secondary">
@@ -194,7 +194,7 @@ export function BillingPage() {
           <GlowSurfaceCard accent="green" padding="sm" hover={false}>
             <div className="flex items-center gap-2 text-emerald-300 text-sm">
               <CheckCircle className="h-4 w-4 shrink-0" />
-              Payment received â€” your plan will update shortly.
+              Payment received — your plan will update shortly.
             </div>
           </GlowSurfaceCard>
         )}
@@ -204,7 +204,7 @@ export function BillingPage() {
             slotKey={PLACEMENT_KEYS.H}
             title="You're approaching your plan limits"
             description="Upgrade to Pro for more Copilot questions, row storage, and secondary sales imports."
-            ctaLabel="View plans â†’"
+            ctaLabel="View plans →"
             ctaTo="/upgrade"
             accent="amber"
             onDismiss={() => {
@@ -226,10 +226,10 @@ export function BillingPage() {
               planName={`AKARA ${usage.plan.charAt(0).toUpperCase()}${usage.plan.slice(1)}`}
               planPrice={
                 usage.plan === "free"
-                  ? "â‚¹0 / month"
+                  ? "₹0 / month"
                   : usage.plan === "pro"
-                    ? "â‚¹7,999 / month"
-                    : "â‚¹13,999 / month"
+                    ? "₹7,999 / month"
+                    : "₹13,999 / month"
               }
               planId={
                 PLAN_REFLECTIVE_META[
@@ -264,7 +264,7 @@ export function BillingPage() {
                 {subscription?.current_end && (
                   <>
                     {" "}
-                    Â· Renews{" "}
+                    · Renews{" "}
                     {new Date(subscription.current_end * 1000).toLocaleDateString("en-IN")}
                   </>
                 )}
@@ -306,7 +306,7 @@ export function BillingPage() {
           )}
           {usage.plan_status === "cancelled" && (
             <p className="text-sm text-amber-700">
-              Subscription cancelled â€” access continues until your grace period ends.
+              Subscription cancelled — access continues until your grace period ends.
             </p>
           )}
         </GlowSurfaceCard>
@@ -393,7 +393,7 @@ export function BillingPage() {
               />
             </div>
             <AkaraButton type="submit" size="sm" disabled={saving}>
-              {saving ? "Savingâ€¦" : saved ? "Saved âœ“" : "Save GST details"}
+              {saving ? "Saving…" : saved ? "Saved ✓" : "Save GST details"}
             </AkaraButton>
           </form>
         </GlowSurfaceCard>
@@ -410,7 +410,7 @@ export function BillingPage() {
                   className="flex justify-between items-center text-sm py-2 border-b border-white/10 last:border-0"
                 >
                   <span>{inv.invoice_number}</span>
-                  <span className="text-text-secondary">â‚¹{inv.total_amount.toLocaleString("en-IN")}</span>
+                  <span className="text-text-secondary">₹{inv.total_amount.toLocaleString("en-IN")}</span>
                   <Badge variant="outline">{inv.tax_type}</Badge>
                   {inv.pdf_storage_path && (
                     <button
@@ -419,7 +419,7 @@ export function BillingPage() {
                       disabled={downloadingId === inv.id}
                       className="text-xs text-accent hover:text-accent-hover hover:underline disabled:opacity-50"
                     >
-                      {downloadingId === inv.id ? "Downloadingâ€¦" : "Download PDF"}
+                      {downloadingId === inv.id ? "Downloading…" : "Download PDF"}
                     </button>
                   )}
                 </div>

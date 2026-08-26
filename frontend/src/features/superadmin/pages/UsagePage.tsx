@@ -12,7 +12,7 @@ import { MutationReasonField } from "@/features/superadmin/components/MutationRe
 type SortKey = "pct" | "name" | "usage" | "last_active";
 
 function formatLimit(value: number): string {
-  return value === -1 ? "âˆž" : value.toLocaleString("en-IN");
+  return value === -1 ? "∞" : value.toLocaleString("en-IN");
 }
 
 function formatRelative(iso: string | null | undefined): string {
@@ -97,7 +97,7 @@ export function UsagePage() {
 
   async function handleNudge(tenantId: string) {
     if (!reasonOk) return;
-    setNudgeStatus((s) => ({ ...s, [tenantId]: "Sendingâ€¦" }));
+    setNudgeStatus((s) => ({ ...s, [tenantId]: "Sending…" }));
     try {
       await sa.nudgeUpgrade(tenantId, reason.trim());
       setNudgeStatus((s) => ({ ...s, [tenantId]: "Sent" }));
@@ -111,7 +111,7 @@ export function UsagePage() {
 
   async function handleActivationNudge(tenantId: string, template: "day1_no_import" | "day3_no_copilot" | "day7_no_phone") {
     if (!reasonOk) return;
-    setActivationStatus((s) => ({ ...s, [tenantId]: "Sendingâ€¦" }));
+    setActivationStatus((s) => ({ ...s, [tenantId]: "Sending…" }));
     try {
       await sa.activationNudge(tenantId, reason.trim(), template);
       setActivationStatus((s) => ({ ...s, [tenantId]: "Sent" }));
@@ -135,7 +135,7 @@ export function UsagePage() {
 
       <section>
         <div className="flex flex-wrap items-end justify-between gap-3 mb-2">
-          <h3 className="text-sm font-medium text-sa-muted">Upsell queue (â‰¥70% copilot quota)</h3>
+          <h3 className="text-sm font-medium text-sa-muted">Upsell queue (≥70% copilot quota)</h3>
           <div className="flex items-end gap-3">
             <div>
               <label className="text-xs text-sa-muted">Sort by</label>
@@ -259,7 +259,7 @@ export function UsagePage() {
 
       <section>
         <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
-          <h3 className="text-sm font-medium text-sa-muted">All tenants â€” usage</h3>
+          <h3 className="text-sm font-medium text-sa-muted">All tenants — usage</h3>
           <select
             className="rounded border border-sa-border bg-sa-raised px-2 py-1 text-xs"
             value={tableSort}
@@ -325,7 +325,7 @@ export function UsagePage() {
                 >
                   <td className="p-3">
                     <p>{r.tenant_name}</p>
-                    <p className="text-xs text-sa-muted font-mono">{r.tenant_id.slice(0, 8)}â€¦</p>
+                    <p className="text-xs text-sa-muted font-mono">{r.tenant_id.slice(0, 8)}…</p>
                   </td>
                   <td className="p-3 capitalize">{r.plan}</td>
                   <td className="p-3 tabular-nums">
@@ -339,7 +339,7 @@ export function UsagePage() {
               ))}
               {costRows.length === 0 && (
                 <tr>
-                  <td colSpan={5} className="p-4 text-sa-muted">Loading cost dataâ€¦</td>
+                  <td colSpan={5} className="p-4 text-sa-muted">Loading cost data…</td>
                 </tr>
               )}
             </tbody>
