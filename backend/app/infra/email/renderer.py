@@ -6,8 +6,6 @@ from pathlib import Path
 
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 
-from app.api.superadmin.control_plane import resolve_published_content
-
 _TEMPLATE_DIR = Path(__file__).resolve().parent / "templates"
 
 _env = Environment(
@@ -31,6 +29,8 @@ _DB_TEMPLATE_KEYS = {
 
 
 def render_template(name: str, **context: object) -> str:
+    from app.api.superadmin.control_plane import resolve_published_content
+
     key = _DB_TEMPLATE_KEYS.get(name)
     if key:
         payload, used_fallback = resolve_published_content("message_templates", key, {})

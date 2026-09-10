@@ -5,13 +5,18 @@ from __future__ import annotations
 from datetime import UTC, datetime
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi import APIRouter, Depends, Request, status
 from pydantic import BaseModel, Field
 
+from app.core.errors import AkaraHTTPException
 from app.core.plan_guard import FeatureBlocked, _effective_plan
 from app.core.plan_limits import get_limit
 from app.core.rate_limit import limiter
-from app.core.tenant import TenantContext, get_supabase_service_client, get_tenant_context
+from app.core.tenant import (
+    TenantContext,
+    get_supabase_service_client,
+    get_tenant_context,
+)
 from app.domain.alerts.metrics import VALID_METRICS
 
 router = APIRouter(prefix="/alerts", tags=["alerts"])
@@ -48,7 +53,9 @@ class AlertOut(BaseModel):
     last_triggered: str | None
 
 
-def _require_alerts_feature(tenant: TenantContext = Depends(get_tenant_context)) -> TenantContext:
+def _require_alerts_feature(
+    tenant: TenantContext = Depends(get_tenant_context),
+) -> TenantContext:
     plan = _effective_plan(tenant)
     max_alerts = get_limit(plan, "alerts_max")
     if max_alerts == 0:
@@ -109,14 +116,19 @@ async def create_alert(
     tenant: TenantContext = Depends(_require_alerts_feature),
 ) -> AlertOut:
     if body.metric not in VALID_METRICS:
-        raise HTTPException(status.HTTP_400_BAD_REQUEST, detail="Invalid metric")
+        raise AkaraHTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            code="VALIDATION_ERROR",
+            message="Invalid metric",
+        )
 
     plan = _effective_plan(tenant)
     max_alerts = get_limit(plan, "alerts_max")
     if max_alerts != -1 and _count_alerts(tenant.tenant_id) >= max_alerts:
-        raise HTTPException(
-            status.HTTP_402_PAYMENT_REQUIRED,
-            detail=f"Alert limit reached ({max_alerts} on {plan} plan)",
+        raise AkaraHTTPException(
+            status_code=status.HTTP_402_PAYMENT_REQUIRED,
+            code="QUOTA_EXCEEDED",
+            message=f"Alert limit reached ({max_alerts} on {plan} plan)",
         )
 
     supa = get_supabase_service_client()
@@ -133,7 +145,11 @@ async def create_alert(
     }
     result = supa.table("tenant_alerts").insert(row).execute()
     if not result.data:
-        raise HTTPException(status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Could not create alert")
+        raise AkaraHTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            code="INTERNAL_ERROR",
+            message="Could not create alert",
+        )
     r = result.data[0]
     return AlertOut(
         id=UUID(r["id"]),
@@ -167,7 +183,11 @@ async def update_alert(
         .execute()
     )
     if not existing.data:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Alert not found")
+        raise AkaraHTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            code="NOT_FOUND",
+            message="Alert not found",
+        )
 
     update: dict = {"updated_at": datetime.now(UTC).isoformat()}
     if body.name is not None:

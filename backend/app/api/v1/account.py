@@ -5,16 +5,20 @@ from __future__ import annotations
 import json
 import logging
 from datetime import UTC, datetime
-from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
-from pydantic import BaseModel, Field
+from fastapi import APIRouter, Depends, Request, Response, status
+from pydantic import BaseModel
 
 from app.core.auth import CurrentUser
 from app.core.config import settings
+from app.core.errors import AkaraHTTPException
 from app.core.plan_guard import require_feature
 from app.core.rate_limit import limiter
-from app.core.tenant import TenantContext, get_supabase_service_client, get_tenant_context
+from app.core.tenant import (
+    TenantContext,
+    get_supabase_service_client,
+    get_tenant_context,
+)
 from app.domain.billing.email import _send
 from app.infra.notifications.delivery_log import log_delivery
 
@@ -104,14 +108,20 @@ def update_preferences(
         .single()
         .execute()
     )
-    merged = _merge_preferences(profile.data.get("preferences") if profile.data else {}, body)
-    supa.table("profiles").update({"preferences": merged}).eq("id", str(user.user_id)).execute()
+    merged = _merge_preferences(
+        profile.data.get("preferences") if profile.data else {}, body
+    )
+    supa.table("profiles").update({"preferences": merged}).eq(
+        "id", str(user.user_id)
+    ).execute()
     return {"preferences": merged}
 
 
 @router.patch("/profile")
 @limiter.limit("30/minute")
-def update_profile(request: Request, body: ProfileUpdate, user: CurrentUser) -> dict[str, str]:
+def update_profile(
+    request: Request, body: ProfileUpdate, user: CurrentUser
+) -> dict[str, str]:
     supa = get_supabase_service_client()
     update: dict = {}
     if body.display_name is not None:
@@ -126,11 +136,18 @@ def update_profile(request: Request, body: ProfileUpdate, user: CurrentUser) -> 
             .single()
             .execute()
         )
-        prefs = {**DEFAULT_PREFERENCES, **((profile.data or {}).get("preferences") or {})}
+        prefs = {
+            **DEFAULT_PREFERENCES,
+            **((profile.data or {}).get("preferences") or {}),
+        }
         prefs["avatar_seed"] = body.avatar_seed.strip()
         update["preferences"] = prefs
     if not update:
-        raise HTTPException(status.HTTP_400_BAD_REQUEST, detail="No fields to update")
+        raise AkaraHTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            code="VALIDATION_ERROR",
+            message="No fields to update",
+        )
     supa.table("profiles").update(update).eq("id", str(user.user_id)).execute()
     return {"status": "ok"}
 
@@ -138,7 +155,9 @@ def update_profile(request: Request, body: ProfileUpdate, user: CurrentUser) -> 
 @router.get("/export")
 @limiter.limit("5/minute")
 def export_account_data(
-    request: Request, user: CurrentUser, tenant: TenantContext = Depends(get_tenant_context)
+    request: Request,
+    user: CurrentUser,
+    tenant: TenantContext = Depends(get_tenant_context),
 ) -> Response:
     supa = get_supabase_service_client()
     profile = (
@@ -209,7 +228,12 @@ def send_test_email(
     <p>If you received this, your email delivery is working.</p>
     <p>— AKARA Team</p>
     """
-    ok = _send(user.email or "", "AKARA — Test email", html, text_content="AKARA test email — delivery OK.")
+    ok = _send(
+        user.email or "",
+        "AKARA — Test email",
+        html,
+        text_content="AKARA test email — delivery OK.",
+    )
     log_delivery(
         channel="email",
         template="test_email",
@@ -219,13 +243,15 @@ def send_test_email(
     )
     if not ok:
         if not settings.sendgrid_api_key:
-            raise HTTPException(
-                status.HTTP_503_SERVICE_UNAVAILABLE,
-                detail="Email delivery is not configured (SENDGRID_API_KEY missing on server)",
+            raise AkaraHTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                code="SERVICE_UNAVAILABLE",
+                message="Email delivery is not configured (SENDGRID_API_KEY missing on server)",
             )
-        raise HTTPException(
-            status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="Email send failed — check SendGrid config or spam suppressions",
+        raise AkaraHTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            code="SERVICE_UNAVAILABLE",
+            message="Email send failed \u2014 check SendGrid config or spam suppressions",
         )
     return {"status": "ok"}
 
@@ -240,15 +266,21 @@ def unsubscribe_preferences(
     """Record email suppression (morning brief unsubscribe)."""
     email = user.email or ""
     if not email:
-        raise HTTPException(status.HTTP_400_BAD_REQUEST, detail="No email on account")
+        raise AkaraHTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            code="VALIDATION_ERROR",
+            message="No email on account",
+        )
 
     normalized = email.strip().lower()
     reason = f"{body.category}_unsubscribe"
     supa = get_supabase_service_client()
-    supa.table("email_suppressions").upsert({
-        "email_normalized": normalized,
-        "reason": reason,
-    }).execute()
+    supa.table("email_suppressions").upsert(
+        {
+            "email_normalized": normalized,
+            "reason": reason,
+        }
+    ).execute()
 
     profile = (
         supa.table("profiles")
@@ -261,9 +293,14 @@ def unsubscribe_preferences(
     if body.category == "morning_brief":
         prefs["email_morning_brief_enabled"] = False
         prefs["morning_brief_enabled"] = False
-    supa.table("profiles").update({"preferences": prefs}).eq("id", str(user.user_id)).execute()
+    supa.table("profiles").update({"preferences": prefs}).eq(
+        "id", str(user.user_id)
+    ).execute()
 
-    return {"status": "ok", "message": "You have been unsubscribed from morning brief emails."}
+    return {
+        "status": "ok",
+        "message": "You have been unsubscribed from morning brief emails.",
+    }
 
 
 @router.post("/preferences/test-whatsapp")
@@ -287,7 +324,11 @@ async def send_test_whatsapp(
     )
     phone = (profile.data or {}).get("phone_number") if profile else None
     if not phone:
-        raise HTTPException(status.HTTP_400_BAD_REQUEST, detail="Add a phone number in Settings first")
+        raise AkaraHTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            code="VALIDATION_ERROR",
+            message="Add a phone number in Settings first",
+        )
 
     ok = await send_whatsapp_template(
         to_phone=phone,
@@ -297,17 +338,30 @@ async def send_test_whatsapp(
         user_id=user.user_id,
     )
     if not ok and not settings.whatsapp_sends_enabled:
-        return {"status": "skipped", "message": "WhatsApp sends disabled until templates are approved"}
+        return {
+            "status": "skipped",
+            "message": "WhatsApp sends disabled until templates are approved",
+        }
     if not ok:
-        raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, detail="WhatsApp send failed")
+        raise AkaraHTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            code="SERVICE_UNAVAILABLE",
+            message="WhatsApp send failed",
+        )
     return {"status": "ok"}
 
 
 @router.delete("", status_code=status.HTTP_202_ACCEPTED)
 @limiter.limit("3/minute")
-def delete_account(request: Request, body: DeleteAccountRequest, user: CurrentUser) -> dict[str, str]:
+def delete_account(
+    request: Request, body: DeleteAccountRequest, user: CurrentUser
+) -> dict[str, str]:
     if body.confirm_email.lower() != (user.email or "").lower():
-        raise HTTPException(status.HTTP_400_BAD_REQUEST, detail="Email confirmation does not match")
+        raise AkaraHTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            code="VALIDATION_ERROR",
+            message="Email confirmation does not match",
+        )
 
     supa = get_supabase_service_client()
     profile = (
@@ -328,18 +382,23 @@ def delete_account(request: Request, body: DeleteAccountRequest, user: CurrentUs
         .execute()
     )
     if not existing.data:
-        supa.table("account_deletion_queue").insert({
-            "user_id": str(user.user_id),
-            "tenant_id": tenant_id,
-            "status": "pending",
-        }).execute()
+        supa.table("account_deletion_queue").insert(
+            {
+                "user_id": str(user.user_id),
+                "tenant_id": tenant_id,
+                "status": "pending",
+            }
+        ).execute()
 
     try:
         supa.auth.admin.sign_out(str(user.user_id))
     except Exception as exc:
         logger.warning("Could not revoke sessions for %s: %s", user.user_id, exc)
 
-    return {"status": "queued", "message": "Account deletion scheduled. You will be signed out."}
+    return {
+        "status": "queued",
+        "message": "Account deletion scheduled. You will be signed out.",
+    }
 
 
 class SessionInfo(BaseModel):
@@ -377,8 +436,9 @@ def revoke_other_sessions(request: Request, user: CurrentUser) -> dict[str, str]
         )
     except Exception as exc:
         logger.warning("Could not revoke other sessions for %s: %s", user.user_id, exc)
-        raise HTTPException(
-            status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="Could not revoke other sessions",
+        raise AkaraHTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            code="SERVICE_UNAVAILABLE",
+            message="Could not revoke other sessions",
         ) from exc
     return {"status": "ok", "message": "Other sessions revoked"}

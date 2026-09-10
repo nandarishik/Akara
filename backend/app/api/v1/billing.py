@@ -6,7 +6,6 @@ import hashlib
 import json
 import logging
 import re
-
 from uuid import UUID
 
 from fastapi import APIRouter, HTTPException, Request, status
@@ -14,6 +13,7 @@ from fastapi.responses import Response
 from pydantic import BaseModel, Field
 
 from app.core.auth import CurrentUser
+from app.core.errors import AkaraHTTPException
 from app.core.idempotency import IdempotencyKey
 from app.core.plan_guard import _get_current_usage
 from app.core.plan_limits import PLAN_LIMITS
@@ -26,17 +26,37 @@ from app.domain.billing.checkout import (
     sync_subscription_from_razorpay,
 )
 from app.domain.billing.idempotency_store import get_cached_response, store_response
-from app.domain.billing.webhook_handler import dispatch_razorpay_event, verify_webhook_signature
+from app.domain.billing.webhook_handler import (
+    dispatch_razorpay_event,
+    verify_webhook_signature,
+)
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/billing", tags=["billing"])
 
-GSTIN_RE = re.compile(
-    r"^\d{2}[A-Z]{5}\d{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$"
-)
+GSTIN_RE = re.compile(r"^\d{2}[A-Z]{5}\d{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$")
 
 CHECKOUT_ENDPOINT = "POST /billing/create-checkout-session"
+
+_STATUS_TO_CODE = {
+    400: "VALIDATION_ERROR",
+    401: "UNAUTHENTICATED",
+    402: "QUOTA_EXCEEDED",
+    403: "FORBIDDEN",
+    404: "NOT_FOUND",
+    409: "CONFLICT",
+    410: "NOT_FOUND",
+    422: "VALIDATION_ERROR",
+    429: "RATE_LIMITED",
+    500: "INTERNAL_ERROR",
+    502: "SERVICE_UNAVAILABLE",
+    503: "SERVICE_UNAVAILABLE",
+}
+
+
+def _status_to_code(status_code: int) -> str:
+    return _STATUS_TO_CODE.get(status_code, "INTERNAL_ERROR")
 
 
 class UsageResponse(BaseModel):
@@ -179,11 +199,20 @@ def create_checkout(
     if cached:
         status_code, response_body = cached
         if status_code != 200:
-            raise HTTPException(status_code=status_code, detail=response_body)
+            raise AkaraHTTPException(
+                status_code=status_code,
+                code=_status_to_code(status_code),
+                message=str(response_body),
+                detail=response_body,
+            )
         return CheckoutResponse(**response_body)
 
     if not user.email:
-        raise HTTPException(status.HTTP_400_BAD_REQUEST, detail="User email required for checkout")
+        raise AkaraHTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            code="VALIDATION_ERROR",
+            message="User email required for checkout",
+        )
 
     try:
         result = create_checkout_session(
@@ -193,11 +222,28 @@ def create_checkout(
             interval=body.interval,
         )
     except HTTPException as exc:
-        store_response(idempotency_key, tenant.tenant_id, CHECKOUT_ENDPOINT, exc.status_code, {"detail": exc.detail})
+        store_response(
+            idempotency_key,
+            tenant.tenant_id,
+            CHECKOUT_ENDPOINT,
+            exc.status_code,
+            {"detail": exc.detail},
+        )
+        raise
+    except AkaraHTTPException as exc:
+        store_response(
+            idempotency_key,
+            tenant.tenant_id,
+            CHECKOUT_ENDPOINT,
+            exc.status_code,
+            {"detail": exc.message},
+        )
         raise
 
     response = CheckoutResponse(**result)
-    store_response(idempotency_key, tenant.tenant_id, CHECKOUT_ENDPOINT, 200, response.model_dump())
+    store_response(
+        idempotency_key, tenant.tenant_id, CHECKOUT_ENDPOINT, 200, response.model_dump()
+    )
     return response
 
 
@@ -220,9 +266,10 @@ def sync_subscription(request: Request, tenant: TenantCtx) -> SubscriptionRespon
 @limiter.limit("10/minute")
 def cancel_sub(request: Request, tenant: TenantCtx) -> CancelSubscriptionResponse:
     if not tenant.is_admin:
-        raise HTTPException(
-            status.HTTP_403_FORBIDDEN,
-            detail="Only admins can cancel the subscription",
+        raise AkaraHTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            code="FORBIDDEN",
+            message="Only admins can cancel the subscription",
         )
     result = cancel_subscription(tenant.tenant_id, at_cycle_end=True)
     return CancelSubscriptionResponse(**result)
@@ -232,12 +279,19 @@ def cancel_sub(request: Request, tenant: TenantCtx) -> CancelSubscriptionRespons
 async def razorpay_webhook(request: Request) -> dict[str, bool]:
     payload = await request.body()
     sig_header = request.headers.get("X-Razorpay-Signature")
-    event_id = request.headers.get("X-Razorpay-Event-Id") or hashlib.sha256(payload).hexdigest()[:32]
+    event_id = (
+        request.headers.get("X-Razorpay-Event-Id")
+        or hashlib.sha256(payload).hexdigest()[:32]
+    )
 
     try:
         verify_webhook_signature(payload, sig_header)
     except ValueError as exc:
-        raise HTTPException(status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
+        raise AkaraHTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            code="VALIDATION_ERROR",
+            message=str(exc),
+        ) from exc
 
     body = json.loads(payload.decode("utf-8"))
     dispatch_razorpay_event(body, event_id)
@@ -252,7 +306,11 @@ def update_billing_details(
     tenant: TenantCtx,
 ) -> BillingDetailsResponse:
     if body.gstin and not GSTIN_RE.match(body.gstin.upper()):
-        raise HTTPException(status.HTTP_400_BAD_REQUEST, detail="Invalid GSTIN format")
+        raise AkaraHTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            code="VALIDATION_ERROR",
+            message="Invalid GSTIN format",
+        )
 
     supa = get_supabase_service_client()
     current = (
@@ -300,7 +358,9 @@ def list_invoices(request: Request, tenant: TenantCtx) -> InvoiceListResponse:
     supa = get_supabase_service_client()
     result = (
         supa.table("invoices")
-        .select("id, invoice_number, total_amount, tax_type, status, created_at, pdf_storage_path")
+        .select(
+            "id, invoice_number, total_amount, tax_type, status, created_at, pdf_storage_path"
+        )
         .eq("tenant_id", str(tenant.tenant_id))
         .order("created_at", desc=True)
         .limit(50)
@@ -334,18 +394,28 @@ def download_invoice(request: Request, invoice_id: UUID, tenant: TenantCtx) -> R
         .execute()
     )
     if not result.data:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Invoice not found")
+        raise AkaraHTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            code="NOT_FOUND",
+            message="Invoice not found",
+        )
 
     path = result.data.get("pdf_storage_path")
     if not path:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Invoice PDF not available")
+        raise AkaraHTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            code="NOT_FOUND",
+            message="Invoice PDF not available",
+        )
 
     try:
         pdf_bytes = supa.storage.from_("storage").download(path)
     except Exception as exc:
         logger.error("Failed to download invoice PDF %s: %s", path, exc)
-        raise HTTPException(
-            status.HTTP_502_BAD_GATEWAY, detail="Could not retrieve invoice PDF"
+        raise AkaraHTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            code="SERVICE_UNAVAILABLE",
+            message="Could not retrieve invoice PDF",
         ) from exc
 
     filename = f"{result.data['invoice_number']}.pdf"

@@ -10,10 +10,11 @@ import logging
 from datetime import datetime
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
+from fastapi import APIRouter, Depends, Request, Response, status
 from pydantic import BaseModel
 
 from app.core.auth import CurrentUser
+from app.core.errors import AkaraHTTPException
 from app.core.plan_guard import require_feature
 from app.core.rate_limit import EXPORT_LIMIT, limiter
 from app.core.tenant import TenantCtx, get_supabase_service_client
@@ -107,15 +108,20 @@ def download_report(
         .execute()
     )
     if not result.data:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Report not found")
+        raise AkaraHTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            code="NOT_FOUND",
+            message="Report not found",
+        )
 
     storage_path = result.data.get("storage_path")
     title = result.data.get("title", "report")
 
     if not storage_path:
-        raise HTTPException(
+        raise AkaraHTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Report file not yet available",
+            code="NOT_FOUND",
+            message="Report file not yet available",
         )
 
     try:
@@ -127,7 +133,8 @@ def download_report(
         )
     except Exception as exc:
         logger.error("Failed to download report %s: %s", report_id, exc)
-        raise HTTPException(
+        raise AkaraHTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Download failed — file may have been deleted",
+            code="INTERNAL_ERROR",
+            message="Download failed \u2014 file may have been deleted",
         ) from exc

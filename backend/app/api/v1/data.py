@@ -8,7 +8,6 @@ from fastapi import (
     Body,
     Depends,
     File,
-    HTTPException,
     Path,
     Query,
     Request,
@@ -19,6 +18,7 @@ from pydantic import BaseModel
 
 from app.core.auth import CurrentUser
 from app.core.config import settings
+from app.core.errors import AkaraHTTPException
 from app.core.plan_guard import (
     require_feature,
     require_import_quota,
@@ -76,7 +76,11 @@ async def list_excel_sheets(
     user uploads a multi-sheet Excel so the UI can show a sheet picker.
     """
     if not tenant.is_admin:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Admins only")
+        raise AkaraHTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            code="FORBIDDEN",
+            message="Admins only",
+        )
 
     content = await file.read()
     filename = file.filename or "upload.xlsx"
@@ -97,7 +101,9 @@ async def list_excel_sheets(
     return SheetListResponse(sheets=sheets, recommended=recommended)
 
 
-@router.post("/import", response_model=ImportResult, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/import", response_model=ImportResult, status_code=status.HTTP_201_CREATED
+)
 @limiter.limit("10/minute")
 async def import_data(
     request: Request,
@@ -105,7 +111,9 @@ async def import_data(
     tenant: TenantCtx,
     file: UploadFile = File(...),
     source_type: Annotated[SourceType, Query()] = "primary",
-    sheet_name: Annotated[str | None, Query(description="Excel sheet name. Omit for auto-detect.")] = None,
+    sheet_name: Annotated[
+        str | None, Query(description="Excel sheet name. Omit for auto-detect.")
+    ] = None,
 ) -> ImportResult:
     """
     Import a CSV or Excel file into the appropriate table.
@@ -121,9 +129,10 @@ async def import_data(
     Vyapar, Busy, GoFrugal, myBillBook, and any generic spreadsheet.
     """
     if not tenant.is_admin:
-        raise HTTPException(
+        raise AkaraHTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Only admins can import data",
+            code="FORBIDDEN",
+            message="Only admins can import data",
         )
 
     content_type = file.content_type or ""
@@ -132,16 +141,18 @@ async def import_data(
 
     # Accept by content-type OR by file extension (browsers vary)
     if content_type not in _ALLOWED_CONTENT_TYPES and ext not in ("csv", "xlsx", "xls"):
-        raise HTTPException(
+        raise AkaraHTTPException(
             status_code=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE,
-            detail="Unsupported file type. Upload a CSV, XLSX, or XLS file.",
+            code="VALIDATION_ERROR",
+            message="Unsupported file type. Upload a CSV, XLSX, or XLS file.",
         )
 
     content = await file.read()
     if len(content) > _MAX_FILE_SIZE:
-        raise HTTPException(
+        raise AkaraHTTPException(
             status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
-            detail="File exceeds 50 MB limit",
+            code="VALIDATION_ERROR",
+            message="File exceeds 50 MB limit",
         )
 
     # Feature gate: secondary/scheme sources require Pro+
@@ -162,13 +173,19 @@ async def import_data(
     # Create import job record before importing
     import_job_id: str | None = None
     try:
-        job_result = supa.table("import_jobs").insert({
-            "tenant_id":   str(tenant.tenant_id),
-            "user_id":     str(user.user_id),
-            "source_type": str(source_type),
-            "filename":    filename,
-            "status":      "completed",
-        }).execute()
+        job_result = (
+            supa.table("import_jobs")
+            .insert(
+                {
+                    "tenant_id": str(tenant.tenant_id),
+                    "user_id": str(user.user_id),
+                    "source_type": str(source_type),
+                    "filename": filename,
+                    "status": "completed",
+                }
+            )
+            .execute()
+        )
         if job_result.data:
             import_job_id = job_result.data[0]["id"]
     except Exception as exc:
@@ -187,28 +204,39 @@ async def import_data(
     # Update import_job with actual row count
     if import_job_id:
         try:
-            supa.table("import_jobs").update({
-                "rows_inserted": rows_inserted,
-                "rows_skipped":  result.rows_skipped or 0,
-            }).eq("id", import_job_id).execute()
+            supa.table("import_jobs").update(
+                {
+                    "rows_inserted": rows_inserted,
+                    "rows_skipped": result.rows_skipped or 0,
+                }
+            ).eq("id", import_job_id).execute()
         except Exception as exc:
             logger.warning("Failed to update import_job rows: %s", exc)
 
     # Increment usage counters after successful import
     try:
-        supa.rpc("increment_usage", {
-            "p_tenant_id": str(tenant.tenant_id),
-            "p_field":     "rows_imported",
-            "p_amount":    rows_inserted,
-        }).execute()
-        supa.rpc("increment_usage", {
-            "p_tenant_id": str(tenant.tenant_id),
-            "p_field":     "uploads_count",
-        }).execute()
-        supa.rpc("increment_usage", {
-            "p_tenant_id": str(tenant.tenant_id),
-            "p_field":     "uploads_today",
-        }).execute()
+        supa.rpc(
+            "increment_usage",
+            {
+                "p_tenant_id": str(tenant.tenant_id),
+                "p_field": "rows_imported",
+                "p_amount": rows_inserted,
+            },
+        ).execute()
+        supa.rpc(
+            "increment_usage",
+            {
+                "p_tenant_id": str(tenant.tenant_id),
+                "p_field": "uploads_count",
+            },
+        ).execute()
+        supa.rpc(
+            "increment_usage",
+            {
+                "p_tenant_id": str(tenant.tenant_id),
+                "p_field": "uploads_today",
+            },
+        ).execute()
     except Exception as exc:
         logger.warning("Failed to increment import usage: %s", exc)
 
@@ -234,9 +262,10 @@ async def undo_import(
     import history table.
     """
     if not tenant.is_admin:
-        raise HTTPException(
+        raise AkaraHTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Only admins can undo imports",
+            code="FORBIDDEN",
+            message="Only admins can undo imports",
         )
 
     supa = get_supabase_service_client()
@@ -252,47 +281,61 @@ async def undo_import(
             .execute()
         )
     except Exception as exc:
-        raise HTTPException(status_code=404, detail="Import job not found") from exc
+        raise AkaraHTTPException(
+            status_code=404,
+            code="NOT_FOUND",
+            message="Import job not found",
+        ) from exc
 
     if not job_result.data:
-        raise HTTPException(status_code=404, detail="Import job not found")
+        raise AkaraHTTPException(
+            status_code=404,
+            code="NOT_FOUND",
+            message="Import job not found",
+        )
 
     job = job_result.data
     if job.get("status") == "deleted":
-        raise HTTPException(
+        raise AkaraHTTPException(
             status_code=status.HTTP_409_CONFLICT,
-            detail="This import has already been undone",
+            code="CONFLICT",
+            message="This import has already been undone",
         )
 
     rows_to_delete = job.get("rows_inserted", 0)
 
     # Delete rows tagged with this import_job_id
     try:
-        supa.table("sales_data").delete() \
-            .eq("tenant_id", str(tenant.tenant_id)) \
-            .eq("import_job_id", import_job_id) \
-            .execute()
+        supa.table("sales_data").delete().eq("tenant_id", str(tenant.tenant_id)).eq(
+            "import_job_id", import_job_id
+        ).execute()
     except Exception as exc:
-        logger.error("Failed to delete sales_data rows for job %s: %s", import_job_id, exc)
-        raise HTTPException(
+        logger.error(
+            "Failed to delete sales_data rows for job %s: %s", import_job_id, exc
+        )
+        raise AkaraHTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to delete imported rows. Please try again.",
+            code="INTERNAL_ERROR",
+            message="Failed to delete imported rows. Please try again.",
         ) from exc
 
     # Mark job as deleted
     try:
-        supa.table("import_jobs").update({"status": "deleted"}) \
-            .eq("id", import_job_id) \
-            .execute()
+        supa.table("import_jobs").update({"status": "deleted"}).eq(
+            "id", import_job_id
+        ).execute()
     except Exception as exc:
         logger.warning("Failed to mark import_job as deleted: %s", exc)
 
     # Increment undo counter
     try:
-        supa.rpc("increment_usage", {
-            "p_tenant_id": str(tenant.tenant_id),
-            "p_field":     "undos_today",
-        }).execute()
+        supa.rpc(
+            "increment_usage",
+            {
+                "p_tenant_id": str(tenant.tenant_id),
+                "p_field": "undos_today",
+            },
+        ).execute()
     except Exception as exc:
         logger.warning("Failed to increment undo usage: %s", exc)
 
@@ -318,12 +361,15 @@ async def sync_data(
     No file upload needed — rows are already transformed to the AKARA schema.
     """
     if not tenant.is_admin:
-        raise HTTPException(
+        raise AkaraHTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Only admins can push sync data",
+            code="FORBIDDEN",
+            message="Only admins can push sync data",
         )
     if not body.rows:
-        return ImportResult(rows_inserted=0, rows_skipped=0, errors=[], warnings=["No rows in payload"])
+        return ImportResult(
+            rows_inserted=0, rows_skipped=0, errors=[], warnings=["No rows in payload"]
+        )
 
     await require_import_quota(len(body.rows))(tenant)
 
@@ -339,19 +385,28 @@ async def sync_data(
     if rows_inserted > 0:
         try:
             supa = get_supabase_service_client()
-            supa.rpc("increment_usage", {
-                "p_tenant_id": str(tenant.tenant_id),
-                "p_field":     "rows_imported",
-                "p_amount":    rows_inserted,
-            }).execute()
-            supa.rpc("increment_usage", {
-                "p_tenant_id": str(tenant.tenant_id),
-                "p_field":     "uploads_count",
-            }).execute()
-            supa.rpc("increment_usage", {
-                "p_tenant_id": str(tenant.tenant_id),
-                "p_field":     "uploads_today",
-            }).execute()
+            supa.rpc(
+                "increment_usage",
+                {
+                    "p_tenant_id": str(tenant.tenant_id),
+                    "p_field": "rows_imported",
+                    "p_amount": rows_inserted,
+                },
+            ).execute()
+            supa.rpc(
+                "increment_usage",
+                {
+                    "p_tenant_id": str(tenant.tenant_id),
+                    "p_field": "uploads_count",
+                },
+            ).execute()
+            supa.rpc(
+                "increment_usage",
+                {
+                    "p_tenant_id": str(tenant.tenant_id),
+                    "p_field": "uploads_today",
+                },
+            ).execute()
         except Exception as exc:
             logger.warning("Failed to increment sync import usage: %s", exc)
 
@@ -361,6 +416,7 @@ async def sync_data(
 # ============================================================================
 # DAY 4: Async Import Endpoints for Large File Processing
 # ============================================================================
+
 
 class AsyncImportResponse(BaseModel):
     job_id: str
@@ -398,20 +454,23 @@ async def import_data_async(
     tenant: TenantCtx,
     file: UploadFile = File(...),
     source_type: Annotated[SourceType, Query()] = "primary",
-    sheet_name: Annotated[str | None, Query(description="Excel sheet name for multi-sheet files")] = None,
+    sheet_name: Annotated[
+        str | None, Query(description="Excel sheet name for multi-sheet files")
+    ] = None,
 ) -> AsyncImportResponse:
     """
     Async import for large files (>5000 rows estimated).
-    
+
     For files under 5000 rows, use the regular POST /import endpoint.
     Large files are uploaded to Supabase Storage and processed by background workers.
-    
+
     Returns a job_id that can be used to poll status via GET /import/jobs/{job_id}
     """
     if not tenant.is_admin:
-        raise HTTPException(
+        raise AkaraHTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Only admins can import data",
+            code="FORBIDDEN",
+            message="Only admins can import data",
         )
 
     content_type = file.content_type or ""
@@ -420,16 +479,18 @@ async def import_data_async(
 
     # Validate file type
     if content_type not in _ALLOWED_CONTENT_TYPES and ext not in ("csv", "xlsx", "xls"):
-        raise HTTPException(
+        raise AkaraHTTPException(
             status_code=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE,
-            detail="Unsupported file type. Upload a CSV, XLSX, or XLS file.",
+            code="VALIDATION_ERROR",
+            message="Unsupported file type. Upload a CSV, XLSX, or XLS file.",
         )
 
     content = await file.read()
     if len(content) > _MAX_FILE_SIZE:
-        raise HTTPException(
+        raise AkaraHTTPException(
             status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
-            detail="File exceeds 50 MB limit",
+            code="VALIDATION_ERROR",
+            message="File exceeds 50 MB limit",
         )
 
     # Feature gate check
@@ -440,9 +501,10 @@ async def import_data_async(
     estimated_rows = max(1, len(content) // 200)
 
     if estimated_rows < 5000:
-        raise HTTPException(
+        raise AkaraHTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"File has ~{estimated_rows} rows. Use POST /import for files under 5000 rows.",
+            code="VALIDATION_ERROR",
+            message=f"File has ~{estimated_rows} rows. Use POST /import for files under 5000 rows.",
         )
 
     # Quota check for large imports
@@ -457,35 +519,47 @@ async def import_data_async(
 
     try:
         # Upload file to storage
-        supa.storage.from_(settings.supabase_imports_bucket).upload(storage_path, content, {
-            "content-type": content_type,
-            "x-upsert": "true"  # Overwrite if exists
-        })
+        supa.storage.from_(settings.supabase_imports_bucket).upload(
+            storage_path,
+            content,
+            {
+                "content-type": content_type,
+                "x-upsert": "true",  # Overwrite if exists
+            },
+        )
     except Exception as e:
         logger.error(f"Failed to upload file to storage: {e}")
-        raise HTTPException(
+        raise AkaraHTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to upload file for processing. Please try again.",
+            code="INTERNAL_ERROR",
+            message="Failed to upload file for processing. Please try again.",
         )
 
     # Create import job record
     try:
-        job_result = supa.table("import_jobs").insert({
-            "id": job_id,
-            "tenant_id": str(tenant.tenant_id),
-            "user_id": str(user.user_id),
-            "source_type": str(source_type),
-            "filename": filename,
-            "status": "queued",
-            "storage_path": storage_path,
-            "rows_inserted": 0,
-            "rows_skipped": 0,
-        }).execute()
+        job_result = (
+            supa.table("import_jobs")
+            .insert(
+                {
+                    "id": job_id,
+                    "tenant_id": str(tenant.tenant_id),
+                    "user_id": str(user.user_id),
+                    "source_type": str(source_type),
+                    "filename": filename,
+                    "status": "queued",
+                    "storage_path": storage_path,
+                    "rows_inserted": 0,
+                    "rows_skipped": 0,
+                }
+            )
+            .execute()
+        )
 
         if not job_result.data:
-            raise HTTPException(
+            raise AkaraHTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="Failed to create import job",
+                code="INTERNAL_ERROR",
+                message="Failed to create import job",
             )
 
     except Exception as e:
@@ -496,9 +570,10 @@ async def import_data_async(
         except:
             pass
 
-        raise HTTPException(
+        raise AkaraHTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to queue import job. Please try again.",
+            code="INTERNAL_ERROR",
+            message="Failed to queue import job. Please try again.",
         )
 
     # Estimate processing time based on file size
@@ -508,7 +583,7 @@ async def import_data_async(
         job_id=job_id,
         status="queued",
         message=f"Import job queued for processing. Estimated {estimated_rows:,} rows.",
-        estimated_processing_time=processing_time
+        estimated_processing_time=processing_time,
     )
 
 
@@ -522,13 +597,14 @@ async def get_import_job(
 ) -> ImportJob:
     """
     Get status of a specific import job.
-    
+
     Use this to poll the status of async imports started with POST /import/async
     """
     if not tenant.is_admin:
-        raise HTTPException(
+        raise AkaraHTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Only admins can view import jobs",
+            code="FORBIDDEN",
+            message="Only admins can view import jobs",
         )
 
     supa = get_supabase_service_client()
@@ -544,10 +620,18 @@ async def get_import_job(
         )
     except Exception as e:
         logger.error(f"Failed to fetch import job {job_id}: {e}")
-        raise HTTPException(status_code=404, detail="Import job not found")
+        raise AkaraHTTPException(
+            status_code=404,
+            code="NOT_FOUND",
+            message="Import job not found",
+        )
 
     if not result.data:
-        raise HTTPException(status_code=404, detail="Import job not found")
+        raise AkaraHTTPException(
+            status_code=404,
+            code="NOT_FOUND",
+            message="Import job not found",
+        )
 
     job_data = result.data
     return ImportJob(
@@ -578,13 +662,14 @@ async def list_import_jobs(
 ) -> ImportJobsResponse:
     """
     List import jobs for this tenant, ordered by creation time (newest first).
-    
+
     Includes both sync and async import jobs for the import history view.
     """
     if not tenant.is_admin:
-        raise HTTPException(
+        raise AkaraHTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Only admins can view import jobs",
+            code="FORBIDDEN",
+            message="Only admins can view import jobs",
         )
 
     supa = get_supabase_service_client()
@@ -610,9 +695,10 @@ async def list_import_jobs(
 
     except Exception as e:
         logger.error(f"Failed to fetch import jobs: {e}")
-        raise HTTPException(
+        raise AkaraHTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to fetch import jobs",
+            code="INTERNAL_ERROR",
+            message="Failed to fetch import jobs",
         )
 
     jobs_data = result.data or []
@@ -652,9 +738,17 @@ def _get_tenant_import_job(supa, tenant_id: str, job_id: str) -> dict:
         )
     except Exception as e:
         logger.error("Failed to fetch import job %s: %s", job_id, e)
-        raise HTTPException(status_code=404, detail="Import job not found") from e
+        raise AkaraHTTPException(
+            status_code=404,
+            code="NOT_FOUND",
+            message="Import job not found",
+        ) from e
     if not result.data:
-        raise HTTPException(status_code=404, detail="Import job not found")
+        raise AkaraHTTPException(
+            status_code=404,
+            code="NOT_FOUND",
+            message="Import job not found",
+        )
     return result.data
 
 
@@ -668,26 +762,30 @@ async def cancel_import_job(
 ) -> dict[str, str]:
     """Cancel a queued or processing async import job."""
     if not tenant.is_admin:
-        raise HTTPException(
+        raise AkaraHTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Only admins can cancel import jobs",
+            code="FORBIDDEN",
+            message="Only admins can cancel import jobs",
         )
 
     supa = get_supabase_service_client()
     job = _get_tenant_import_job(supa, str(tenant.tenant_id), job_id)
 
     if job["status"] not in ("queued", "processing"):
-        raise HTTPException(
+        raise AkaraHTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Cannot cancel job in status '{job['status']}'",
+            code="VALIDATION_ERROR",
+            message=f"Cannot cancel job in status '{job['status']}'",
         )
 
-    supa.table("import_jobs").update({
-        "status": "cancelled",
-        "error_message": "Cancelled by user",
-        "worker_id": None,
-        "completed_at": datetime.now(UTC).isoformat(),
-    }).eq("id", job_id).execute()
+    supa.table("import_jobs").update(
+        {
+            "status": "cancelled",
+            "error_message": "Cancelled by user",
+            "worker_id": None,
+            "completed_at": datetime.now(UTC).isoformat(),
+        }
+    ).eq("id", job_id).execute()
 
     return {"status": "cancelled", "job_id": job_id}
 
@@ -702,33 +800,38 @@ async def retry_import_job(
 ) -> dict[str, str]:
     """Re-queue a failed or cancelled async import job for processing."""
     if not tenant.is_admin:
-        raise HTTPException(
+        raise AkaraHTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Only admins can retry import jobs",
+            code="FORBIDDEN",
+            message="Only admins can retry import jobs",
         )
 
     supa = get_supabase_service_client()
     job = _get_tenant_import_job(supa, str(tenant.tenant_id), job_id)
 
     if job["status"] not in ("failed", "cancelled"):
-        raise HTTPException(
+        raise AkaraHTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Cannot retry job in status '{job['status']}'",
+            code="VALIDATION_ERROR",
+            message=f"Cannot retry job in status '{job['status']}'",
         )
     if not job.get("storage_path"):
-        raise HTTPException(
+        raise AkaraHTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Job has no stored file — upload again instead",
+            code="VALIDATION_ERROR",
+            message="Job has no stored file \u2014 upload again instead",
         )
 
-    supa.table("import_jobs").update({
-        "status": "queued",
-        "error_message": None,
-        "worker_id": None,
-        "heartbeat_at": None,
-        "completed_at": None,
-        "rows_inserted": 0,
-        "rows_skipped": 0,
-    }).eq("id", job_id).execute()
+    supa.table("import_jobs").update(
+        {
+            "status": "queued",
+            "error_message": None,
+            "worker_id": None,
+            "heartbeat_at": None,
+            "completed_at": None,
+            "rows_inserted": 0,
+            "rows_skipped": 0,
+        }
+    ).eq("id", job_id).execute()
 
     return {"status": "queued", "job_id": job_id}

@@ -13,11 +13,12 @@ from datetime import date
 from typing import TYPE_CHECKING
 
 import httpx
-from fastapi import APIRouter, HTTPException, Request, status
+from fastapi import APIRouter, Request, status
 from pydantic import BaseModel
 
 from app.core.auth import CurrentUser
 from app.core.config import settings
+from app.core.errors import AkaraHTTPException
 from app.core.rate_limit import limiter
 from app.core.tenant import get_supabase_service_client
 from app.domain.user_events import record_user_event
@@ -98,36 +99,216 @@ def _make_slug(name: str) -> str:
 # Sample data seeding
 # ---------------------------------------------------------------------------
 _SAMPLE_ROWS: list[dict] = [
-    {"distributor": "Sharma Traders", "zone": "North", "product": "Maggi 2min", "quantity": 240, "revenue": 28800},
-    {"distributor": "Sharma Traders", "zone": "North", "product": "KitKat 4F", "quantity": 180, "revenue": 10800},
-    {"distributor": "Gupta Agencies", "zone": "East",  "product": "Maggi 2min", "quantity": 310, "revenue": 37200},
-    {"distributor": "Gupta Agencies", "zone": "East",  "product": "Lay's Classic", "quantity": 520, "revenue": 20800},
-    {"distributor": "Mehta Dist.",    "zone": "West",  "product": "Nestea",    "quantity": 150, "revenue": 9000},
-    {"distributor": "Mehta Dist.",    "zone": "West",  "product": "KitKat 4F", "quantity": 220, "revenue": 13200},
-    {"distributor": "Patel Depot",    "zone": "South", "product": "Maggi 2min", "quantity": 400, "revenue": 48000},
-    {"distributor": "Patel Depot",    "zone": "South", "product": "Lay's Classic", "quantity": 290, "revenue": 11600},
-    {"distributor": "Joshi & Sons",   "zone": "North", "product": "Nestea",    "quantity": 100, "revenue": 6000},
-    {"distributor": "Joshi & Sons",   "zone": "North", "product": "Milkybar",  "quantity": 340, "revenue": 17000},
-    {"distributor": "Rao Traders",    "zone": "East",  "product": "Maggi 2min", "quantity": 270, "revenue": 32400},
-    {"distributor": "Rao Traders",    "zone": "East",  "product": "Milkybar",  "quantity": 190, "revenue": 9500},
-    {"distributor": "Verma Dist.",    "zone": "West",  "product": "KitKat 4F", "quantity": 160, "revenue": 9600},
-    {"distributor": "Verma Dist.",    "zone": "West",  "product": "Lay's Classic", "quantity": 380, "revenue": 15200},
-    {"distributor": "Singh Stores",   "zone": "South", "product": "Nestea",    "quantity": 210, "revenue": 12600},
-    {"distributor": "Singh Stores",   "zone": "South", "product": "Milkybar",  "quantity": 260, "revenue": 13000},
-    {"distributor": "Kumar Agencies", "zone": "North", "product": "Maggi 2min", "quantity": 330, "revenue": 39600},
-    {"distributor": "Kumar Agencies", "zone": "North", "product": "KitKat 4F", "quantity": 140, "revenue": 8400},
-    {"distributor": "Bose Pvt Ltd",   "zone": "East",  "product": "Lay's Classic", "quantity": 460, "revenue": 18400},
-    {"distributor": "Bose Pvt Ltd",   "zone": "East",  "product": "Nestea",    "quantity": 130, "revenue": 7800},
-    {"distributor": "Iyer Corp",      "zone": "West",  "product": "Milkybar",  "quantity": 290, "revenue": 14500},
-    {"distributor": "Iyer Corp",      "zone": "West",  "product": "Maggi 2min", "quantity": 200, "revenue": 24000},
-    {"distributor": "Nair Dist.",     "zone": "South", "product": "KitKat 4F", "quantity": 175, "revenue": 10500},
-    {"distributor": "Nair Dist.",     "zone": "South", "product": "Lay's Classic", "quantity": 310, "revenue": 12400},
-    {"distributor": "Reddy Traders",  "zone": "North", "product": "Nestea",    "quantity": 185, "revenue": 11100},
-    {"distributor": "Reddy Traders",  "zone": "North", "product": "Milkybar",  "quantity": 220, "revenue": 11000},
-    {"distributor": "Pillai & Co",    "zone": "East",  "product": "Maggi 2min", "quantity": 360, "revenue": 43200},
-    {"distributor": "Pillai & Co",    "zone": "East",  "product": "KitKat 4F", "quantity": 145, "revenue": 8700},
-    {"distributor": "Das Agencies",   "zone": "West",  "product": "Lay's Classic", "quantity": 410, "revenue": 16400},
-    {"distributor": "Das Agencies",   "zone": "West",  "product": "Nestea",    "quantity": 165, "revenue": 9900},
+    {
+        "distributor": "Sharma Traders",
+        "zone": "North",
+        "product": "Maggi 2min",
+        "quantity": 240,
+        "revenue": 28800,
+    },
+    {
+        "distributor": "Sharma Traders",
+        "zone": "North",
+        "product": "KitKat 4F",
+        "quantity": 180,
+        "revenue": 10800,
+    },
+    {
+        "distributor": "Gupta Agencies",
+        "zone": "East",
+        "product": "Maggi 2min",
+        "quantity": 310,
+        "revenue": 37200,
+    },
+    {
+        "distributor": "Gupta Agencies",
+        "zone": "East",
+        "product": "Lay's Classic",
+        "quantity": 520,
+        "revenue": 20800,
+    },
+    {
+        "distributor": "Mehta Dist.",
+        "zone": "West",
+        "product": "Nestea",
+        "quantity": 150,
+        "revenue": 9000,
+    },
+    {
+        "distributor": "Mehta Dist.",
+        "zone": "West",
+        "product": "KitKat 4F",
+        "quantity": 220,
+        "revenue": 13200,
+    },
+    {
+        "distributor": "Patel Depot",
+        "zone": "South",
+        "product": "Maggi 2min",
+        "quantity": 400,
+        "revenue": 48000,
+    },
+    {
+        "distributor": "Patel Depot",
+        "zone": "South",
+        "product": "Lay's Classic",
+        "quantity": 290,
+        "revenue": 11600,
+    },
+    {
+        "distributor": "Joshi & Sons",
+        "zone": "North",
+        "product": "Nestea",
+        "quantity": 100,
+        "revenue": 6000,
+    },
+    {
+        "distributor": "Joshi & Sons",
+        "zone": "North",
+        "product": "Milkybar",
+        "quantity": 340,
+        "revenue": 17000,
+    },
+    {
+        "distributor": "Rao Traders",
+        "zone": "East",
+        "product": "Maggi 2min",
+        "quantity": 270,
+        "revenue": 32400,
+    },
+    {
+        "distributor": "Rao Traders",
+        "zone": "East",
+        "product": "Milkybar",
+        "quantity": 190,
+        "revenue": 9500,
+    },
+    {
+        "distributor": "Verma Dist.",
+        "zone": "West",
+        "product": "KitKat 4F",
+        "quantity": 160,
+        "revenue": 9600,
+    },
+    {
+        "distributor": "Verma Dist.",
+        "zone": "West",
+        "product": "Lay's Classic",
+        "quantity": 380,
+        "revenue": 15200,
+    },
+    {
+        "distributor": "Singh Stores",
+        "zone": "South",
+        "product": "Nestea",
+        "quantity": 210,
+        "revenue": 12600,
+    },
+    {
+        "distributor": "Singh Stores",
+        "zone": "South",
+        "product": "Milkybar",
+        "quantity": 260,
+        "revenue": 13000,
+    },
+    {
+        "distributor": "Kumar Agencies",
+        "zone": "North",
+        "product": "Maggi 2min",
+        "quantity": 330,
+        "revenue": 39600,
+    },
+    {
+        "distributor": "Kumar Agencies",
+        "zone": "North",
+        "product": "KitKat 4F",
+        "quantity": 140,
+        "revenue": 8400,
+    },
+    {
+        "distributor": "Bose Pvt Ltd",
+        "zone": "East",
+        "product": "Lay's Classic",
+        "quantity": 460,
+        "revenue": 18400,
+    },
+    {
+        "distributor": "Bose Pvt Ltd",
+        "zone": "East",
+        "product": "Nestea",
+        "quantity": 130,
+        "revenue": 7800,
+    },
+    {
+        "distributor": "Iyer Corp",
+        "zone": "West",
+        "product": "Milkybar",
+        "quantity": 290,
+        "revenue": 14500,
+    },
+    {
+        "distributor": "Iyer Corp",
+        "zone": "West",
+        "product": "Maggi 2min",
+        "quantity": 200,
+        "revenue": 24000,
+    },
+    {
+        "distributor": "Nair Dist.",
+        "zone": "South",
+        "product": "KitKat 4F",
+        "quantity": 175,
+        "revenue": 10500,
+    },
+    {
+        "distributor": "Nair Dist.",
+        "zone": "South",
+        "product": "Lay's Classic",
+        "quantity": 310,
+        "revenue": 12400,
+    },
+    {
+        "distributor": "Reddy Traders",
+        "zone": "North",
+        "product": "Nestea",
+        "quantity": 185,
+        "revenue": 11100,
+    },
+    {
+        "distributor": "Reddy Traders",
+        "zone": "North",
+        "product": "Milkybar",
+        "quantity": 220,
+        "revenue": 11000,
+    },
+    {
+        "distributor": "Pillai & Co",
+        "zone": "East",
+        "product": "Maggi 2min",
+        "quantity": 360,
+        "revenue": 43200,
+    },
+    {
+        "distributor": "Pillai & Co",
+        "zone": "East",
+        "product": "KitKat 4F",
+        "quantity": 145,
+        "revenue": 8700,
+    },
+    {
+        "distributor": "Das Agencies",
+        "zone": "West",
+        "product": "Lay's Classic",
+        "quantity": 410,
+        "revenue": 16400,
+    },
+    {
+        "distributor": "Das Agencies",
+        "zone": "West",
+        "product": "Nestea",
+        "quantity": 165,
+        "revenue": 9900,
+    },
 ]
 
 
@@ -207,22 +388,37 @@ async def setup_tenant(
     if body.turnstile_token:
         ok = await _verify_turnstile(body.turnstile_token, ip)
         if not ok:
-            raise HTTPException(
+            raise AkaraHTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
-                detail={"error": "turnstile_failed", "message": "Bot verification failed. Please try again."},
+                code="FORBIDDEN",
+                message="Bot verification failed. Please try again.",
+                detail={
+                    "error": "turnstile_failed",
+                    "message": "Bot verification failed. Please try again.",
+                },
             )
-    elif settings.turnstile_secret_key and settings.turnstile_secret_key not in ("", "test"):
+    elif settings.turnstile_secret_key and settings.turnstile_secret_key not in (
+        "",
+        "test",
+    ):
         # Prod env requires a token
-        raise HTTPException(
+        raise AkaraHTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail={"error": "turnstile_missing", "message": "Bot verification token required."},
+            code="FORBIDDEN",
+            message="Bot verification token required.",
+            detail={
+                "error": "turnstile_missing",
+                "message": "Bot verification token required.",
+            },
         )
 
     # 2 — Disposable email check
     email = user.email or ""
     if is_disposable_email(email):
-        raise HTTPException(
+        raise AkaraHTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            code="VALIDATION_ERROR",
+            message="Please use a work email address (disposable emails not accepted).",
             detail={
                 "error": "disposable_email",
                 "message": "Please use a work email address (disposable emails not accepted).",
@@ -336,9 +532,9 @@ async def onboarding_complete(request: Request, user: CurrentUser) -> dict:
     on Onboarding step 3.  Safe to call multiple times (idempotent).
     """
     client = get_supabase_service_client()
-    client.table("profiles").update(
-        {"has_completed_onboarding": True}
-    ).eq("id", str(user.user_id)).execute()
+    client.table("profiles").update({"has_completed_onboarding": True}).eq(
+        "id", str(user.user_id)
+    ).execute()
     record_user_event(user.user_id, "onboarded")
 
     try:
