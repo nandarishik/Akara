@@ -1,7 +1,7 @@
 import json
 import logging
 import time
-from datetime import date, datetime, UTC
+from datetime import UTC, datetime
 from uuid import UUID
 
 import openai
@@ -21,17 +21,18 @@ from app.core.plan_guard import (
 from app.core.rate_limit import limiter
 from app.core.tenant import TenantCtx, get_supabase_service_client
 from app.domain.copilot.agent import CopilotAgent
+from app.domain.copilot.date_range import compute_copilot_date_range
 from app.domain.copilot.planner import Planner
 from app.domain.copilot.synthesizer import Synthesizer
 from app.domain.copilot.tools.context_tool import ContextTool
 from app.domain.copilot.tools.sql_tool import SQLTool
-from app.infra.llm.manager import LLMManager
-from app.infra.llm.cost_logger import log_llm_cost
-from app.infra.prompts.generator import PromptGenerator
-from app.infra.schema.discovery import SchemaDiscovery
 from app.domain.debrief.copilot_context import load_debrief_context_addendum
 from app.domain.user_events import record_user_event
 from app.infra.db.executor import SQLExecutor
+from app.infra.llm.cost_logger import log_llm_cost
+from app.infra.llm.manager import LLMManager
+from app.infra.prompts.generator import PromptGenerator
+from app.infra.schema.discovery import SchemaDiscovery
 
 logger = logging.getLogger(__name__)
 
@@ -70,13 +71,11 @@ def _extract_provenance(result, supabase, tenant_id: UUID) -> dict:
     }
 
     try:
-        # Extract SQL from result if available
-        if hasattr(result, 'sql_executed') and result.sql_executed:
-            provenance["sql_used"] = result.sql_executed.strip()
-
-        # Extract row count from result metadata
-        if hasattr(result, 'rows_analyzed') and result.rows_analyzed:
-            provenance["row_count"] = result.rows_analyzed
+        if getattr(result, "sql_queries_run", None):
+            provenance["sql_used"] = result.sql_queries_run[0].strip()
+        row_count = getattr(result, "row_count", 0) or 0
+        if row_count:
+            provenance["row_count"] = row_count
 
         # Set date range based on the query
         provenance["date_range"] = "Jan 2024 – Present"
@@ -214,7 +213,8 @@ async def chat(
         synthesizer_addendum = synthesizer_addendum + debrief_addendum
 
     agent = _build_agent(tenant.tenant_id)
-    date_range = ("2024-01-01", date.today().isoformat())
+    actual_range = schema.get_data_date_range(tenant.tenant_id)
+    date_range = compute_copilot_date_range(actual_range)
 
     if body.stream:
 
@@ -356,8 +356,8 @@ async def chat(
 
     # Log token cost (best-effort; does not fail the request)
     try:
-        input_tokens: int = getattr(getattr(result, "usage", None), "prompt_tokens", 0) or 0
-        output_tokens: int = getattr(getattr(result, "usage", None), "completion_tokens", 0) or 0
+        input_tokens = result.input_tokens or 0
+        output_tokens = result.output_tokens or 0
         log_llm_cost(
             tenant_id=tenant.tenant_id,
             user_id=user.user_id,

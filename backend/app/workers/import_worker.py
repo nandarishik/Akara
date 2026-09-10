@@ -111,7 +111,7 @@ class ImportWorker:
         ).eq("id", str(job_id)).execute()
         logger.info("Job %s marked as %s", job_id, status)
 
-    def retry_job(self, job_id: UUID, retry_count: int, error_message: str) -> None:
+    async def retry_job(self, job_id: UUID, retry_count: int, error_message: str) -> None:
         if retry_count >= self.max_retries:
             self.complete_job(
                 job_id,
@@ -122,7 +122,7 @@ class ImportWorker:
             logger.error(
                 "Job %s moved to dead letter after %s retries", job_id, retry_count
             )
-            self._notify_import_failure(job_id, error_message)
+            await self._notify_import_failure(job_id, error_message)
             return
 
         self.supabase.table("import_jobs").update(
@@ -139,7 +139,7 @@ class ImportWorker:
             "Job %s scheduled for retry #%s in %ss", job_id, retry_count + 1, delay
         )
 
-    def _notify_import_failure(self, job_id: UUID, error_message: str) -> None:
+    async def _notify_import_failure(self, job_id: UUID, error_message: str) -> None:
         try:
             job = (
                 self.supabase.table("import_jobs")
@@ -181,14 +181,12 @@ class ImportWorker:
                 if phone and prefs.get("whatsapp_alerts_enabled", True):
                     from app.infra.notifications.whatsapp import send_whatsapp_template
 
-                    asyncio.run(
-                        send_whatsapp_template(
-                            to_phone=phone,
-                            template_name="import_failed",
-                            variables=[filename[:40], error_message[:120]],
-                            tenant_id=UUID(str(tenant_id)) if tenant_id else None,
-                            user_id=UUID(str(user_id)),
-                        )
+                    await send_whatsapp_template(
+                        to_phone=phone,
+                        template_name="import_failed",
+                        variables=[filename[:40], error_message[:120]],
+                        tenant_id=UUID(str(tenant_id)) if tenant_id else None,
+                        user_id=UUID(str(user_id)),
                     )
         except Exception as exc:
             logger.warning("Import failure notification skipped for %s: %s", job_id, exc)
@@ -276,7 +274,7 @@ class ImportWorker:
         except Exception as exc:
             error_msg = str(exc)
             logger.error("Job %s failed: %s", job_id, error_msg)
-            self.retry_job(job_id, retry_count, error_msg)
+            await self.retry_job(job_id, retry_count, error_msg)
             return False
         finally:
             heartbeat_task.cancel()

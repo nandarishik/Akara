@@ -6,6 +6,19 @@ import re
 from datetime import date, timedelta
 
 
+def compute_copilot_date_range(
+    actual_range: tuple[str, str] | None,
+    *,
+    today: date | None = None,
+    fallback_start: str = "2024-01-01",
+) -> tuple[str, str]:
+    """Planner bounds: tenant min invoice date (or fallback) through today."""
+    end = (today or date.today()).isoformat()
+    if actual_range is not None and actual_range[0]:
+        return actual_range[0], end
+    return fallback_start, end
+
+
 def parse_result_limit(question: str, default: int, max_limit: int) -> int:
     match = re.search(r"\btop\s+(\d+)\b", question.lower())
     if match:

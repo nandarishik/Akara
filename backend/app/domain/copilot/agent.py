@@ -22,6 +22,9 @@ class CopilotResponse:
     sql_queries_run: list[str] = field(default_factory=list)
     llm_model: str = ""
     tokens_used: int = 0
+    input_tokens: int = 0
+    output_tokens: int = 0
+    row_count: int = 0
     guardrail_results: list[dict] = field(default_factory=list)
     response_time_ms: int = 0
 
@@ -144,11 +147,18 @@ class CopilotAgent:
 
         elapsed_ms = int(time.time() * 1000) - start_ms
 
+        input_tokens = self._synthesizer.last_input_tokens
+        output_tokens = self._synthesizer.last_output_tokens
         return CopilotResponse(
             question=question,
             intent=plan.intent,
             response=response_text,
             sql_queries_run=queries_run,
+            llm_model=getattr(self._synthesizer._llm, "model", "") or "",
+            tokens_used=input_tokens + output_tokens,
+            input_tokens=input_tokens,
+            output_tokens=output_tokens,
+            row_count=len(all_results),
             guardrail_results=[
                 {"check": gr.check_name, "passed": gr.passed, "message": gr.message}
                 for gr in guardrail_results
@@ -210,5 +220,22 @@ class CopilotAgent:
                 system_addendum=synthesizer_addendum,
                 date_range=date_range,
             )
+        full_response_parts: list[str] = []
         async for chunk in stream:
+            full_response_parts.append(chunk)
             yield chunk
+        full_response = "".join(full_response_parts)
+        guardrail_results = run_all_guardrails(
+            question=question,
+            response=full_response,
+            sql_results=all_results,
+            available_columns=available_columns,
+            tenant_date_range=date_range,
+            allowed_terms=allowed_vocabulary,
+        )
+        for gr in guardrail_results:
+            if not gr.passed:
+                logger.warning(
+                    "Stream guardrail failed: %s — %s", gr.check_name, gr.message
+                )
+                yield f"\n\n⚠️ Note: {gr.message}"

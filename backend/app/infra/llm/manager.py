@@ -40,3 +40,11 @@ class LLMManager:
     @property
     def provider(self) -> str:
         return "openrouter"
+
+    @property
+    def last_input_tokens(self) -> int:
+        return getattr(self._client, "last_input_tokens", 0)
+
+    @property
+    def last_output_tokens(self) -> int:
+        return getattr(self._client, "last_output_tokens", 0)

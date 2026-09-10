@@ -1,3 +1,7 @@
+# DISPLAY_AND_SYNC_LAYER (AD-P01-003)
+# This module is the display and billing-sync layer for plan metadata.
+# Runtime quota enforcement reads PLAN_LIMITS in plan_limits.py, not this catalog.
+
 """Dynamic plan catalog — DB-backed with static fallback."""
 
 from __future__ import annotations

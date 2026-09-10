@@ -8,6 +8,9 @@ from app.infra.db.guard import SQLGuardError
 logger = logging.getLogger(__name__)
 
 _DATE_PATTERN = re.compile(r"^\d{4}-\d{2}-\d{2}$")
+_UUID_PATTERN = re.compile(
+    r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+)
 
 
 class SQLTool:
@@ -39,9 +42,20 @@ class SQLTool:
             return {"success": False, "error": str(exc), "rows": []}
 
     def _bind_params(self, query: str, start_date: str, end_date: str) -> str:
+        """Bind tenant and date placeholders after validating their formats.
+
+        AD-P01-002 (Option D): validate UUID type/format and date strings, then
+        substitute into the query text. True parameterized execution via asyncpg
+        is deferred to Phase 2.
+        """
+        if not isinstance(self._tenant_id, UUID):
+            raise TypeError("tenant_id must be a UUID")
+        tenant_str = str(self._tenant_id)
+        if not _UUID_PATTERN.match(tenant_str):
+            raise TypeError("tenant_id is not a canonical UUID string")
         if not _DATE_PATTERN.match(start_date) or not _DATE_PATTERN.match(end_date):
             raise ValueError("Invalid date parameter for SQL binding")
-        bound = query.replace(":tenant_id", f"'{self._tenant_id}'")
+        bound = query.replace(":tenant_id", f"'{tenant_str}'")
         bound = bound.replace(":start_date", f"'{start_date}'")
         bound = bound.replace(":end_date", f"'{end_date}'")
         return bound
