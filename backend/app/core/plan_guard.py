@@ -23,26 +23,24 @@ from fastapi import Depends, HTTPException, status
 
 from app.core.plan_limits import (
     get_limit as _static_get_limit,
+)
+from app.core.plan_limits import (
     is_feature_enabled as _static_is_feature_enabled,
+)
+from app.core.plan_limits import (
     required_plan_for_feature,
 )
-from app.core.tenant import TenantContext, get_supabase_service_client, get_tenant_context
+from app.core.tenant import (
+    TenantContext,
+    get_supabase_service_client,
+    get_tenant_context,
+)
 
 logger = logging.getLogger(__name__)
 
 
 def get_limit(plan: str, key: str, tenant_id: UUID | None = None) -> Any:
-    """Resolve limit from plan_assignments → catalog → static fallback."""
-    if tenant_id is not None:
-        try:
-            from app.infra.catalog.plan_catalog_service import resolve_tenant_limits
-
-            resolved = resolve_tenant_limits(tenant_id, plan)
-            limits = resolved.get("limits") or {}
-            if key in limits:
-                return limits[key]
-        except Exception:
-            pass
+    """Resolve limit from PLAN_LIMITS. Catalog is display-only."""
     return _static_get_limit(plan, key)
 
 

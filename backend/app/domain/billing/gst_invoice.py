@@ -4,8 +4,9 @@ from __future__ import annotations
 
 import io
 import logging
+from datetime import UTC, datetime
+from decimal import ROUND_HALF_UP, Decimal
 from typing import Any
-from decimal import Decimal, ROUND_HALF_UP
 from uuid import UUID
 
 from reportlab.lib.pagesizes import A4
@@ -19,6 +20,27 @@ logger = logging.getLogger(__name__)
 
 GST_RATE = Decimal("0.18")
 SAC_CODE = "998314"
+_GSTN_CHARS = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+
+
+def validate_gstin_checksum(gstin: str) -> bool:
+    """Indian GSTIN check-digit (15th character)."""
+    value = (gstin or "").strip().upper()
+    if len(value) != 15:
+        return False
+    try:
+        factor = 2
+        total = 0
+        for char in reversed(value[:-1]):
+            code = _GSTN_CHARS.index(char)
+            digit = factor * code
+            factor = 1 if factor == 2 else 2
+            digit = (digit // 36) + (digit % 36)
+            total += digit
+        check = _GSTN_CHARS[(36 - (total % 36)) % 36]
+        return check == value[-1]
+    except ValueError:
+        return False
 
 
 def _quantize(value: Decimal) -> Decimal:
@@ -152,6 +174,18 @@ def generate_and_store_invoice(
 
     total = Decimal(total_paise) / 100
     breakdown = compute_tax_breakdown(total, customer_state, company_state)
+    billing_period_start = datetime.now(UTC).date().replace(day=1).isoformat()
+
+    existing = (
+        supa.table("invoices")
+        .select("*")
+        .eq("tenant_id", str(tenant_id))
+        .eq("billing_period_start", billing_period_start)
+        .maybe_single()
+        .execute()
+    )
+    if existing.data:
+        return existing.data
 
     seq_result = supa.rpc("next_invoice_number", {}).execute()
     invoice_number = seq_result.data if seq_result.data else f"INV-{total_paise}"
@@ -192,6 +226,7 @@ def generate_and_store_invoice(
         "customer_state": customer_state,
         "pdf_storage_path": storage_path,
         "status": "issued",
+        "billing_period_start": billing_period_start,
     }
     result = supa.table("invoices").insert(row).execute()
     invoice = (result.data or [row])[0]

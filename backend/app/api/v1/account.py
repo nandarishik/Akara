@@ -25,6 +25,35 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/account", tags=["account"])
 
+
+@router.get("/impersonation-session")
+def impersonation_session(user: CurrentUser) -> dict:
+    supa = get_supabase_service_client()
+    now = datetime.now(UTC).isoformat()
+    try:
+        result = (
+            supa.table("impersonation_sessions")
+            .select("id, reason, expires_at, ended_at, target_user_id")
+            .eq("target_user_id", str(user.user_id))
+            .is_("ended_at", "null")
+            .gt("expires_at", now)
+            .order("expires_at", desc=True)
+            .limit(1)
+            .execute()
+        )
+    except Exception:
+        result = None
+    row = (result.data or [None])[0] if result else None
+    if not row:
+        return {"active": False, "reason": None, "expires_at": None, "session_id": None}
+    return {
+        "active": True,
+        "reason": row.get("reason"),
+        "expires_at": row.get("expires_at"),
+        "session_id": row.get("id"),
+    }
+
+
 DEFAULT_PREFERENCES = {
     "morning_brief_enabled": True,
     "email_debrief_enabled": True,

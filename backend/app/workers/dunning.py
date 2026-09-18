@@ -8,7 +8,7 @@ from datetime import UTC, datetime
 
 from app.core.cron_ping import ping_cron_health
 from app.core.tenant import get_supabase_service_client
-from app.domain.billing.email import send_dunning_reminder_email, send_downgrade_email
+from app.domain.billing.email import send_downgrade_email, send_dunning_reminder_email
 from app.domain.billing.plan_downgrade import apply_plan_downgrade
 
 logger = logging.getLogger(__name__)
@@ -41,7 +41,21 @@ def _admin_email(supa, tenant_id: str) -> str | None:
         return None
 
 
-def _dunning_already_sent(supa, tenant_id: str, day_offset: int) -> bool:
+def _dunning_already_sent(supa, tenant_id: str, day_offset: int, past_due_at: str) -> bool:
+    try:
+        logged = (
+            supa.table("dunning_sent_log")
+            .select("tenant_id")
+            .eq("tenant_id", tenant_id)
+            .eq("day", day_offset)
+            .eq("past_due_at", past_due_at)
+            .maybe_single()
+            .execute()
+        )
+        if isinstance(logged.data, dict) and logged.data:
+            return True
+    except Exception:
+        pass
     result = (
         supa.table("dunning_events")
         .select("id")
@@ -52,6 +66,17 @@ def _dunning_already_sent(supa, tenant_id: str, day_offset: int) -> bool:
         .execute()
     )
     return bool(result.data)
+
+
+def _record_dunning_sent(supa, tenant_id: str, day_offset: int, past_due_at: str) -> None:
+    try:
+        supa.table("dunning_sent_log").insert({
+            "tenant_id": tenant_id,
+            "day": day_offset,
+            "past_due_at": past_due_at,
+        }).execute()
+    except Exception:
+        logger.warning("dunning_sent_log insert failed", extra={"tenant_id": tenant_id, "day": day_offset})
 
 
 async def run_dunning_cycle() -> None:
@@ -73,7 +98,8 @@ async def run_dunning_cycle() -> None:
             continue
 
         for offset in DUNNING_DAYS:
-            if days >= offset and not _dunning_already_sent(supa, tenant["id"], offset):
+            if days >= offset and not _dunning_already_sent(supa, tenant["id"], offset, since):
+                _record_dunning_sent(supa, tenant["id"], offset, since)
                 ok = send_dunning_reminder_email(email, offset)
                 supa.table("dunning_events").insert({
                     "tenant_id": tenant["id"],
@@ -84,7 +110,8 @@ async def run_dunning_cycle() -> None:
 
         if days >= 14 and tenant.get("plan") != "free":
             apply_plan_downgrade(tenant["id"], "free", reason="dunning_day_14")
-            if not _dunning_already_sent(supa, tenant["id"], 14):
+            if not _dunning_already_sent(supa, tenant["id"], 14, since):
+                _record_dunning_sent(supa, tenant["id"], 14, since)
                 send_downgrade_email(email)
                 supa.table("dunning_events").insert({
                     "tenant_id": tenant["id"],

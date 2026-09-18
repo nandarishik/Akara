@@ -8,7 +8,7 @@ import json
 import logging
 import re
 import time
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from typing import Any
 from uuid import UUID, uuid4
 
@@ -29,7 +29,6 @@ from app.core.superadmin import SuperAdmin, SudoCtx, request_actor_meta, require
 from app.core.tenant import get_supabase_service_client
 from app.domain.superadmin.audit import record_operation
 from app.domain.superadmin.mutations import SuperadminMutation, dry_run_response
-from app.infra.db.executor import SQLExecutor
 from app.infra.db.guard import SQLGuardError, validate_sql
 
 logger = logging.getLogger(__name__)
@@ -273,25 +272,24 @@ class SavedQueryBody(SuperadminMutation):
 
 
 async def _readonly_execute(sql: str, params: dict[str, Any]) -> tuple[list[dict[str, Any]], bool, float]:
-    """Execute through the dedicated role when configured; RPC is compatibility fallback."""
+    """Execute through the dedicated SELECT-only role. Never fall back to service role."""
     started = time.perf_counter()
-    if settings.query_readonly_db_url:
-        try:
-            import asyncpg
-            conn = await asyncpg.connect(settings.query_readonly_db_url, timeout=10)
-            try:
-                async with conn.transaction():
-                    await conn.execute("SET LOCAL statement_timeout = '10s'")
-                    values = list(params.values())
-                    rows = await conn.fetch(sql, *values)
-                return [dict(row) for row in rows[:10_000]], False, (time.perf_counter() - started) * 1000
-            finally:
-                await conn.close()
-        except Exception:
-            logger.exception("Dedicated Query Console connection failed; using compatibility RPC")
-    rows = SQLExecutor(get_supabase_service_client()).execute(sql, params=params, max_rows=10_000)
-    logger.warning("query_console_fallback_used sql_hash=%s", sql_hash(sql))
-    return rows[:10_000], True, (time.perf_counter() - started) * 1000
+    if not settings.query_readonly_db_url:
+        raise AkaraHTTPException(
+            status_code=503,
+            code="QUERY_READONLY_UNCONFIGURED",
+            message="Query console readonly database is not configured",
+        )
+    import asyncpg
+    conn = await asyncpg.connect(settings.query_readonly_db_url, timeout=30)
+    try:
+        async with conn.transaction():
+            await conn.execute("SET LOCAL statement_timeout = '30s'")
+            values = list(params.values())
+            rows = await conn.fetch(sql, *values)
+        return [dict(row) for row in rows[:1000]], False, (time.perf_counter() - started) * 1000
+    finally:
+        await conn.close()
 
 
 @router.post("/query/execute")
@@ -401,6 +399,11 @@ def execute_runbook(name: str, body: RunbookRequest, request: Request, sudo: Sud
     if name in {"revoke_all_tenant_sessions", "purge_expired_exports", "regenerate_invoice", "reconcile_stripe_subscription"} and body.confirm != f"EXECUTE {name}":
         raise _bad(f'Confirmation must be exactly: "EXECUTE {name}"')
     if body.dry_run: return dry_run_response(action=f"runbook:{name}", impact={"max_rows": definition["max_rows"]}, warnings=[] if definition["reversible"] else ["This operation is not reversible"])
+    if definition.get("dry_run_required_before_real"):
+        since = datetime.now(UTC) - timedelta(minutes=5)
+        prior = get_supabase_service_client().table("audit_log").select("id").eq("actor_id", str(sudo.user_id)).eq("action", f"runbook:{name}").gte("created_at", since.isoformat()).limit(1).execute()
+        if not (prior.data or []):
+            raise AkaraHTTPException(status_code=409, code="CONFLICT", message="Dry-run required in the last 5 minutes")
     op_id = body.operation_id or uuid4()
     # Typed operations delegate to existing workers/providers where available;
     # the execution record is the durable contract even if a provider is down.

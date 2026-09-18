@@ -4,13 +4,14 @@ from __future__ import annotations
 
 import secrets
 from datetime import UTC, datetime, timedelta
+from enum import StrEnum
 from typing import Annotated
 from uuid import UUID, uuid4
 
 from fastapi import Depends, HTTPException, Request, Response, status
 from pydantic import BaseModel
 
-from app.core.auth import AuthenticatedUser, CurrentUser, get_current_user
+from app.core.auth import AuthenticatedUser, CurrentUser
 from app.core.config import settings
 from app.core.errors import AkaraHTTPException
 from app.core.tenant import get_supabase_anon_client, get_supabase_service_client
@@ -21,6 +22,13 @@ CSRF_HEADER = "X-CSRF-Token"
 SUDO_TTL = timedelta(minutes=15)
 
 
+class SuperadminRole(StrEnum):
+    SUPER_ADMIN = "SUPER_ADMIN"
+    SUPPORT = "SUPPORT"
+    BILLING_OPS = "BILLING_OPS"
+    CONTENT_OPS = "CONTENT_OPS"
+
+
 class SudoUser(BaseModel):
     """Authenticated superadmin with a valid sudo session."""
 
@@ -29,6 +37,15 @@ class SudoUser(BaseModel):
     role: str | None
     sudo_session_id: UUID
     sudo_expires_at: datetime
+    superadmin_role: SuperadminRole | None = None
+
+
+class SuperAdminCtx(BaseModel):
+    user_id: UUID
+    email: str | None = None
+    superadmin_role: SuperadminRole
+    sudo_session_id: UUID | None = None
+    sudo_expires_at: datetime | None = None
 
 
 def _client_ip(request: Request) -> str | None:
@@ -91,10 +108,28 @@ def get_sudo_session_id(request: Request) -> UUID | None:
         return None
 
 
+def load_superadmin_role(user_id: UUID) -> SuperadminRole:
+    """Load granular role; backfill SUPER_ADMIN when the column is null."""
+    supa = get_supabase_service_client()
+    profile = (
+        supa.table("profiles")
+        .select("role, superadmin_role")
+        .eq("id", str(user_id))
+        .maybe_single()
+        .execute()
+    )
+    raw = (profile.data or {}).get("superadmin_role")
+    if raw in SuperadminRole._value2member_map_:
+        return SuperadminRole(raw)
+    return SuperadminRole.SUPER_ADMIN
+
+
 async def require_superadmin(
     user: CurrentUser,
 ) -> AuthenticatedUser:
     """Return the user if they are a superadmin; otherwise 404 (not 403)."""
+    if getattr(user, "impersonated", False):
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not found")
     supa = get_supabase_service_client()
     profile = (
         supa.table("profiles")
@@ -106,6 +141,26 @@ async def require_superadmin(
     if not profile.data or profile.data.get("role") != "superadmin":
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not found")
     return user
+
+
+def require_role(*allowed: SuperadminRole):
+    """Gate a superadmin route to one or more SuperadminRole values."""
+
+    async def _dep(user: SuperAdmin) -> SuperAdminCtx:
+        role = load_superadmin_role(user.user_id)
+        if role not in allowed:
+            raise AkaraHTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                code="FORBIDDEN",
+                message="Insufficient superadmin role",
+            )
+        return SuperAdminCtx(
+            user_id=user.user_id,
+            email=user.email,
+            superadmin_role=role,
+        )
+
+    return _dep
 
 
 SuperAdmin = Annotated[AuthenticatedUser, Depends(require_superadmin)]
@@ -169,6 +224,7 @@ async def require_sudo(
         role=user.role,
         sudo_session_id=session_id,
         sudo_expires_at=expires_at,
+        superadmin_role=load_superadmin_role(user.user_id),
     )
 
 
