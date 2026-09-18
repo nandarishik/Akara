@@ -1,0 +1,11 @@
+rules:
+  - id: no-unverified-member-access
+    languages: [python]
+    message: Team member mutations must use get_team_member_verified
+    severity: ERROR
+    metadata:
+      category: security
+    patterns:
+      - pattern: |
+          supa.table("profiles").update($X).eq("id", str(member_id))
+      - pattern-not: get_team_member_verified(...)

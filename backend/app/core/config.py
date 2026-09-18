@@ -131,6 +131,19 @@ class Settings(BaseSettings):
     service_name: str = "akara-api"
 
     # -----------------------------------------------------------------------
+    # Identity / DPDP (Phase 4)
+    # -----------------------------------------------------------------------
+    max_concurrent_sessions: int = 3
+    invite_token_expiry_hours: int = 48
+    account_deletion_grace_days: int = 30
+    invite_email_template_id: str = ""
+    export_ready_email_template_id: str = ""
+    account_deletion_confirm_template_id: str = ""
+    max_seats_free: int = 5
+    max_seats_pro: int = 10
+    max_seats_business: int = 25
+
+    # -----------------------------------------------------------------------
     # Derived properties
     # -----------------------------------------------------------------------
 

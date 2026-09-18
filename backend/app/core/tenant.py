@@ -45,7 +45,7 @@ class TenantContext:
 
     @property
     def is_admin(self) -> bool:
-        return self.role == "admin"
+        return self.role in {"owner", "admin"}
 
     @property
     def industry(self) -> str:
@@ -65,6 +65,8 @@ class TenantContext:
     @property
     def is_active(self) -> bool:
         """True for active and trialing tenants; False for past_due / cancelled."""
+        if self.plan_status == "pending_deletion":
+            return False
         return self.plan_status in ("active", "trialing")
 
 

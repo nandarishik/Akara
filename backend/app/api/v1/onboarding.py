@@ -9,12 +9,13 @@ from __future__ import annotations
 import hashlib
 import re
 import uuid
+from contextlib import suppress
 from datetime import date
 from typing import TYPE_CHECKING
 
 import httpx
 from fastapi import APIRouter, Request, status
-from pydantic import BaseModel
+from pydantic import BaseModel, model_validator
 
 from app.core.auth import CurrentUser
 from app.core.config import settings
@@ -341,17 +342,33 @@ def _seed_sample_data(client, tenant_id: str) -> None:
 # ---------------------------------------------------------------------------
 class OnboardingRequest(BaseModel):
     company_name: str
+    workspace_name: str | None = None
     industry: str = "general"
+    business_type: str | None = None
     language: str = "en"
     currency: str = "INR"
+    timezone: str = "Asia/Kolkata"
     monthly_revenue_range: str | None = None  # segmentation only
     use_sample_data: bool = False
     turnstile_token: str | None = None  # required in prod; skipped in dev/test
+
+    @model_validator(mode="before")
+    @classmethod
+    def _apply_aliases(cls, data: object) -> object:
+        if not isinstance(data, dict):
+            return data
+        out = dict(data)
+        if not out.get("company_name") and out.get("workspace_name"):
+            out["company_name"] = out["workspace_name"]
+        if not out.get("industry") and out.get("business_type"):
+            out["industry"] = out["business_type"]
+        return out
 
 
 class OnboardingResponse(BaseModel):
     tenant_id: str
     tenant_slug: str
+    redirect_hint: str = "first_upload"
 
 
 # ---------------------------------------------------------------------------
@@ -453,6 +470,7 @@ async def setup_tenant(
         return OnboardingResponse(
             tenant_id=data["id"],
             tenant_slug=data["slug"],
+            redirect_hint="dashboard",
         )
 
     # 4 — Create tenant
@@ -462,6 +480,7 @@ async def setup_tenant(
         "industry": body.industry,
         "language": body.language,
         "currency": body.currency,
+        "timezone": body.timezone,
         "monthly_revenue_range": body.monthly_revenue_range,
     }
     tenant_insert = (
@@ -485,7 +504,7 @@ async def setup_tenant(
         {
             "id": str(user.user_id),
             "tenant_id": new_tenant_id,
-            "role": "admin",
+            "role": "owner",
             "has_completed_onboarding": False,
         }
     ).execute()
@@ -513,7 +532,22 @@ async def setup_tenant(
     return OnboardingResponse(
         tenant_id=new_tenant_id,
         tenant_slug=slug,
+        redirect_hint="first_upload",
     )
+
+
+# ---------------------------------------------------------------------------
+# POST /onboarding/skip
+# ---------------------------------------------------------------------------
+@router.post("/onboarding/skip")
+@limiter.limit("10/minute")
+async def skip_onboarding(request: Request, user: CurrentUser) -> dict:
+    client = get_supabase_service_client()
+    with suppress(Exception):
+        client.table("profiles").update({"has_completed_onboarding": True}).eq(
+            "id", str(user.user_id)
+        ).execute()
+    return {"skipped": True, "redirect": "/dashboard"}
 
 
 # ---------------------------------------------------------------------------

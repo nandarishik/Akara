@@ -48,9 +48,38 @@ def process_deletion_queue(limit: int = 20) -> dict[str, int]:
 
             if effective_tenant:
                 try:
+                    tenant_row = (
+                        supa.table("tenants")
+                        .select("pending_deletion_since, plan_status")
+                        .eq("id", str(effective_tenant))
+                        .maybe_single()
+                        .execute()
+                    ).data
+                    since = (tenant_row or {}).get("pending_deletion_since")
+                    if since:
+                        from datetime import timedelta
+
+                        from app.core.config import settings
+
+                        start = datetime.fromisoformat(
+                            str(since).replace("Z", "+00:00")
+                        )
+                        if start.tzinfo is None:
+                            start = start.replace(tzinfo=UTC)
+                        if datetime.now(UTC) < start + timedelta(
+                            days=settings.account_deletion_grace_days
+                        ):
+                            continue
+                except Exception:
+                    pass
+                try:
                     cancel_subscription(UUID(str(effective_tenant)), at_cycle_end=False)
                 except Exception as exc:
-                    logger.warning("Razorpay cancel skipped for tenant %s: %s", effective_tenant, exc)
+                    logger.warning(
+                        "Razorpay cancel skipped for tenant %s: %s",
+                        effective_tenant,
+                        exc,
+                    )
 
                 if profile and profile.get("role") == "admin":
                     admins = (
@@ -71,13 +100,17 @@ def process_deletion_queue(limit: int = 20) -> dict[str, int]:
                 pass
             supa.auth.admin.delete_user(user_id)
 
-            supa.table("account_deletion_queue").update({
-                "status": "completed",
-                "completed_at": datetime.now(UTC).isoformat(),
-            }).eq("id", queue_id).execute()
+            supa.table("account_deletion_queue").update(
+                {
+                    "status": "completed",
+                    "completed_at": datetime.now(UTC).isoformat(),
+                }
+            ).eq("id", queue_id).execute()
             completed += 1
         except Exception as exc:
-            logger.exception("Account deletion failed queue=%s user=%s: %s", queue_id, user_id, exc)
+            logger.exception(
+                "Account deletion failed queue=%s user=%s: %s", queue_id, user_id, exc
+            )
             supa.table("account_deletion_queue").update({"status": "failed"}).eq(
                 "id", queue_id
             ).execute()

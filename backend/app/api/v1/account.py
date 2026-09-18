@@ -2,14 +2,13 @@
 
 from __future__ import annotations
 
-import json
 import logging
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 
-from fastapi import APIRouter, Depends, Request, Response, status
+from fastapi import APIRouter, Depends, Request, status
 from pydantic import BaseModel
 
-from app.core.auth import CurrentUser
+from app.core.auth import Capability, CurrentUser, check_role_capability
 from app.core.config import settings
 from app.core.errors import AkaraHTTPException
 from app.core.plan_guard import require_feature
@@ -158,7 +157,7 @@ def export_account_data(
     request: Request,
     user: CurrentUser,
     tenant: TenantContext = Depends(get_tenant_context),
-) -> Response:
+) -> dict:
     supa = get_supabase_service_client()
     profile = (
         supa.table("profiles")
@@ -168,49 +167,85 @@ def export_account_data(
         .execute()
     ).data or {}
 
-    payload: dict = {
+    def _rows(table: str, **eq: str) -> list:
+        q = supa.table(table).select("*")
+        for col, val in eq.items():
+            q = q.eq(col, val)
+        try:
+            return q.execute().data or []
+        except Exception:
+            return []
+
+    sessions = _rows("active_sessions", user_id=str(user.user_id))
+    for row in sessions:
+        row.pop("ip_address", None)
+        if "ip_address" in row:
+            row["ip_address"] = None
+
+    payload = {
         "exported_at": datetime.now(UTC).isoformat(),
-        "profile": profile,
-        "conversations": [],
-        "chat_history": [],
-        "sales_data": [],
+        "profiles": [profile],
+        "tenants": _rows("tenants", id=str(tenant.tenant_id)),
+        "conversations": _rows(
+            "conversations", tenant_id=str(tenant.tenant_id), user_id=str(user.user_id)
+        ),
+        "chat_history": _rows(
+            "chat_history", tenant_id=str(tenant.tenant_id), user_id=str(user.user_id)
+        ),
+        "copilot_feedback": _rows("copilot_feedback", user_id=str(user.user_id)),
+        "invoices": _rows("invoices", tenant_id=str(tenant.tenant_id)),
+        "alerts": _rows("tenant_alerts", tenant_id=str(tenant.tenant_id)),
+        "consent_log": _rows("consent_log", user_id=str(user.user_id)),
+        "team_invites": _rows("team_invites", tenant_id=str(tenant.tenant_id)),
+        "active_sessions": sessions,
     }
+    return payload
 
-    convos = (
-        supa.table("conversations")
-        .select("*")
-        .eq("tenant_id", str(tenant.tenant_id))
-        .eq("user_id", str(user.user_id))
-        .execute()
-    )
-    payload["conversations"] = convos.data or []
 
-    chats = (
-        supa.table("chat_history")
-        .select("*")
-        .eq("tenant_id", str(tenant.tenant_id))
-        .eq("user_id", str(user.user_id))
-        .execute()
-    )
-    payload["chat_history"] = chats.data or []
+@router.post("/export/request")
+@limiter.limit("5/minute")
+def request_account_export(
+    request: Request,
+    user: CurrentUser,
+    tenant: TenantContext = Depends(get_tenant_context),
+) -> dict:
+    from uuid import uuid4
 
-    if tenant.is_admin:
-        sales = (
-            supa.table("sales_data")
-            .select("*")
-            .eq("tenant_id", str(tenant.tenant_id))
-            .limit(50000)
+    supa = get_supabase_service_client()
+    since = datetime.now(UTC).replace(microsecond=0)
+    try:
+        recent = (
+            supa.table("account_export_jobs")
+            .select("id, created_at")
+            .eq("user_id", str(user.user_id))
+            .gte("created_at", (since - timedelta(hours=24)).isoformat())
+            .limit(1)
             .execute()
-        )
-        payload["sales_data"] = sales.data or []
+        ).data or []
+        if recent:
+            raise AkaraHTTPException(
+                status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+                code="RATE_LIMITED",
+                message="Export already requested in the last 24 hours",
+            )
+    except AkaraHTTPException:
+        raise
+    except Exception:
+        recent = []
 
-    content = json.dumps(payload, default=str, indent=2)
-    filename = f"akara_export_{datetime.now(UTC).strftime('%Y%m%d')}.json"
-    return Response(
-        content=content,
-        media_type="application/json",
-        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
-    )
+    job_id = str(uuid4())
+    try:
+        supa.table("account_export_jobs").insert(
+            {
+                "id": job_id,
+                "tenant_id": str(tenant.tenant_id),
+                "user_id": str(user.user_id),
+                "status": "pending",
+            }
+        ).execute()
+    except Exception as exc:
+        logger.warning("export job insert failed: %s", exc)
+    return {"queued": True, "job_id": job_id, "eta_minutes": 5}
 
 
 @router.post("/preferences/test-email")
@@ -222,7 +257,6 @@ def send_test_email(
     _: None = Depends(require_feature("morning_brief")),
 ) -> dict[str, str]:
     """Send a minimal test email to verify delivery settings."""
-    supa = get_supabase_service_client()
     html = """
     <p>This is a test message from AKARA.</p>
     <p>If you received this, your email delivery is working.</p>
@@ -355,7 +389,7 @@ async def send_test_whatsapp(
 @limiter.limit("3/minute")
 def delete_account(
     request: Request, body: DeleteAccountRequest, user: CurrentUser
-) -> dict[str, str]:
+) -> dict:
     if body.confirm_email.lower() != (user.email or "").lower():
         raise AkaraHTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -372,6 +406,11 @@ def delete_account(
         .execute()
     ).data
     tenant_id = profile.get("tenant_id") if profile else None
+    role = (profile or {}).get("role") or "user"
+    check_role_capability(role, Capability.DELETE_WORKSPACE)
+
+    grace = timedelta(days=settings.account_deletion_grace_days)
+    deletion_date = (datetime.now(UTC) + grace).date().isoformat()
 
     existing = (
         supa.table("account_deletion_queue")
@@ -389,6 +428,16 @@ def delete_account(
                 "status": "pending",
             }
         ).execute()
+    if tenant_id:
+        try:
+            supa.table("tenants").update(
+                {
+                    "plan_status": "pending_deletion",
+                    "pending_deletion_since": datetime.now(UTC).isoformat(),
+                }
+            ).eq("id", str(tenant_id)).execute()
+        except Exception:
+            logger.debug("pending_deletion columns not available yet")
 
     try:
         supa.auth.admin.sign_out(str(user.user_id))
@@ -397,29 +446,100 @@ def delete_account(
 
     return {
         "status": "queued",
+        "scheduled": True,
+        "deletion_date": deletion_date,
         "message": "Account deletion scheduled. You will be signed out.",
     }
 
 
 class SessionInfo(BaseModel):
     id: str
-    device: str
+    session_id: str
+    device_hint: str
+    last_seen_at: str
     current: bool
-    last_active: str
+    device: str | None = None
+    last_active: str | None = None
 
 
 @router.get("/sessions", response_model=list[SessionInfo])
 def list_sessions(request: Request, user: CurrentUser) -> list[SessionInfo]:
-    """List active sessions — current device from request metadata."""
+    """List active sessions from active_sessions when the table exists."""
     ua = request.headers.get("user-agent", "Unknown device")[:120]
-    return [
-        SessionInfo(
-            id="current",
-            device=ua,
-            current=True,
-            last_active=datetime.now(UTC).isoformat(),
+    current_jti = request.headers.get("X-Session-Id") or "current"
+    rows: list[SessionInfo] = []
+    try:
+        from app.core.tenant import get_supabase_service_client as _supa
+
+        data = (
+            _supa()
+            .table("active_sessions")
+            .select("*")
+            .eq("user_id", str(user.user_id))
+            .is_("revoked_at", "null")
+            .execute()
+        ).data or []
+        for row in data:
+            sid = str(row.get("session_id") or row.get("id"))
+            hint = row.get("device_hint") or ua
+            seen = str(row.get("last_seen_at") or datetime.now(UTC).isoformat())
+            current = sid == current_jti
+            rows.append(
+                SessionInfo(
+                    id=str(row.get("id") or sid),
+                    session_id=sid,
+                    device_hint=hint,
+                    last_seen_at=seen,
+                    current=current,
+                    device=hint,
+                    last_active=seen,
+                )
+            )
+    except Exception:
+        logger.debug("active_sessions unavailable; returning current stub")
+    if not rows:
+        now = datetime.now(UTC).isoformat()
+        rows = [
+            SessionInfo(
+                id="current",
+                session_id="current",
+                device_hint=ua,
+                last_seen_at=now,
+                current=True,
+                device=ua,
+                last_active=now,
+            )
+        ]
+    return rows
+
+
+@router.delete("/sessions/{session_id}")
+@limiter.limit("10/minute")
+def revoke_session(
+    request: Request, session_id: str, user: CurrentUser
+) -> dict[str, bool]:
+    supa = get_supabase_service_client()
+    try:
+        row = (
+            supa.table("active_sessions")
+            .select("*")
+            .eq("session_id", session_id)
+            .maybe_single()
+            .execute()
+        ).data
+    except Exception:
+        row = None
+    if row and str(row.get("user_id")) != str(user.user_id):
+        raise AkaraHTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            code="FORBIDDEN",
+            message="Not owner of that session",
         )
-    ]
+    if row:
+        supa.table("active_sessions").update(
+            {"revoked_at": datetime.now(UTC).isoformat()}
+        ).eq("session_id", session_id).eq("user_id", str(user.user_id)).execute()
+    return {"revoked": True}
 
 
 @router.post("/sessions/revoke-others")

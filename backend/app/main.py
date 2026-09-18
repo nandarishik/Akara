@@ -142,13 +142,22 @@ async def request_validation_exception_handler(
     request: Request, exc: RequestValidationError
 ) -> JSONResponse:
     request_id: str | None = getattr(request.state, "request_id", None)
+    errors = exc.errors()
+    for err in errors:
+        ctx = err.get("ctx")
+        if (
+            ctx
+            and "error" in ctx
+            and not isinstance(ctx["error"], str | int | float | bool | type(None))
+        ):
+            ctx["error"] = str(ctx["error"])
     return JSONResponse(
         status_code=422,
         content=ErrorEnvelope(
             code="VALIDATION_ERROR",
             message="Request validation failed",
             request_id=request_id,
-            detail={"errors": exc.errors()},
+            detail={"errors": errors},
         ).model_dump(exclude_none=True),
     )
 

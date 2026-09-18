@@ -164,6 +164,56 @@
         ]
       }
     },
+    "/v1/auth/consent": {
+      "post": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Record Consent",
+        "operationId": "record_consent_v1_auth_consent_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConsentWriteRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "boolean"
+                  },
+                  "type": "object",
+                  "title": "Response Record Consent V1 Auth Consent Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
     "/v1/billing/usage": {
       "get": {
         "tags": [
@@ -535,6 +585,34 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/v1/onboarding/skip": {
+      "post": {
+        "tags": [
+          "onboarding"
+        ],
+        "summary": "Skip Onboarding",
+        "operationId": "skip_onboarding_v1_onboarding_skip_post",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Skip Onboarding V1 Onboarding Skip Post"
                 }
               }
             }
@@ -2536,7 +2614,9 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/InviteOut"
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Create Invite V1 Team Invite Post"
                 }
               }
             }
@@ -2907,6 +2987,148 @@
         }
       }
     },
+    "/v1/team/invite/accept": {
+      "get": {
+        "tags": [
+          "team"
+        ],
+        "summary": "Preview Invite",
+        "operationId": "preview_invite_v1_team_invite_accept_get",
+        "parameters": [
+          {
+            "name": "token",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Preview Invite V1 Team Invite Accept Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "team"
+        ],
+        "summary": "Accept Invite V2",
+        "operationId": "accept_invite_v2_v1_team_invite_accept_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AcceptInviteRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Accept Invite V2 V1 Team Invite Accept Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/team/invite/{invite_id}": {
+      "delete": {
+        "tags": [
+          "team"
+        ],
+        "summary": "Revoke Invite Alias",
+        "operationId": "revoke_invite_alias_v1_team_invite__invite_id__delete",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "invite_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Invite Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": {
+                    "type": "boolean"
+                  },
+                  "title": "Response Revoke Invite Alias V1 Team Invite  Invite Id  Delete"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/v1/account/channels": {
       "get": {
         "tags": [
@@ -3043,7 +3265,39 @@
             "description": "Successful Response",
             "content": {
               "application/json": {
-                "schema": {}
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Export Account Data V1 Account Export Get"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/v1/account/export/request": {
+      "post": {
+        "tags": [
+          "account"
+        ],
+        "summary": "Request Account Export",
+        "operationId": "request_account_export_v1_account_export_request_post",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Request Account Export V1 Account Export Request Post"
+                }
               }
             }
           }
@@ -3191,9 +3445,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "additionalProperties": {
-                    "type": "string"
-                  },
+                  "additionalProperties": true,
                   "type": "object",
                   "title": "Response Delete Account V1 Account Delete"
                 }
@@ -3224,7 +3476,7 @@
           "account"
         ],
         "summary": "List Sessions",
-        "description": "List active sessions \u2014 current device from request metadata.",
+        "description": "List active sessions from active_sessions when the table exists.",
         "operationId": "list_sessions_v1_account_sessions_get",
         "responses": {
           "200": {
@@ -3247,6 +3499,57 @@
             "HTTPBearer": []
           }
         ]
+      }
+    },
+    "/v1/account/sessions/{session_id}": {
+      "delete": {
+        "tags": [
+          "account"
+        ],
+        "summary": "Revoke Session",
+        "operationId": "revoke_session_v1_account_sessions__session_id__delete",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "session_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Session Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": {
+                    "type": "boolean"
+                  },
+                  "title": "Response Revoke Session V1 Account Sessions  Session Id  Delete"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
       }
     },
     "/v1/account/sessions/revoke-others": {
@@ -3536,6 +3839,56 @@
         "responses": {
           "204": {
             "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/auth/consent": {
+      "post": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Record Consent",
+        "operationId": "record_consent_auth_consent_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConsentWriteRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "boolean"
+                  },
+                  "type": "object",
+                  "title": "Response Record Consent Auth Consent Post"
+                }
+              }
+            }
           },
           "422": {
             "description": "Validation Error",
@@ -3926,6 +4279,34 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/onboarding/skip": {
+      "post": {
+        "tags": [
+          "onboarding"
+        ],
+        "summary": "Skip Onboarding",
+        "operationId": "skip_onboarding_onboarding_skip_post",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Skip Onboarding Onboarding Skip Post"
                 }
               }
             }
@@ -5927,7 +6308,9 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/InviteOut"
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Create Invite Team Invite Post"
                 }
               }
             }
@@ -6298,6 +6681,148 @@
         }
       }
     },
+    "/team/invite/accept": {
+      "get": {
+        "tags": [
+          "team"
+        ],
+        "summary": "Preview Invite",
+        "operationId": "preview_invite_team_invite_accept_get",
+        "parameters": [
+          {
+            "name": "token",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Preview Invite Team Invite Accept Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "team"
+        ],
+        "summary": "Accept Invite V2",
+        "operationId": "accept_invite_v2_team_invite_accept_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AcceptInviteRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Accept Invite V2 Team Invite Accept Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/team/invite/{invite_id}": {
+      "delete": {
+        "tags": [
+          "team"
+        ],
+        "summary": "Revoke Invite Alias",
+        "operationId": "revoke_invite_alias_team_invite__invite_id__delete",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "invite_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Invite Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": {
+                    "type": "boolean"
+                  },
+                  "title": "Response Revoke Invite Alias Team Invite  Invite Id  Delete"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/account/channels": {
       "get": {
         "tags": [
@@ -6434,7 +6959,39 @@
             "description": "Successful Response",
             "content": {
               "application/json": {
-                "schema": {}
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Export Account Data Account Export Get"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/account/export/request": {
+      "post": {
+        "tags": [
+          "account"
+        ],
+        "summary": "Request Account Export",
+        "operationId": "request_account_export_account_export_request_post",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Request Account Export Account Export Request Post"
+                }
               }
             }
           }
@@ -6582,9 +7139,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "additionalProperties": {
-                    "type": "string"
-                  },
+                  "additionalProperties": true,
                   "type": "object",
                   "title": "Response Delete Account Account Delete"
                 }
@@ -6615,7 +7170,7 @@
           "account"
         ],
         "summary": "List Sessions",
-        "description": "List active sessions \u2014 current device from request metadata.",
+        "description": "List active sessions from active_sessions when the table exists.",
         "operationId": "list_sessions_account_sessions_get",
         "responses": {
           "200": {
@@ -6638,6 +7193,57 @@
             "HTTPBearer": []
           }
         ]
+      }
+    },
+    "/account/sessions/{session_id}": {
+      "delete": {
+        "tags": [
+          "account"
+        ],
+        "summary": "Revoke Session",
+        "operationId": "revoke_session_account_sessions__session_id__delete",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "session_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Session Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": {
+                    "type": "boolean"
+                  },
+                  "title": "Response Revoke Session Account Sessions  Session Id  Delete"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
       }
     },
     "/account/sessions/revoke-others": {
@@ -17480,6 +18086,31 @@
         ],
         "title": "ConsentStatusResponse"
       },
+      "ConsentWriteRequest": {
+        "properties": {
+          "consent_type": {
+            "type": "string",
+            "pattern": "^(terms|privacy|marketing)$",
+            "title": "Consent Type"
+          },
+          "accepted": {
+            "type": "boolean",
+            "title": "Accepted"
+          },
+          "source": {
+            "type": "string",
+            "pattern": "^(signup|reaccept_modal|settings)$",
+            "title": "Source"
+          }
+        },
+        "type": "object",
+        "required": [
+          "consent_type",
+          "accepted",
+          "source"
+        ],
+        "title": "ConsentWriteRequest"
+      },
       "ContentScheduleBody": {
         "properties": {
           "scheduled_at": {
@@ -19983,10 +20614,32 @@
             "type": "string",
             "title": "Company Name"
           },
+          "workspace_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Workspace Name"
+          },
           "industry": {
             "type": "string",
             "title": "Industry",
             "default": "general"
+          },
+          "business_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Business Type"
           },
           "language": {
             "type": "string",
@@ -19997,6 +20650,11 @@
             "type": "string",
             "title": "Currency",
             "default": "INR"
+          },
+          "timezone": {
+            "type": "string",
+            "title": "Timezone",
+            "default": "Asia/Kolkata"
           },
           "monthly_revenue_range": {
             "anyOf": [
@@ -20041,6 +20699,11 @@
           "tenant_slug": {
             "type": "string",
             "title": "Tenant Slug"
+          },
+          "redirect_hint": {
+            "type": "string",
+            "title": "Redirect Hint",
+            "default": "first_upload"
           }
         },
         "type": "object",
@@ -22066,25 +22729,52 @@
             "type": "string",
             "title": "Id"
           },
-          "device": {
+          "session_id": {
             "type": "string",
-            "title": "Device"
+            "title": "Session Id"
+          },
+          "device_hint": {
+            "type": "string",
+            "title": "Device Hint"
+          },
+          "last_seen_at": {
+            "type": "string",
+            "title": "Last Seen At"
           },
           "current": {
             "type": "boolean",
             "title": "Current"
           },
+          "device": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Device"
+          },
           "last_active": {
-            "type": "string",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Last Active"
           }
         },
         "type": "object",
         "required": [
           "id",
-          "device",
-          "current",
-          "last_active"
+          "session_id",
+          "device_hint",
+          "last_seen_at",
+          "current"
         ],
         "title": "SessionInfo"
       },
