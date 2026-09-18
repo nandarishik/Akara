@@ -4,7 +4,7 @@ Requires two real Supabase users in different tenants. Configure in .env:
 
   TEST_TENANT_A_TOKEN=<jwt for tenant A>
   TEST_TENANT_B_TOKEN=<jwt for tenant B>
-  TEST_API_BASE_URL=https://akara-production.up.railway.app
+  TEST_API_BASE_URL=http://localhost:8000
 
 Run:
   pytest tests/test_data_isolation.py -m integration
@@ -20,9 +20,7 @@ import pytest
 
 TOKEN_A = os.getenv("TEST_TENANT_A_TOKEN")
 TOKEN_B = os.getenv("TEST_TENANT_B_TOKEN")
-BASE_URL = os.getenv(
-    "TEST_API_BASE_URL", "https://akara-production.up.railway.app"
-).rstrip("/")
+BASE_URL = os.getenv("TEST_API_BASE_URL", "http://localhost:8000").rstrip("/")
 
 pytestmark = [
     pytest.mark.integration,

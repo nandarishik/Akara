@@ -86,7 +86,7 @@ class Settings(BaseSettings):
     # -----------------------------------------------------------------------
     # Cron monitoring — healthchecks.io
     # -----------------------------------------------------------------------
-    healthchecks_ping_url: str = ""          # base URL for all cron pings
+    healthchecks_ping_url: str = ""  # base URL for all cron pings
 
     # -----------------------------------------------------------------------
     # Company / GST details (used in invoices and legal pages)
@@ -94,7 +94,7 @@ class Settings(BaseSettings):
     company_name: str = "AKARA Analytics Pvt Ltd"
     company_gstin: str = ""
     company_address: str = ""
-    company_state_code: str = ""            # e.g. "27" for Maharashtra
+    company_state_code: str = ""  # e.g. "27" for Maharashtra
     support_email: str = "support@akara.ai"
     billing_email: str = "billing@akara.ai"
 
@@ -120,6 +120,15 @@ class Settings(BaseSettings):
     # -----------------------------------------------------------------------
     environment: str = "development"
     log_level: str = "INFO"
+
+    # -----------------------------------------------------------------------
+    # Observability (Phase 3)
+    # -----------------------------------------------------------------------
+    otel_endpoint: str = ""
+    otel_enabled: bool = False
+    structured_logging: bool = False
+    git_sha: str = "dev"
+    service_name: str = "akara-api"
 
     # -----------------------------------------------------------------------
     # Derived properties
@@ -191,7 +200,10 @@ class Settings(BaseSettings):
                 ("RAZORPAY_KEY_SECRET", self.razorpay_key_secret),
                 ("RAZORPAY_WEBHOOK_SECRET", self.razorpay_webhook_secret),
                 ("RAZORPAY_PRO_MONTHLY_PLAN_ID", self.razorpay_pro_monthly_plan_id),
-                ("RAZORPAY_BUSINESS_MONTHLY_PLAN_ID", self.razorpay_business_monthly_plan_id),
+                (
+                    "RAZORPAY_BUSINESS_MONTHLY_PLAN_ID",
+                    self.razorpay_business_monthly_plan_id,
+                ),
             ]:
                 if not value:
                     errors.append(f"MISSING_STAGING_PROD: {field}")
@@ -203,6 +215,14 @@ class Settings(BaseSettings):
             # Company/GST required for invoices
             if not self.company_gstin:
                 errors.append("MISSING_STAGING_PROD: COMPANY_GSTIN")
+
+        if self.environment == "staging" and self.razorpay_key_id.startswith(
+            "rzp_live_"
+        ):
+            errors.append("LIVE_KEY_IN_NON_PROD")
+
+        if self.whatsapp_sends_enabled and self.environment != "production":
+            errors.append("WHATSAPP_ENABLED_NON_PROD")
 
         return errors
 

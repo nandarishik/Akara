@@ -31,14 +31,13 @@ from app.core.errors import (
     ErrorEnvelope,
     akara_exception_handler,
 )
+from app.core.logging import configure_logging
 from app.core.middleware import RequestIDMiddleware
 from app.core.rate_limit import limiter, rate_limit_exceeded_handler
 from app.core.security_headers import SecurityHeadersMiddleware
+from app.core.telemetry import setup_telemetry
 
-logging.basicConfig(
-    level=settings.log_level,
-    format="%(asctime)s %(levelname)s %(name)s %(message)s",
-)
+configure_logging()
 logger = logging.getLogger("akara.startup")
 
 
@@ -47,7 +46,11 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     """Startup validation -- fail fast on critical misconfiguration."""
     errors = settings.validate_for_environment()
     if errors:
-        fatal = [e for e in errors if e.startswith("MISSING_REQUIRED:")]
+        fatal = [
+            e
+            for e in errors
+            if e.startswith(("MISSING_REQUIRED:", "LIVE_KEY_IN_NON_PROD"))
+        ]
         if fatal and (settings.is_production or settings.is_staging):
             logger.critical(
                 "STARTUP FAILED -- missing required configuration:\n%s",
@@ -91,6 +94,7 @@ app = FastAPI(
     redoc_url="/redoc" if not settings.is_production else None,
     lifespan=lifespan,
 )
+setup_telemetry(app, settings)
 
 # ---------------------------------------------------------------------------
 # Middleware

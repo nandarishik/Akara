@@ -33,7 +33,7 @@ def test_placement_stats_aggregation(mock_supa):
     assert slot_a["clicks"] == 1
 
 
-@patch("app.infra.content.cms_service.record_placement_event")
+@patch("app.api.v1.public_routes.record_placement_event")
 def test_placement_impression_http_returns_200(mock_record):
     mock_record.return_value = {"id": "evt-1", "slot_key": "landing.banner.a", "event_type": "impression"}
     from app.main import app
