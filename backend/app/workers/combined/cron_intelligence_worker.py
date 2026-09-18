@@ -13,6 +13,9 @@ import schedule
 from app.core.config import settings
 from app.core.cron_ping import ping_cron_health
 from app.workers import founder_brief, revenue_snapshot, weekly_debrief
+from app.workers.forecast_worker import run_forecast_cycle
+from app.workers.morning_brief_worker import run_morning_brief_cycle
+from app.workers.alert_evaluator import run_alert_evaluator_cycle
 
 logger = logging.getLogger("akara.cron.intelligence")
 
@@ -73,6 +76,9 @@ def register_jobs() -> schedule.Scheduler:
     scheduler.every().monday.at("01:30").do(job_weekly_debrief)
     scheduler.every().monday.at("02:00").do(job_revenue_snapshot)
     scheduler.every().monday.at("02:30").do(job_founder_brief)
+    scheduler.every().day.at("20:30").do(_isolated("forecast", run_forecast_cycle))
+    scheduler.every().day.at("21:30").do(_isolated("alert_evaluator", run_alert_evaluator_cycle))
+    scheduler.every().day.at("01:30").do(_isolated("morning_brief", run_morning_brief_cycle))
     _registered = True
     return scheduler
 

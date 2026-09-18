@@ -22,6 +22,8 @@ from slowapi.errors import RateLimitExceeded
 from app.api.internal import router as internal_router
 from app.api.superadmin import include_superadmin_routers
 from app.api.superadmin import router as superadmin_router
+from app.api.v1.connectors import router as connectors_router
+from app.api.v1.connectors import router as connectors_router
 from app.api.v1.router import compat_router as v1_compat_router
 from app.api.v1.router import router as v1_router
 from app.core.config import settings
@@ -208,5 +210,6 @@ app.add_exception_handler(HTTPException, fastapi_http_exception_handler)  # type
 include_superadmin_routers()
 app.include_router(v1_router)
 app.include_router(v1_compat_router)
+app.include_router(connectors_router)
 app.include_router(superadmin_router)
 app.include_router(internal_router)

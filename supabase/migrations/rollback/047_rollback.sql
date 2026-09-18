@@ -1,0 +1,15 @@
+ALTER TABLE public.import_jobs DROP CONSTRAINT IF EXISTS import_jobs_import_type_check;
+ALTER TABLE public.import_jobs DROP COLUMN IF EXISTS ai_mapping_confidence;
+ALTER TABLE public.import_jobs DROP COLUMN IF EXISTS ai_mapping_used;
+ALTER TABLE public.import_jobs DROP COLUMN IF EXISTS undone_at;
+ALTER TABLE public.import_jobs DROP COLUMN IF EXISTS reconciliation_confirmed;
+ALTER TABLE public.import_jobs DROP COLUMN IF EXISTS reconciliation_notes;
+ALTER TABLE public.import_jobs DROP COLUMN IF EXISTS reconciliation_totals;
+ALTER TABLE public.import_jobs DROP COLUMN IF EXISTS canonical_row_count;
+ALTER TABLE public.import_jobs DROP COLUMN IF EXISTS quarantine_row_count;
+ALTER TABLE public.import_jobs DROP COLUMN IF EXISTS last_completed_batch;
+ALTER TABLE public.import_jobs DROP COLUMN IF EXISTS total_batches;
+ALTER TABLE public.import_jobs DROP COLUMN IF EXISTS batch_size;
+ALTER TABLE public.import_jobs DROP COLUMN IF EXISTS column_mapping;
+ALTER TABLE public.import_jobs DROP COLUMN IF EXISTS import_type;
+ALTER TABLE public.import_jobs DROP COLUMN IF EXISTS source_file_hash;

@@ -4,9 +4,11 @@ from fastapi import APIRouter
 
 from app.api.v1 import (
     account,
+    actions,
     alerts,
     auth,
     billing,
+    cafe_data,
     conversations,
     copilot,
     data,
@@ -35,12 +37,14 @@ def _mount_customer_routers(target: APIRouter) -> None:
     target.include_router(conversations.router)
     target.include_router(kpi.router)
     target.include_router(data.router)
+    target.include_router(cafe_data.router)
     target.include_router(reports.router)
     target.include_router(debrief.router)
     target.include_router(team.router)
     target.include_router(account.router)
     target.include_router(simulator.router)
     target.include_router(system.router)
+    target.include_router(actions.router)
 
 
 router = APIRouter(prefix="/v1")

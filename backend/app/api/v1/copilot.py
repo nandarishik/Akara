@@ -40,6 +40,11 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/copilot", tags=["copilot"])
 
 
+@router.get("/status")
+def copilot_status() -> dict:
+    return {"ok": True, "llm": "openrouter", "outage": False}
+
+
 class ChatRequest(BaseModel):
     question: str
     stream: bool = True
