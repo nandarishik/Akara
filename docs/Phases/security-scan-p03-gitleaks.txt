@@ -1,0 +1,2 @@
+﻿TOOL_NOT_INSTALLED: gitleaks
+Gitleaks not on PATH locally. DEV1 CI security-static (d922de8) owns L4 after integration.

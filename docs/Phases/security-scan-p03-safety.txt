@@ -1,0 +1,2 @@
+﻿TOOL_NOT_INSTALLED: safety
+Safety CLI not on PATH this host. pip-audit used as live CVE scan (SECURITY.md). Safety lands in DEV1 CI security-static.

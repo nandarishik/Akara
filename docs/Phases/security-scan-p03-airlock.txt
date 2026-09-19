@@ -1,0 +1,10 @@
+﻿TOOL installed: airlock-rls (npm global airlock-rls / bin airlock)
+Unverified — live check requires SUPABASE_DB_URL (or DB_URL arg) and/or --site.
+No disposable Postgres URL configured on this host for Phase 2.
+Command attempted: airlock
+Result: exit 2 — Nothing to audit. Set SUPABASE_DB_URL
+This artefact is the Phase 3 RLS baseline placeholder until a disposable DB run lands.
+Status: Unverified — tool installed; DB URL missing
+Phase 3 start — Airlock/rlsgrid still Unverified (no disposable DB).
+Carried from Phase 2 artefacts. Live run is staging green precondition.
+Do not invent green baseline. Do not probe production.

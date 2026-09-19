@@ -1,0 +1,2 @@
+﻿TOOL_NOT_INSTALLED: keyhog
+Deferred on this Windows host (cargo detector corpus / MSVC). Phase 1 L1 hole carries into Phase 3 start.

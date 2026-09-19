@@ -1,0 +1,2 @@
+﻿TOOL_NOT_INSTALLED: hadolint
+Hadolint not on PATH. Image Dockerfile Hadolint is DEV1 CI security-container after integration.
