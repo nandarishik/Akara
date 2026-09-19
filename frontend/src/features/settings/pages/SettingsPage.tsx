@@ -569,6 +569,9 @@ export function SettingsPage() {
           </div>
         </GlowSurfaceCard>
       )}
+      <p className="text-xs text-muted-foreground">
+        Version {import.meta.env.VITE_GIT_SHA?.slice(0, 7) ?? "dev"}
+      </p>
     </ProductPageLayout>
   );
 }
