@@ -55,4 +55,9 @@ class RequestIDMiddleware(BaseHTTPMiddleware):
             response.headers["X-Request-ID"] = request_id
             if request.url.path.startswith("/superadmin"):
                 response.headers["X-Robots-Tag"] = "noindex, nofollow"
+            path = request.url.path
+            if not path.startswith(
+                ("/v1", "/superadmin", "/admin", "/docs", "/redoc", "/openapi.json")
+            ):
+                response.headers["Deprecated"] = "true"
             return response

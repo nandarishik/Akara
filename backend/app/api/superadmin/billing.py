@@ -15,10 +15,9 @@ from app.core.errors import AkaraHTTPException
 from app.core.idempotency import IdempotencyKey, OptionalIdempotencyKey
 from app.core.plan_limits import PLAN_LIMITS, get_limit
 from app.core.rate_limit import ADMIN_READ_LIMIT, ADMIN_WRITE_LIMIT, limiter
-from app.core.superadmin import SuperAdmin, SudoCtx, request_actor_meta, require_csrf
+from app.core.superadmin import SudoCtx, SuperAdmin, request_actor_meta, require_csrf
 from app.core.tenant import get_supabase_service_client
 from app.domain.billing.checkout import fetch_subscription_status
-from app.domain.billing.email import send_payment_success_email
 from app.domain.superadmin.audit import record_operation
 from app.domain.superadmin.mutations import SuperadminMutation, dry_run_response
 from app.domain.superadmin.revenue import compute_revenue_summary
@@ -64,7 +63,9 @@ def _get_tenant_row(tenant_id: str) -> dict[str, Any]:
         .execute()
     )
     if not result.data:
-        raise AkaraHTTPException(status_code=404, code="NOT_FOUND", message="Tenant not found")
+        raise AkaraHTTPException(
+            status_code=404, code="NOT_FOUND", message="Tenant not found"
+        )
     return result.data
 
 
@@ -116,15 +117,24 @@ def manual_upgrade(
     if body.dry_run:
         return dry_run_response(
             action="superadmin.billing.manual_upgrade",
-            before={"plan": before.get("plan"), "plan_status": before.get("plan_status")},
-            impact={"plan": body.plan, "plan_status": "active", "clear_past_due": body.clear_past_due},
+            before={
+                "plan": before.get("plan"),
+                "plan_status": before.get("plan_status"),
+            },
+            impact={
+                "plan": body.plan,
+                "plan_status": "active",
+                "clear_past_due": body.clear_past_due,
+            },
         )
 
     update: dict[str, Any] = {"plan": body.plan, "plan_status": "active"}
     if body.clear_past_due:
         update["past_due_since"] = None
 
-    get_supabase_service_client().table("tenants").update(update).eq("id", str(tenant_id)).execute()
+    get_supabase_service_client().table("tenants").update(update).eq(
+        "id", str(tenant_id)
+    ).execute()
     meta = request_actor_meta(request)
     audit = record_operation(
         action="superadmin.billing.manual_upgrade",
@@ -132,7 +142,10 @@ def manual_upgrade(
         actor_email=admin.email,
         reason=body.reason,
         tenant_id=tenant_id,
-        before_state={"plan": before.get("plan"), "plan_status": before.get("plan_status")},
+        before_state={
+            "plan": before.get("plan"),
+            "plan_status": before.get("plan_status"),
+        },
         after_state={"plan": body.plan, "plan_status": "active"},
         operation_id=body.operation_id,
         resource_type="tenant",
@@ -173,10 +186,12 @@ def extend_trial(
             impact={"trial_ends_at": trial_ends_at, "days": body.days},
         )
 
-    get_supabase_service_client().table("tenants").update({
-        "plan_status": "trialing",
-        "trial_ends_at": trial_ends_at,
-    }).eq("id", str(tenant_id)).execute()
+    get_supabase_service_client().table("tenants").update(
+        {
+            "plan_status": "trialing",
+            "trial_ends_at": trial_ends_at,
+        }
+    ).eq("id", str(tenant_id)).execute()
 
     meta = request_actor_meta(request)
     audit = record_operation(
@@ -193,7 +208,12 @@ def extend_trial(
         details={"days": body.days},
         **meta,
     )
-    return {"ok": True, "tenant_id": str(tenant_id), "trial_ends_at": trial_ends_at, "audit": audit}
+    return {
+        "ok": True,
+        "tenant_id": str(tenant_id),
+        "trial_ends_at": trial_ends_at,
+        "audit": audit,
+    }
 
 
 @router.post("/billing/void-invoice/{invoice_ref}")
@@ -212,11 +232,15 @@ def void_invoice(
     elif body.stripe_invoice_id:
         query = query.eq("stripe_invoice_id", body.stripe_invoice_id)
     else:
-        query = query.or_(f"id.eq.{invoice_ref},stripe_invoice_id.eq.{invoice_ref},invoice_number.eq.{invoice_ref}")
+        query = query.or_(
+            f"id.eq.{invoice_ref},stripe_invoice_id.eq.{invoice_ref},invoice_number.eq.{invoice_ref}"
+        )
 
     row = query.maybe_single().execute()
     if not row.data:
-        raise AkaraHTTPException(status_code=404, code="NOT_FOUND", message="Invoice not found")
+        raise AkaraHTTPException(
+            status_code=404, code="NOT_FOUND", message="Invoice not found"
+        )
 
     before = row.data
     if body.dry_run:
@@ -348,10 +372,20 @@ def refund_payment(
         operation_id=body.operation_id,
         resource_type="payment",
         resource_id=body.payment_id,
-        after_state={"refund": result, "ledger_id": ledger.get("id"), "credit_note": credit_note},
+        after_state={
+            "refund": result,
+            "ledger_id": ledger.get("id"),
+            "credit_note": credit_note,
+        },
         **meta,
     )
-    response = {"ok": True, "refund": result, "ledger": ledger, "credit_note": credit_note, "audit": audit}
+    response = {
+        "ok": True,
+        "refund": result,
+        "ledger": ledger,
+        "credit_note": credit_note,
+        "audit": audit,
+    }
     store_idempotency_response(idempotency_key, response)
     return response
 
@@ -378,7 +412,9 @@ def resend_invoice(
         .execute()
     )
     if not invoice.data:
-        raise AkaraHTTPException(status_code=404, code="NOT_FOUND", message="No invoice found")
+        raise AkaraHTTPException(
+            status_code=404, code="NOT_FOUND", message="No invoice found"
+        )
 
     profiles = (
         supa.table("profiles")
@@ -389,7 +425,9 @@ def resend_invoice(
         .execute()
     )
     if not profiles.data:
-        raise AkaraHTTPException(status_code=404, code="NOT_FOUND", message="No admin user")
+        raise AkaraHTTPException(
+            status_code=404, code="NOT_FOUND", message="No admin user"
+        )
 
     try:
         user = supa.auth.admin.get_user_by_id(profiles.data[0]["id"])
@@ -402,7 +440,9 @@ def resend_invoice(
         ) from exc
 
     if not email:
-        raise AkaraHTTPException(status_code=404, code="NOT_FOUND", message="Admin email not found")
+        raise AkaraHTTPException(
+            status_code=404, code="NOT_FOUND", message="Admin email not found"
+        )
 
     if body.dry_run:
         return dry_run_response(
@@ -418,7 +458,11 @@ def resend_invoice(
         except Exception:
             pass
 
-    send_payment_success_email(email, invoice.data["invoice_number"], "pro", pdf_bytes=pdf_bytes)
+    from app.domain.billing.email import send_payment_success_email
+
+    send_payment_success_email(
+        email, invoice.data["invoice_number"], "pro", pdf_bytes=pdf_bytes
+    )
 
     meta = request_actor_meta(request)
     audit = record_operation(
@@ -527,8 +571,14 @@ def tenant_cost_diagnostics(
     _admin: SuperAdmin,
 ) -> list[dict[str, Any]]:
     supa = get_supabase_service_client()
-    month_start = datetime.now(UTC).replace(day=1, hour=0, minute=0, second=0, microsecond=0)
-    tenants = supa.table("tenants").select("id, name, plan, plan_status, feature_overrides").execute()
+    month_start = datetime.now(UTC).replace(
+        day=1, hour=0, minute=0, second=0, microsecond=0
+    )
+    tenants = (
+        supa.table("tenants")
+        .select("id, name, plan, plan_status, feature_overrides")
+        .execute()
+    )
     usage_rows = (
         supa.table("usage_tracking")
         .select("tenant_id, copilot_calls, rows_imported")
@@ -577,7 +627,9 @@ def costs_summary(
     _admin: SuperAdmin,
 ) -> dict[str, Any]:
     supa = get_supabase_service_client()
-    month_start = datetime.now(UTC).replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+    month_start = datetime.now(UTC).replace(
+        day=1, hour=0, minute=0, second=0, microsecond=0
+    )
     rows = (
         supa.table("llm_cost_log")
         .select("tenant_id, feature, cost_usd")
@@ -600,9 +652,7 @@ def costs_summary(
         reverse=True,
     )
     copilot_rows = [r for r in rows if r.get("feature") == "copilot"]
-    avg_per_question = (
-        total / len(copilot_rows) if copilot_rows else 0
-    )
+    avg_per_question = total / len(copilot_rows) if copilot_rows else 0
 
     return {
         "total_cost_usd_this_month": round(total, 6),
@@ -646,7 +696,9 @@ def webhook_status(
         .execute()
     )
     rows = events.data or []
-    processed = sum(1 for r in rows if r.get("processed_at") and not r.get("error_message"))
+    processed = sum(
+        1 for r in rows if r.get("processed_at") and not r.get("error_message")
+    )
     errors = sum(1 for r in rows if r.get("error_message"))
     return WebhookStatusResponse(
         last_24h_total=len(rows),
@@ -804,7 +856,9 @@ def billing_ledger(
 ) -> dict[str, Any]:
     from app.domain.billing.ledger import list_ledger
 
-    return list_ledger(tenant_id=tenant_id, entry_type=entry_type, limit=limit, offset=offset)
+    return list_ledger(
+        tenant_id=tenant_id, entry_type=entry_type, limit=limit, offset=offset
+    )
 
 
 @router.post("/billing/refunds/preview")
@@ -849,7 +903,10 @@ def issue_credit(
     if body.dry_run:
         return dry_run_response(
             action="superadmin.billing.credit",
-            impact={"tenant_id": str(body.tenant_id), "amount_minor": body.amount_minor},
+            impact={
+                "tenant_id": str(body.tenant_id),
+                "amount_minor": body.amount_minor,
+            },
         )
     ledger = record_ledger_entry(
         tenant_id=body.tenant_id,
@@ -879,7 +936,12 @@ def issue_credit(
 @limiter.limit(ADMIN_READ_LIMIT)
 def list_coupons(request: Request, _admin: SuperAdmin) -> dict[str, Any]:
     supa = get_supabase_service_client()
-    rows = supa.table("billing_coupons").select("*").order("created_at", desc=True).execute()
+    rows = (
+        supa.table("billing_coupons")
+        .select("*")
+        .order("created_at", desc=True)
+        .execute()
+    )
     return {"items": rows.data or []}
 
 
@@ -926,7 +988,9 @@ def create_promotion_code(
         .execute()
     )
     if not coupon.data:
-        raise AkaraHTTPException(status_code=404, code="NOT_FOUND", message="Coupon not found")
+        raise AkaraHTTPException(
+            status_code=404, code="NOT_FOUND", message="Coupon not found"
+        )
     payload = {"coupon_id": str(body.coupon_id), "code": body.code.upper()}
     result = supa.table("billing_promotion_codes").insert(payload).execute()
     promo = (result.data or [{}])[0]
@@ -986,9 +1050,17 @@ def retry_invoice(
     _: None = Depends(require_csrf),
 ) -> dict[str, Any]:
     supa = get_supabase_service_client()
-    inv = supa.table("invoices").select("*").eq("id", str(invoice_id)).maybe_single().execute()
+    inv = (
+        supa.table("invoices")
+        .select("*")
+        .eq("id", str(invoice_id))
+        .maybe_single()
+        .execute()
+    )
     if not inv.data:
-        raise AkaraHTTPException(status_code=404, code="NOT_FOUND", message="Invoice not found")
+        raise AkaraHTTPException(
+            status_code=404, code="NOT_FOUND", message="Invoice not found"
+        )
 
     tenant_id = UUID(inv.data["tenant_id"])
     if body.dry_run:
@@ -1009,15 +1081,21 @@ def retry_invoice(
     )
     admin_email = (profiles.data or {}).get("email")
     if not admin_email:
-        raise AkaraHTTPException(status_code=404, code="NOT_FOUND", message="No admin email found")
+        raise AkaraHTTPException(
+            status_code=404, code="NOT_FOUND", message="No admin email found"
+        )
 
     pdf_bytes = None
     pdf_path = inv.data.get("pdf_storage_path")
     if pdf_path:
         try:
-            pdf_bytes = supa.storage.from_(settings.supabase_imports_bucket).download(pdf_path)
+            pdf_bytes = supa.storage.from_(settings.supabase_imports_bucket).download(
+                pdf_path
+            )
         except Exception:
             pdf_bytes = None
+
+    from app.domain.billing.email import send_payment_success_email
 
     try:
         sent = send_payment_success_email(
@@ -1026,9 +1104,15 @@ def retry_invoice(
             plan=row.get("plan") or "pro",
             pdf_bytes=pdf_bytes,
         )
-        result = {"resent": sent, "invoice_number": inv.data["invoice_number"], "to": admin_email}
+        result = {
+            "resent": sent,
+            "invoice_number": inv.data["invoice_number"],
+            "to": admin_email,
+        }
     except Exception as exc:
-        raise AkaraHTTPException(status_code=502, code="EMAIL_ERROR", message=str(exc)) from exc
+        raise AkaraHTTPException(
+            status_code=502, code="EMAIL_ERROR", message=str(exc)
+        ) from exc
 
     meta = request_actor_meta(request)
     audit = record_operation(
@@ -1058,9 +1142,17 @@ def mark_invoice_paid(
     from app.domain.billing.ledger import record_ledger_entry
 
     supa = get_supabase_service_client()
-    inv = supa.table("invoices").select("*").eq("id", str(invoice_id)).maybe_single().execute()
+    inv = (
+        supa.table("invoices")
+        .select("*")
+        .eq("id", str(invoice_id))
+        .maybe_single()
+        .execute()
+    )
     if not inv.data:
-        raise AkaraHTTPException(status_code=404, code="NOT_FOUND", message="Invoice not found")
+        raise AkaraHTTPException(
+            status_code=404, code="NOT_FOUND", message="Invoice not found"
+        )
 
     if body.dry_run:
         return dry_run_response(
@@ -1070,7 +1162,9 @@ def mark_invoice_paid(
         )
 
     amount_minor = int(float(inv.data.get("total_amount") or 0) * 100)
-    supa.table("invoices").update({"status": "paid"}).eq("id", str(invoice_id)).execute()
+    supa.table("invoices").update({"status": "paid"}).eq(
+        "id", str(invoice_id)
+    ).execute()
     ledger = record_ledger_entry(
         tenant_id=UUID(inv.data["tenant_id"]),
         entry_type="manual_payment",
@@ -1109,15 +1203,27 @@ def write_off_invoice(
     from app.domain.billing.ledger import record_ledger_entry
 
     supa = get_supabase_service_client()
-    inv = supa.table("invoices").select("*").eq("id", str(invoice_id)).maybe_single().execute()
+    inv = (
+        supa.table("invoices")
+        .select("*")
+        .eq("id", str(invoice_id))
+        .maybe_single()
+        .execute()
+    )
     if not inv.data:
-        raise AkaraHTTPException(status_code=404, code="NOT_FOUND", message="Invoice not found")
+        raise AkaraHTTPException(
+            status_code=404, code="NOT_FOUND", message="Invoice not found"
+        )
 
     if body.dry_run:
-        return dry_run_response(action="superadmin.billing.write_off", impact={"status": "written_off"})
+        return dry_run_response(
+            action="superadmin.billing.write_off", impact={"status": "written_off"}
+        )
 
     amount_minor = int(float(inv.data.get("total_amount") or 0) * 100)
-    supa.table("invoices").update({"status": "void"}).eq("id", str(invoice_id)).execute()
+    supa.table("invoices").update({"status": "void"}).eq(
+        "id", str(invoice_id)
+    ).execute()
     ledger = record_ledger_entry(
         tenant_id=UUID(inv.data["tenant_id"]),
         entry_type="write_off",
@@ -1204,7 +1310,9 @@ def subscription_action(
             impact={"subscription_id": sub_id, "new_date": body.new_date},
         )
     if not sub_id:
-        raise AkaraHTTPException(status_code=404, code="NOT_FOUND", message="No Razorpay subscription")
+        raise AkaraHTTPException(
+            status_code=404, code="NOT_FOUND", message="No Razorpay subscription"
+        )
 
     from app.domain.billing.checkout import _client
 
@@ -1218,10 +1326,14 @@ def subscription_action(
         elif body.action == "cancel":
             result["provider"] = client.subscription.cancel(sub_id)
         elif body.action == "change_date" and body.new_date:
-            get_supabase_service_client().table("tenants").update({"trial_ends_at": body.new_date}).eq("id", str(tenant_id)).execute()
+            get_supabase_service_client().table("tenants").update(
+                {"trial_ends_at": body.new_date}
+            ).eq("id", str(tenant_id)).execute()
             result["new_date"] = body.new_date
     except Exception as exc:
-        raise AkaraHTTPException(status_code=502, code="PAYMENT_PROVIDER_ERROR", message=str(exc)) from exc
+        raise AkaraHTTPException(
+            status_code=502, code="PAYMENT_PROVIDER_ERROR", message=str(exc)
+        ) from exc
 
     meta = request_actor_meta(request)
     audit = record_operation(
@@ -1251,7 +1363,9 @@ def reconciliation_view(
     snapshot = fetch_subscription_status(tenant_id)
     invoice = (
         supa.table("invoices")
-        .select("id, invoice_number, total_amount, status, gst_amount, provider_payment_id")
+        .select(
+            "id, invoice_number, total_amount, status, gst_amount, provider_payment_id"
+        )
         .eq("tenant_id", str(tenant_id))
         .order("created_at", desc=True)
         .limit(1)

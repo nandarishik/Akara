@@ -2,11 +2,12 @@ import hashlib
 from datetime import UTC, datetime
 from uuid import UUID
 
-from fastapi import APIRouter, HTTPException, Request, status
+from fastapi import APIRouter, Request, status
 from pydantic import BaseModel, Field
 
 from app.core.auth import CurrentUser
 from app.core.config import settings
+from app.core.errors import AkaraHTTPException
 from app.core.rate_limit import limiter
 from app.core.tenant import get_supabase_service_client
 
@@ -44,11 +45,7 @@ def _active_impersonation(user_id: UUID) -> dict | None:
     tid = session.get("tenant_id")
     if tid:
         tenant = (
-            supa.table("tenants")
-            .select("name")
-            .eq("id", tid)
-            .maybe_single()
-            .execute()
+            supa.table("tenants").select("name").eq("id", tid).maybe_single().execute()
         )
         if tenant.data:
             tenant_name = tenant.data.get("name")
@@ -78,15 +75,17 @@ async def me(request: Request, user: CurrentUser) -> MeResponse:
             .execute()
         )
     except Exception as exc:
-        raise HTTPException(
+        raise AkaraHTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="User profile not found",
+            code="FORBIDDEN",
+            message="User profile not found",
         ) from exc
 
     if not profile_result.data:
-        raise HTTPException(
+        raise AkaraHTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="User profile not found",
+            code="FORBIDDEN",
+            message="User profile not found",
         )
 
     raw_tenant_id = profile_result.data.get("tenant_id")
@@ -126,7 +125,9 @@ class ConsentStatusResponse(BaseModel):
 class ConsentAcceptRequest(BaseModel):
     terms: bool = Field(..., description="User accepts current Terms of Service")
     privacy: bool = Field(..., description="User accepts current Privacy Policy")
-    ai_processing: bool = Field(..., description="User consents to AI processing of sales data")
+    ai_processing: bool = Field(
+        ..., description="User consents to AI processing of sales data"
+    )
 
 
 @router.get("/consent-status", response_model=ConsentStatusResponse)
@@ -212,9 +213,10 @@ async def consent_accept(
     user: CurrentUser,
 ) -> None:
     if not (body.terms and body.privacy and body.ai_processing):
-        raise HTTPException(
+        raise AkaraHTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="All consent checkboxes must be accepted",
+            code="VALIDATION_ERROR",
+            message="All consent checkboxes must be accepted",
         )
     client = get_supabase_service_client()
     ip = request.client.host if request.client else "unknown"
@@ -224,7 +226,10 @@ async def consent_accept(
     terms_version = settings.terms_version
     privacy_version = settings.privacy_version
     try:
-        from app.infra.legal.document_service import get_published_document, record_user_consent
+        from app.infra.legal.document_service import (
+            get_published_document,
+            record_user_consent,
+        )
 
         terms_doc = get_published_document("terms")
         privacy_doc = get_published_document("privacy")

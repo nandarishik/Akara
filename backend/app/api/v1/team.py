@@ -7,16 +7,21 @@ from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi import APIRouter, Depends, Request, status
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 from pydantic import BaseModel, Field
 
 from app.core.auth import CurrentUser
 from app.core.config import settings
+from app.core.errors import AkaraHTTPException
 from app.core.plan_guard import require_feature
 from app.core.plan_limits import get_limit
 from app.core.rate_limit import limiter
-from app.core.tenant import TenantContext, get_supabase_service_client, get_tenant_context
+from app.core.tenant import (
+    TenantContext,
+    get_supabase_service_client,
+    get_tenant_context,
+)
 from app.domain.billing.email import _send
 
 logger = logging.getLogger(__name__)
@@ -143,7 +148,11 @@ def create_invite(
     _: None = Depends(require_feature("team_invites")),
 ) -> InviteOut:
     if not tenant.is_admin:
-        raise HTTPException(status.HTTP_403_FORBIDDEN, detail="Admin role required")
+        raise AkaraHTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            code="FORBIDDEN",
+            message="Admin role required",
+        )
 
     supa = get_supabase_service_client()
     seat_limit = _seat_limit(tenant)
@@ -160,16 +169,25 @@ def create_invite(
         ).execute()
     except Exception as exc:
         if "seat_limit_reached" in str(exc):
-            raise HTTPException(
-                status.HTTP_402_PAYMENT_REQUIRED,
-                detail="Team seat limit reached. Upgrade or cancel pending invites.",
+            raise AkaraHTTPException(
+                status_code=status.HTTP_402_PAYMENT_REQUIRED,
+                code="QUOTA_EXCEEDED",
+                message="Team seat limit reached. Upgrade or cancel pending invites.",
             ) from exc
-        raise HTTPException(status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(exc)) from exc
+        raise AkaraHTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            code="INTERNAL_ERROR",
+            message=str(exc),
+        ) from exc
 
     row = (rpc.data or [{}])[0]
     invite_id = row.get("invite_id")
     if not invite_id:
-        raise HTTPException(status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Invite failed")
+        raise AkaraHTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            code="INTERNAL_ERROR",
+            message="Invite failed",
+        )
 
     invite = (
         supa.table("team_invites")
@@ -179,11 +197,21 @@ def create_invite(
         .execute()
     ).data
     if not invite:
-        raise HTTPException(status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Invite not found")
+        raise AkaraHTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            code="INTERNAL_ERROR",
+            message="Invite not found",
+        )
 
     tenant_name = "your team"
     try:
-        t = supa.table("tenants").select("name").eq("id", str(tenant.tenant_id)).single().execute()
+        t = (
+            supa.table("tenants")
+            .select("name")
+            .eq("id", str(tenant.tenant_id))
+            .single()
+            .execute()
+        )
         if t.data:
             tenant_name = t.data.get("name") or tenant_name
     except Exception:
@@ -205,7 +233,11 @@ def resend_invite(
     _: None = Depends(require_feature("team_invites")),
 ) -> dict[str, str]:
     if not tenant.is_admin:
-        raise HTTPException(status.HTTP_403_FORBIDDEN, detail="Admin role required")
+        raise AkaraHTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            code="FORBIDDEN",
+            message="Admin role required",
+        )
 
     supa = get_supabase_service_client()
     invite = (
@@ -218,15 +250,29 @@ def resend_invite(
         .execute()
     ).data
     if not invite:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Invite not found")
+        raise AkaraHTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            code="NOT_FOUND",
+            message="Invite not found",
+        )
 
-    supa.table("team_invites").update({
-        "expires_at": (datetime.now(UTC).replace(microsecond=0) + timedelta(days=7)).isoformat(),
-    }).eq("id", str(invite_id)).execute()
+    supa.table("team_invites").update(
+        {
+            "expires_at": (
+                datetime.now(UTC).replace(microsecond=0) + timedelta(days=7)
+            ).isoformat(),
+        }
+    ).eq("id", str(invite_id)).execute()
 
     tenant_name = "your team"
     try:
-        t = supa.table("tenants").select("name").eq("id", str(tenant.tenant_id)).single().execute()
+        t = (
+            supa.table("tenants")
+            .select("name")
+            .eq("id", str(tenant.tenant_id))
+            .single()
+            .execute()
+        )
         if t.data:
             tenant_name = t.data.get("name") or tenant_name
     except Exception:
@@ -246,21 +292,29 @@ def cancel_invite(
     _: None = Depends(require_feature("team_invites")),
 ) -> None:
     if not tenant.is_admin:
-        raise HTTPException(status.HTTP_403_FORBIDDEN, detail="Admin role required")
+        raise AkaraHTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            code="FORBIDDEN",
+            message="Admin role required",
+        )
 
     supa = get_supabase_service_client()
-    supa.table("team_invites").update({
-        "status": "cancelled",
-        "cancelled_at": datetime.now(UTC).isoformat(),
-        "reserves_seat": False,
-    }).eq("id", str(invite_id)).eq("tenant_id", str(tenant.tenant_id)).eq(
+    supa.table("team_invites").update(
+        {
+            "status": "cancelled",
+            "cancelled_at": datetime.now(UTC).isoformat(),
+            "reserves_seat": False,
+        }
+    ).eq("id", str(invite_id)).eq("tenant_id", str(tenant.tenant_id)).eq(
         "status", "pending"
     ).execute()
 
 
 @router.post("/accept")
 @limiter.limit("10/minute")
-def accept_invite(request: Request, body: AcceptInviteRequest, user: CurrentUser) -> dict[str, str]:
+def accept_invite(
+    request: Request, body: AcceptInviteRequest, user: CurrentUser
+) -> dict[str, str]:
     supa = get_supabase_service_client()
     invite = (
         supa.table("team_invites")
@@ -271,33 +325,49 @@ def accept_invite(request: Request, body: AcceptInviteRequest, user: CurrentUser
         .execute()
     ).data
     if not invite:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Invalid or expired invite")
+        raise AkaraHTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            code="NOT_FOUND",
+            message="Invalid or expired invite",
+        )
 
     expires = datetime.fromisoformat(str(invite["expires_at"]).replace("Z", "+00:00"))
     if expires.tzinfo is None:
         expires = expires.replace(tzinfo=UTC)
     if expires < datetime.now(UTC):
-        supa.table("team_invites").update({"status": "expired", "reserves_seat": False}).eq(
-            "id", invite["id"]
-        ).execute()
-        raise HTTPException(status.HTTP_410_GONE, detail="Invite expired")
+        supa.table("team_invites").update(
+            {"status": "expired", "reserves_seat": False}
+        ).eq("id", invite["id"]).execute()
+        raise AkaraHTTPException(
+            status_code=status.HTTP_410_GONE,
+            code="NOT_FOUND",
+            message="Invite expired",
+        )
 
     user_email = (user.email or "").lower()
     if user_email != invite["email_normalized"]:
-        raise HTTPException(status.HTTP_403_FORBIDDEN, detail="Invite email does not match")
+        raise AkaraHTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            code="FORBIDDEN",
+            message="Invite email does not match",
+        )
 
-    supa.table("profiles").update({
-        "tenant_id": invite["tenant_id"],
-        "role": invite["role"],
-        "membership_status": "active",
-    }).eq("id", str(user.user_id)).execute()
+    supa.table("profiles").update(
+        {
+            "tenant_id": invite["tenant_id"],
+            "role": invite["role"],
+            "membership_status": "active",
+        }
+    ).eq("id", str(user.user_id)).execute()
 
-    supa.table("team_invites").update({
-        "status": "accepted",
-        "accepted_by": str(user.user_id),
-        "accepted_at": datetime.now(UTC).isoformat(),
-        "reserves_seat": False,
-    }).eq("id", invite["id"]).execute()
+    supa.table("team_invites").update(
+        {
+            "status": "accepted",
+            "accepted_by": str(user.user_id),
+            "accepted_at": datetime.now(UTC).isoformat(),
+            "reserves_seat": False,
+        }
+    ).eq("id", invite["id"]).execute()
 
     return {"status": "ok", "tenant_id": invite["tenant_id"]}
 
@@ -312,12 +382,16 @@ def update_member_role(
     tenant: TenantContext = Depends(get_tenant_context),
 ) -> dict[str, str]:
     if not tenant.is_admin:
-        raise HTTPException(status.HTTP_403_FORBIDDEN, detail="Admin role required")
+        raise AkaraHTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            code="FORBIDDEN",
+            message="Admin role required",
+        )
 
     supa = get_supabase_service_client()
-    supa.table("profiles").update({"role": body.role}).eq(
-        "id", str(member_id)
-    ).eq("tenant_id", str(tenant.tenant_id)).execute()
+    supa.table("profiles").update({"role": body.role}).eq("id", str(member_id)).eq(
+        "tenant_id", str(tenant.tenant_id)
+    ).execute()
     return {"status": "ok"}
 
 
@@ -330,7 +404,11 @@ def remove_member(
     tenant: TenantContext = Depends(get_tenant_context),
 ) -> None:
     if not tenant.is_admin:
-        raise HTTPException(status.HTTP_403_FORBIDDEN, detail="Admin role required")
+        raise AkaraHTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            code="FORBIDDEN",
+            message="Admin role required",
+        )
 
     supa = get_supabase_service_client()
     admins = (
@@ -343,12 +421,18 @@ def remove_member(
     )
     admin_ids = {r["id"] for r in (admins.data or [])}
     if str(member_id) in admin_ids and len(admin_ids) <= 1:
-        raise HTTPException(status.HTTP_400_BAD_REQUEST, detail="Cannot remove the last admin")
+        raise AkaraHTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            code="VALIDATION_ERROR",
+            message="Cannot remove the last admin",
+        )
 
-    supa.table("profiles").update({
-        "membership_status": "suspended",
-        "tenant_id": None,
-    }).eq("id", str(member_id)).eq("tenant_id", str(tenant.tenant_id)).execute()
+    supa.table("profiles").update(
+        {
+            "membership_status": "suspended",
+            "tenant_id": None,
+        }
+    ).eq("id", str(member_id)).eq("tenant_id", str(tenant.tenant_id)).execute()
 
 
 @router.post("/downgrade-seat-selection")
@@ -360,7 +444,11 @@ def downgrade_seat_selection(
     tenant: TenantContext = Depends(get_tenant_context),
 ) -> dict[str, str]:
     if not tenant.is_admin:
-        raise HTTPException(status.HTTP_403_FORBIDDEN, detail="Admin role required")
+        raise AkaraHTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            code="FORBIDDEN",
+            message="Admin role required",
+        )
 
     supa = get_supabase_service_client()
     keep = {str(uid) for uid in body.keep_user_ids}
@@ -375,7 +463,9 @@ def downgrade_seat_selection(
         mid = row["id"]
         if mid in keep:
             continue
-        supa.table("profiles").update({"membership_status": "seat_locked"}).eq("id", mid).execute()
+        supa.table("profiles").update({"membership_status": "seat_locked"}).eq(
+            "id", mid
+        ).execute()
     return {"status": "ok"}
 
 
@@ -388,13 +478,23 @@ def reactivate_member(
     tenant: TenantContext = Depends(get_tenant_context),
 ) -> dict[str, str]:
     if not tenant.is_admin:
-        raise HTTPException(status.HTTP_403_FORBIDDEN, detail="Admin role required")
+        raise AkaraHTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            code="FORBIDDEN",
+            message="Admin role required",
+        )
 
     supa = get_supabase_service_client()
-    occupied = supa.rpc("count_occupied_seats", {"p_tenant_id": str(tenant.tenant_id)}).execute()
+    occupied = supa.rpc(
+        "count_occupied_seats", {"p_tenant_id": str(tenant.tenant_id)}
+    ).execute()
     seat_limit = _seat_limit(tenant)
-    if int((occupied.data or 0)) >= seat_limit:
-        raise HTTPException(status.HTTP_402_PAYMENT_REQUIRED, detail="No seats available")
+    if int(occupied.data or 0) >= seat_limit:
+        raise AkaraHTTPException(
+            status_code=status.HTTP_402_PAYMENT_REQUIRED,
+            code="QUOTA_EXCEEDED",
+            message="No seats available",
+        )
 
     supa.table("profiles").update({"membership_status": "active"}).eq(
         "id", str(member_id)

@@ -5,7 +5,6 @@ from __future__ import annotations
 from contextlib import ExitStack
 from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock, patch
-
 from uuid import UUID
 
 import openai
@@ -25,7 +24,9 @@ def authed_copilot_client() -> TestClient:
     from app.core.tenant import TenantContext, get_tenant_context
     from app.main import app
 
-    fake_user = AuthenticatedUser(user_id=USER_PRO, email="pro@akara.test", role="admin")
+    fake_user = AuthenticatedUser(
+        user_id=USER_PRO, email="pro@akara.test", role="admin"
+    )
     fake_tenant = TenantContext(
         tenant_id=TENANT_PRO,
         role="admin",
@@ -61,9 +62,7 @@ def _mock_copilot_supabase(*, feedback_rows: list | None = None) -> MagicMock:
     def table_side(name: str) -> MagicMock:
         m = MagicMock()
         if name == "import_jobs":
-            m.select.return_value.eq.return_value.eq.return_value.order.return_value.limit.return_value = (
-                import_chain
-            )
+            m.select.return_value.eq.return_value.eq.return_value.order.return_value.limit.return_value = import_chain
         elif name == "copilot_feedback":
             return feedback_table
         elif name == "conversations":
@@ -88,7 +87,9 @@ def _mock_agent_result(**overrides) -> CopilotResponse:
         "question": "What was the revenue in Q1?",
         "intent": "revenue_query",
         "response": "Revenue for Q1 was ₹45L",
-        "sql_queries_run": ["SELECT SUM(total_amount) FROM sales WHERE date >= '2024-01-01'"],
+        "sql_queries_run": [
+            "SELECT SUM(total_amount) FROM sales WHERE date >= '2024-01-01'"
+        ],
         "llm_model": "test-model",
         "response_time_ms": 120,
     }
@@ -99,7 +100,9 @@ def _mock_agent_result(**overrides) -> CopilotResponse:
 def _patch_copilot_stack(mock_build_agent, mock_supa):
     """Common patches for /copilot/chat non-streaming tests."""
     return [
-        patch("app.core.plan_guard._get_current_usage", return_value={"copilot_calls": 5}),
+        patch(
+            "app.core.plan_guard._get_current_usage", return_value={"copilot_calls": 5}
+        ),
         patch("app.api.v1.copilot.get_supabase_service_client", return_value=mock_supa),
         patch("app.api.v1.copilot.SchemaDiscovery"),
         patch("app.api.v1.copilot.PromptGenerator"),
@@ -119,10 +122,16 @@ class TestCopilotChat:
         mock_supa = _mock_copilot_supabase()
 
         with ExitStack() as stack:
-            for p in _patch_copilot_stack(MagicMock(return_value=mock_agent), mock_supa):
+            for p in _patch_copilot_stack(
+                MagicMock(return_value=mock_agent), mock_supa
+            ):
                 stack.enter_context(p)
-            mock_schema = stack.enter_context(patch("app.api.v1.copilot.SchemaDiscovery"))
-            mock_prompt = stack.enter_context(patch("app.api.v1.copilot.PromptGenerator"))
+            mock_schema = stack.enter_context(
+                patch("app.api.v1.copilot.SchemaDiscovery")
+            )
+            mock_prompt = stack.enter_context(
+                patch("app.api.v1.copilot.PromptGenerator")
+            )
             mock_schema.return_value.get_columns.return_value = ["total_amount"]
             mock_schema.return_value.get_allowed_vocabulary.return_value = []
             mock_prompt.return_value.build_schema_context.return_value = "schema ctx"
@@ -152,10 +161,16 @@ class TestCopilotChat:
         mock_supa = _mock_copilot_supabase()
 
         with ExitStack() as stack:
-            for p in _patch_copilot_stack(MagicMock(return_value=mock_agent), mock_supa):
+            for p in _patch_copilot_stack(
+                MagicMock(return_value=mock_agent), mock_supa
+            ):
                 stack.enter_context(p)
-            mock_schema = stack.enter_context(patch("app.api.v1.copilot.SchemaDiscovery"))
-            mock_prompt = stack.enter_context(patch("app.api.v1.copilot.PromptGenerator"))
+            mock_schema = stack.enter_context(
+                patch("app.api.v1.copilot.SchemaDiscovery")
+            )
+            mock_prompt = stack.enter_context(
+                patch("app.api.v1.copilot.PromptGenerator")
+            )
             mock_schema.return_value.get_columns.return_value = ["total_amount"]
             mock_schema.return_value.get_allowed_vocabulary.return_value = []
             mock_prompt.return_value.build_schema_context.return_value = "schema ctx"
@@ -186,10 +201,16 @@ class TestLLMDegradation:
         mock_supa = _mock_copilot_supabase()
 
         with ExitStack() as stack:
-            for p in _patch_copilot_stack(MagicMock(return_value=mock_agent), mock_supa):
+            for p in _patch_copilot_stack(
+                MagicMock(return_value=mock_agent), mock_supa
+            ):
                 stack.enter_context(p)
-            mock_schema = stack.enter_context(patch("app.api.v1.copilot.SchemaDiscovery"))
-            mock_prompt = stack.enter_context(patch("app.api.v1.copilot.PromptGenerator"))
+            mock_schema = stack.enter_context(
+                patch("app.api.v1.copilot.SchemaDiscovery")
+            )
+            mock_prompt = stack.enter_context(
+                patch("app.api.v1.copilot.PromptGenerator")
+            )
             mock_schema.return_value.get_columns.return_value = []
             mock_schema.return_value.get_allowed_vocabulary.return_value = []
             mock_prompt.return_value.build_schema_context.return_value = ""
@@ -203,9 +224,11 @@ class TestLLMDegradation:
             )
 
         assert response.status_code == 503
-        detail = response.json()["detail"]
-        assert detail["error"] == "ai_rate_limited"
-        assert "temporarily busy" in detail["message"]
+        body = response.json()
+        assert body["ok"] is False
+        assert body["code"] == "LLM_UNAVAILABLE"
+        assert "temporarily busy" in body["message"]
+        assert body["detail"]["retry_after"] == 30
 
     def test_llm_server_error_503(self, authed_copilot_client):
         mock_agent = MagicMock()
@@ -219,10 +242,16 @@ class TestLLMDegradation:
         mock_supa = _mock_copilot_supabase()
 
         with ExitStack() as stack:
-            for p in _patch_copilot_stack(MagicMock(return_value=mock_agent), mock_supa):
+            for p in _patch_copilot_stack(
+                MagicMock(return_value=mock_agent), mock_supa
+            ):
                 stack.enter_context(p)
-            mock_schema = stack.enter_context(patch("app.api.v1.copilot.SchemaDiscovery"))
-            mock_prompt = stack.enter_context(patch("app.api.v1.copilot.PromptGenerator"))
+            mock_schema = stack.enter_context(
+                patch("app.api.v1.copilot.SchemaDiscovery")
+            )
+            mock_prompt = stack.enter_context(
+                patch("app.api.v1.copilot.PromptGenerator")
+            )
             mock_schema.return_value.get_columns.return_value = []
             mock_schema.return_value.get_allowed_vocabulary.return_value = []
             mock_prompt.return_value.build_schema_context.return_value = ""
@@ -236,18 +265,28 @@ class TestLLMDegradation:
             )
 
         assert response.status_code == 503
-        assert response.json()["detail"]["error"] == "ai_unavailable"
+        body = response.json()
+        assert body["ok"] is False
+        assert body["code"] == "LLM_UNAVAILABLE"
 
     def test_llm_timeout_error(self, authed_copilot_client):
         mock_agent = MagicMock()
-        mock_agent.answer = AsyncMock(side_effect=openai.APITimeoutError("Request timeout"))
+        mock_agent.answer = AsyncMock(
+            side_effect=openai.APITimeoutError("Request timeout")
+        )
         mock_supa = _mock_copilot_supabase()
 
         with ExitStack() as stack:
-            for p in _patch_copilot_stack(MagicMock(return_value=mock_agent), mock_supa):
+            for p in _patch_copilot_stack(
+                MagicMock(return_value=mock_agent), mock_supa
+            ):
                 stack.enter_context(p)
-            mock_schema = stack.enter_context(patch("app.api.v1.copilot.SchemaDiscovery"))
-            mock_prompt = stack.enter_context(patch("app.api.v1.copilot.PromptGenerator"))
+            mock_schema = stack.enter_context(
+                patch("app.api.v1.copilot.SchemaDiscovery")
+            )
+            mock_prompt = stack.enter_context(
+                patch("app.api.v1.copilot.PromptGenerator")
+            )
             mock_schema.return_value.get_columns.return_value = []
             mock_schema.return_value.get_allowed_vocabulary.return_value = []
             mock_prompt.return_value.build_schema_context.return_value = ""
@@ -261,7 +300,7 @@ class TestLLMDegradation:
             )
 
         assert response.status_code == 504
-        assert "taking too long" in response.json()["detail"]["message"]
+        assert "taking too long" in response.json()["message"]
 
     def test_llm_general_server_error_5xx(self, authed_copilot_client):
         mock_agent = MagicMock()
@@ -275,10 +314,16 @@ class TestLLMDegradation:
         mock_supa = _mock_copilot_supabase()
 
         with ExitStack() as stack:
-            for p in _patch_copilot_stack(MagicMock(return_value=mock_agent), mock_supa):
+            for p in _patch_copilot_stack(
+                MagicMock(return_value=mock_agent), mock_supa
+            ):
                 stack.enter_context(p)
-            mock_schema = stack.enter_context(patch("app.api.v1.copilot.SchemaDiscovery"))
-            mock_prompt = stack.enter_context(patch("app.api.v1.copilot.PromptGenerator"))
+            mock_schema = stack.enter_context(
+                patch("app.api.v1.copilot.SchemaDiscovery")
+            )
+            mock_prompt = stack.enter_context(
+                patch("app.api.v1.copilot.PromptGenerator")
+            )
             mock_schema.return_value.get_columns.return_value = []
             mock_schema.return_value.get_allowed_vocabulary.return_value = []
             mock_prompt.return_value.build_schema_context.return_value = ""
@@ -292,7 +337,9 @@ class TestLLMDegradation:
             )
 
         assert response.status_code == 503
-        assert response.json()["detail"]["error"] == "ai_unavailable"
+        body = response.json()
+        assert body["ok"] is False
+        assert body["code"] == "LLM_UNAVAILABLE"
 
     def test_quota_not_incremented_on_llm_failure(self, authed_copilot_client):
         mock_agent = MagicMock()
@@ -306,10 +353,16 @@ class TestLLMDegradation:
         mock_supa = _mock_copilot_supabase()
 
         with ExitStack() as stack:
-            for p in _patch_copilot_stack(MagicMock(return_value=mock_agent), mock_supa):
+            for p in _patch_copilot_stack(
+                MagicMock(return_value=mock_agent), mock_supa
+            ):
                 stack.enter_context(p)
-            mock_schema = stack.enter_context(patch("app.api.v1.copilot.SchemaDiscovery"))
-            mock_prompt = stack.enter_context(patch("app.api.v1.copilot.PromptGenerator"))
+            mock_schema = stack.enter_context(
+                patch("app.api.v1.copilot.SchemaDiscovery")
+            )
+            mock_prompt = stack.enter_context(
+                patch("app.api.v1.copilot.PromptGenerator")
+            )
             mock_schema.return_value.get_columns.return_value = []
             mock_schema.return_value.get_allowed_vocabulary.return_value = []
             mock_prompt.return_value.build_schema_context.return_value = ""
@@ -340,10 +393,16 @@ class TestLLMDegradation:
         mock_supa = _mock_copilot_supabase()
 
         with ExitStack() as stack:
-            for p in _patch_copilot_stack(MagicMock(return_value=mock_agent), mock_supa):
+            for p in _patch_copilot_stack(
+                MagicMock(return_value=mock_agent), mock_supa
+            ):
                 stack.enter_context(p)
-            mock_schema = stack.enter_context(patch("app.api.v1.copilot.SchemaDiscovery"))
-            mock_prompt = stack.enter_context(patch("app.api.v1.copilot.PromptGenerator"))
+            mock_schema = stack.enter_context(
+                patch("app.api.v1.copilot.SchemaDiscovery")
+            )
+            mock_prompt = stack.enter_context(
+                patch("app.api.v1.copilot.PromptGenerator")
+            )
             mock_schema.return_value.get_columns.return_value = []
             mock_schema.return_value.get_allowed_vocabulary.return_value = []
             mock_prompt.return_value.build_schema_context.return_value = ""
@@ -451,8 +510,8 @@ class TestCopilotFeedback:
         self, mock_supa_fn, authed_copilot_client, mock_conversation_id, mock_message_id
     ):
         mock_supa = MagicMock()
-        mock_supa.table.return_value.insert.return_value.execute.side_effect = Exception(
-            "Database error"
+        mock_supa.table.return_value.insert.return_value.execute.side_effect = (
+            Exception("Database error")
         )
         mock_supa_fn.return_value = mock_supa
 
@@ -505,10 +564,16 @@ class TestDataProvenance:
                     },
                 )
             )
-            for p in _patch_copilot_stack(MagicMock(return_value=mock_agent), mock_supa):
+            for p in _patch_copilot_stack(
+                MagicMock(return_value=mock_agent), mock_supa
+            ):
                 stack.enter_context(p)
-            mock_schema = stack.enter_context(patch("app.api.v1.copilot.SchemaDiscovery"))
-            mock_prompt = stack.enter_context(patch("app.api.v1.copilot.PromptGenerator"))
+            mock_schema = stack.enter_context(
+                patch("app.api.v1.copilot.SchemaDiscovery")
+            )
+            mock_prompt = stack.enter_context(
+                patch("app.api.v1.copilot.PromptGenerator")
+            )
             mock_schema.return_value.get_columns.return_value = ["total_amount"]
             mock_schema.return_value.get_allowed_vocabulary.return_value = []
             mock_prompt.return_value.build_schema_context.return_value = "schema"
@@ -548,10 +613,16 @@ class TestDataProvenance:
                     },
                 )
             )
-            for p in _patch_copilot_stack(MagicMock(return_value=mock_agent), mock_supa):
+            for p in _patch_copilot_stack(
+                MagicMock(return_value=mock_agent), mock_supa
+            ):
                 stack.enter_context(p)
-            mock_schema = stack.enter_context(patch("app.api.v1.copilot.SchemaDiscovery"))
-            mock_prompt = stack.enter_context(patch("app.api.v1.copilot.PromptGenerator"))
+            mock_schema = stack.enter_context(
+                patch("app.api.v1.copilot.SchemaDiscovery")
+            )
+            mock_prompt = stack.enter_context(
+                patch("app.api.v1.copilot.PromptGenerator")
+            )
             mock_schema.return_value.get_columns.return_value = []
             mock_schema.return_value.get_allowed_vocabulary.return_value = []
             mock_prompt.return_value.build_schema_context.return_value = ""
@@ -621,10 +692,16 @@ class TestDataProvenance:
                     },
                 )
             )
-            for p in _patch_copilot_stack(MagicMock(return_value=mock_agent), mock_supa):
+            for p in _patch_copilot_stack(
+                MagicMock(return_value=mock_agent), mock_supa
+            ):
                 stack.enter_context(p)
-            mock_schema = stack.enter_context(patch("app.api.v1.copilot.SchemaDiscovery"))
-            mock_prompt = stack.enter_context(patch("app.api.v1.copilot.PromptGenerator"))
+            mock_schema = stack.enter_context(
+                patch("app.api.v1.copilot.SchemaDiscovery")
+            )
+            mock_prompt = stack.enter_context(
+                patch("app.api.v1.copilot.PromptGenerator")
+            )
             mock_schema.return_value.get_columns.return_value = ["product_name"]
             mock_schema.return_value.get_allowed_vocabulary.return_value = []
             mock_prompt.return_value.build_schema_context.return_value = ""
@@ -634,7 +711,10 @@ class TestDataProvenance:
 
             response = authed_copilot_client.post(
                 "/copilot/chat",
-                json={"question": "What are the top 10 products by revenue?", "stream": False},
+                json={
+                    "question": "What are the top 10 products by revenue?",
+                    "stream": False,
+                },
             )
 
         assert response.status_code == 200
@@ -661,7 +741,9 @@ class TestConversationManagement:
         assert "deleted_at" in update_call[0][0]
 
     @patch("app.api.v1.conversations.get_supabase_service_client")
-    def test_conversation_list_excludes_deleted(self, mock_supa_fn, authed_copilot_client):
+    def test_conversation_list_excludes_deleted(
+        self, mock_supa_fn, authed_copilot_client
+    ):
         supa = MagicMock()
         rpc_chain = MagicMock()
         rpc_chain.execute.return_value = MagicMock(

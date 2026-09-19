@@ -6,10 +6,11 @@ import logging
 from datetime import datetime
 from uuid import UUID
 
-from fastapi import APIRouter, HTTPException, Request, Response, status
+from fastapi import APIRouter, Request, Response, status
 from pydantic import BaseModel
 
 from app.core.auth import CurrentUser
+from app.core.errors import AkaraHTTPException
 from app.core.rate_limit import limiter
 from app.core.tenant import TenantCtx, get_supabase_service_client
 from app.domain.debrief.metadata_enrich import enrich_debrief_metadata
@@ -58,7 +59,11 @@ async def generate_debrief(
 ) -> DebriefGenerateResponse:
     """Generate this week's debrief if missing. No-op when one already exists."""
     if tenant.role not in ("admin", "superadmin"):
-        raise HTTPException(status.HTTP_403_FORBIDDEN, detail="Admin access required")
+        raise AkaraHTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            code="FORBIDDEN",
+            message="Admin access required",
+        )
 
     service = WeeklyDebriefService(supabase=get_supabase_service_client())
     result = await service.generate_for_tenant(
@@ -80,7 +85,9 @@ async def generate_debrief(
 
 @router.get("/latest", response_model=DebriefDetail)
 @limiter.limit("30/minute")
-def get_latest_debrief(request: Request, user: CurrentUser, tenant: TenantCtx) -> DebriefDetail:
+def get_latest_debrief(
+    request: Request, user: CurrentUser, tenant: TenantCtx
+) -> DebriefDetail:
     supa = get_supabase_service_client()
     result = (
         supa.table("generated_reports")
@@ -92,8 +99,10 @@ def get_latest_debrief(request: Request, user: CurrentUser, tenant: TenantCtx) -
         .execute()
     )
     if not result.data:
-        raise HTTPException(
+        raise AkaraHTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
+            code="NOT_FOUND",
+            message="No weekly debrief yet",
             detail={"code": "no_debrief_yet", "message": "No weekly debrief yet"},
         )
     row = result.data[0]
@@ -112,7 +121,9 @@ def get_latest_debrief(request: Request, user: CurrentUser, tenant: TenantCtx) -
 
 @router.get("", response_model=list[DebriefSummary])
 @limiter.limit("30/minute")
-def list_debriefs(request: Request, user: CurrentUser, tenant: TenantCtx) -> list[DebriefSummary]:
+def list_debriefs(
+    request: Request, user: CurrentUser, tenant: TenantCtx
+) -> list[DebriefSummary]:
     supa = get_supabase_service_client()
     result = (
         supa.table("generated_reports")
@@ -159,7 +170,11 @@ def get_debrief(
         .execute()
     )
     if not result.data:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Report not found")
+        raise AkaraHTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            code="NOT_FOUND",
+            message="Report not found",
+        )
     row = result.data
     meta = enrich_debrief_metadata(
         row.get("metadata") or {},
@@ -193,7 +208,11 @@ def download_debrief_pdf(
         .execute()
     )
     if not result.data:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Report not found")
+        raise AkaraHTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            code="NOT_FOUND",
+            message="Report not found",
+        )
 
     meta = enrich_debrief_metadata(
         result.data.get("metadata") or {},

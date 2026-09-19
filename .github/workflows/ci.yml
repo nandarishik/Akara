@@ -35,6 +35,22 @@ jobs:
       - name: Ruff format check
         run: uv run ruff format --check .
 
+      - name: Lint imports
+        working-directory: backend
+        run: uv run lint-imports
+
+      - name: Check OpenAPI spec is committed
+        working-directory: backend
+        run: |
+          uv run python -c "
+          import json
+          from app.main import app
+          spec = app.openapi()
+          with open('../docs/openapi.json') as f:
+              committed = json.load(f)
+          assert spec == committed, 'OpenAPI spec has changed. Regenerate docs/openapi.json and commit.'
+          "
+
       - name: Run tests with coverage
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}

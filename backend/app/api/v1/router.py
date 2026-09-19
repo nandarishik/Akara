@@ -1,4 +1,4 @@
-"""Aggregate customer-facing v1 routers (URL paths unchanged — no /v1 prefix yet)."""
+"""Aggregate customer-facing v1 routers with unversioned compatibility aliases."""
 
 from fastapi import APIRouter
 
@@ -22,22 +22,29 @@ from app.api.v1 import (
     team,
 )
 
-router = APIRouter()
 
-router.include_router(health.router)
-router.include_router(auth.router)
-router.include_router(billing.router)
-router.include_router(onboarding.router)
-router.include_router(marketing.router)
-router.include_router(public_routes.router)
-router.include_router(alerts.router)
-router.include_router(copilot.router)
-router.include_router(conversations.router)
-router.include_router(kpi.router)
-router.include_router(data.router)
-router.include_router(reports.router)
-router.include_router(debrief.router)
-router.include_router(team.router)
-router.include_router(account.router)
-router.include_router(simulator.router)
-router.include_router(system.router)
+def _mount_customer_routers(target: APIRouter) -> None:
+    target.include_router(health.router)
+    target.include_router(auth.router)
+    target.include_router(billing.router)
+    target.include_router(onboarding.router)
+    target.include_router(marketing.router)
+    target.include_router(public_routes.router)
+    target.include_router(alerts.router)
+    target.include_router(copilot.router)
+    target.include_router(conversations.router)
+    target.include_router(kpi.router)
+    target.include_router(data.router)
+    target.include_router(reports.router)
+    target.include_router(debrief.router)
+    target.include_router(team.router)
+    target.include_router(account.router)
+    target.include_router(simulator.router)
+    target.include_router(system.router)
+
+
+router = APIRouter(prefix="/v1")
+_mount_customer_routers(router)
+
+compat_router = APIRouter()
+_mount_customer_routers(compat_router)
