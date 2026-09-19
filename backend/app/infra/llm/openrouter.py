@@ -32,6 +32,8 @@ class OpenRouterClient:
             "HTTP-Referer": "https://akara.ai",
             "X-Title": "AKARA Analytics",
         }
+        self.last_input_tokens = 0
+        self.last_output_tokens = 0
 
     def _build_payload(self, prompt: str, system: str, stream: bool) -> dict:
         messages: list[dict] = []
@@ -54,6 +56,9 @@ class OpenRouterClient:
             )
             response.raise_for_status()
             data = response.json()
+            usage = data.get("usage") or {}
+            self.last_input_tokens = int(usage.get("prompt_tokens") or 0)
+            self.last_output_tokens = int(usage.get("completion_tokens") or 0)
             return data["choices"][0]["message"]["content"]
 
     async def stream(

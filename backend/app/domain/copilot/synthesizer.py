@@ -55,6 +55,14 @@ class Synthesizer:
     def __init__(self, llm: LLMManager) -> None:
         self._llm = llm
 
+    @property
+    def last_input_tokens(self) -> int:
+        return getattr(self._llm, "last_input_tokens", 0)
+
+    @property
+    def last_output_tokens(self) -> int:
+        return getattr(self._llm, "last_output_tokens", 0)
+
     def _build_prompt(
         self,
         question: str,

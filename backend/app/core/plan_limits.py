@@ -1,3 +1,7 @@
+# RUNTIME_SOURCE_OF_TRUTH (AD-P01-003)
+# This module is the runtime source of truth for quota and feature checks.
+# app.infra.catalog.plan_catalog_service is display/sync only. Do not reverse that.
+
 """Plan limits — single source of truth for AKARA's Free / Pro / Business plans.
 
 Every quota check, feature gate, and billing UI reads from this module.

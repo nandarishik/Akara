@@ -580,8 +580,8 @@ class TestDataProvenance:
         mock_supa_fn.return_value = supa
 
         result = SimpleNamespace(
-            sql_executed="SELECT * FROM sales WHERE date >= '2024-01-01'",
-            rows_analyzed=1247,
+            sql_queries_run=["SELECT * FROM sales WHERE date >= '2024-01-01'"],
+            row_count=1247,
         )
 
         provenance = _extract_provenance(result, supa, TENANT_PRO)

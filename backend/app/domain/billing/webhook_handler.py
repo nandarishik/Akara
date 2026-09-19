@@ -348,7 +348,7 @@ def handle_payment_succeeded(payment: dict[str, Any], subscription: dict[str, An
         .maybe_single()
         .execute()
     )
-    if existing is None or not existing.data:
+    if existing is not None and existing.data:
         return True
 
     amount = payment.get("amount") or payment.get("base_amount") or 0

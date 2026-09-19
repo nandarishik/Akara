@@ -408,7 +408,14 @@ def execute_runbook(name: str, body: RunbookRequest, request: Request, sudo: Sud
     try: get_supabase_service_client().table("runbook_executions").insert(execution).execute()
     except Exception: logger.warning("runbook execution record write failed", exc_info=True)
     audit = record_operation(action=f"runbook.execute:{name}", actor_id=sudo.user_id, actor_email=sudo.email, reason=body.reason, operation_id=op_id, details={"parameters": body.parameters, "reversible": definition["reversible"]}, **request_actor_meta(request))
-    return {"ok": True, "operation_id": str(op_id), "execution": execution, "audit": audit}
+    return {
+        "ok": True,
+        "operation_id": str(op_id),
+        "execution": execution,
+        "audit": audit,
+        "status": "queued",
+        "warning": "Runbook execution is not yet operational. No worker is processing this queue.",
+    }
 
 
 @router.get("/runbooks/executions/{execution_id}")

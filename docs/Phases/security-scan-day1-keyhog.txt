@@ -1,0 +1,6 @@
+TOOL_NOT_INSTALLED: keyhog
+Attempted: uv tool install keyhog (not on PyPI); pip install keyhog (no distribution); cargo install (cargo not on PATH).
+KeyHog is a Rust binary (https://github.com/santhsecurity/keyhog). Install via official installer or cargo when available, then re-run: keyhog scan --git-history .
+Gate status: Unverified — tool not installed: keyhog
+Date: 2026-09-19
+SHA: caac39f / phase/01-dev-2-truth-baseline
