@@ -55,3 +55,16 @@ def resolve_date_range_for_question(
     if clamped_start > clamped_end:
         return available_range[0], available_range[1]
     return clamped_start.isoformat(), clamped_end.isoformat()
+
+
+def compute_copilot_date_range(
+    actual_range: tuple[str, str] | None,
+    *,
+    today: date | None = None,
+    fallback_start: str = "2024-01-01",
+) -> tuple[str, str]:
+    """Bound copilot queries: min available start (or fallback) through today."""
+    end = (today or date.today()).isoformat()
+    if actual_range is not None and actual_range[0]:
+        return (actual_range[0], end)
+    return (fallback_start, end)
