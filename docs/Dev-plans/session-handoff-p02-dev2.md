@@ -60,7 +60,7 @@ DEV1 merge: kept Phase 1 lazy-import comment in `backend/app/infra/email/rendere
 
 ## HEAD
 
-Integration HEAD: `51296e41c9865ee65c6bd757f678cbc7a557d740`
+Integration HEAD: `83b0e7be546ee567b18aecd6af7aec1840032d3f`
 
 ## PR
 
