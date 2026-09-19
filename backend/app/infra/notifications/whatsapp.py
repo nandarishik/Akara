@@ -8,7 +8,6 @@ import httpx
 
 from app.core.config import settings
 from app.infra.notifications.delivery_log import log_delivery
-from app.api.superadmin.templates_control import resolve_template
 
 logger = logging.getLogger(__name__)
 
@@ -43,6 +42,9 @@ async def send_whatsapp_template(
     phone = to_phone.lstrip("+")
     if phone.startswith("91") and len(phone) > 10:
         phone = phone[2:]
+
+    # Lazy import: templates_control → superadmin package → debrief → whatsapp (Day 11 cycle).
+    from app.api.superadmin.templates_control import resolve_template
 
     controlled, used_fallback = resolve_template(
         template_name,
