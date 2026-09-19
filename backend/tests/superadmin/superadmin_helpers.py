@@ -32,6 +32,7 @@ SUPABASE_CLIENT_PATHS = [
     "app.api.superadmin.system.get_supabase_service_client",
     "app.api.superadmin.sudo.get_supabase_service_client",
     "app.domain.superadmin.audit.get_supabase_service_client",
+    "app.domain.superadmin.revenue.get_supabase_service_client",
 ]
 
 
@@ -130,6 +131,9 @@ class _FilterTrackingTable:
     def lt(self, *_args, **_kwargs):
         return self
 
+    def lte(self, *_args, **_kwargs):
+        return self
+
     @property
     def not_(self):
         return self
@@ -215,6 +219,7 @@ class QaMatrixSupabase:
         table.select.return_value.limit.return_value.execute.return_value = self._list(
             [self.tenant_row]
         )
+        table.select.return_value.execute.return_value = self._list([self.tenant_row])
         table.select.return_value.eq.return_value.order.return_value.limit.return_value.execute.return_value = (
             self._empty()
         )
@@ -301,7 +306,7 @@ class QaMatrixSupabase:
         if name in ("generated_reports", "delivery_logs", "usage_tracking", "copilot_feedback",
                     "llm_cost_log", "billing_webhook_events", "invoices", "dunning_events",
                     "chat_history", "alert_triggers", "user_events", "secondary_sales_data",
-                    "scheme_master"):
+                    "scheme_master", "revenue_snapshots"):
             return self._empty_table()
 
         # Generic empty table fallback

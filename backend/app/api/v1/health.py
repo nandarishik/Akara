@@ -1,6 +1,6 @@
 """Health and readiness endpoints.
 
-GET /health   — liveness probe: fast, no external calls, used by Railway
+GET /health   — liveness probe (HTTP 200 even on DB blip; additive checks)
 GET /ready    — readiness probe: checks Supabase connectivity, used by CI gate
 GET /version  — returns app metadata without secrets
 """
@@ -10,6 +10,7 @@ from __future__ import annotations
 import logging
 from datetime import UTC, datetime
 
+import httpx
 from fastapi import APIRouter
 from pydantic import BaseModel
 
@@ -19,15 +20,21 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter(tags=["health"])
 
+APP_VERSION = "2.0.0"
+_PROBE_TIMEOUT = 2.0
+
 
 class HealthResponse(BaseModel):
     status: str
     environment: str
     timestamp: str
+    git_sha: str
+    version: str
+    checks: dict[str, str]
 
 
 class ReadinessResponse(BaseModel):
-    status: str          # "ready" | "degraded"
+    status: str  # "ready" | "degraded"
     environment: str
     timestamp: str
     checks: dict[str, str]
@@ -39,15 +46,62 @@ class VersionResponse(BaseModel):
     llm_provider: str
 
 
+def _check_database() -> str:
+    """Service-role SELECT 1 equivalent with a 2s timeout."""
+    base = (settings.supabase_url or "").rstrip("/")
+    key = settings.supabase_service_role_key
+    if not base or not key:
+        return "error"
+    try:
+        response = httpx.get(
+            f"{base}/rest/v1/tenants",
+            params={"select": "id", "limit": "1"},
+            headers={
+                "apikey": key,
+                "Authorization": f"Bearer {key}",
+            },
+            timeout=_PROBE_TIMEOUT,
+        )
+        response.raise_for_status()
+        return "ok"
+    except Exception as exc:
+        logger.warning("Health database check failed: %s", exc)
+        return "error"
+
+
+def _check_supabase_auth() -> str:
+    base = (settings.supabase_url or "").rstrip("/")
+    key = settings.supabase_anon_key or settings.supabase_service_role_key
+    if not base or not key:
+        return "error"
+    try:
+        response = httpx.get(
+            f"{base}/auth/v1/health",
+            headers={"apikey": key},
+            timeout=_PROBE_TIMEOUT,
+        )
+        response.raise_for_status()
+        return "ok"
+    except Exception as exc:
+        logger.warning("Health supabase_auth check failed: %s", exc)
+        return "error"
+
+
 @router.get("/health", response_model=HealthResponse)
 async def liveness() -> HealthResponse:
-    """Fast liveness check — no DB call.
-    Railway and UptimeRobot ping this endpoint.
-    """
+    """Liveness check — always HTTP 200. DB blips become status=degraded."""
+    checks = {
+        "database": _check_database(),
+        "supabase_auth": _check_supabase_auth(),
+    }
+    status = "ok" if all(v == "ok" for v in checks.values()) else "degraded"
     return HealthResponse(
-        status="ok",
+        status=status,
         environment=settings.environment,
         timestamp=datetime.now(UTC).isoformat(),
+        git_sha=settings.git_sha,
+        version=APP_VERSION,
+        checks=checks,
     )
 
 
@@ -64,6 +118,7 @@ async def readiness() -> ReadinessResponse:
     # Check 1: Supabase reachable
     try:
         from app.core.tenant import get_supabase_service_client
+
         client = get_supabase_service_client()
         # Lightweight query — just check the connection works
         client.table("tenants").select("id").limit(1).execute()

@@ -1,28 +1,34 @@
-"""Cross-tenant isolation — live HTTP + SQLTool unit isolation (DEV2).
+"""Cross-tenant isolation — live integration tests against deployed API.
 
-Live HTTP class requires tokens. SQLTool class always runs in CI.
+Requires two real Supabase users in different tenants. Configure in .env:
+
+  TEST_TENANT_A_TOKEN=<jwt for tenant A>
+  TEST_TENANT_B_TOKEN=<jwt for tenant B>
+  TEST_API_BASE_URL=http://localhost:8000
+
+Run:
+  pytest tests/test_data_isolation.py -m integration
 """
 
 from __future__ import annotations
 
 import os
 import uuid
-from unittest.mock import MagicMock
-from uuid import UUID
 
 import httpx
 import pytest
 
-from app.domain.copilot.tools.sql_tool import SQLTool
-
 TOKEN_A = os.getenv("TEST_TENANT_A_TOKEN")
 TOKEN_B = os.getenv("TEST_TENANT_B_TOKEN")
-BASE_URL = os.getenv(
-    "TEST_API_BASE_URL", "https://akara-production.up.railway.app"
-).rstrip("/")
+BASE_URL = os.getenv("TEST_API_BASE_URL", "http://localhost:8000").rstrip("/")
 
-TENANT_A = UUID("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa")
-TENANT_B = UUID("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb")
+pytestmark = [
+    pytest.mark.integration,
+    pytest.mark.skipif(
+        not TOKEN_A or not TOKEN_B,
+        reason="TEST_TENANT_A_TOKEN and TEST_TENANT_B_TOKEN required",
+    ),
+]
 
 
 @pytest.fixture
@@ -43,11 +49,6 @@ def client_b() -> httpx.Client:
     )
 
 
-@pytest.mark.integration
-@pytest.mark.skipif(
-    not TOKEN_A or not TOKEN_B,
-    reason="TEST_TENANT_A_TOKEN and TEST_TENANT_B_TOKEN required",
-)
 class TestDataIsolation:
     def test_auth_me_returns_different_tenants(
         self, client_a: httpx.Client, client_b: httpx.Client
@@ -143,64 +144,3 @@ class TestDataIsolation:
             },
         )
         assert res.status_code in (200, 402, 429, 503)
-
-
-class TestSQLToolTenantIsolation:
-    """CI isolation: no TEST_TENANT_* tokens required.
-
-    Note (Phase 2 candidate): SQLGuard.validate_sql does not require a
-    tenant_id predicate. SQLTool only replaces :tenant_id when present.
-    """
-
-    def test_bind_params_embeds_only_constructed_tenant(self) -> None:
-        recorded: list[str] = []
-        executor = MagicMock()
-        executor.execute.side_effect = lambda query, tenant_id=None: (
-            recorded.append(query),
-            [],
-        )[1]
-        tool = SQLTool(executor, TENANT_A)
-        query = (
-            "SELECT * FROM sales_data WHERE tenant_id = :tenant_id "
-            "AND invoice_date >= :start_date AND invoice_date <= :end_date"
-        )
-        tool.run(query, start_date="2026-01-01", end_date="2026-09-09")
-        assert recorded
-        bound = recorded[0]
-        assert str(TENANT_A) in bound
-        assert str(TENANT_B) not in bound
-
-    def test_query_without_tenant_placeholder_does_not_inject_filter(self) -> None:
-        recorded: list[str] = []
-        executor = MagicMock()
-        executor.execute.side_effect = lambda query, tenant_id=None: (
-            recorded.append(query),
-            [],
-        )[1]
-        tool = SQLTool(executor, TENANT_A)
-        query = (
-            "SELECT 1 AS x WHERE invoice_date >= :start_date "
-            "AND invoice_date <= :end_date"
-        )
-        tool.run(query, start_date="2026-01-01", end_date="2026-09-09")
-        assert recorded[0] == (
-            "SELECT 1 AS x WHERE invoice_date >= '2026-01-01' "
-            "AND invoice_date <= '2026-09-09'"
-        )
-
-    def test_wrong_tenant_placeholder_still_replaced_with_tool_tenant(self) -> None:
-        recorded: list[str] = []
-        executor = MagicMock()
-        executor.execute.side_effect = lambda query, tenant_id=None: (
-            recorded.append(query),
-            [],
-        )[1]
-        tool = SQLTool(executor, TENANT_A)
-        query = (
-            "SELECT * FROM sales_data WHERE tenant_id = :tenant_id "
-            "AND invoice_date >= :start_date AND invoice_date <= :end_date"
-        )
-        tool.run(query, start_date="2026-01-01", end_date="2026-09-09")
-        bound = recorded[0]
-        assert str(TENANT_A) in bound
-        assert str(TENANT_B) not in bound

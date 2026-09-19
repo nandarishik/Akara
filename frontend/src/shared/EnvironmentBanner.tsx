@@ -4,7 +4,9 @@
  * Does not replace SystemBanner / ImpersonationBanner.
  */
 
-export function EnvironmentBanner() {
+import type { ReactElement } from "react"
+
+export function EnvironmentBanner(): ReactElement | null {
   const env = import.meta.env.VITE_ENVIRONMENT as string | undefined
   if (!env || env === "production") {
     return null

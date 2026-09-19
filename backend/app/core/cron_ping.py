@@ -28,25 +28,29 @@ def record_cron_run(
     try:
         from app.core.tenant import get_supabase_service_client
 
-        get_supabase_service_client().table("cron_runs").insert({
-            "task_name": task_name,
-            "status": status,
-            "details": details or {},
-            "started_at": started.isoformat(),
-            "finished_at": finished_at.isoformat(),
-        }).execute()
+        get_supabase_service_client().table("cron_runs").insert(
+            {
+                "task_name": task_name,
+                "status": status,
+                "details": details or {},
+                "started_at": started.isoformat(),
+                "finished_at": finished_at.isoformat(),
+            }
+        ).execute()
     except Exception as exc:
         logger.warning("Could not record cron_run for %s: %s", task_name, exc)
 
 
-def ping_cron_health(job: str, status: str = "ok", details: dict[str, Any] | None = None) -> None:
+def ping_cron_health(
+    job: str, status: str = "ok", details: dict[str, Any] | None = None
+) -> None:
     """Ping HEALTHCHECKS_PING_URL/{job} if configured. Failures are logged only."""
     record_cron_run(job, status=status, details=details)
     base = (settings.healthchecks_ping_url or "").rstrip("/")
     if not base:
         return
     url = f"{base}/{job}" if not base.endswith(job) else base
-    if status == "partial":
+    if status in {"fail", "failed", "partial"}:
         url = f"{url}/fail"
     try:
         httpx.get(url, timeout=10.0).raise_for_status()
