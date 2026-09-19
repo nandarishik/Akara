@@ -1,0 +1,32 @@
+﻿=============
+Import Linter — Phase 2 FIRST SCAN (before ignore_imports)
+=============
+(Captured 2026-09-19 on phase/02-dev-2-modular-foundation)
+
+Analyzed 160 files, 480 dependencies.
+AKARA layer contract — domain cannot import from api BROKEN
+
+app.core is not allowed to import app.domain:
+- app.core.plan_guard -> app.domain.billing.email (l.298)
+
+app.infra is not allowed to import app.domain:
+- app.infra.notifications -> app.domain.billing.email (l.9)
+- app.infra.catalog.plan_catalog_service -> app.domain.billing.checkout (l.257)
+- app.infra.email.morning_brief -> app.domain.insights.engine (l.31)
+- app.infra.email.morning_brief -> app.domain.kpi.service (l.32)
+
+app.core is not allowed to import app.infra:
+- app.core.plan_guard -> app.infra.notifications.delivery_log (l.299)
+- app.core.plan_guard -> app.infra.catalog.plan_catalog_service (l.38, l.59)
+
+app.infra is not allowed to import app.api:
+- app.infra.notifications.whatsapp -> app.api.superadmin.templates_control (l.47)
+- app.infra.prompts.generator -> app.api.superadmin.control_plane (l.5)
+- app.infra.email.renderer -> app.api.superadmin.control_plane (l.33)
+
+Contracts: 0 kept, 1 broken.
+
+=============
+AFTER D2-P02-002 (ignore_imports with # FIXME(phase-3+))
+=============
+uv run lint-imports → Contracts: 1 kept, 0 broken (10 ignored imports). exit 0.

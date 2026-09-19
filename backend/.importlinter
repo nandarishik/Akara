@@ -1,0 +1,26 @@
+[importlinter]
+root_packages =
+    app
+
+[importlinter:contract:layers]
+name = AKARA layer contract — domain cannot import from api
+type = layers
+layers =
+    app.api
+    app.domain
+    app.infra
+    app.core
+independence_leniency = 0
+# FIXME(phase-3+): infra reads published content/templates from api.superadmin; move to domain/infra
+ignore_imports =
+    app.infra.email.renderer -> app.api.superadmin.control_plane
+    app.infra.notifications.whatsapp -> app.api.superadmin.templates_control
+    app.infra.prompts.generator -> app.api.superadmin.control_plane
+    # FIXME(phase-3+): core/infra billing and email couple upward into domain; untangle without behaviour change
+    app.core.plan_guard -> app.domain.billing.email
+    app.core.plan_guard -> app.infra.notifications.delivery_log
+    app.core.plan_guard -> app.infra.catalog.plan_catalog_service
+    app.infra.notifications -> app.domain.billing.email
+    app.infra.catalog.plan_catalog_service -> app.domain.billing.checkout
+    app.infra.email.morning_brief -> app.domain.insights.engine
+    app.infra.email.morning_brief -> app.domain.kpi.service

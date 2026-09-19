@@ -1,0 +1,2 @@
+Betterleaks scoped scan (backend/app, frontend/src, docs). See JSON for details.
+Compare to Phase 1 scoped: no new live committed secrets expected.
