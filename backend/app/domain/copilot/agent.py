@@ -210,5 +210,24 @@ class CopilotAgent:
                 system_addendum=synthesizer_addendum,
                 date_range=date_range,
             )
+        full_response_parts: list[str] = []
         async for chunk in stream:
+            full_response_parts.append(chunk)
             yield chunk
+
+        # Post-stream guardrails (same checks as answer()). Do not skip when sql empty.
+        full_response = "".join(full_response_parts)
+        guardrail_results = run_all_guardrails(
+            question=question,
+            response=full_response,
+            sql_results=all_results,
+            available_columns=available_columns,
+            tenant_date_range=date_range,
+            allowed_terms=allowed_vocabulary,
+        )
+        for gr in guardrail_results:
+            if not gr.passed:
+                logger.warning(
+                    "Stream guardrail failed: %s — %s", gr.check_name, gr.message
+                )
+                yield f"\n\n⚠️ Note: {gr.message}"
