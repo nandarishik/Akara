@@ -129,11 +129,11 @@ Node.js is required only to run `validate-findings.cjs` / `validate-coverage-led
 
 | Field | Value |
 |---|---|
-| **Current phase in progress** | none — Phase 2 landed on `main` @ `e03be63`; next cut is Phase 3 from this tip |
-| **Last phase merged to `main`** | 2 — Modular Foundation (`e03be63`) |
-| **Security baseline SHA** | Phase 2 integration tip included in `e03be63` |
-| **Next gate file to create** | `docs/Dev-plans/security-gate-p03.md` (at Phase 3 start) |
-| **Open programme blockers** | JWT/RLS swap not done. SQLGuard no `tenant_id` predicate. KeyHog still deferred on Windows. Airlock/rlsgrid live DB audits Unverified (tools installed; need disposable DB before staging). |
+| **Current phase in progress** | 3 — Environments/CI/CD on `phase/03-environments-cicd` @ `0dc2067` (not yet on `main`) |
+| **Last phase merged to `main`** | 2 — Modular Foundation (`e03be63` / Living tip `d79479c`) |
+| **Security baseline SHA** | Phase 3 integration tip `0dc2067` (DEV2 then DEV1 `d922de8`) |
+| **Next gate file to create** | `docs/Dev-plans/security-gate-p04.md` (at Phase 4 start; after Phase 3 lands on `main`) |
+| **Open programme blockers** | JWT/RLS swap not done. SQLGuard no `tenant_id` predicate. KeyHog still deferred on Windows. Airlock/rlsgrid live DB Unverified. Phase 3 dashboards (Supabase×3, Vercel×3, healthchecks, Sentry Performance, restore drill, Swazz) BLOCKED on this host — JOINT DoD incomplete. |
 | **Accepted findings still live** | SEC-P01-002 service role. SEC-P01-003/004 Bandit Medium. **SEC-P02-003** compat aliases (remove Phase 5). |
 
 ### Artefact index (append a row when a file is written)
@@ -153,6 +153,12 @@ Node.js is required only to run `validate-findings.cjs` / `validate-coverage-led
 | 2 | `docs/Dev-plans/session-handoff-p02-dev2.md` | written |
 | 2 | `backend/.importlinter` + `docs/Phases/p02-import-violations.txt` | written |
 | 2 | `docs/Phases/stripe-deletion-map.md` / `fmcg-to-cafe-domain.md` | written |
+| 3 | `docs/Phases/security-scan-p03-*` | written (start + end Bandit/pip-audit/Semgrep; KeyHog/Safety/Hadolint/Gitleaks stubs; airlock/rlsgrid Unverified) |
+| 3 | `docs/Dev-plans/security-gate-p03.md` | written |
+| 3 | Cloudflare (`C:\Users\Admin\security-audit-skill\akara\p03-run-1\`) | full quick — 0 confirmed; 4 needs_validation |
+| 3 | `docs/Dev-plans/session-handoff-p03-dev2.md` | written |
+| 3 | CI jobs on tip | `security-static`, `security-dast`, `security-container`, `env-isolation-check`, `deploy-staging`, `deploy-production` (+ existing backend/frontend/e2e/migrations) |
+| 3 | Restore drill | runbook `docs/operations/backup-restore.md`; live insert **failed/BLOCKED** (no staging DB) |
 
 ---
 
@@ -255,17 +261,19 @@ Compare Semgrep HIGH/CRITICAL counts to the previous gate. `sql_tool.py` finding
 
 **Label note:** constitution §21 calls Bandit L1 and Gitleaks L4. Keep those names in `security-gate-p03.md`.
 
+Status (2026-09-19): Integration tip `0dc2067` on `phase/03-environments-cicd` (DEV2 first, then DEV1 `d922de8`). Repo + CI YAML + scanners done. Dashboard/staging JOINT rows remain Unverified/BLOCKED. **Not merged to `main`.**
+
 ### Start
 
-- [ ] Phase 2 Airlock/rlsgrid baseline exists.
-- [ ] Confirm no production Supabase URL in source: `git grep akara-production` → 0.
-- [ ] Seed gate from constitution §28 table (Bandit 0 high, Safety 0 CVE, Semgrep 0 p/fastapi critical, Gitleaks 0, Swazz 0 critical on staging, Trivy 0 CRITICAL image, Hadolint 0 DL3, rlsgrid Phase 3 tables, Razorpay `rzp_live_*` only in production, staging secrets not in dev/CI, restore drill).
+- [x] Phase 2 Airlock/rlsgrid baseline exists (Unverified placeholders).
+- [ ] Confirm no production Supabase URL in source: `git grep akara-production` → 0. (**Partial** — test/.env.example defaults)
+- [x] Seed gate from constitution §28 table (Bandit 0 high, Safety 0 CVE, Semgrep 0 p/fastapi critical, Gitleaks 0, Swazz 0 critical on staging, Trivy 0 CRITICAL image, Hadolint 0 DL3, rlsgrid Phase 3 tables, Razorpay `rzp_live_*` only in production, staging secrets not in dev/CI, restore drill).
 
 ### End
 
-- [ ] Every §28 row checked. Document in `deployment_events` `event_type=security_gate` if that table exists.
-- [ ] Workers still use service role — sequential in combined process; do not add concurrent shared-state workers.
-- [ ] Update Living log: CI job names, first Swazz/Trivy image reports, restore-drill evidence.
+- [x] Every §28 row checked (many Partial/Unverified/Missing — see gate file). `security_gate` event_type vs CHECK mismatch recorded; do not widen CHECK.
+- [x] Workers still use service role — sequential in combined process; do not add concurrent shared-state workers (DEV1 combined cron workers).
+- [x] Update Living log: CI job names, restore-drill evidence (BLOCKED), Airlock/rlsgrid Unverified, Cloudflare p03-run-1.
 
 ---
 
