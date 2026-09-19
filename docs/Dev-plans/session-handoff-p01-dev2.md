@@ -2,7 +2,7 @@
 
 **Developer:** DEV2  
 **Work branch:** `phase/01-dev-2-truth-baseline` (tip before integrate: `318d824`)  
-**Integration branch:** `phase/01-truth-baseline` @ `c7dad6d`  
+**Integration branch:** `phase/01-truth-baseline` @ `bdcd3ec`  
 **Base main:** `caac39f`  
 **DEV1 SHA merged:** `5ce6c10` only (not tip `74aa8eb`)  
 **Date:** 2026-09-19  
@@ -44,12 +44,21 @@
 ## Suite
 
 ```
-cd backend; uv run pytest tests/unit/ -q   # 229 passed, 16 skipped (integration branch)
-cd frontend; npx tsc -b ; node node_modules/vite/bin/vite.js build  # PC-04 via vite (pnpm approve-builds blocks pnpm build wrapper)
+cd backend; uv run pytest tests/unit/ -q
+# → 229 passed, 16 skipped on phase/01-truth-baseline
+
+cd backend; uv run pytest tests/ -q
+# → 390 passed, 23 skipped, 3 failed (env):
+#   - test_placement_impression_http_returns_200 (httpx ConnectError / DNS)
+#   - superadmin QA matrix GET revenue + webhooks/status (RATE_LIMITED 429)
+# Unit + DEV2 exclusive tests are green. Failures are live-network / rate-limit flakes, not DEV2 regressions.
+
+cd frontend; npx tsc -b ; node node_modules/vite/bin/vite.js build
+# → tsc + vite build OK (pnpm build wrapper blocked by approve-builds)
 ```
 
 - `pytest-cov` not installed → agent.py ≥90% coverage not measured; stream guardrail test covers `answer_stream` failure path.
-- `ruff check .` reports many pre-existing findings on DEV1 tree (day11 compact style); not introduced as new product AC for DEV2 exclusive files beyond existing day11 style.
+- `ruff check .` reports many pre-existing findings on DEV1/day11 tree; not introduced as new product AC for DEV2 exclusive files beyond existing day11 style.
 
 ## Constitutional audit (DEV2-relevant)
 
