@@ -42,4 +42,15 @@ Any **new** Critical/High vs this day-one baseline **BLOCKS** merge. Isolation l
 
 ## Per-PR rescan (WP-D2-007)
 
-Fill after DEV2 code: `0 new Critical/High` or STOP.
+Date: 2026-09-19 after DEV2 code on `phase/01-dev-2-truth-baseline`.
+
+| Tool | Day-one | After DEV2 | Delta |
+|---|---|---|---|
+| Bandit High | 0 | 0 | **0 new Critical/High** |
+| Semgrep findings | 0 | 0 (registry, no login) | **0 new Critical/High** |
+| pip-audit | no known vulns | no known vulns | **0 new Critical/High** |
+| KeyHog staged | Unverified | Unverified | tool not installed |
+| Betterleaks / Skylos / OpenTaint / Trivy | Unverified | Unverified | tools not installed |
+| `semgrep p/sql-injection sql_tool.py` | 0 | 0 | not worse |
+
+**Verdict: 0 new Critical/High vs day-one.** Proceed to integration merge.
