@@ -10,10 +10,11 @@ Discount elasticity uses the industry-standard FMCG estimate of -0.3.
 
 import logging
 
-from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi import APIRouter, Depends, Request, status
 from pydantic import BaseModel, Field
 
 from app.core.auth import CurrentUser
+from app.core.errors import AkaraHTTPException
 from app.core.plan_guard import require_feature
 from app.core.rate_limit import limiter
 from app.core.tenant import TenantCtx, get_supabase_service_client
@@ -96,9 +97,10 @@ def run_simulation(
         baseline = projector.get_baseline(tenant_id=tenant.tenant_id)
     except Exception as exc:
         logger.exception("Failed to fetch baseline for simulator")
-        raise HTTPException(
+        raise AkaraHTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Could not load baseline data: {exc}",
+            code="INTERNAL_ERROR",
+            message=f"Could not load baseline data: {exc}",
         ) from exc
 
     scenario = projector.project(

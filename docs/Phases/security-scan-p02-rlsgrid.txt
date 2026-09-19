@@ -1,0 +1,6 @@
+﻿TOOL installed: rlsgrid 0.5.7 (uv tool)
+Unverified — live introspect/check requires rlsgrid.toml + database.
+Command attempted: rlsgrid introspect
+Result: exit 2 — Config not found: rlsgrid.toml
+Do not invent a fake matrix. Init+DB run is Phase 3 staging precondition if still missing.
+Status: Unverified — tool installed; no rlsgrid.toml / DB

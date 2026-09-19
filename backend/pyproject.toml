@@ -59,3 +59,8 @@ testpaths = ["tests"]
 markers = [
     "integration: live tests against deployed API (requires TEST_TENANT_* tokens)",
 ]
+
+[dependency-groups]
+dev = [
+    "import-linter>=2.15",
+]

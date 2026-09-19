@@ -5,12 +5,13 @@ from datetime import UTC, datetime
 from uuid import UUID
 
 import openai
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, Depends, Request
 from fastapi.responses import JSONResponse, StreamingResponse
 from pydantic import BaseModel
 
 from app.core.auth import CurrentUser
 from app.core.config import settings
+from app.core.errors import AkaraHTTPException
 from app.core.plan_guard import (
     apply_copilot_quota_headers,
     get_copilot_quota_metadata,
@@ -94,7 +95,10 @@ def _extract_provenance(result, supabase, tenant_id: UUID) -> dict:
 
             if latest_import.data:
                 from datetime import datetime
-                import_date = datetime.fromisoformat(latest_import.data[0]["created_at"].replace('Z', '+00:00'))
+
+                import_date = datetime.fromisoformat(
+                    latest_import.data[0]["created_at"].replace("Z", "+00:00")
+                )
                 days_ago = (datetime.now(import_date.tzinfo) - import_date).days
 
                 if days_ago == 0:
@@ -116,7 +120,9 @@ def _extract_provenance(result, supabase, tenant_id: UUID) -> dict:
     return provenance
 
 
-def _create_conversation(supabase, tenant_id: UUID, user_id: UUID, question: str) -> UUID | None:
+def _create_conversation(
+    supabase, tenant_id: UUID, user_id: UUID, question: str
+) -> UUID | None:
     """Create a conversation row from the first message."""
     try:
         title = question[:50].strip()
@@ -124,11 +130,13 @@ def _create_conversation(supabase, tenant_id: UUID, user_id: UUID, question: str
             title += "..."
         conv_result = (
             supabase.table("conversations")
-            .insert({
-                "tenant_id": str(tenant_id),
-                "user_id": str(user_id),
-                "title": title,
-            })
+            .insert(
+                {
+                    "tenant_id": str(tenant_id),
+                    "user_id": str(user_id),
+                    "title": title,
+                }
+            )
             .execute()
         )
         return conv_result.data[0]["id"]
@@ -150,17 +158,21 @@ def _save_chat_turn(
     if not conversation_id or not response.strip():
         return
     try:
-        supabase.table("chat_history").insert({
-            "tenant_id": str(tenant_id),
-            "user_id": str(user_id),
-            "conversation_id": str(conversation_id),
-            "question": question,
-            "response": response,
-            "metadata": {},
-        }).execute()
-        supabase.table("conversations").update({
-            "updated_at": datetime.now(UTC).isoformat(),
-        }).eq("id", str(conversation_id)).execute()
+        supabase.table("chat_history").insert(
+            {
+                "tenant_id": str(tenant_id),
+                "user_id": str(user_id),
+                "conversation_id": str(conversation_id),
+                "question": question,
+                "response": response,
+                "metadata": {},
+            }
+        ).execute()
+        supabase.table("conversations").update(
+            {
+                "updated_at": datetime.now(UTC).isoformat(),
+            }
+        ).eq("id", str(conversation_id)).execute()
     except Exception as exc:
         logger.warning("Failed to save chat history: %s", exc)
 
@@ -201,14 +213,15 @@ async def chat(
     # Language addendum is industry-agnostic and always appended last so it
     # takes highest priority in the synthesizer system prompt.
     planner_addendum = prompt_gen.build_planner_addendum(tenant.tenant_config)
-    synthesizer_addendum = (
-        prompt_gen.build_synthesizer_addendum(tenant.tenant_config)
-        + prompt_gen.build_language_addendum(tenant.tenant_config)
-    )
+    synthesizer_addendum = prompt_gen.build_synthesizer_addendum(
+        tenant.tenant_config
+    ) + prompt_gen.build_language_addendum(tenant.tenant_config)
 
     if body.report_id:
         await require_feature("ask_copilot_debrief")(tenant)
-        debrief_addendum = load_debrief_context_addendum(tenant.tenant_id, body.report_id)
+        debrief_addendum = load_debrief_context_addendum(
+            tenant.tenant_id, body.report_id
+        )
         planner_addendum = planner_addendum + debrief_addendum
         synthesizer_addendum = synthesizer_addendum + debrief_addendum
 
@@ -230,7 +243,9 @@ async def chat(
                 if conversation_id:
                     yield (
                         "data: "
-                        + json.dumps({"type": "conversation_id", "id": str(conversation_id)})
+                        + json.dumps(
+                            {"type": "conversation_id", "id": str(conversation_id)}
+                        )
                         + "\n\n"
                     )
 
@@ -251,14 +266,19 @@ async def chat(
                 try:
                     supabase.rpc(
                         "increment_usage",
-                        {"p_tenant_id": str(tenant.tenant_id), "p_field": "copilot_calls"},
+                        {
+                            "p_tenant_id": str(tenant.tenant_id),
+                            "p_field": "copilot_calls",
+                        },
                     ).execute()
                     usage_incremented = True
                     maybe_notify_copilot_quota_threshold(
                         tenant.tenant_id, prev_count, prev_count + 1
                     )
                 except Exception as exc:
-                    logger.warning("Failed to increment copilot usage (stream): %s", exc)
+                    logger.warning(
+                        "Failed to increment copilot usage (stream): %s", exc
+                    )
 
                 _save_chat_turn(
                     supabase,
@@ -272,19 +292,19 @@ async def chat(
             except openai.APIStatusError as e:
                 # Day 4: Graceful LLM degradation
                 if e.status_code == 429:
-                    yield "data: {\"error\": \"ai_rate_limited\", \"message\": \"The AI is temporarily busy. Try again in 30 seconds.\", \"retry_after\": 30}\n\n"
+                    yield 'data: {"error": "ai_rate_limited", "message": "The AI is temporarily busy. Try again in 30 seconds.", "retry_after": 30}\n\n'
                 elif e.status_code >= 500:
                     logger.error("OpenAI server error: %s", e, exc_info=True)
-                    yield "data: {\"error\": \"ai_unavailable\", \"message\": \"The AI copilot is temporarily unavailable. Your dashboard still works. Try again later.\"}\n\n"
+                    yield 'data: {"error": "ai_unavailable", "message": "The AI copilot is temporarily unavailable. Your dashboard still works. Try again later."}\n\n'
                 else:
                     logger.error("OpenAI API error: %s", e, exc_info=True)
-                    yield "data: {\"error\": \"ai_error\", \"message\": \"Sorry, I couldn't process that request. Please try again.\"}\n\n"
+                    yield 'data: {"error": "ai_error", "message": "Sorry, I couldn\'t process that request. Please try again."}\n\n'
             except openai.APITimeoutError as e:
                 logger.error("OpenAI timeout: %s", e, exc_info=True)
-                yield "data: {\"error\": \"ai_timeout\", \"message\": \"This question is taking too long. Try a simpler question.\"}\n\n"
+                yield 'data: {"error": "ai_timeout", "message": "This question is taking too long. Try a simpler question."}\n\n'
             except Exception as exc:
                 logger.error("Copilot stream error: %s", exc, exc_info=True)
-                yield "data: {\"error\": \"unknown\", \"message\": \"Sorry, I couldn't process that request.\"}\n\n"
+                yield 'data: {"error": "unknown", "message": "Sorry, I couldn\'t process that request."}\n\n'
 
             yield "data: [DONE]\n\n"
 
@@ -325,34 +345,39 @@ async def chat(
     except openai.APIStatusError as e:
         # Day 4: Graceful LLM degradation - DO NOT increment quota on failure
         if e.status_code == 429:
-            raise HTTPException(status_code=503, detail={
-                "error": "ai_rate_limited",
-                "message": "The AI is temporarily busy. Try again in 30 seconds.",
-                "retry_after": 30,
-            })
+            raise AkaraHTTPException(
+                status_code=503,
+                code="LLM_UNAVAILABLE",
+                message="The AI is temporarily busy. Try again in 30 seconds.",
+                detail={"retry_after": 30},
+            ) from e
         if e.status_code >= 500:
             logger.error("OpenAI server error: %s", e, exc_info=True)
-            raise HTTPException(status_code=503, detail={
-                "error": "ai_unavailable",
-                "message": "The AI copilot is temporarily unavailable. Your dashboard still works. Try again later.",
-            })
+            raise AkaraHTTPException(
+                status_code=503,
+                code="LLM_UNAVAILABLE",
+                message="The AI copilot is temporarily unavailable. Your dashboard still works. Try again later.",
+            ) from e
         logger.error("OpenAI API error: %s", e, exc_info=True)
-        raise HTTPException(status_code=503, detail={
-            "error": "ai_error",
-            "message": "Sorry, I couldn't process that request. Please try again.",
-        })
+        raise AkaraHTTPException(
+            status_code=503,
+            code="LLM_UNAVAILABLE",
+            message="Sorry, I couldn't process that request. Please try again.",
+        ) from e
     except openai.APITimeoutError as e:
         logger.error("OpenAI timeout: %s", e, exc_info=True)
-        raise HTTPException(status_code=504, detail={
-            "error": "ai_timeout",
-            "message": "This question is taking too long. Try a simpler question.",
-        })
+        raise AkaraHTTPException(
+            status_code=504,
+            code="LLM_UNAVAILABLE",
+            message="This question is taking too long. Try a simpler question.",
+        ) from e
     except Exception as e:
         logger.error("Copilot error: %s", e, exc_info=True)
-        raise HTTPException(status_code=500, detail={
-            "error": "unknown",
-            "message": "Sorry, I couldn't process that request.",
-        })
+        raise AkaraHTTPException(
+            status_code=500,
+            code="INTERNAL_ERROR",
+            message="Sorry, I couldn't process that request.",
+        ) from e
 
     # Log token cost (best-effort; does not fail the request)
     try:
@@ -410,6 +435,7 @@ async def chat(
 # DAY 4: Copilot Feedback Endpoint
 # ============================================================================
 
+
 class FeedbackRequest(BaseModel):
     message_id: str
     rating: int  # 1 for thumbs up, -1 for thumbs down
@@ -433,34 +459,47 @@ async def submit_feedback(
 ) -> FeedbackResponse:
     """
     Submit feedback (thumbs up/down) for a copilot response.
-    
+
     This helps us improve the AI copilot by tracking user satisfaction.
     Thumbs down feedback is logged with high priority for review.
     """
 
     # Validate rating
     if body.rating not in [-1, 1]:
-        raise HTTPException(
+        raise AkaraHTTPException(
             status_code=400,
-            detail="Rating must be 1 (thumbs up) or -1 (thumbs down)"
+            code="VALIDATION_ERROR",
+            message="Rating must be 1 (thumbs up) or -1 (thumbs down)",
         )
 
     supabase = get_supabase_service_client()
 
     try:
         # Insert feedback record
-        feedback_result = supabase.table("copilot_feedback").insert({
-            "conversation_id": str(body.conversation_id) if body.conversation_id else None,
-            "message_id": body.message_id,
-            "tenant_id": str(tenant.tenant_id),
-            "user_id": str(user.user_id),
-            "rating": body.rating,
-            "comment": body.comment,
-            "question": body.question or "",
-        }).execute()
+        feedback_result = (
+            supabase.table("copilot_feedback")
+            .insert(
+                {
+                    "conversation_id": str(body.conversation_id)
+                    if body.conversation_id
+                    else None,
+                    "message_id": body.message_id,
+                    "tenant_id": str(tenant.tenant_id),
+                    "user_id": str(user.user_id),
+                    "rating": body.rating,
+                    "comment": body.comment,
+                    "question": body.question or "",
+                }
+            )
+            .execute()
+        )
 
         if not feedback_result.data:
-            raise HTTPException(status_code=500, detail="Failed to save feedback")
+            raise AkaraHTTPException(
+                status_code=500,
+                code="INTERNAL_ERROR",
+                message="Failed to save feedback",
+            )
 
         # Log thumbs down feedback with high priority for review
         if body.rating == -1:
@@ -476,26 +515,28 @@ async def submit_feedback(
                     "user_id": str(user.user_id),
                     "message_id": str(body.message_id),
                     "feedback_type": "thumbs_down",
-                    "priority": "high"
-                }
+                    "priority": "high",
+                },
             )
-            message = "Thank you for your feedback. We'll use this to improve the AI copilot."
+            message = (
+                "Thank you for your feedback. We'll use this to improve the AI copilot."
+            )
         else:
             logger.info(
                 "POSITIVE FEEDBACK - Tenant: %s, Message: %s",
                 tenant.tenant_id,
-                body.message_id
+                body.message_id,
             )
             message = "Thank you for your positive feedback!"
 
-        return FeedbackResponse(
-            success=True,
-            message=message
-        )
+        return FeedbackResponse(success=True, message=message)
 
+    except AkaraHTTPException:
+        raise
     except Exception as e:
         logger.error("Failed to submit copilot feedback: %s", e, exc_info=True)
-        raise HTTPException(
+        raise AkaraHTTPException(
             status_code=500,
-            detail="Failed to submit feedback. Please try again."
-        )
+            code="INTERNAL_ERROR",
+            message="Failed to submit feedback. Please try again.",
+        ) from e

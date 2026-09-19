@@ -129,12 +129,12 @@ Node.js is required only to run `validate-findings.cjs` / `validate-coverage-led
 
 | Field | Value |
 |---|---|
-| **Current phase in progress** | 1 — Truth Baseline (integration `phase/01-truth-baseline` @ `c7dad6d`; not yet PR'd to main) |
-| **Last phase merged to `main`** | none (main = `caac39f` Day 11) |
-| **Security baseline SHA** | day-one on DEV2: `caac39f` + scans commit `d95e1cc`; integration `c7dad6d` |
-| **Next gate file to create** | `docs/Dev-plans/security-gate-p02.md` (after Phase 1 lands on main) |
-| **Open programme blockers** | JWT/RLS swap not done (ADR-006; constitution FIX-06 is test-only). SQLGuard has no `tenant_id` predicate (do not edit `guard.py` in Phase 1). KeyHog binary not installed on this Windows host. |
-| **Accepted findings still live** | SEC-P01-002 Bandit/design — service role in `tenant.py` (intentional). SEC-P01-003/004 Bandit Medium B104/B608 day-one accepted. |
+| **Current phase in progress** | 2 — Modular Foundation (integration `phase/02-modular-foundation` @ `51296e4`; not yet PR'd to main) |
+| **Last phase merged to `main`** | 1 — Truth Baseline (`255f937`) |
+| **Security baseline SHA** | Phase 1 day-one on main lineage; Phase 2 start scans on `255f937` / end on `51296e4` |
+| **Next gate file to create** | `docs/Dev-plans/security-gate-p03.md` (after Phase 2 lands on main) |
+| **Open programme blockers** | JWT/RLS swap not done. SQLGuard no `tenant_id` predicate. KeyHog still deferred on Windows. Airlock/rlsgrid live DB audits Unverified (tools installed; need disposable DB before staging). |
+| **Accepted findings still live** | SEC-P01-002 service role. SEC-P01-003/004 Bandit Medium. **SEC-P02-003** compat aliases (remove Phase 5). |
 
 ### Artefact index (append a row when a file is written)
 
@@ -145,8 +145,14 @@ Node.js is required only to run `validate-findings.cjs` / `validate-coverage-led
 | 1 | `docs/Phases/security-scan-day1-keyhog.txt` | written (`TOOL_NOT_INSTALLED`) |
 | 1 | `docs/Phases/security-scan-day1-semgrep.json` | written (0 registry findings) |
 | 1 | `docs/Dev-plans/security-gate-p01.md` | written |
-| 1 | Cloudflare audit run dir (`C:\Users\Admin\security-audit-skill\akara\p01-run-1\`) | guidance done; full audit = no OS sandbox → `needs_validation` only (no confirmed high/critical invented) |
+| 1 | Cloudflare audit run dir (`C:\Users\Admin\security-audit-skill\akara\p01-run-1\` / `p01-run-2`) | guidance + full quick (0 confirmed) |
 | 1 | `docs/Dev-plans/session-handoff-p01-dev2.md` | written |
+| 2 | `docs/Phases/security-scan-p02-*` | written (start + end + airlock/rlsgrid Unverified + disclosure) |
+| 2 | `docs/Dev-plans/security-gate-p02.md` | written |
+| 2 | Cloudflare (`C:\Users\Admin\security-audit-skill\akara\p02-run-1\`) | full quick — 0 confirmed |
+| 2 | `docs/Dev-plans/session-handoff-p02-dev2.md` | written |
+| 2 | `backend/.importlinter` + `docs/Phases/p02-import-violations.txt` | written |
+| 2 | `docs/Phases/stripe-deletion-map.md` / `fmcg-to-cafe-domain.md` | written |
 
 ---
 

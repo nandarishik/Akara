@@ -1,10 +1,11 @@
 from datetime import UTC, datetime
 from uuid import UUID
 
-from fastapi import APIRouter, HTTPException, Request, status
+from fastapi import APIRouter, Request, status
 from pydantic import BaseModel
 
 from app.core.auth import CurrentUser
+from app.core.errors import AkaraHTTPException
 from app.core.rate_limit import limiter
 from app.core.tenant import TenantCtx, get_supabase_service_client
 
@@ -50,14 +51,13 @@ def list_conversations(
     # For now, we'll use a direct query if the RPC doesn't handle soft deletes
     try:
         result = supabase.rpc(
-            "get_conversations_with_counts",
-            {"p_user_id": str(user.user_id)}
+            "get_conversations_with_counts", {"p_user_id": str(user.user_id)}
         ).execute()
 
         # Filter out deleted conversations client-side if RPC doesn't handle it
         conversations = result.data or []
         # Filter out any that have deleted_at (if the field is returned)
-        conversations = [conv for conv in conversations if not conv.get('deleted_at')]
+        conversations = [conv for conv in conversations if not conv.get("deleted_at")]
 
         return [ConversationOut(**row) for row in conversations]
     except Exception:
@@ -85,11 +85,13 @@ def create_conversation(
     supabase = get_supabase_service_client()
     result = (
         supabase.table("conversations")
-        .insert({
-            "tenant_id": str(tenant.tenant_id),
-            "user_id": str(user.user_id),
-            "title": body.title,
-        })
+        .insert(
+            {
+                "tenant_id": str(tenant.tenant_id),
+                "user_id": str(user.user_id),
+                "title": body.title,
+            }
+        )
         .execute()
     )
     conv = result.data[0]
@@ -116,7 +118,11 @@ def get_conversation_messages(
         .execute()
     )
     if not conv_check.data:
-        raise HTTPException(status_code=404, detail="Conversation not found")
+        raise AkaraHTTPException(
+            status_code=404,
+            code="NOT_FOUND",
+            message="Conversation not found",
+        )
 
     # Get messages
     result = (
@@ -129,19 +135,23 @@ def get_conversation_messages(
 
     messages = []
     for row in result.data or []:
-        messages.append(MessageOut(
-            id=str(row["id"]),
-            role="user",
-            content=row["question"],
-            created_at=row["created_at"],
-        ))
-        if row["response"]:
-            messages.append(MessageOut(
-                id=f"{row['id']}-assistant",
-                role="assistant",
-                content=row["response"],
+        messages.append(
+            MessageOut(
+                id=str(row["id"]),
+                role="user",
+                content=row["question"],
                 created_at=row["created_at"],
-            ))
+            )
+        )
+        if row["response"]:
+            messages.append(
+                MessageOut(
+                    id=f"{row['id']}-assistant",
+                    role="assistant",
+                    content=row["response"],
+                    created_at=row["created_at"],
+                )
+            )
 
     return messages
 
@@ -159,16 +169,22 @@ def update_conversation(
     supabase = get_supabase_service_client()
     result = (
         supabase.table("conversations")
-        .update({
-            "title": body.title,
-            "updated_at": datetime.now(UTC).isoformat(),
-        })
+        .update(
+            {
+                "title": body.title,
+                "updated_at": datetime.now(UTC).isoformat(),
+            }
+        )
         .eq("id", str(conversation_id))
         .eq("user_id", str(user.user_id))
         .execute()
     )
     if not result.data:
-        raise HTTPException(status_code=404, detail="Conversation not found")
+        raise AkaraHTTPException(
+            status_code=404,
+            code="NOT_FOUND",
+            message="Conversation not found",
+        )
 
     conv = result.data[0]
     return ConversationOut(**conv, message_count=0)
@@ -195,4 +211,8 @@ def delete_conversation(
         .execute()
     )
     if not result.data:
-        raise HTTPException(status_code=404, detail="Conversation not found or already deleted")
+        raise AkaraHTTPException(
+            status_code=404,
+            code="NOT_FOUND",
+            message="Conversation not found or already deleted",
+        )
