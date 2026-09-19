@@ -129,10 +129,10 @@ Node.js is required only to run `validate-findings.cjs` / `validate-coverage-led
 
 | Field | Value |
 |---|---|
-| **Current phase in progress** | 2 — Modular Foundation (integration `phase/02-modular-foundation` @ `51296e4`; not yet PR'd to main) |
-| **Last phase merged to `main`** | 1 — Truth Baseline (`255f937`) |
-| **Security baseline SHA** | Phase 1 day-one on main lineage; Phase 2 start scans on `255f937` / end on `51296e4` |
-| **Next gate file to create** | `docs/Dev-plans/security-gate-p03.md` (after Phase 2 lands on main) |
+| **Current phase in progress** | none — Phase 2 landed on `main` @ `e03be63`; next cut is Phase 3 from this tip |
+| **Last phase merged to `main`** | 2 — Modular Foundation (`e03be63`) |
+| **Security baseline SHA** | Phase 2 integration tip included in `e03be63` |
+| **Next gate file to create** | `docs/Dev-plans/security-gate-p03.md` (at Phase 3 start) |
 | **Open programme blockers** | JWT/RLS swap not done. SQLGuard no `tenant_id` predicate. KeyHog still deferred on Windows. Airlock/rlsgrid live DB audits Unverified (tools installed; need disposable DB before staging). |
 | **Accepted findings still live** | SEC-P01-002 service role. SEC-P01-003/004 Bandit Medium. **SEC-P02-003** compat aliases (remove Phase 5). |
 
