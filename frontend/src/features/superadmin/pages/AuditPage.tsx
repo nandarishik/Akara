@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { Download } from "lucide-react";
+import { Fragment, useCallback, useEffect, useMemo, useState } from "react";
+import { ChevronDown, ChevronRight, Download } from "lucide-react";
 
 import { sa, type AuditLogRow } from "@/lib/api/superadmin";
 
@@ -11,12 +11,31 @@ function detailsSnippet(details: Record<string, unknown> | null | undefined): st
   return raw.length > 80 ? `${raw.slice(0, 77)}…` : raw;
 }
 
+function resolveBeforeAfter(row: AuditLogRow): {
+  before: Record<string, unknown> | null;
+  after: Record<string, unknown> | null;
+} {
+  const fromDetailsBefore =
+    row.details && typeof row.details.before_state === "object" && row.details.before_state != null
+      ? (row.details.before_state as Record<string, unknown>)
+      : null;
+  const fromDetailsAfter =
+    row.details && typeof row.details.after_state === "object" && row.details.after_state != null
+      ? (row.details.after_state as Record<string, unknown>)
+      : null;
+  return {
+    before: row.before_state ?? fromDetailsBefore,
+    after: row.after_state ?? fromDetailsAfter,
+  };
+}
+
 export function SuperadminAuditPage() {
   const [rows, setRows] = useState<AuditLogRow[]>([]);
   const [total, setTotal] = useState(0);
   const [offset, setOffset] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [expandedId, setExpandedId] = useState<string | null>(null);
 
   const [tenantId, setTenantId] = useState("");
   const [actorEmail, setActorEmail] = useState("");
@@ -76,11 +95,23 @@ export function SuperadminAuditPage() {
   const displayRows = useMemo(() => rows, [rows]);
 
   function exportCsv() {
-    const header = ["id", "created_at", "action", "actor_email", "tenant_id", "tenant_name", "ip_address", "details"];
+    const header = [
+      "id",
+      "created_at",
+      "action",
+      "actor_email",
+      "tenant_id",
+      "tenant_name",
+      "ip_address",
+      "details",
+      "before_state",
+      "after_state",
+    ];
     const lines = [
       header.join(","),
-      ...displayRows.map((r) =>
-        [
+      ...displayRows.map((r) => {
+        const { before, after } = resolveBeforeAfter(r);
+        return [
           r.id,
           r.created_at,
           `"${r.action.replace(/"/g, '""')}"`,
@@ -89,8 +120,10 @@ export function SuperadminAuditPage() {
           r.tenant_id ? (tenantNames[r.tenant_id] ?? "") : "",
           r.ip_address ?? "",
           `"${detailsSnippet(r.details).replace(/"/g, '""')}"`,
-        ].join(","),
-      ),
+          `"${JSON.stringify(before ?? {}).replace(/"/g, '""')}"`,
+          `"${JSON.stringify(after ?? {}).replace(/"/g, '""')}"`,
+        ].join(",");
+      }),
     ];
     const blob = new Blob([lines.join("\n")], { type: "text/csv" });
     const url = URL.createObjectURL(blob);
@@ -141,6 +174,7 @@ export function SuperadminAuditPage() {
         <table className="w-full text-left text-sm">
           <thead className="bg-sa-raised text-sa-muted">
             <tr>
+              <th className="p-2 w-8" />
               <th className="p-2">Time</th>
               <th className="p-2">Action</th>
               <th className="p-2">Actor</th>
@@ -152,31 +186,77 @@ export function SuperadminAuditPage() {
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan={6} className="p-4 text-sa-muted">Loading…</td>
+                <td colSpan={7} className="p-4 text-sa-muted">Loading…</td>
               </tr>
             ) : displayRows.length === 0 ? (
               <tr>
-                <td colSpan={6} className="p-4 text-sa-muted">No audit events match filters</td>
+                <td colSpan={7} className="p-4 text-sa-muted">No audit events match filters</td>
               </tr>
             ) : (
-              displayRows.map((r) => (
-                <tr key={r.id} className="border-t border-sa-border">
-                  <td className="p-2 whitespace-nowrap text-xs">
-                    {new Date(r.created_at).toLocaleString()}
-                  </td>
-                  <td className="p-2 font-mono text-xs">{r.action}</td>
-                  <td className="p-2 text-xs">{r.actor_email || "—"}</td>
-                  <td className="p-2 text-xs">
-                    {r.tenant_id
-                      ? tenantNames[r.tenant_id] ?? `${r.tenant_id.slice(0, 8)}…`
-                      : "—"}
-                  </td>
-                  <td className="p-2 font-mono text-[10px] text-sa-muted max-w-[200px] truncate" title={JSON.stringify(r.details)}>
-                    {detailsSnippet(r.details)}
-                  </td>
-                  <td className="p-2 text-xs">{r.ip_address || "—"}</td>
-                </tr>
-              ))
+              displayRows.map((r) => {
+                const { before, after } = resolveBeforeAfter(r);
+                const expandable = !!(before || after);
+                const open = expandedId === r.id;
+                return (
+                  <Fragment key={r.id}>
+                    <tr className="border-t border-sa-border">
+                      <td className="p-2">
+                        {expandable ? (
+                          <button
+                            type="button"
+                            className="text-sa-muted hover:text-sa-text"
+                            aria-label={open ? "Collapse before/after" : "Expand before/after"}
+                            onClick={() => setExpandedId(open ? null : r.id)}
+                          >
+                            {open ? (
+                              <ChevronDown className="h-3.5 w-3.5" />
+                            ) : (
+                              <ChevronRight className="h-3.5 w-3.5" />
+                            )}
+                          </button>
+                        ) : null}
+                      </td>
+                      <td className="p-2 whitespace-nowrap text-xs">
+                        {new Date(r.created_at).toLocaleString()}
+                      </td>
+                      <td className="p-2 font-mono text-xs">{r.action}</td>
+                      <td className="p-2 text-xs">{r.actor_email || "—"}</td>
+                      <td className="p-2 text-xs">
+                        {r.tenant_id
+                          ? tenantNames[r.tenant_id] ?? `${r.tenant_id.slice(0, 8)}…`
+                          : "—"}
+                      </td>
+                      <td
+                        className="p-2 font-mono text-[10px] text-sa-muted max-w-[200px] truncate"
+                        title={JSON.stringify(r.details)}
+                      >
+                        {detailsSnippet(r.details)}
+                      </td>
+                      <td className="p-2 text-xs">{r.ip_address || "—"}</td>
+                    </tr>
+                    {open && expandable && (
+                      <tr className="border-t border-sa-border bg-sa-raised/40">
+                        <td colSpan={7} className="p-3">
+                          <div className="grid gap-3 md:grid-cols-2">
+                            <div>
+                              <p className="text-xs font-medium text-sa-muted mb-1">before_state</p>
+                              <pre className="text-[10px] font-mono overflow-auto max-h-40 rounded border border-sa-border bg-sa-surface p-2">
+                                {JSON.stringify(before ?? {}, null, 2)}
+                              </pre>
+                            </div>
+                            <div>
+                              <p className="text-xs font-medium text-sa-muted mb-1">after_state</p>
+                              <pre className="text-[10px] font-mono overflow-auto max-h-40 rounded border border-sa-border bg-sa-surface p-2">
+                                {JSON.stringify(after ?? {}, null, 2)}
+                              </pre>
+                            </div>
+                          </div>
+                        </td>
+                      </tr>
+                    )}
+                  </Fragment>
+                );
+              })
             )}
           </tbody>
         </table>

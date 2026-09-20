@@ -5,6 +5,7 @@ import { MoreHorizontal } from "lucide-react";
 
 import { TenantDrawer } from "@/features/superadmin/components/TenantDrawer";
 import { ConfirmDialog } from "@/features/superadmin/components/ConfirmDialog";
+import { DangerousActionDialog } from "@/features/superadmin/components/DangerousActionDialog";
 import { MutationReasonField } from "@/features/superadmin/components/MutationReasonField";
 import GlowSurfaceCard from "@/shared/ui/GlowSurfaceCard";
 import { Badge } from "@/shared/ui/badge";
@@ -52,11 +53,13 @@ function formatRelative(iso: string | null | undefined): string {
   return new Date(iso).toLocaleDateString("en-IN");
 }
 
-type PendingConfirm =
+type PendingDanger =
   | { type: "suspend"; tenant: TenantRow }
-  | { type: "wipe"; tenant: TenantRow }
   | { type: "delete"; tenant: TenantRow }
+  | { type: "impersonate"; tenant: TenantRow }
   | null;
+
+type PendingConfirm = { type: "wipe"; tenant: TenantRow } | null;
 
 const DEFAULT_REASON = "Superadmin action from Tenants panel";
 
@@ -75,7 +78,9 @@ export function TenantsPage() {
   const [newName, setNewName] = useState("");
   const [newSlug, setNewSlug] = useState("");
   const [newPlan, setNewPlan] = useState("free");
+  const [pendingDanger, setPendingDanger] = useState<PendingDanger>(null);
   const [pendingConfirm, setPendingConfirm] = useState<PendingConfirm>(null);
+  const [dangerLoading, setDangerLoading] = useState(false);
 
   const reasonOk = reason.trim().length >= 10;
 
@@ -131,23 +136,33 @@ export function TenantsPage() {
     setSearchParams({});
   }
 
-  async function handleImpersonate(t: TenantRow) {
-    if (!reasonOk) return;
-    const r = await sa.impersonate(t.id, reason);
-    if (r.magic_link) window.open(r.magic_link, "_blank", "noopener,noreferrer");
+  async function handleDangerConfirm(dialogReason: string) {
+    if (!pendingDanger) return;
+    setDangerLoading(true);
+    try {
+      const { tenant } = pendingDanger;
+      if (pendingDanger.type === "suspend") {
+        if (tenant.is_active) await sa.deactivateTenant(tenant.id, dialogReason);
+        else await sa.activateTenant(tenant.id, dialogReason);
+      } else if (pendingDanger.type === "delete") {
+        await sa.deleteTenant(tenant.id, {
+          reason: dialogReason,
+          confirm: `DELETE ${tenant.name}`,
+        });
+      } else if (pendingDanger.type === "impersonate") {
+        const r = await sa.impersonate(tenant.id, dialogReason);
+        if (r.magic_link) window.open(r.magic_link, "_blank", "noopener,noreferrer");
+      }
+      setPendingDanger(null);
+      void queryClient.invalidateQueries({ queryKey: ["superadmin", "tenants"] });
+    } finally {
+      setDangerLoading(false);
+    }
   }
 
-  async function handleConfirmAction() {
+  async function handleWipeConfirm() {
     if (!pendingConfirm || !reasonOk) return;
-    const { tenant } = pendingConfirm;
-    if (pendingConfirm.type === "suspend") {
-      if (tenant.is_active) await sa.deactivateTenant(tenant.id, reason);
-      else await sa.activateTenant(tenant.id, reason);
-    } else if (pendingConfirm.type === "wipe") {
-      await sa.wipeTenantData(tenant.id, { reason });
-    } else if (pendingConfirm.type === "delete") {
-      await sa.deleteTenant(tenant.id, { reason, confirm: `DELETE ${tenant.name}` });
-    }
+    await sa.wipeTenantData(pendingConfirm.tenant.id, { reason });
     setPendingConfirm(null);
     void queryClient.invalidateQueries({ queryKey: ["superadmin", "tenants"] });
   }
@@ -165,6 +180,28 @@ export function TenantsPage() {
       </div>
     );
   }
+
+  const dangerTitle =
+    pendingDanger?.type === "suspend"
+      ? pendingDanger.tenant.is_active
+        ? "Suspend tenant"
+        : "Activate tenant"
+      : pendingDanger?.type === "delete"
+        ? "Delete tenant"
+        : pendingDanger?.type === "impersonate"
+          ? "Impersonate tenant"
+          : "";
+
+  const dangerSummary =
+    pendingDanger?.type === "suspend"
+      ? pendingDanger.tenant.is_active
+        ? `Users of ${pendingDanger.tenant.name} will not be able to log in.`
+        : `Restore access for ${pendingDanger.tenant.name}.`
+      : pendingDanger?.type === "delete"
+        ? `Permanently delete ${pendingDanger.tenant.name}. All users and data will be removed.`
+        : pendingDanger?.type === "impersonate"
+          ? `Open a support session as ${pendingDanger.tenant.name}. Actions are audited.`
+          : "";
 
   return (
     <div className="p-6 space-y-4 max-w-6xl">
@@ -270,8 +307,7 @@ export function TenantsPage() {
                         View details
                       </DropdownMenuItem>
                       <DropdownMenuItem
-                        disabled={!reasonOk}
-                        onClick={() => void handleImpersonate(t)}
+                        onClick={() => setPendingDanger({ type: "impersonate", tenant: t })}
                       >
                         Impersonate
                       </DropdownMenuItem>
@@ -280,8 +316,7 @@ export function TenantsPage() {
                       </DropdownMenuItem>
                       <DropdownMenuSeparator />
                       <DropdownMenuItem
-                        disabled={!reasonOk}
-                        onClick={() => setPendingConfirm({ type: "suspend", tenant: t })}
+                        onClick={() => setPendingDanger({ type: "suspend", tenant: t })}
                       >
                         {t.is_active ? "Suspend" : "Activate"}
                       </DropdownMenuItem>
@@ -293,9 +328,8 @@ export function TenantsPage() {
                         Wipe data
                       </DropdownMenuItem>
                       <DropdownMenuItem
-                        disabled={!reasonOk}
                         className="text-red-600 focus:text-red-600"
-                        onClick={() => setPendingConfirm({ type: "delete", tenant: t })}
+                        onClick={() => setPendingDanger({ type: "delete", tenant: t })}
                       >
                         Delete
                       </DropdownMenuItem>
@@ -370,34 +404,27 @@ export function TenantsPage() {
         </AlertDialogContent>
       </AlertDialog>
 
+      <DangerousActionDialog
+        open={!!pendingDanger}
+        onOpenChange={(open) => {
+          if (!open) setPendingDanger(null);
+        }}
+        title={dangerTitle}
+        summary={dangerSummary}
+        minReasonLength={pendingDanger?.type === "delete" ? 20 : 10}
+        irreversible={pendingDanger?.type === "delete"}
+        loading={dangerLoading}
+        onConfirm={handleDangerConfirm}
+      />
+
       {pendingConfirm && (
         <ConfirmDialog
           open
           onOpenChange={() => setPendingConfirm(null)}
-          title={
-            pendingConfirm.type === "suspend"
-              ? pendingConfirm.tenant.is_active
-                ? "Suspend tenant"
-                : "Activate tenant"
-              : pendingConfirm.type === "wipe"
-                ? "Wipe tenant data"
-                : "Delete tenant"
-          }
-          description={
-            pendingConfirm.type === "suspend"
-              ? pendingConfirm.tenant.is_active
-                ? "Users will not be able to log in."
-                : "Restore tenant access."
-              : pendingConfirm.type === "wipe"
-                ? "Deletes sales data but keeps the account."
-                : "Permanent. All users and data removed."
-          }
-          confirmPhrase={
-            pendingConfirm.type === "delete"
-              ? `DELETE ${pendingConfirm.tenant.name}`
-              : "CONFIRM"
-          }
-          onConfirm={handleConfirmAction}
+          title="Wipe tenant data"
+          description="Deletes sales data but keeps the account."
+          confirmPhrase="CONFIRM"
+          onConfirm={handleWipeConfirm}
         />
       )}
     </div>

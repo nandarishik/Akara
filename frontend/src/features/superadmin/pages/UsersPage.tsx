@@ -41,6 +41,7 @@ import {
   AlertDialogTitle,
 } from "@/shared/ui/alert-dialog";
 import { ConfirmDialog } from "@/features/superadmin/components/ConfirmDialog";
+import { DangerousActionDialog } from "@/features/superadmin/components/DangerousActionDialog";
 import { sa, superadminFetch } from "@/lib/api/superadmin";
 
 interface UserRow {
@@ -71,6 +72,11 @@ type PendingAction =
   | { type: "move"; user: UserRow }
   | null;
 
+type PendingDanger =
+  | { type: "suspend"; user: UserRow }
+  | { type: "magic"; user: UserRow }
+  | null;
+
 export function UsersPage() {
   const queryClient = useQueryClient();
   const [searchParams] = useSearchParams();
@@ -81,6 +87,8 @@ export function UsersPage() {
   const [actionError, setActionError] = useState("");
   const [magicLink, setMagicLink] = useState<string | null>(null);
   const [pendingAction, setPendingAction] = useState<PendingAction>(null);
+  const [pendingDanger, setPendingDanger] = useState<PendingDanger>(null);
+  const [dangerLoading, setDangerLoading] = useState(false);
   const [moveTenantId, setMoveTenantId] = useState("");
 
   const reasonOk = reason.trim().length >= 10;
@@ -137,7 +145,7 @@ export function UsersPage() {
   }
 
   async function handleSuspend(user: UserRow) {
-    await runAction(user.id, () => sa.suspendUser(user.id, reason.trim()));
+    setPendingDanger({ type: "suspend", user });
   }
 
   async function handleActivate(user: UserRow) {
@@ -149,18 +157,27 @@ export function UsersPage() {
   }
 
   async function handleMagicLink(user: UserRow) {
-    if (!reasonOk) {
-      setActionError("Reason must be at least 10 characters");
-      return;
-    }
+    setPendingDanger({ type: "magic", user });
+  }
+
+  async function handleDangerConfirm(dialogReason: string) {
+    if (!pendingDanger) return;
+    setDangerLoading(true);
     setActionError("");
-    setSavingId(user.id);
+    setSavingId(pendingDanger.user.id);
     try {
-      const res = await sa.magicLink(user.id, reason.trim());
-      setMagicLink(res.magic_link || "No link returned");
+      if (pendingDanger.type === "suspend") {
+        await sa.suspendUser(pendingDanger.user.id, dialogReason);
+        queryClient.invalidateQueries({ queryKey: ["superadmin", "users"] });
+      } else {
+        const res = await sa.magicLink(pendingDanger.user.id, dialogReason);
+        setMagicLink(res.magic_link || "No link returned");
+      }
+      setPendingDanger(null);
     } catch (e) {
-      setActionError(e instanceof Error ? e.message : "Magic link failed");
+      setActionError(e instanceof Error ? e.message : "Action failed");
     } finally {
+      setDangerLoading(false);
       setSavingId(null);
     }
   }
@@ -311,7 +328,6 @@ export function UsersPage() {
                       <DropdownMenuContent align="end">
                         {!isSuspended(u) ? (
                           <DropdownMenuItem
-                            disabled={!reasonOk}
                             onClick={() => void handleSuspend(u)}
                           >
                             Suspend
@@ -331,7 +347,6 @@ export function UsersPage() {
                           Reset password
                         </DropdownMenuItem>
                         <DropdownMenuItem
-                          disabled={!reasonOk}
                           onClick={() => void handleMagicLink(u)}
                         >
                           Magic link
@@ -404,6 +419,26 @@ export function UsersPage() {
           loading={savingId === pendingAction.user.id}
         />
       )}
+
+      <DangerousActionDialog
+        open={!!pendingDanger}
+        onOpenChange={(open) => {
+          if (!open) setPendingDanger(null);
+        }}
+        title={
+          pendingDanger?.type === "suspend"
+            ? "Suspend user"
+            : "Generate magic link"
+        }
+        summary={
+          pendingDanger?.type === "suspend"
+            ? `Suspend ${pendingDanger.user.email || pendingDanger.user.display_name || "this user"}. They will not be able to sign in.`
+            : `Create a one-time magic link for ${pendingDanger?.user.email || pendingDanger?.user.display_name || "this user"}.`
+        }
+        minReasonLength={10}
+        loading={dangerLoading}
+        onConfirm={handleDangerConfirm}
+      />
 
       <AlertDialog
         open={pendingAction?.type === "move"}

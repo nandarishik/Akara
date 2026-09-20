@@ -1,17 +1,34 @@
-import { useCallback, useEffect, useState, type ReactNode } from "react";
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type ClipboardEvent,
+  type FormEvent,
+  type KeyboardEvent,
+  type ReactNode,
+} from "react";
 
-import { getSudoStatus, startSudo } from "@/lib/api/superadmin";
+import {
+  getSudoStatus,
+  startSudo,
+  SuperadminApiError,
+} from "@/lib/api/superadmin";
 import { Button } from "@/shared/ui/button";
 import { Input } from "@/shared/ui/input";
 import { Label } from "@/shared/ui/label";
+
+const TOTP_LEN = 6;
 
 export function SudoGate({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [active, setActive] = useState(false);
   const [expiresAt, setExpiresAt] = useState<string | null>(null);
   const [password, setPassword] = useState("");
+  const [digits, setDigits] = useState<string[]>(() => Array(TOTP_LEN).fill(""));
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const digitRefs = useRef<(HTMLInputElement | null)[]>([]);
 
   const refresh = useCallback(async () => {
     try {
@@ -32,17 +49,66 @@ export function SudoGate({ children }: { children: ReactNode }) {
     return () => window.clearInterval(id);
   }, [refresh]);
 
-  async function handleConfirm(e: React.FormEvent) {
+  const totpCode = digits.join("");
+  const totpComplete = totpCode.length === TOTP_LEN && digits.every((d) => /^\d$/.test(d));
+
+  function setDigitAt(index: number, raw: string) {
+    const char = raw.replace(/\D/g, "").slice(-1);
+    setDigits((prev) => {
+      const next = [...prev];
+      next[index] = char;
+      return next;
+    });
+    if (char && index < TOTP_LEN - 1) {
+      digitRefs.current[index + 1]?.focus();
+    }
+  }
+
+  function handleDigitKeyDown(index: number, e: KeyboardEvent<HTMLInputElement>) {
+    if (e.key === "Backspace" && !digits[index] && index > 0) {
+      digitRefs.current[index - 1]?.focus();
+    }
+  }
+
+  function handleDigitPaste(e: ClipboardEvent<HTMLInputElement>) {
     e.preventDefault();
+    const pasted = e.clipboardData.getData("text").replace(/\D/g, "").slice(0, TOTP_LEN);
+    if (!pasted) return;
+    const next = Array(TOTP_LEN).fill("");
+    for (let i = 0; i < pasted.length; i++) next[i] = pasted[i];
+    setDigits(next);
+    const focusIdx = Math.min(pasted.length, TOTP_LEN - 1);
+    digitRefs.current[focusIdx]?.focus();
+  }
+
+  async function handleConfirm(e: FormEvent) {
+    e.preventDefault();
+    if (!password || !totpComplete) return;
     setSubmitting(true);
     setError("");
     try {
-      const res = await startSudo(password);
+      const res = await startSudo(password, totpCode);
       setActive(true);
       setExpiresAt(res.expires_at);
       setPassword("");
-    } catch {
-      setError("Invalid password. Try again.");
+      setDigits(Array(TOTP_LEN).fill(""));
+    } catch (err) {
+      if (err instanceof SuperadminApiError) {
+        if (err.status === 429) {
+          setError("Too many attempts. Account temporarily locked. Try again later.");
+        } else if (err.status === 401) {
+          const n = err.remainingAttempts;
+          setError(
+            n != null
+              ? `Invalid credentials — ${n} of 5 remaining`
+              : "Invalid credentials. Try again.",
+          );
+        } else {
+          setError(err.message || "Authentication failed.");
+        }
+      } else {
+        setError("Invalid password or TOTP. Try again.");
+      }
     } finally {
       setSubmitting(false);
     }
@@ -81,8 +147,35 @@ export function SudoGate({ children }: { children: ReactNode }) {
                 className="border-sa-border bg-sa-raised text-sa-text"
               />
             </div>
+            <div className="mt-4 space-y-2">
+              <Label className="text-sa-muted">Authenticator code</Label>
+              <div className="flex gap-2" onPaste={handleDigitPaste}>
+                {digits.map((digit, i) => (
+                  <Input
+                    key={i}
+                    ref={(el) => {
+                      digitRefs.current[i] = el;
+                    }}
+                    type="text"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
+                    maxLength={1}
+                    autoComplete={i === 0 ? "one-time-code" : "off"}
+                    aria-label={`TOTP digit ${i + 1}`}
+                    value={digit}
+                    onChange={(e) => setDigitAt(i, e.target.value)}
+                    onKeyDown={(e) => handleDigitKeyDown(i, e)}
+                    className="h-11 w-10 border-sa-border bg-sa-raised p-0 text-center text-sa-text"
+                  />
+                ))}
+              </div>
+            </div>
             {error && <p className="mt-2 text-sm text-red-400">{error}</p>}
-            <Button type="submit" disabled={submitting || !password} className="mt-4 w-full">
+            <Button
+              type="submit"
+              disabled={submitting || !password || !totpComplete}
+              className="mt-4 w-full"
+            >
               {submitting ? "Verifying…" : "Continue to superadmin"}
             </Button>
           </form>

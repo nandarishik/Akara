@@ -43,6 +43,21 @@
 
 ---
 
+## Phase 5 — Superadmin / billing / entitlements
+
+| ID | Item | Status |
+|---|---|---|
+| D2-P05-OPS-001 | Apply migrations 033–038 to `akara-dev` / `akara-staging` | Deferred |
+| D2-P05-OPS-002 | Provision `QUERY_READONLY_DB_URL` (readonly PG role; never service role) | Deferred |
+| D2-P05-OPS-003 | Set `REQUIRE_SUDO_TOTP=true` on staging; store `SUPERADMIN_TOTP_ENCRYPTION_KEY` out of band | Deferred |
+| D2-P05-OPS-004 | Staging smoke: TOTP setup → sudo → impersonate → tenant banner → end session | Deferred |
+| D2-P05-OPS-005 | Staging: query console dual-barrier write fail; 1000-row / 30s | Deferred |
+| D2-P05-OPS-006 | Swazz / ZAP scoped to `/superadmin/*` (+ billing webhook JOINT) | Deferred |
+| D2-P05-OPS-007 | Live rlsgrid on new P5 tables; dual §28 sign-off | Deferred |
+| D2-P05-OPS-008 | Razorpay webhook completeness + GST PDF e2e on staging | Deferred |
+
+---
+
 ## Later phases
 
-Append rows when Phases 5–12 coding starts.
+Append rows when Phases 6–12 coding starts.

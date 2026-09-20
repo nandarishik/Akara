@@ -1,12 +1,21 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link, Navigate, Outlet, useLocation } from "react-router-dom";
 import { NotFoundPage } from "@/features/auth/pages/NotFoundPage";
 
 import { SudoGate } from "@/features/superadmin/components/SudoGate";
 import { CommandPalette } from "@/features/superadmin/components/CommandPalette";
+import { canAccessPath } from "@/features/superadmin/lib/roleGuards";
 import { useAuth } from "@/features/auth/contexts/AuthContext";
-import { checkSuperadminAccess, sa, type AtRiskResponse, type RevenueSummary } from "@/lib/api/superadmin";
+import {
+  checkSuperadminAccess,
+  getSudoStatus,
+  sa,
+  type AtRiskResponse,
+  type RevenueSummary,
+  type SuperadminRole,
+} from "@/lib/api/superadmin";
 import { cn } from "@/lib/utils";
+import { toast } from "@/shared/ui/toast";
 import { Button } from "@/shared/ui/button";
 import {
   Building2,
@@ -28,6 +37,9 @@ import {
   Terminal,
   Workflow,
   ShieldCheck,
+  KeyRound,
+  UserCog,
+  PauseCircle,
 } from "lucide-react";
 import { GlassIcon } from "@/shared/effects/GlassIcon";
 import DarkMeshBackground from "@/shared/effects/DarkMeshBackground";
@@ -66,12 +78,15 @@ const NAV_GROUPS: { label: string; items: NavItem[] }[] = [
     items: [
       { href: "/superadmin/comms", label: "Comms", icon: Mail, color: "orange" },
       { href: "/superadmin/cron", label: "Cron", icon: Clock, color: "blue" },
+      { href: "/superadmin/jobs", label: "Jobs", icon: PauseCircle, color: "blue" },
+      { href: "/superadmin/impersonation", label: "Impersonation", icon: UserCog, color: "orange" },
     ],
   },
   {
     label: "Governance",
     items: [
       { href: "/superadmin/audit", label: "Audit Log", icon: ClipboardList, color: "red" },
+      { href: "/superadmin/totp-setup", label: "TOTP setup", icon: KeyRound, color: "indigo" },
       { href: "/superadmin/settings", label: "System", icon: Wrench, color: "indigo" },
     ],
   },
@@ -93,11 +108,24 @@ const NAV_GROUPS: { label: string; items: NavItem[] }[] = [
 
 const NAV_ITEMS: NavItem[] = NAV_GROUPS.flatMap((g) => g.items);
 
+function formatCountdown(expiresAt: string | null): string {
+  if (!expiresAt) return "—";
+  const ms = new Date(expiresAt).getTime() - Date.now();
+  if (ms <= 0) return "00:00";
+  const totalSec = Math.floor(ms / 1000);
+  const mm = String(Math.floor(totalSec / 60)).padStart(2, "0");
+  const ss = String(totalSec % 60).padStart(2, "0");
+  return `${mm}:${ss}`;
+}
+
 export function SuperadminShell() {
   const { session, user, loading, signOut } = useAuth();
   const location = useLocation();
   const [allowed, setAllowed] = useState<boolean | null>(null);
   const [attentionCount, setAttentionCount] = useState(0);
+  const [role, setRole] = useState<SuperadminRole>(null);
+  const [expiresAt, setExpiresAt] = useState<string | null>(null);
+  const [tick, setTick] = useState(0);
 
   useEffect(() => {
     if (!session) return;
@@ -105,6 +133,28 @@ export function SuperadminShell() {
       .then(setAllowed)
       .catch(() => setAllowed(false));
   }, [session]);
+
+  useEffect(() => {
+    if (!session || allowed !== true) return;
+    const refreshSudo = () => {
+      void getSudoStatus()
+        .then((s) => {
+          setRole(s.superadmin_role ?? null);
+          setExpiresAt(s.expires_at);
+        })
+        .catch(() => {
+          setRole(null);
+          setExpiresAt(null);
+        });
+    };
+    refreshSudo();
+    const id = window.setInterval(refreshSudo, 60_000);
+    const tickId = window.setInterval(() => setTick((t) => t + 1), 1000);
+    return () => {
+      window.clearInterval(id);
+      window.clearInterval(tickId);
+    };
+  }, [session, allowed]);
 
   useEffect(() => {
     if (!session || allowed !== true) return;
@@ -137,6 +187,20 @@ export function SuperadminShell() {
       .catch(() => setAttentionCount(0));
   }, [session, allowed]);
 
+  const filteredNav = useMemo(
+    () => NAV_ITEMS.filter((item) => canAccessPath(item.href, role)),
+    [role],
+  );
+
+  const pathAllowed = canAccessPath(location.pathname, role);
+
+  useEffect(() => {
+    if (allowed !== true) return;
+    if (!pathAllowed) {
+      toast.error("Insufficient permissions");
+    }
+  }, [allowed, pathAllowed, location.pathname]);
+
   if (loading || (session && allowed === null)) {
     return (
       <div className="superadmin-surface flex h-screen items-center justify-center">
@@ -153,8 +217,16 @@ export function SuperadminShell() {
     return <NotFoundPage />;
   }
 
+  if (!pathAllowed) {
+    return <Navigate to="/superadmin/overview" replace />;
+  }
+
   const activeItem =
-    NAV_ITEMS.find((item) => location.pathname.startsWith(item.href)) ?? NAV_ITEMS[0];
+    filteredNav.find((item) => location.pathname.startsWith(item.href)) ??
+    filteredNav[0] ??
+    NAV_ITEMS[0];
+
+  void tick;
 
   return (
     <div className="theme-product-dark superadmin-surface flex h-screen overflow-hidden">
@@ -166,7 +238,7 @@ export function SuperadminShell() {
           </span>
         </div>
         <nav className="flex flex-1 flex-col items-center gap-1 overflow-y-auto py-2">
-          {NAV_ITEMS.map((item) => {
+          {filteredNav.map((item) => {
             const active = location.pathname.startsWith(item.href);
             const Icon = item.icon;
             return (
@@ -176,7 +248,7 @@ export function SuperadminShell() {
                 title={item.label}
                 className={cn(
                   "flex h-11 w-11 items-center justify-center rounded-lg transition-colors",
-                  active ? "bg-sa-accent/20" : "hover:bg-sa-raised"
+                  active ? "bg-sa-accent/20" : "hover:bg-sa-raised",
                 )}
               >
                 <GlassIcon
@@ -212,6 +284,16 @@ export function SuperadminShell() {
             <h1 className="text-sm font-semibold text-sa-text">{activeItem.label}</h1>
           </div>
           <div className="flex items-center gap-4">
+            {role && (
+              <span className="rounded border border-sa-border bg-sa-raised px-2 py-0.5 font-mono text-[10px] uppercase tracking-wide text-sa-accent">
+                {role}
+              </span>
+            )}
+            {expiresAt && (
+              <span className="text-xs text-sa-muted">
+                Sudo active — {formatCountdown(expiresAt)}
+              </span>
+            )}
             {attentionCount > 0 && (
               <Link
                 to="/superadmin/overview"
@@ -226,8 +308,8 @@ export function SuperadminShell() {
           </div>
         </header>
 
-        <main className="flex-1 overflow-auto p-6 relative">
-          <DarkMeshBackground className="fixed inset-0 opacity-20 pointer-events-none" />
+        <main className="relative flex-1 overflow-auto p-6">
+          <DarkMeshBackground className="pointer-events-none fixed inset-0 opacity-20" />
           <div className="relative z-10">
             <SudoGate>
               <Outlet />
