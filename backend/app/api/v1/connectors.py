@@ -59,7 +59,7 @@ def _verify_tally_hmac(raw_body: bytes, timestamp: str, signature: str) -> None:
     body_hash = hashlib.sha256(raw_body).hexdigest()
     expected = hmac.new(
         secret.encode("utf-8"),
-        f"{ts}.{body_hash}".encode("utf-8"),
+        f"{ts}.{body_hash}".encode(),
         hashlib.sha256,
     ).hexdigest()
     if not hmac.compare_digest(expected, signature):
