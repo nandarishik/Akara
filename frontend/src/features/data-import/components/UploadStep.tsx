@@ -51,8 +51,8 @@ export function UploadStep({ flags, onUploaded }: Props) {
     setBusy(true);
     try {
       const res = await uploadCafeFile(file, importType);
-      if ("status" in res && res.status === "skipped") {
-        toast.message(`Duplicate file — existing import ${res.existing_import_id}`);
+      if ("existing_import_id" in res) {
+        toast.info(`Duplicate file — existing import ${res.existing_import_id}`);
         return;
       }
       onUploaded(res.import_id, res.import_type);

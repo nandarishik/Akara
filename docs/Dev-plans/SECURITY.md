@@ -129,10 +129,10 @@ Node.js is required only to run `validate-findings.cjs` / `validate-coverage-led
 
 | Field | Value |
 |---|---|
-| **Current phase in progress** | none — Phase 6 **code** landed on `main` @ `8540e44`; next is Phase 7 (split `74aa8eb` for 048–051 first) |
-| **Last phase merged to `main`** | 6 — Canonical café data (`8540e44`; merge tip from `phase/06-canonical-cafe-data` @ `5d62dbe`) |
-| **Security baseline SHA** | Phase 6 on `main` @ `8540e44` |
-| **Next gate file to create** | `docs/Dev-plans/security-gate-p07.md` (at Phase 7 start) |
+| **Current phase in progress** | Phase 7 coding complete on `phase/07-connector-sync-platform` @ `f6733b0` — **not** on `main` until operator asks; ops JOINT deferred |
+| **Last phase merged to `main`** | 6 — Canonical café data (`8540e44`; Living note `2546a2f`) |
+| **Security baseline SHA** | Phase 7 integration tip `f6733b0` (base `2546a2f`) |
+| **Next gate file to create** | `docs/Dev-plans/security-gate-p08.md` (at Phase 8 start; after P7 lands on main) |
 | **Open programme blockers** | JWT/RLS swap not done (Partial / SEC-P01-002). SQLGuard gap. KeyHog deferred. Airlock/rlsgrid Unverified. Phase 3–6 dashboard/staging/DAST/apply ops deferred post–Phase 12. Later phases still require further splits of `74aa8eb` (do not merge tip). |
 | **Accepted findings still live** | SEC-P01-002 service role. SEC-P01-003/004 Bandit Medium. **SEC-P02-003** compat aliases (remove when cleared). |
 
@@ -190,6 +190,17 @@ Node.js is required only to run `validate-findings.cjs` / `validate-coverage-led
 | 6 | Ops deferred | apply 039–047 / AI mapping staging / Swazz / rlsgrid → `ops-deferred-after-p12.md` |
 | 6 | Integration tip | `a4f7ea3` (DEV1 `d0defea` then DEV2 + end docs) |
 | 6 | Landed on `main` | `8540e44` (2026-09-20) — code land; ops Partial → `ops-deferred-after-p12.md` |
+| 7 | `docs/Phases/security-scan-p07-*` | written (start + end Bandit/pip-audit/Semgrep; KeyHog/Betterleaks stubs; Trivy) |
+| 7 | `docs/Dev-plans/security-gate-p07.md` | written — S1–S8 Partial/Complete as coded; Vault/DAST deferred |
+| 7 | Cloudflare (`C:\Users\Admin\security-audit-skill\akara\p07-run-1\`) | full quick — 0 confirmed; 5 needs_validation |
+| 7 | `docs/Dev-plans/session-handoff-p07-dev2.md` | written |
+| 7 | DEV1 split | `phase/07-dev-1-connector-sync-platform` @ `e904e74` from `74aa8eb` (048–051 only; scrubbed 052+) |
+| 7 | Migrations | contiguous `048`–`051`; no `052+` |
+| 7 | Encryption / allowlist / HMAC | AES-GCM CredentialService **Partial** stub; agent allowlist localhost Tally; push headers `X-Connector-Key` / `X-Akara-Timestamp` / `X-Akara-Signature` verified + 300s skew + gate |
+| 7 | Cursor security-review | domain/connectors — 2 HIGH (ungated/unverified push) fixed on tip; MEDIUM Partial crypto/key-binding remain |
+| 7 | JWT/RLS programme | **Partial** — SEC-P01-002 unchanged |
+| 7 | Ops deferred | apply 048–051 / Vault / Railway 5th / partnership / Swazz / rlsgrid / signed-update CA → `ops-deferred-after-p12.md` |
+| 7 | Integration tip | `f6733b0` (DEV1 `e904e74` then DEV2 + HMAC fix + end docs) — **awaiting operator PR to main** |
 
 ---
 

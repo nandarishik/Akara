@@ -67,6 +67,16 @@ const QuarantinePage = React.lazy(() =>
     default: m.QuarantinePage,
   })),
 )
+const ConnectorListPage = React.lazy(() =>
+  import("@/features/connectors/pages/ConnectorListPage").then((m) => ({
+    default: m.ConnectorListPage,
+  })),
+)
+const ConnectorDetailPage = React.lazy(() =>
+  import("@/features/connectors/pages/ConnectorDetailPage").then((m) => ({
+    default: m.ConnectorDetailPage,
+  })),
+)
 const OutletSettingsPage = React.lazy(() =>
   import("@/features/settings/pages/OutletSettingsPage").then((m) => ({
     default: m.OutletSettingsRoutePage,
@@ -204,6 +214,8 @@ export function AppRouter() {
               <Route path="/data" element={<DataPage />} />
               <Route path="/data/upload" element={<UploadWizardPage />} />
               <Route path="/data/quarantine" element={<QuarantinePage />} />
+              <Route path="/connectors" element={<ConnectorListPage />} />
+              <Route path="/connectors/:id" element={<ConnectorDetailPage />} />
               <Route path="/reports" element={<ReportsPage />} />
               <Route path="/debrief" element={<DebriefPage />} />
               <Route path="/simulator" element={<SimulatorPage />} />

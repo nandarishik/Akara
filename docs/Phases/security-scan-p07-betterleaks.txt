@@ -1,0 +1,1 @@
+﻿Betterleaks TOOL_NOT_INSTALLED / Partial — CLI not on PATH; no leak scan run at start

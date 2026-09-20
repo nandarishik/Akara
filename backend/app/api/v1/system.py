@@ -17,6 +17,7 @@ class SystemSettingsResponse(BaseModel):
     maintenance_mode: bool
     signup_open: bool
     environment_banner: str | None = None
+    connectors_enabled: bool = False
 
 
 class SystemBannerResponse(BaseModel):
@@ -42,6 +43,8 @@ def _load_setting(key: str, default: Any) -> Any:
 
 @router.get("/settings", response_model=SystemSettingsResponse)
 def get_system_settings() -> SystemSettingsResponse:
+    from app.core.config import settings
+
     maintenance = _load_setting("maintenance_mode", False)
     signup_open = _load_setting("signup_open", True)
     banner = _load_setting("system_banner", None)
@@ -52,6 +55,7 @@ def get_system_settings() -> SystemSettingsResponse:
         maintenance_mode=bool(maintenance),
         signup_open=bool(signup_open),
         environment_banner=env_banner,
+        connectors_enabled=bool(getattr(settings, "connectors_enabled", False)),
     )
 
 
