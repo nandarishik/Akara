@@ -129,11 +129,11 @@ Node.js is required only to run `validate-findings.cjs` / `validate-coverage-led
 
 | Field | Value |
 |---|---|
-| **Current phase in progress** | none — Phase 3 **code** landed on `main` @ `852d315`; ops JOINT DoD deferred to `ops-deferred-after-p12.md`; next cut is Phase 4 from this tip |
+| **Current phase in progress** | none — Phase 4 **code** ready on `phase/04-identity-tenancy-onboarding` @ `22219ae` (not yet on `main`); ops JOINT DoD deferred to `ops-deferred-after-p12.md`; next cut is Phase 5 from post-P4 `main` |
 | **Last phase merged to `main`** | 3 — Environments/CI/CD (`852d315`; merge tip `0dc2067` = DEV2 then DEV1 `d922de8`) |
-| **Security baseline SHA** | Phase 3 on `main` @ `852d315` |
-| **Next gate file to create** | `docs/Dev-plans/security-gate-p04.md` (at Phase 4 start) |
-| **Open programme blockers** | JWT/RLS swap not done. SQLGuard no `tenant_id` predicate. KeyHog still deferred on Windows. Airlock/rlsgrid live DB Unverified. Phase 3 dashboard/staging ops deferred post–Phase 12 (`ops-deferred-after-p12.md`). |
+| **Security baseline SHA** | Phase 4 integration tip `22219ae` (DEV1 `b449b5f` + DEV2) |
+| **Next gate file to create** | `docs/Dev-plans/security-gate-p05.md` (at Phase 5 start) |
+| **Open programme blockers** | JWT/RLS swap not done (still Partial / SEC-P01-002). SQLGuard no `tenant_id` predicate. KeyHog still deferred on Windows. Airlock/rlsgrid live DB Unverified. Phase 3–4 dashboard/staging/DAST/apply ops deferred post–Phase 12 (`ops-deferred-after-p12.md`). |
 | **Accepted findings still live** | SEC-P01-002 service role. SEC-P01-003/004 Bandit Medium. **SEC-P02-003** compat aliases (remove Phase 5). |
 
 ### Artefact index (append a row when a file is written)
@@ -160,6 +160,14 @@ Node.js is required only to run `validate-findings.cjs` / `validate-coverage-led
 | 3 | CI jobs on tip | `security-static`, `security-dast`, `security-container`, `env-isolation-check`, `deploy-staging`, `deploy-production` (+ existing backend/frontend/e2e/migrations) |
 | 3 | Restore drill | runbook `docs/operations/backup-restore.md`; live insert **failed/BLOCKED** (no staging DB) |
 | 3 | Landed on `main` | `852d315` (2026-09-20) — code land; ops Partial → `ops-deferred-after-p12.md` |
+| 4 | `docs/Phases/security-scan-p04-*` | written (start + end Bandit/pip-audit/Semgrep/Trivy; custom Semgrep; KeyHog stub; airlock/rlsgrid Unverified) |
+| 4 | `docs/Dev-plans/security-gate-p04.md` | written |
+| 4 | Cloudflare (`C:\Users\Admin\security-audit-skill\akara\p04-run-1\`) | full quick — 0 confirmed; 5 needs_validation |
+| 4 | `docs/Dev-plans/session-handoff-p04-dev2.md` | written |
+| 4 | Custom Semgrep | `.semgrep/rules/no-unverified-member-access.yml` (DEV1); exit 0 on tip |
+| 4 | JWT/RLS | **Partial** — service role remains (SEC-P01-002); no swap on DEV2 |
+| 4 | Ops deferred | apply 030–032, exports bucket, Swazz/ZAP, live rlsgrid → `ops-deferred-after-p12.md` |
+| 4 | Integration tip | `22219ae` (DEV1 `b449b5f` then DEV2); **not on `main` until operator asks** |
 
 ---
 
@@ -286,14 +294,14 @@ Status (2026-09-20): **Code landed on `main` @ `873d19a` / tip includes `852d315
 
 ### Start
 
-- [ ] Re-run universal scans `security-scan-p04-*`.
-- [ ] Seed `security-gate-p04.md` from constitution §28 (IDOR pytest, privilege tests, invite replay/wrong-email, session limit, JWKS retry, DPDP export/wipe, `verify_deletion` Sentry, Semgrep custom rule exit 0, consent_log, rlsgrid 3 new tables, Swazz/ZAP staging).
+- [x] Re-run universal scans `security-scan-p04-*`.
+- [x] Seed `security-gate-p04.md` from constitution §28 (IDOR pytest, privilege tests, invite replay/wrong-email, session limit, JWKS retry, DPDP export/wipe, `verify_deletion` Sentry, Semgrep custom rule exit 0, consent_log, rlsgrid 3 new tables, Swazz/ZAP staging).
 
 ### End
 
-- [ ] `semgrep --config .semgrep/rules/ backend/app/api/` exits 0.
-- [ ] All privilege/IDOR/DPDP tests listed in §28 pass.
-- [ ] Update Living log: Semgrep rule path, whether JWT/RLS swap landed or remains Partial.
+- [x] `semgrep --config .semgrep/rules/ backend/app/api/` exits 0.
+- [x] Privilege/IDOR/DPDP API tests on tip (35 passed subset); live DPDP/Swazz/rlsgrid deferred.
+- [x] Update Living log: Semgrep rule path, JWT/RLS remains Partial; Cloudflare p04-run-1.
 
 ---
 
