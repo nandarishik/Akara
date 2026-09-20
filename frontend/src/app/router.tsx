@@ -57,6 +57,21 @@ const CopilotPage = React.lazy(() =>
 const DataPage = React.lazy(() =>
   import("@/features/data-import/pages/DataPage").then((m) => ({ default: m.DataPage }))
 )
+const UploadWizardPage = React.lazy(() =>
+  import("@/features/data-import/pages/UploadWizardPage").then((m) => ({
+    default: m.UploadWizardPage,
+  })),
+)
+const QuarantinePage = React.lazy(() =>
+  import("@/features/data-import/pages/QuarantinePage").then((m) => ({
+    default: m.QuarantinePage,
+  })),
+)
+const OutletSettingsPage = React.lazy(() =>
+  import("@/features/settings/pages/OutletSettingsPage").then((m) => ({
+    default: m.OutletSettingsRoutePage,
+  })),
+)
 const ReportsPage = React.lazy(() =>
   import("@/features/reports/pages/ReportsPage").then((m) => ({ default: m.ReportsPage }))
 )
@@ -187,11 +202,14 @@ export function AppRouter() {
               <Route path="/dashboard" element={<DashboardPage />} />
               <Route path="/copilot" element={<CopilotPage />} />
               <Route path="/data" element={<DataPage />} />
+              <Route path="/data/upload" element={<UploadWizardPage />} />
+              <Route path="/data/quarantine" element={<QuarantinePage />} />
               <Route path="/reports" element={<ReportsPage />} />
               <Route path="/debrief" element={<DebriefPage />} />
               <Route path="/simulator" element={<SimulatorPage />} />
               <Route path="/settings" element={<SettingsPage />} />
               <Route path="/settings/team" element={<SettingsTeamPage />} />
+              <Route path="/settings/outlets" element={<OutletSettingsPage />} />
               <Route path="/billing" element={<BillingPage />} />
               <Route path="/alerts" element={<AlertsPage />} />
               <Route path="/admin/tenants" element={<Navigate to="/superadmin/tenants" replace />} />

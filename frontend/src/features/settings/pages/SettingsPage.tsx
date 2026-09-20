@@ -12,6 +12,7 @@ import { Badge } from "@/shared/ui/badge";
 import { CheckCircle, AlertCircle, Trash2, Download, KeyRound } from "lucide-react";
 import { isOwner, roleLabel } from "@/lib/auth-utils";
 import { DeleteAccountDialog } from "@/features/settings/components/DeleteAccountDialog";
+import { OutletSettingsPage } from "@/features/settings/pages/OutletSettingsPage";
 import { PlanGate } from "@/features/billing/components/PlanGate";
 import { useBilling } from "@/features/billing/hooks/useBilling";
 import { TeamPage } from "@/features/team/pages/TeamPage";
@@ -57,6 +58,7 @@ const TABS = [
   { id: "billing", label: "Billing" },
   { id: "security", label: "Security" },
   { id: "team", label: "Team" },
+  { id: "outlets", label: "Outlets" },
   { id: "api", label: "API Keys" },
   { id: "danger", label: "Danger Zone" },
 ] as const;
@@ -139,6 +141,10 @@ export function SettingsPage() {
   const [tenantMeta, setTenantMeta] = useState<{ company?: string; industry?: string; language?: string }>({});
 
   useEffect(() => {
+    const tabParam = searchParams.get("tab");
+    if (tabParam && TABS.some((t) => t.id === tabParam)) {
+      setTab(tabParam as TabId);
+    }
     if (searchParams.get("focus") === "whatsapp") {
       setTab("notifications");
     }
@@ -625,6 +631,8 @@ export function SettingsPage() {
           <TeamPage embedded />
         </GlowSurfaceCard>
       )}
+
+      {tab === "outlets" && <OutletSettingsPage />}
 
       {tab === "api" && (
         <GlowSurfaceCard className="text-center py-8 space-y-3">
