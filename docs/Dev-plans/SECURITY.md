@@ -129,9 +129,9 @@ Node.js is required only to run `validate-findings.cjs` / `validate-coverage-led
 
 | Field | Value |
 |---|---|
-| **Current phase in progress** | Ready for Phase 9 cut from `origin/main` @ `af26c85` (Phase 8 code land) |
-| **Last phase merged to `main`** | 8 — Semantic metrics (`af26c85`) |
-| **Security baseline SHA** | Phase 8 start = `716fc97`; land = `af26c85` |
+| **Current phase in progress** | Ready for Phase 9 cut from `origin/main` @ `d831e8f` (Phase 8 code land) |
+| **Last phase merged to `main`** | 8 — Semantic metrics (`af26c85`; Living note `d831e8f`) |
+| **Security baseline SHA** | Phase 8 start = `716fc97`; land = `af26c85`; Living note = `d831e8f` |
 | **Next gate file to create** | `docs/Dev-plans/security-gate-p09.md` |
 | **Open programme blockers** | JWT/RLS swap not done (Partial / SEC-P01-002). SQLGuard gap. KeyHog deferred. Airlock/rlsgrid Unverified. Phase 3–8 dashboard/staging/DAST/apply ops deferred post–Phase 12. Later phases still require further splits of `74aa8eb` (do not merge tip). |
 | **Accepted findings still live** | SEC-P01-002 service role. SEC-P01-003/004 Bandit Medium. **SEC-P02-003** compat aliases (remove when cleared). |
