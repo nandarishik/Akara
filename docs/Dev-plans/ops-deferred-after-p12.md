@@ -69,10 +69,26 @@
 | D2-P06-OPS-005 | Swazz/ZAP scoped to `/data/imports/*` and café upload | Deferred |
 | D2-P06-OPS-006 | Dual §28 sign-off | Deferred |
 
-**Code base at kickoff:** `main` @ `55d63e7`. DEV1 must be path-split from `74aa8eb` (039–047 only) before integrate.
+**Code base at kickoff:** `main` @ `55d63e7`. DEV1 path-split from `74aa8eb` (039–047 only). Code landed on `main` @ `8540e44` / Living note `2546a2f`.
+
+---
+
+## Phase 7 — Connector sync platform
+
+| ID | Item | Status |
+|---|---|---|
+| D2-P07-OPS-001 | Apply migrations 048–051 to `akara-dev` / `akara-staging` | Deferred |
+| D2-P07-OPS-002 | Provision AES master key / Vault; `CONNECTORS_ENABLED=true` on staging; `CONNECTOR_TALLY_PUSH_SECRET` out of band | Deferred |
+| D2-P07-OPS-003 | Deploy 5th Railway service from `railway.connector_sync.json` (record conflict with Phase 3 4-service cap) | Deferred |
+| D2-P07-OPS-004 | Staging smoke: wizard → test → sync → logs; agent HMAC push → `canonical_orders` | Deferred |
+| D2-P07-OPS-005 | Petpooja partnership sandbox→prod; UrbanPiper Gamma (stub stays gated until approved) | Deferred |
+| D2-P07-OPS-006 | Swazz/ZAP scoped to `/api/v1/connectors/*`; live rlsgrid on connector tables | Deferred |
+| D2-P07-OPS-007 | Signed update CA / private key ops (S5); dual §28 S1–S8 sign-off | Deferred |
+
+**Code base at kickoff:** `main` @ `2546a2f` (`PHASE6_SHA`). DEV1 must be path-split from `74aa8eb` (048–051 only; scrub 052+) before integrate.
 
 ---
 
 ## Later phases
 
-Append rows when Phases 7–12 coding starts.
+Append rows when Phases 8–12 coding starts.
