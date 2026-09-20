@@ -85,10 +85,26 @@
 | D2-P07-OPS-006 | Swazz/ZAP scoped to `/api/v1/connectors/*`; live rlsgrid on connector tables | Deferred |
 | D2-P07-OPS-007 | Signed update CA / private key ops (S5); dual §28 S1–S8 sign-off | Deferred |
 
-**Code base at kickoff:** `main` @ `2546a2f` (`PHASE6_SHA`). DEV1 must be path-split from `74aa8eb` (048–051 only; scrub 052+) before integrate.
+**Code base at kickoff:** `main` @ `2546a2f` (`PHASE6_SHA`). DEV1 path-split from `74aa8eb` (048–051 only). Code landed on `main` @ `8cbc1d1` / Living note `716fc97`.
+
+---
+
+## Phase 8 — Semantic metrics & café dashboard
+
+| ID | Item | Status |
+|---|---|---|
+| D2-P08-OPS-001 | Apply migrations 052–055 to `akara-dev` / `akara-staging` | Deferred |
+| D2-P08-OPS-002 | Staging `CAFE_METRICS_V2=true` + `NEW_DASHBOARD` / `VITE_NEW_DASHBOARD` for smoke | Deferred |
+| D2-P08-OPS-003 | MV refresh after import/connector sync verified on staging | Deferred |
+| D2-P08-OPS-004 | Cube.js Railway / internal-only deploy **only if** POC adopted; else mark S4 N/A | Deferred |
+| D2-P08-OPS-005 | Two-tenant API test live: A cannot see B revenue | Deferred |
+| D2-P08-OPS-006 | Swazz/ZAP scoped to `/kpi/*` and `/metrics`; live rlsgrid on new tables | Deferred |
+| D2-P08-OPS-007 | 10% A/B then GA; dual §28 S1–S5 sign-off | Deferred |
+
+**Code base at kickoff:** `main` @ `716fc97` (`PHASE7_SHA`). DEV1 must be path-split from `74aa8eb` (052–055 only; scrub 056+) before integrate.
 
 ---
 
 ## Later phases
 
-Append rows when Phases 8–12 coding starts.
+Append rows when Phases 9–12 coding starts.

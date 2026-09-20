@@ -1,0 +1,4 @@
+﻿Phase 8 start — Cloudflare security-audit guidance mode only.
+Companions: DATA-ISOLATION-AND-LIFECYCLE, WEB-PROTOCOL-AND-AUTH.
+No findings.json at start. Full quick audit deferred to integration tip → p08-run-1.
+Focus: tenant_id on all KPI queries, evidence display-only, no Cube from browser.
