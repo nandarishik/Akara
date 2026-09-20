@@ -151,7 +151,6 @@ const JobControlsPage = React.lazy(() =>
     default: m.JobControlsPage,
   })),
 )
-)
 
 // Dev-only component gallery
 const ComponentGallery = React.lazy(() => import("@/pages/gallery/ComponentGallery"))
