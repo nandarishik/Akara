@@ -42,20 +42,183 @@ export async function superadminFetch<T>(
   return res.json() as Promise<T>;
 }
 
+export type SuperadminRole =
+  | "SUPER_ADMIN"
+  | "SUPPORT"
+  | "BILLING_OPS"
+  | "CONTENT_OPS"
+  | null;
+
 export interface SudoStatus {
   active: boolean;
   expires_at: string | null;
+  superadmin_role?: SuperadminRole;
+}
+
+export interface SudoStartResult {
+  ok?: boolean;
+  expires_at: string;
+  csrf_token: string;
+  superadmin_role?: SuperadminRole;
+}
+
+export class SuperadminApiError extends Error {
+  status: number;
+  body: string;
+  remainingAttempts: number | null;
+
+  constructor(status: number, body: string) {
+    super(`API ${status}: ${body}`);
+    this.name = "SuperadminApiError";
+    this.status = status;
+    this.body = body;
+    this.remainingAttempts = parseRemainingAttempts(body);
+  }
+}
+
+function parseRemainingAttempts(body: string): number | null {
+  try {
+    const parsed = JSON.parse(body) as {
+      remaining_attempts?: number;
+      detail?: { remaining_attempts?: number } | string;
+    };
+    if (typeof parsed.remaining_attempts === "number") return parsed.remaining_attempts;
+    if (
+      parsed.detail &&
+      typeof parsed.detail === "object" &&
+      typeof parsed.detail.remaining_attempts === "number"
+    ) {
+      return parsed.detail.remaining_attempts;
+    }
+  } catch {
+    // fall through
+  }
+  const match = body.match(/remaining[_\s-]?attempts["\s:]*(\d+)/i);
+  return match ? Number(match[1]) : null;
 }
 
 export async function getSudoStatus(): Promise<SudoStatus> {
   return superadminFetch<SudoStatus>("/superadmin/sudo");
 }
 
-export async function startSudo(password: string): Promise<{ expires_at: string; csrf_token: string }> {
-  return superadminFetch("/superadmin/sudo", {
+export async function startSudo(
+  password: string,
+  totpCode?: string | null,
+): Promise<SudoStartResult> {
+  const token = await getToken();
+  const csrf = csrfFromCookie();
+  const res = await fetch(`${BASE}/superadmin/sudo`, {
     method: "POST",
-    body: JSON.stringify({ password }),
+    credentials: "include",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+      ...(csrf ? { "X-CSRF-Token": csrf } : {}),
+    },
+    body: JSON.stringify({ password, totp_code: totpCode ?? null }),
   });
+  const text = await res.text();
+  if (!res.ok) throw new SuperadminApiError(res.status, text);
+  return JSON.parse(text) as SudoStartResult;
+}
+
+export async function setupTotp(): Promise<{ provisioning_uri: string; qr_code_svg: string }> {
+  return superadminFetch("/superadmin/sudo/totp/setup", { method: "POST", body: "{}" });
+}
+
+export async function getTotpStatus(): Promise<{ configured: boolean }> {
+  return superadminFetch("/superadmin/sudo/totp/status");
+}
+
+export interface ImpersonationSessionRow {
+  id: string;
+  tenant_id: string;
+  tenant_name: string | null;
+  operator_id: string;
+  reason: string;
+  started_at: string;
+  expires_at: string;
+}
+
+export async function listActiveImpersonations(): Promise<{ items: ImpersonationSessionRow[] }> {
+  return superadminFetch("/superadmin/impersonate/active");
+}
+
+export async function endImpersonationSession(
+  sessionId: string,
+  reason: string,
+): Promise<unknown> {
+  return superadminFetch(`/superadmin/impersonate/${sessionId}/end`, {
+    method: "POST",
+    body: JSON.stringify({ reason, dry_run: false }),
+  });
+}
+
+export async function patchFeatureOverrides(
+  tenantId: string,
+  overrides: Record<string, number | boolean | unknown[]>,
+  reason: string,
+): Promise<{ ok: boolean; feature_overrides: Record<string, unknown> }> {
+  return superadminFetch(`/superadmin/tenants/${tenantId}/feature-overrides`, {
+    method: "PATCH",
+    body: JSON.stringify({ overrides, reason, dry_run: false }),
+  });
+}
+
+export interface JobRow {
+  job_name: string;
+  paused?: boolean;
+  paused_until?: string | null;
+  last_run_at?: string | null;
+  last_status?: string | null;
+}
+
+export async function listJobs(): Promise<{ items: JobRow[] } | JobRow[]> {
+  return superadminFetch("/superadmin/jobs");
+}
+
+export async function getJobHistory(jobName: string): Promise<{ items: unknown[] }> {
+  return superadminFetch(`/superadmin/jobs/${encodeURIComponent(jobName)}/history`);
+}
+
+export async function triggerJob(jobName: string, reason: string): Promise<unknown> {
+  return superadminFetch(`/superadmin/jobs/${encodeURIComponent(jobName)}/trigger`, {
+    method: "POST",
+    body: JSON.stringify({ reason, dry_run: false }),
+  });
+}
+
+export async function pauseJob(
+  jobName: string,
+  reason: string,
+  pausedUntil: string,
+): Promise<unknown> {
+  return superadminFetch(`/superadmin/jobs/${encodeURIComponent(jobName)}/pause`, {
+    method: "POST",
+    body: JSON.stringify({ reason, dry_run: false, paused_until: pausedUntil }),
+  });
+}
+
+export async function resumeJob(jobName: string, reason: string): Promise<unknown> {
+  return superadminFetch(`/superadmin/jobs/${encodeURIComponent(jobName)}/resume`, {
+    method: "POST",
+    body: JSON.stringify({ reason, dry_run: false }),
+  });
+}
+
+export async function overrideTenantJob(
+  tenantId: string,
+  jobName: string,
+  reason: string,
+  body: Record<string, unknown> = {},
+): Promise<unknown> {
+  return superadminFetch(
+    `/superadmin/tenants/${tenantId}/jobs/${encodeURIComponent(jobName)}/override`,
+    {
+      method: "POST",
+      body: JSON.stringify({ reason, dry_run: false, ...body }),
+    },
+  );
 }
 
 export async function checkSuperadminAccess(): Promise<boolean> {
@@ -166,6 +329,8 @@ export interface AuditLogRow {
   tenant_id?: string | null;
   ip_address?: string | null;
   details: Record<string, unknown> | null;
+  before_state?: Record<string, unknown> | null;
+  after_state?: Record<string, unknown> | null;
 }
 
 export interface AuditFilters {
