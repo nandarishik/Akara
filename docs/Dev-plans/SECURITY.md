@@ -129,10 +129,10 @@ Node.js is required only to run `validate-findings.cjs` / `validate-coverage-led
 
 | Field | Value |
 |---|---|
-| **Current phase in progress** | Phase 6 coding complete on `phase/06-canonical-cafe-data` @ `a4f7ea3` — **not** on `main` until operator asks; ops JOINT deferred |
-| **Last phase merged to `main`** | 5 — Superadmin/billing (+ esbuild hotfix `55d63e7`) |
-| **Security baseline SHA** | Phase 6 integration tip `a4f7ea3` (base `55d63e7`) |
-| **Next gate file to create** | `docs/Dev-plans/security-gate-p07.md` (at Phase 7 start; after P6 lands on main) |
+| **Current phase in progress** | none — Phase 6 **code** landed on `main` @ `8540e44`; next is Phase 7 (split `74aa8eb` for 048–051 first) |
+| **Last phase merged to `main`** | 6 — Canonical café data (`8540e44`; merge tip from `phase/06-canonical-cafe-data` @ `5d62dbe`) |
+| **Security baseline SHA** | Phase 6 on `main` @ `8540e44` |
+| **Next gate file to create** | `docs/Dev-plans/security-gate-p07.md` (at Phase 7 start) |
 | **Open programme blockers** | JWT/RLS swap not done (Partial / SEC-P01-002). SQLGuard gap. KeyHog deferred. Airlock/rlsgrid Unverified. Phase 3–6 dashboard/staging/DAST/apply ops deferred post–Phase 12. Later phases still require further splits of `74aa8eb` (do not merge tip). |
 | **Accepted findings still live** | SEC-P01-002 service role. SEC-P01-003/004 Bandit Medium. **SEC-P02-003** compat aliases (remove when cleared). |
 
@@ -188,7 +188,8 @@ Node.js is required only to run `validate-findings.cjs` / `validate-coverage-led
 | 6 | PII artefact | `backend/app/domain/data_import/cafe/pii.py` (named LLM PII pytest Unverified / shell) |
 | 6 | JWT/RLS programme | **Partial** — SEC-P01-002 unchanged |
 | 6 | Ops deferred | apply 039–047 / AI mapping staging / Swazz / rlsgrid → `ops-deferred-after-p12.md` |
-| 6 | Integration tip | `a4f7ea3` (DEV1 `d0defea` then DEV2 + end docs) — **awaiting operator PR to main** |
+| 6 | Integration tip | `a4f7ea3` (DEV1 `d0defea` then DEV2 + end docs) |
+| 6 | Landed on `main` | `8540e44` (2026-09-20) — code land; ops Partial → `ops-deferred-after-p12.md` |
 
 ---
 
