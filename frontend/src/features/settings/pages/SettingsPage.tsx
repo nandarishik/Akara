@@ -10,7 +10,8 @@ import { Label } from "@/shared/ui/label";
 import GlowSurfaceCard from "@/shared/ui/GlowSurfaceCard";
 import { Badge } from "@/shared/ui/badge";
 import { CheckCircle, AlertCircle, Trash2, Download, KeyRound } from "lucide-react";
-import { roleLabel } from "@/lib/auth-utils";
+import { isOwner, roleLabel } from "@/lib/auth-utils";
+import { DeleteAccountDialog } from "@/features/settings/components/DeleteAccountDialog";
 import { PlanGate } from "@/features/billing/components/PlanGate";
 import { useBilling } from "@/features/billing/hooks/useBilling";
 import { TeamPage } from "@/features/team/pages/TeamPage";
@@ -100,7 +101,18 @@ function Toggle({
   );
 }
 
-type SessionRow = { id: string; device: string; current: boolean; last_active: string };
+type SessionRow = {
+  id: string;
+  session_id?: string;
+  device?: string;
+  device_hint?: string;
+  current: boolean;
+  last_active?: string;
+  last_seen_at?: string;
+};
+
+const MAX_SESSION_HINT =
+  import.meta.env.VITE_MAX_SESSION_HINT ?? "Max 3 devices";
 
 export function SettingsPage() {
   const { user, session, refreshProfile } = useAuth();
@@ -114,7 +126,8 @@ export function SettingsPage() {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState("");
-  const [deleteEmail, setDeleteEmail] = useState("");
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [exportMsg, setExportMsg] = useState("");
   const [password, setPassword] = useState("");
   const [passwordMsg, setPasswordMsg] = useState("");
   const [sessions, setSessions] = useState<SessionRow[]>([]);
@@ -151,11 +164,41 @@ export function SettingsPage() {
     try {
       await apiFetch("/account/sessions/revoke-others", { method: "POST" });
       setPasswordMsg("Signed out on all other devices.");
+      const rows = await apiFetch<SessionRow[]>("/account/sessions");
+      setSessions(rows);
     } catch {
       setPasswordMsg("Could not revoke other sessions.");
     } finally {
       setRevokingOthers(false);
     }
+  }
+
+  async function handleRevokeSession(sessionId: string) {
+    try {
+      await apiFetch(`/account/sessions/${encodeURIComponent(sessionId)}`, { method: "DELETE" });
+      setSessions((prev) => prev.filter((s) => (s.session_id ?? s.id) !== sessionId));
+      setPasswordMsg("Session signed out.");
+    } catch {
+      setPasswordMsg("Could not sign out that session.");
+    }
+  }
+
+  function sessionDeviceLabel(s: SessionRow): string {
+    return s.device_hint ?? s.device ?? "Unknown device";
+  }
+
+  function sessionLastSeen(s: SessionRow): string {
+    const raw = s.last_seen_at ?? s.last_active;
+    if (!raw) return "Unknown";
+    try {
+      return new Date(raw).toLocaleString();
+    } catch {
+      return raw;
+    }
+  }
+
+  function sessionKey(s: SessionRow): string {
+    return s.session_id ?? s.id;
   }
 
   useEffect(() => {
@@ -269,7 +312,7 @@ export function SettingsPage() {
     }
   }
 
-  async function handleExport() {
+  async function handleExportDownload() {
     const token = session?.access_token;
     const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/account/export`, {
       headers: { Authorization: `Bearer ${token}` },
@@ -283,17 +326,40 @@ export function SettingsPage() {
     URL.revokeObjectURL(url);
   }
 
-  async function handleDelete() {
-    if (!confirm("This schedules permanent account deletion. Continue?")) return;
+  async function handleExportRequest() {
+    setExportMsg("");
+    try {
+      const res = await apiFetch<{ queued?: boolean; eta_minutes?: number }>("/account/export/request", {
+        method: "POST",
+      });
+      setExportMsg(
+        res.eta_minutes
+          ? `Export queued — ready in about ${res.eta_minutes} minutes. We'll email you when it's done.`
+          : "Export queued — we'll email you when it's ready.",
+      );
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "";
+      if (msg.includes("API 404")) {
+        await handleExportDownload();
+        setExportMsg("Download started.");
+        return;
+      }
+      setExportMsg("Could not request export. Try again later.");
+    }
+  }
+
+  async function handleDelete(confirmEmail: string) {
     await apiFetch("/account", {
       method: "DELETE",
-      body: JSON.stringify({ confirm_email: deleteEmail }),
+      body: JSON.stringify({ confirm_email: confirmEmail }),
     });
     await supabase.auth.signOut();
     window.location.href = "/";
   }
 
   const role = roleLabel(user, session);
+  const owner = isOwner(user, session);
+  const workspaceName = tenantMeta.company ?? "workspace";
   const { data: usage } = useBilling();
   const whatsappLocked = !channels?.whatsapp_enabled;
 
@@ -503,14 +569,31 @@ export function SettingsPage() {
         <GlowSurfaceCard className="space-y-4">
           <h2 className="text-base font-semibold">Security</h2>
           <div className="space-y-2">
-            <p className="text-sm font-medium text-text-primary">Active sessions</p>
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <p className="text-sm font-medium text-text-primary">Active sessions</p>
+              <p className="text-xs text-text-muted">{MAX_SESSION_HINT}</p>
+            </div>
             <ul className="divide-y divide-white/10 rounded-lg border border-white/10">
               {sessions.map((s) => (
-                <li key={s.id} className="px-3 py-2 text-sm flex justify-between gap-2">
-                  <span className="text-text-secondary truncate">{s.device}</span>
-                  {s.current && (
-                    <Badge variant="outline" className="shrink-0 text-xs">Current</Badge>
-                  )}
+                <li key={sessionKey(s)} className="px-3 py-2 text-sm flex flex-wrap justify-between gap-2 items-center">
+                  <div className="min-w-0">
+                    <p className="text-text-secondary truncate">{sessionDeviceLabel(s)}</p>
+                    <p className="text-xs text-text-muted">Last seen {sessionLastSeen(s)}</p>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    {s.current && (
+                      <Badge variant="outline" className="text-xs">Current</Badge>
+                    )}
+                    {!s.current && (
+                      <AkaraButton
+                        variant="secondary"
+                        size="sm"
+                        onClick={() => void handleRevokeSession(sessionKey(s))}
+                      >
+                        Sign out
+                      </AkaraButton>
+                    )}
+                  </div>
                 </li>
               ))}
               {sessions.length === 0 && (
@@ -552,22 +635,49 @@ export function SettingsPage() {
       )}
 
       {tab === "danger" && (
-        <GlowSurfaceCard accent="red" className="space-y-4">
-          <h2 className="text-base font-semibold text-red-400 flex items-center gap-2">
-            <Trash2 className="h-4 w-4" /> Danger Zone
-          </h2>
-          <AkaraButton variant="secondary" size="sm" onClick={handleExport}>
-            <Download className="h-4 w-4 mr-1" /> Export my data (JSON)
-          </AkaraButton>
-          <div className="space-y-2 pt-2 border-t border-white/10">
-            <Label htmlFor="confirmEmail">Delete account — type your email to confirm</Label>
-            <Input id="confirmEmail" value={deleteEmail} onChange={(e) => setDeleteEmail(e.target.value)} placeholder={user?.email} className="max-w-sm" />
-            <p className="text-xs text-text-muted">Deletion is queued and processed asynchronously (DPDP).</p>
-            <AkaraButton size="sm" onClick={handleDelete} disabled={deleteEmail.toLowerCase() !== (user?.email || "").toLowerCase()}>
-              Delete account permanently
+        <>
+          <GlowSurfaceCard className="space-y-4">
+            <h2 className="text-base font-semibold flex items-center gap-2">
+              <Download className="h-4 w-4" /> Privacy &amp; Data
+            </h2>
+            <p className="text-sm text-text-secondary">
+              Request a JSON export of your account data. We&apos;ll email you when it&apos;s ready.
+            </p>
+            <AkaraButton variant="secondary" size="sm" onClick={() => void handleExportRequest()}>
+              Request data export
             </AkaraButton>
-          </div>
-        </GlowSurfaceCard>
+            {exportMsg && <p className="text-sm text-text-secondary">{exportMsg}</p>}
+          </GlowSurfaceCard>
+
+          <GlowSurfaceCard accent="red" className="space-y-4">
+            <h2 className="text-base font-semibold text-red-400 flex items-center gap-2">
+              <Trash2 className="h-4 w-4" /> Danger Zone
+            </h2>
+            {owner ? (
+              <>
+                <p className="text-sm text-text-secondary">
+                  Permanently delete this workspace and all associated data after the grace period.
+                </p>
+                <AkaraButton size="sm" onClick={() => setDeleteDialogOpen(true)}>
+                  Delete workspace
+                </AkaraButton>
+              </>
+            ) : (
+              <p className="text-sm text-text-secondary">
+                Only the workspace owner can delete the workspace. Contact your owner if you need the
+                workspace removed.
+              </p>
+            )}
+          </GlowSurfaceCard>
+
+          <DeleteAccountDialog
+            open={deleteDialogOpen}
+            onOpenChange={setDeleteDialogOpen}
+            workspaceName={workspaceName}
+            userEmail={user?.email ?? ""}
+            onConfirm={handleDelete}
+          />
+        </>
       )}
       <p className="text-xs text-muted-foreground">
         Version {import.meta.env.VITE_GIT_SHA?.slice(0, 7) ?? "dev"}
