@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+import hashlib
+import hmac
+import time
 from typing import Any
 from uuid import UUID, uuid4
 
@@ -28,6 +31,42 @@ def _gate() -> None:
             status_code=404,
             code="CONNECTORS_DISABLED",
             message="Connectors are not enabled.",
+        )
+
+
+def _verify_tally_hmac(raw_body: bytes, timestamp: str, signature: str) -> None:
+    secret = getattr(settings, "connector_tally_push_secret", "") or ""
+    if not secret:
+        raise AkaraHTTPException(
+            status_code=401,
+            code="UNAUTHENTICATED",
+            message="Push secret not configured",
+        )
+    try:
+        ts = int(timestamp)
+    except ValueError as exc:
+        raise AkaraHTTPException(
+            status_code=401,
+            code="UNAUTHENTICATED",
+            message="Invalid timestamp",
+        ) from exc
+    if abs(int(time.time()) - ts) > 300:
+        raise AkaraHTTPException(
+            status_code=401,
+            code="UNAUTHENTICATED",
+            message="Timestamp skew rejected",
+        )
+    body_hash = hashlib.sha256(raw_body).hexdigest()
+    expected = hmac.new(
+        secret.encode("utf-8"),
+        f"{ts}.{body_hash}".encode("utf-8"),
+        hashlib.sha256,
+    ).hexdigest()
+    if not hmac.compare_digest(expected, signature):
+        raise AkaraHTTPException(
+            status_code=401,
+            code="UNAUTHENTICATED",
+            message="Invalid signature",
         )
 
 
@@ -152,17 +191,22 @@ def connector_logs(connector_id: UUID, tenant: TenantCtx) -> dict[str, Any]:
 
 
 @router.post("/tally/push", status_code=202)
+@limiter.limit("30/minute")
 async def tally_push(
     request: Request,
     x_connector_key: str | None = Header(default=None, alias="X-Connector-Key"),
     x_akara_timestamp: str | None = Header(default=None, alias="X-Akara-Timestamp"),
     x_akara_signature: str | None = Header(default=None, alias="X-Akara-Signature"),
 ) -> dict[str, Any]:
+    _gate()
     if not x_connector_key or not x_akara_timestamp or not x_akara_signature:
         raise AkaraHTTPException(
             status_code=401,
             code="UNAUTHENTICATED",
             message="Missing connector signature",
         )
-    # Stub accept — full HMAC verify + skew is DEV1 follow-up; Partial DoD from tip shell.
+    raw = await request.body()
+    _verify_tally_hmac(raw, x_akara_timestamp, x_akara_signature)
+    # Key→tenant binding via connector_api_keys is DEV1 follow-up when keys are issued on create.
+    # Require non-empty key present (header already checked).
     return {"job_id": str(uuid4()), "status": "accepted"}
