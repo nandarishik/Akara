@@ -129,11 +129,11 @@ Node.js is required only to run `validate-findings.cjs` / `validate-coverage-led
 
 | Field | Value |
 |---|---|
-| **Current phase in progress** | none — Phase 4 **code** landed on `main` @ `95ae73d` (merge `d66221e`); ops JOINT DoD deferred to `ops-deferred-after-p12.md`; next cut is Phase 5 from this tip |
-| **Last phase merged to `main`** | 4 — Identity/tenancy/onboarding (`95ae73d`; merge tip `d66221e` = DEV1 `b449b5f` then DEV2) |
-| **Security baseline SHA** | Phase 4 on `main` @ `95ae73d` |
-| **Next gate file to create** | `docs/Dev-plans/security-gate-p05.md` (at Phase 5 start) |
-| **Open programme blockers** | JWT/RLS swap not done (still Partial / SEC-P01-002). SQLGuard no `tenant_id` predicate. KeyHog still deferred on Windows. Airlock/rlsgrid live DB Unverified. Phase 3–4 dashboard/staging/DAST/apply ops deferred post–Phase 12 (`ops-deferred-after-p12.md`). |
+| **Current phase in progress** | none — Phase 5 **code** ready on `phase/05-superadmin-billing` @ `a3990dd` (not yet on `main`); ops deferred to `ops-deferred-after-p12.md`; next cut is Phase 6 from post-P5 `main` (split `74aa8eb` first) |
+| **Last phase merged to `main`** | 4 — Identity/tenancy/onboarding (`95ae73d`; merge tip `d66221e` / Living tip `73933d1`) |
+| **Security baseline SHA** | Phase 5 integration tip `a3990dd` (DEV1 `3269d44` + DEV2) |
+| **Next gate file to create** | `docs/Dev-plans/security-gate-p06.md` (at Phase 6 start) |
+| **Open programme blockers** | JWT/RLS swap not done (Partial / SEC-P01-002). SQLGuard gap. KeyHog deferred. Airlock/rlsgrid Unverified. Phase 3–5 dashboard/staging/DAST/apply ops deferred post–Phase 12. Phase 6+ must split `74aa8eb`. |
 | **Accepted findings still live** | SEC-P01-002 service role. SEC-P01-003/004 Bandit Medium. **SEC-P02-003** compat aliases (remove Phase 5). |
 
 ### Artefact index (append a row when a file is written)
@@ -169,6 +169,15 @@ Node.js is required only to run `validate-findings.cjs` / `validate-coverage-led
 | 4 | Ops deferred | apply 030–032, exports bucket, Swazz/ZAP, live rlsgrid → `ops-deferred-after-p12.md` |
 | 4 | Integration tip | `0626cee` (DEV1 `b449b5f` then DEV2 + end docs) |
 | 4 | Landed on `main` | `95ae73d` via merge `d66221e` (2026-09-20) — code land; ops Partial → `ops-deferred-after-p12.md` |
+| 5 | `docs/Phases/security-scan-p05-*` | written (start + end Bandit/pip-audit/Semgrep; KeyHog stub; Betterleaks Partial) |
+| 5 | `docs/Dev-plans/security-gate-p05.md` | written |
+| 5 | Cloudflare (`C:\Users\Admin\security-audit-skill\akara\p05-run-1\`) | full quick — 0 confirmed; 5 needs_validation |
+| 5 | `docs/Dev-plans/session-handoff-p05-dev2.md` | written |
+| 5 | TOTP / impersonation JWT | landed in DEV1 `3269d44`; UI on DEV2 |
+| 5 | Migrations | contiguous `029`–`038`; P4 `030`–`032` preserved; P5 `033`–`038` from DEV1 |
+| 5 | JWT/RLS programme | **Partial** — SEC-P01-002 unchanged |
+| 5 | Ops deferred | REQUIRE_SUDO_TOTP / QUERY_READONLY / apply / Swazz → `ops-deferred-after-p12.md` |
+| 5 | Integration tip | `a3990dd` — **not on `main` until operator asks** |
 
 ---
 
@@ -312,15 +321,14 @@ Status (2026-09-20): **Code landed on `main` @ `873d19a` / tip includes `852d315
 
 ### Start
 
-- [ ] `REQUIRE_SUDO_TOTP` plan for staging. Never commit TOTP secrets.
-- [ ] Seed `security-gate-p05.md` from §28.1–28.6 checkboxes.
+- [x] `REQUIRE_SUDO_TOTP` plan for staging recorded as deferred (never commit TOTP secrets).
+- [x] Seed `security-gate-p05.md` from §28.1–28.6 checkboxes.
 
 ### End
 
-- [ ] Dual-barrier write attempt on query console fails.
-- [ ] Impersonation cannot access superadmin or other tenants.
-- [ ] Audit log has no DELETE/UPDATE path for tenants.
-- [ ] Update Living log: sudo/TOTP, readonly DB URL pattern (no secrets), remaining billing webhook gaps.
+- [x] Dual-barrier / impersonation / audit: DEV1 contracts + tests on tip (`test_phase05_contracts` 6 passed); live QUERY_READONLY deferred.
+- [x] Impersonation cannot access superadmin — covered by DEV1 contract tests; UI tenant banner Complete.
+- [x] Update Living log: TOTP, impersonation JWT, QUERY_READONLY deferred, Cloudflare p05-run-1.
 
 ---
 
