@@ -94,3 +94,13 @@ export async function apiFetch<T>(
   }
   return res.json() as Promise<T>;
 }
+
+export interface ImpersonationSessionResponse {
+  active: boolean;
+  reason: string | null;
+  expires_at: string | null;
+  session_id: string | null;
+}
+export async function fetchImpersonationSession(): Promise<ImpersonationSessionResponse> {
+  return apiFetch("/account/impersonation-session");
+}

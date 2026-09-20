@@ -14,7 +14,7 @@ from app.core.rate_limit import ADMIN_READ_LIMIT, limiter
 from app.core.superadmin import SuperAdmin
 from app.core.tenant import get_supabase_service_client
 
-router = APIRouter(prefix="/audit-logs", tags=["superadmin-audit"])
+router = APIRouter(tags=["superadmin-audit"])
 
 
 class AuditLogItem(BaseModel):
@@ -36,7 +36,8 @@ class AuditLogItem(BaseModel):
     user_agent: str | None = None
 
 
-@router.get("", response_model=OffsetPage[AuditLogItem])
+@router.get("/audit-logs", response_model=OffsetPage[AuditLogItem])
+@router.get("/audit", response_model=OffsetPage[AuditLogItem])
 @limiter.limit(ADMIN_READ_LIMIT)
 def list_audit_logs(
     request: Request,
@@ -44,9 +45,11 @@ def list_audit_logs(
     params: OffsetParams = Depends(),
     tenant_id: UUID | None = Query(default=None),
     user_id: UUID | None = Query(default=None),
+    actor_id: UUID | None = Query(default=None),
     action: str | None = Query(default=None),
-    date_from: str | None = Query(default=None),
-    date_to: str | None = Query(default=None),
+    operation: str | None = Query(default=None),
+    date_from: str | None = Query(default=None, alias="from"),
+    date_to: str | None = Query(default=None, alias="to"),
     ip: str | None = Query(default=None),
 ) -> OffsetPage[AuditLogItem]:
     supa = get_supabase_service_client()
@@ -55,8 +58,12 @@ def list_audit_logs(
         query = query.eq("tenant_id", str(tenant_id))
     if user_id:
         query = query.or_(f"user_id.eq.{user_id},actor_id.eq.{user_id}")
+    if actor_id:
+        query = query.eq("actor_id", str(actor_id))
     if action:
         query = query.ilike("action", f"%{action}%")
+    if operation:
+        query = query.ilike("action", f"%{operation}%")
     if date_from:
         query = query.gte("created_at", date_from)
     if date_to:

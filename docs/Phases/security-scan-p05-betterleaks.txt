@@ -1,0 +1,1 @@
+﻿scoped: betterleaks CLI present but scan subcommand differs — recorded TOOL_USAGE_PARTIAL; no live secret hunt this host

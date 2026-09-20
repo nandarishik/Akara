@@ -2,9 +2,16 @@ import { useEffect, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { Loader2, RefreshCw, Send } from "lucide-react";
 
+import { DangerousActionDialog } from "@/features/superadmin/components/DangerousActionDialog";
 import { sa, superadminFetch, type TenantRow } from "@/lib/api/superadmin";
 
 type BillingTab = "ops" | "ledger" | "reconciliation" | "coupons";
+
+type BillingDanger =
+  | { kind: "manual_upgrade" }
+  | { kind: "manual_payment" }
+  | { kind: "void_invoice" }
+  | null;
 
 interface WebhookStatus {
   last_24h_total: number;
@@ -87,6 +94,10 @@ export function BillingOpsPage() {
   const [invoiceRetryId, setInvoiceRetryId] = useState("");
   const [subAction, setSubAction] = useState<"pause" | "resume" | "cancel" | "change_date">("pause");
   const [subNewDate, setSubNewDate] = useState("");
+  const [billingDanger, setBillingDanger] = useState<BillingDanger>(null);
+  const [dangerLoading, setDangerLoading] = useState(false);
+  const manualPaymentApplyRef = useRef<((reason: string) => Promise<void>) | null>(null);
+  const voidInvoiceApplyRef = useRef<((reason: string) => Promise<void>) | null>(null);
 
   async function load() {
     setLoading(true);
@@ -141,8 +152,9 @@ export function BillingOpsPage() {
     }
   }
 
-  async function handleManualUpgrade() {
-    if (!tenantId.trim() || !manualReason.trim()) return;
+  async function handleManualUpgrade(dialogReason?: string) {
+    const reasonText = (dialogReason ?? manualReason).trim();
+    if (!tenantId.trim() || !reasonText) return;
     setManualLoading(true);
     setOpsMessage("");
     try {
@@ -152,7 +164,7 @@ export function BillingOpsPage() {
           method: "POST",
           body: JSON.stringify({
             plan: manualPlan,
-            reason: manualReason.trim(),
+            reason: reasonText,
             clear_past_due: true,
           }),
         }
@@ -693,8 +705,8 @@ export function BillingOpsPage() {
             />
             <button
               type="button"
-              onClick={handleManualUpgrade}
-              disabled={manualLoading || !tenantId.trim() || !manualReason.trim()}
+              onClick={() => setBillingDanger({ kind: "manual_upgrade" })}
+              disabled={manualLoading || !tenantId.trim()}
               className="w-full px-4 py-2 rounded-md bg-sa-accent text-white text-sm disabled:opacity-50"
             >
               {manualLoading ? "Applying…" : "Apply manual upgrade"}
@@ -785,6 +797,10 @@ export function BillingOpsPage() {
           uploadEvidence={uploadEvidence}
           onMessage={setOpsMessage}
           onReloadTimeline={loadTimeline}
+          onRequestManualPayment={(apply) => {
+            manualPaymentApplyRef.current = apply;
+            setBillingDanger({ kind: "manual_payment" });
+          }}
         />
       )}
 
@@ -814,7 +830,54 @@ export function BillingOpsPage() {
         </div>
       )}
 
-      {tab === "ops" && <VoidRefundPanel />}
+      {tab === "ops" && (
+        <VoidRefundPanel
+          onRequestVoid={(apply) => {
+            voidInvoiceApplyRef.current = apply;
+            setBillingDanger({ kind: "void_invoice" });
+          }}
+        />
+      )}
+
+      <DangerousActionDialog
+        open={!!billingDanger}
+        onOpenChange={(open) => {
+          if (!open) setBillingDanger(null);
+        }}
+        title={
+          billingDanger?.kind === "void_invoice"
+            ? "Void invoice"
+            : billingDanger?.kind === "manual_payment"
+              ? "Record manual payment"
+              : "Apply manual upgrade"
+        }
+        summary={
+          billingDanger?.kind === "void_invoice"
+            ? "Voiding an invoice is irreversible. Confirm with a clear ops reason."
+            : billingDanger?.kind === "manual_payment"
+              ? "Record a manual/NEFT payment against this tenant."
+              : `Force plan change to ${manualPlan} for tenant ${tenantId.slice(0, 8)}…`
+        }
+        minReasonLength={10}
+        irreversible={billingDanger?.kind === "void_invoice"}
+        loading={dangerLoading || manualLoading}
+        onConfirm={async (dialogReason) => {
+          setDangerLoading(true);
+          try {
+            if (billingDanger?.kind === "manual_upgrade") {
+              const merged = [manualReason.trim(), dialogReason].filter(Boolean).join(" — ");
+              await handleManualUpgrade(merged || dialogReason);
+            } else if (billingDanger?.kind === "manual_payment") {
+              await manualPaymentApplyRef.current?.(dialogReason);
+            } else if (billingDanger?.kind === "void_invoice") {
+              await voidInvoiceApplyRef.current?.(dialogReason);
+            }
+            setBillingDanger(null);
+          } finally {
+            setDangerLoading(false);
+          }
+        }}
+      />
     </div>
   );
 }
@@ -848,6 +911,7 @@ function ExtendedBillingOpsPanel({
   uploadEvidence,
   onMessage,
   onReloadTimeline,
+  onRequestManualPayment,
 }: {
   tenantId: string;
   markPaidInvoiceId: string;
@@ -877,6 +941,7 @@ function ExtendedBillingOpsPanel({
   uploadEvidence: (file: File | null) => Promise<string | null>;
   onMessage: (msg: string) => void;
   onReloadTimeline: () => Promise<void>;
+  onRequestManualPayment: (apply: (reason: string) => Promise<void>) => void;
 }) {
   const [markPaidFile, setMarkPaidFile] = useState<File | null>(null);
   const [manualPayFile, setManualPayFile] = useState<File | null>(null);
@@ -905,7 +970,7 @@ function ExtendedBillingOpsPanel({
     }
   }
 
-  async function handleManualPayment() {
+  async function handleManualPayment(dialogReason: string) {
     if (!tenantId.trim() || !manualPayAmount || !manualPayBankRef.trim()) return;
     setLoading(true);
     try {
@@ -913,7 +978,7 @@ function ExtendedBillingOpsPanel({
       await superadminFetch("/superadmin/billing/manual-payment", {
         method: "POST",
         body: JSON.stringify({
-          reason: "Manual payment from billing ops",
+          reason: dialogReason,
           tenant_id: tenantId.trim(),
           amount_minor: parseInt(manualPayAmount, 10),
           bank_reference: manualPayBankRef.trim(),
@@ -1010,7 +1075,7 @@ function ExtendedBillingOpsPanel({
           <input placeholder="Bank reference" value={manualPayBankRef} onChange={(e) => setManualPayBankRef(e.target.value)} className="w-full rounded-md border border-sa-border bg-sa-base px-3 py-2 text-sm text-sa-text" />
           <input type="file" accept="image/*,application/pdf" onChange={(e) => setManualPayFile(e.target.files?.[0] ?? null)} className="text-xs text-sa-muted" />
           <input placeholder="Evidence path (optional override)" value={manualPayEvidence} onChange={(e) => setManualPayEvidence(e.target.value)} className="w-full rounded-md border border-sa-border bg-sa-base px-3 py-2 text-xs text-sa-text" />
-          <button type="button" disabled={loading || !tenantId.trim()} onClick={() => void handleManualPayment()} className="w-full px-4 py-2 rounded-md border border-sa-border text-sm text-sa-text disabled:opacity-50">Record manual payment</button>
+          <button type="button" disabled={loading || !tenantId.trim() || !manualPayAmount || !manualPayBankRef.trim()} onClick={() => onRequestManualPayment(handleManualPayment)} className="w-full px-4 py-2 rounded-md border border-sa-border text-sm text-sa-text disabled:opacity-50">Record manual payment</button>
         </div>
         <div className="space-y-2 rounded-md border border-sa-border p-3">
           <p className="text-xs font-medium uppercase text-sa-text">Issue credit</p>
@@ -1143,7 +1208,11 @@ function TenantSearchAutocomplete({
   );
 }
 
-function VoidRefundPanel() {
+function VoidRefundPanel({
+  onRequestVoid,
+}: {
+  onRequestVoid: (apply: (reason: string) => Promise<void>) => void;
+}) {
   const [invoiceRef, setInvoiceRef] = useState("");
   const [paymentId, setPaymentId] = useState("");
   const [refundAmountPaise, setRefundAmountPaise] = useState("");
@@ -1151,7 +1220,7 @@ function VoidRefundPanel() {
   const [preview, setPreview] = useState<Record<string, unknown> | null>(null);
   const [msg, setMsg] = useState("");
 
-  async function voidInvoice(apply: boolean) {
+  async function voidInvoice(apply: boolean, dialogReason?: string) {
     setMsg("");
     setPreview(null);
     try {
@@ -1160,7 +1229,7 @@ function VoidRefundPanel() {
         {
           method: "POST",
           body: JSON.stringify({
-            reason: "Void from billing ops UI",
+            reason: dialogReason ?? "Void from billing ops UI",
             dry_run: !apply,
           }),
         },
@@ -1249,7 +1318,15 @@ function VoidRefundPanel() {
           type="button"
           className="text-sm text-sa-accent underline disabled:opacity-50"
           disabled={!invoiceRef.trim()}
-          onClick={() => void voidInvoice(!dryRun)}
+          onClick={() => {
+            if (dryRun) {
+              void voidInvoice(false);
+            } else {
+              onRequestVoid(async (reason) => {
+                await voidInvoice(true, reason);
+              });
+            }
+          }}
         >
           {dryRun ? "Preview void" : "Void invoice"}
         </button>
@@ -1257,11 +1334,11 @@ function VoidRefundPanel() {
           <button
             type="button"
             className="text-sm text-red-400 underline"
-            onClick={() => {
-              if (window.confirm("Void this invoice? This cannot be undone.")) {
-                void voidInvoice(true);
-              }
-            }}
+            onClick={() =>
+              onRequestVoid(async (reason) => {
+                await voidInvoice(true, reason);
+              })
+            }
           >
             Apply void
           </button>

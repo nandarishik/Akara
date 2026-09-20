@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 
 import { sa } from "@/lib/api/superadmin";
 import { MutationReasonField } from "@/features/superadmin/components/MutationReasonField";
@@ -93,7 +94,15 @@ export function CronPage() {
   return (
     <div className="space-y-6 text-sa-text max-w-5xl">
       <div className="flex flex-wrap items-end justify-between gap-4">
-        <h2 className="text-xl font-semibold">Cron health</h2>
+        <div>
+          <h2 className="text-xl font-semibold">Cron health</h2>
+          <Link
+            to="/superadmin/jobs"
+            className="text-xs text-sa-accent hover:underline mt-1 inline-block"
+          >
+            Open job controls →
+          </Link>
+        </div>
         <div className="w-72">
           <MutationReasonField value={reason} onChange={setReason} />
         </div>

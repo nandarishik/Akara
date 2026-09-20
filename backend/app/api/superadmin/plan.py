@@ -144,45 +144,14 @@ def patch_features(
     admin: SudoCtx,
     _: None = Depends(require_csrf),
 ) -> dict[str, Any]:
-    before = _get_tenant_or_404(tenant_id)
-    before_overrides = dict(before.get("feature_overrides") or {})
-    after_overrides = {**before_overrides, **body.features}
+    from app.domain.superadmin.feature_overrides import apply_feature_overrides
 
-    if not body.features:
-        raise AkaraHTTPException(
-            status_code=400,
-            code="VALIDATION_ERROR",
-            message="At least one feature override required",
-        )
-
-    if body.dry_run:
-        return dry_run_response(
-            action="superadmin.features.patch",
-            before={"feature_overrides": before_overrides},
-            impact={"feature_overrides": after_overrides},
-        )
-
-    supa = get_supabase_service_client()
-    result = (
-        supa.table("tenants")
-        .update({"feature_overrides": after_overrides})
-        .eq("id", str(tenant_id))
-        .execute()
-    )
-    after = result.data[0]
-
-    meta = request_actor_meta(request)
-    audit = record_operation(
-        action="superadmin.features.patch",
-        actor_id=admin.user_id,
-        actor_email=admin.email,
-        reason=body.reason,
+    return apply_feature_overrides(
+        request=request,
         tenant_id=tenant_id,
-        before_state={"feature_overrides": before_overrides},
-        after_state={"feature_overrides": after_overrides},
+        overrides=body.features,
+        admin=admin,
+        reason=body.reason,
+        dry_run=body.dry_run,
         operation_id=body.operation_id,
-        resource_type="tenant",
-        resource_id=str(tenant_id),
-        **meta,
     )
-    return {"ok": True, "feature_overrides": after.get("feature_overrides"), "audit": audit}

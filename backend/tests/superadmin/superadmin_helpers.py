@@ -191,7 +191,12 @@ class QaMatrixSupabase:
 
     def _profiles_table(self) -> MagicMock:
         table = MagicMock()
-        profile = {"role": self.profile_role, "tenant_id": str(TENANT_FREE), "id": str(USER_FREE)}
+        profile = {
+            "role": self.profile_role,
+            "tenant_id": str(TENANT_FREE),
+            "id": str(USER_FREE),
+            "superadmin_role": "SUPER_ADMIN" if self.profile_role == "superadmin" else None,
+        }
         table.select.return_value.eq.return_value.maybe_single.return_value = _QueryChain(
             self._single(profile)
         )

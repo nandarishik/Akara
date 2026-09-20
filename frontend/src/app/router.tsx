@@ -138,6 +138,20 @@ const ContentPage = React.lazy(() =>
 const LegalPage = React.lazy(() =>
   import("@/features/superadmin/pages/LegalPage").then((m) => ({ default: m.LegalPage }))
 )
+const TotpSetupPage = React.lazy(() =>
+  import("@/features/superadmin/pages/TotpSetupPage").then((m) => ({ default: m.TotpSetupPage })),
+)
+const ImpersonationPage = React.lazy(() =>
+  import("@/features/superadmin/pages/ImpersonationPage").then((m) => ({
+    default: m.ImpersonationPage,
+  })),
+)
+const JobControlsPage = React.lazy(() =>
+  import("@/features/superadmin/pages/JobControlsPage").then((m) => ({
+    default: m.JobControlsPage,
+  })),
+)
+)
 
 // Dev-only component gallery
 const ComponentGallery = React.lazy(() => import("@/pages/gallery/ComponentGallery"))
@@ -202,6 +216,9 @@ export function AppRouter() {
               <Route path="legal" element={<LegalPage />} />
               <Route path="comms" element={<SuperadminCommsPage />} />
               <Route path="cron" element={<CronPage />} />
+              <Route path="jobs" element={<JobControlsPage />} />
+              <Route path="impersonation" element={<ImpersonationPage />} />
+              <Route path="totp-setup" element={<TotpSetupPage />} />
               <Route path="audit" element={<SuperadminAuditPage />} />
               <Route path="settings" element={<SuperadminSettingsPage />} />
               <Route path="ai" element={<SuperadminAiPage />} />

@@ -13,6 +13,7 @@ from fastapi.responses import Response
 from pydantic import BaseModel, Field
 
 from app.core.auth import CurrentUser
+from app.core.config import settings
 from app.core.errors import AkaraHTTPException
 from app.core.idempotency import IdempotencyKey
 from app.core.plan_guard import _get_current_usage
@@ -311,6 +312,15 @@ def update_billing_details(
             code="VALIDATION_ERROR",
             message="Invalid GSTIN format",
         )
+    if body.gstin and settings.gstin_validation_enabled:
+        from app.domain.billing.gst_invoice import validate_gstin_checksum
+
+        if not validate_gstin_checksum(body.gstin.upper()):
+            raise AkaraHTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                code="VALIDATION_ERROR",
+                message="Invalid GSTIN checksum",
+            )
 
     supa = get_supabase_service_client()
     current = (
