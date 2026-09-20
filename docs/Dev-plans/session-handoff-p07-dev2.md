@@ -1,7 +1,7 @@
 # Phase 7 DEV2 session handoff
 
 Branch (DEV2): `phase/07-dev-2-connector-sync-platform` @ `04ee3fd`  
-Integration: `phase/07-connector-sync-platform` @ `878d938`  
+Integration: `phase/07-connector-sync-platform` @ `f6733b0`  
 Date: 2026-09-20
 
 ## Kickoff
@@ -23,7 +23,7 @@ Date: 2026-09-20
 | Agent HMAC pytest | 2 passed |
 | Migrations on integ | contiguous `048`–`051` (no `052+`) |
 
-## Post-merge verification (`71536ed`)
+## Post-merge verification (`f6733b0`)
 
 | Check | Result |
 |---|---|

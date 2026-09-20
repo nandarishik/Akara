@@ -129,9 +129,9 @@ Node.js is required only to run `validate-findings.cjs` / `validate-coverage-led
 
 | Field | Value |
 |---|---|
-| **Current phase in progress** | Phase 7 coding complete on `phase/07-connector-sync-platform` @ `878d938` — **not** on `main` until operator asks; ops JOINT deferred |
+| **Current phase in progress** | Phase 7 coding complete on `phase/07-connector-sync-platform` @ `f6733b0` — **not** on `main` until operator asks; ops JOINT deferred |
 | **Last phase merged to `main`** | 6 — Canonical café data (`8540e44`; Living note `2546a2f`) |
-| **Security baseline SHA** | Phase 7 integration tip `878d938` (base `2546a2f`) |
+| **Security baseline SHA** | Phase 7 integration tip `f6733b0` (base `2546a2f`) |
 | **Next gate file to create** | `docs/Dev-plans/security-gate-p08.md` (at Phase 8 start; after P7 lands on main) |
 | **Open programme blockers** | JWT/RLS swap not done (Partial / SEC-P01-002). SQLGuard gap. KeyHog deferred. Airlock/rlsgrid Unverified. Phase 3–6 dashboard/staging/DAST/apply ops deferred post–Phase 12. Later phases still require further splits of `74aa8eb` (do not merge tip). |
 | **Accepted findings still live** | SEC-P01-002 service role. SEC-P01-003/004 Bandit Medium. **SEC-P02-003** compat aliases (remove when cleared). |
@@ -200,7 +200,7 @@ Node.js is required only to run `validate-findings.cjs` / `validate-coverage-led
 | 7 | Cursor security-review | domain/connectors — 2 HIGH (ungated/unverified push) fixed on tip; MEDIUM Partial crypto/key-binding remain |
 | 7 | JWT/RLS programme | **Partial** — SEC-P01-002 unchanged |
 | 7 | Ops deferred | apply 048–051 / Vault / Railway 5th / partnership / Swazz / rlsgrid / signed-update CA → `ops-deferred-after-p12.md` |
-| 7 | Integration tip | `878d938` (DEV1 `e904e74` then DEV2 + HMAC fix + end docs) — **awaiting operator PR to main** |
+| 7 | Integration tip | `f6733b0` (DEV1 `e904e74` then DEV2 + HMAC fix + end docs) — **awaiting operator PR to main** |
 
 ---
 
