@@ -75,6 +75,8 @@ Gate filled. Cloudflare `p03-run-1` 0 confirmed. Living log updated. Dual §28 s
 Integration HEAD: merge `0dc2067` + tip security docs commit (Living log / gate end)  
 DEV2 HEAD: `8748255`
 
-## PR
+## PR / main
 
-Do not PR/push to main until operator asks.
+**Landed on `main` 2026-09-20** as code land @ `852d315` (FF from `phase/03-environments-cicd`).  
+DEV2 tip `8748255` + DEV1 `d922de8` (merge `0dc2067`) both on `main`.  
+Ops JOINT DoD → [`ops-deferred-after-p12.md`](ops-deferred-after-p12.md).

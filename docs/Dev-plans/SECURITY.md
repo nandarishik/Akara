@@ -129,11 +129,11 @@ Node.js is required only to run `validate-findings.cjs` / `validate-coverage-led
 
 | Field | Value |
 |---|---|
-| **Current phase in progress** | 3 — Environments/CI/CD on `phase/03-environments-cicd` @ `0dc2067` (not yet on `main`) |
-| **Last phase merged to `main`** | 2 — Modular Foundation (`e03be63` / Living tip `d79479c`) |
-| **Security baseline SHA** | Phase 3 integration tip `0dc2067` (DEV2 then DEV1 `d922de8`) |
-| **Next gate file to create** | `docs/Dev-plans/security-gate-p04.md` (at Phase 4 start; after Phase 3 lands on `main`) |
-| **Open programme blockers** | JWT/RLS swap not done. SQLGuard no `tenant_id` predicate. KeyHog still deferred on Windows. Airlock/rlsgrid live DB Unverified. Phase 3 dashboards (Supabase×3, Vercel×3, healthchecks, Sentry Performance, restore drill, Swazz) BLOCKED on this host — JOINT DoD incomplete. |
+| **Current phase in progress** | none — Phase 3 **code** landed on `main` @ `852d315`; ops JOINT DoD deferred to `ops-deferred-after-p12.md`; next cut is Phase 4 from this tip |
+| **Last phase merged to `main`** | 3 — Environments/CI/CD (`852d315`; merge tip `0dc2067` = DEV2 then DEV1 `d922de8`) |
+| **Security baseline SHA** | Phase 3 on `main` @ `852d315` |
+| **Next gate file to create** | `docs/Dev-plans/security-gate-p04.md` (at Phase 4 start) |
+| **Open programme blockers** | JWT/RLS swap not done. SQLGuard no `tenant_id` predicate. KeyHog still deferred on Windows. Airlock/rlsgrid live DB Unverified. Phase 3 dashboard/staging ops deferred post–Phase 12 (`ops-deferred-after-p12.md`). |
 | **Accepted findings still live** | SEC-P01-002 service role. SEC-P01-003/004 Bandit Medium. **SEC-P02-003** compat aliases (remove Phase 5). |
 
 ### Artefact index (append a row when a file is written)
@@ -159,6 +159,7 @@ Node.js is required only to run `validate-findings.cjs` / `validate-coverage-led
 | 3 | `docs/Dev-plans/session-handoff-p03-dev2.md` | written |
 | 3 | CI jobs on tip | `security-static`, `security-dast`, `security-container`, `env-isolation-check`, `deploy-staging`, `deploy-production` (+ existing backend/frontend/e2e/migrations) |
 | 3 | Restore drill | runbook `docs/operations/backup-restore.md`; live insert **failed/BLOCKED** (no staging DB) |
+| 3 | Landed on `main` | `852d315` (2026-09-20) — code land; ops Partial → `ops-deferred-after-p12.md` |
 
 ---
 
