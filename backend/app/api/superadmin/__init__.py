@@ -29,6 +29,7 @@ def include_superadmin_routers() -> None:
         data,
         day11,
         impersonate,
+        jobs,
         legal,
         overview,
         plan,
@@ -65,4 +66,5 @@ def include_superadmin_routers() -> None:
     router.include_router(day11.router)
     router.include_router(ai_control.router)
     router.include_router(templates_control.router)
+    router.include_router(jobs.router)
     _mounted = True

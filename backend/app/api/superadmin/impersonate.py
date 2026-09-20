@@ -7,19 +7,26 @@ from typing import Any
 from uuid import UUID, uuid4
 
 from fastapi import APIRouter, Depends, Request
+from jose import jwt
 from pydantic import BaseModel
 
 from app.core.config import settings
 from app.core.errors import AkaraHTTPException
-from app.core.rate_limit import ADMIN_WRITE_LIMIT, limiter
-from app.core.superadmin import SudoCtx, request_actor_meta, require_csrf
+from app.core.rate_limit import ADMIN_READ_LIMIT, ADMIN_WRITE_LIMIT, limiter
+from app.core.superadmin import (
+    SudoCtx,
+    SuperadminRole,
+    request_actor_meta,
+    require_csrf,
+    require_role,
+)
 from app.core.tenant import get_supabase_service_client
 from app.domain.superadmin.audit import record_operation
 from app.domain.superadmin.mutations import SuperadminMutation, dry_run_response
 
 router = APIRouter(prefix="/impersonate", tags=["superadmin-impersonate"])
 
-IMPERSONATION_TTL = timedelta(minutes=15)
+IMPERSONATION_TTL = timedelta(minutes=30)
 
 
 class ImpersonateBody(SuperadminMutation):
@@ -30,6 +37,7 @@ class ImpersonateResponse(BaseModel):
     ok: bool = True
     session_id: str | None = None
     expires_at: str | None = None
+    impersonation_token: str | None = None
     magic_link: str | None = None
     tenant_name: str | None = None
     target_user_id: str | None = None
@@ -37,6 +45,69 @@ class ImpersonateResponse(BaseModel):
 
 class ImpersonateStopBody(SuperadminMutation):
     session_id: UUID | None = None
+
+
+@router.get("/active")
+@limiter.limit(ADMIN_READ_LIMIT)
+def list_active_impersonations(request: Request, admin: SudoCtx) -> dict[str, Any]:
+    now = datetime.now(UTC).isoformat()
+    result = (
+        get_supabase_service_client()
+        .table("impersonation_sessions")
+        .select("id, tenant_id, superadmin_id, reason, created_at, expires_at")
+        .is_("ended_at", "null")
+        .gt("expires_at", now)
+        .execute()
+    )
+    items = []
+    for row in result.data or []:
+        tenant = (
+            get_supabase_service_client()
+            .table("tenants")
+            .select("name")
+            .eq("id", row["tenant_id"])
+            .maybe_single()
+            .execute()
+        )
+        items.append({
+            "id": row["id"],
+            "tenant_id": row["tenant_id"],
+            "tenant_name": (tenant.data or {}).get("name"),
+            "operator_id": row.get("superadmin_id"),
+            "reason": row.get("reason"),
+            "started_at": row.get("created_at"),
+            "expires_at": row.get("expires_at"),
+        })
+    return {"items": items}
+
+
+@router.post("/{session_id}/end")
+@limiter.limit(ADMIN_WRITE_LIMIT)
+def end_impersonation_session(
+    request: Request,
+    session_id: UUID,
+    body: SuperadminMutation,
+    admin: SudoCtx,
+    _: None = Depends(require_csrf),
+) -> dict[str, Any]:
+    now = datetime.now(UTC).isoformat()
+    if body.dry_run:
+        return dry_run_response(
+            action="superadmin.impersonate.end",
+            impact={"session_id": str(session_id)},
+        )
+    get_supabase_service_client().table("impersonation_sessions").update({
+        "ended_at": now,
+    }).eq("id", str(session_id)).execute()
+    audit = record_operation(
+        action="superadmin.impersonate.end",
+        actor_id=admin.user_id,
+        actor_email=admin.email,
+        reason=body.reason,
+        details={"session_id": str(session_id)},
+        **request_actor_meta(request),
+    )
+    return {"ok": True, "ended": True, "audit": audit}
 
 
 @router.post("/stop")
@@ -88,6 +159,7 @@ def impersonate_tenant(
     body: ImpersonateBody,
     admin: SudoCtx,
     _: None = Depends(require_csrf),
+    __ctx: None = Depends(require_role(SuperadminRole.SUPER_ADMIN, SuperadminRole.SUPPORT)),
 ) -> dict[str, Any]:
     supa = get_supabase_service_client()
     tenant = (
@@ -130,6 +202,8 @@ def impersonate_tenant(
 
     expires_at = datetime.now(UTC) + IMPERSONATION_TTL
     session_id = uuid4()
+    jti = str(uuid4())
+    meta = request_actor_meta(request)
 
     if body.dry_run:
         return dry_run_response(
@@ -147,6 +221,10 @@ def impersonate_tenant(
         "tenant_id": str(tenant_id),
         "target_user_id": target_user_id,
         "expires_at": expires_at.isoformat(),
+        "reason": body.reason,
+        "client_ip": meta.get("ip_address"),
+        "user_agent": meta.get("user_agent"),
+        "jwt_jti": jti,
     }).execute()
 
     try:
@@ -179,8 +257,23 @@ def impersonate_tenant(
             message=f"Could not generate impersonation link: {exc}",
         ) from exc
 
+    impersonation_token = jwt.encode(
+        {
+            "sub": target_user_id,
+            "email": email,
+            "aud": "authenticated",
+            "impersonated": True,
+            "impersonation_session_id": str(session_id),
+            "jti": jti,
+            "exp": expires_at,
+            "iat": datetime.now(UTC),
+        },
+        settings.jwt_secret,
+        algorithm=settings.jwt_algorithm,
+    )
+
     meta = request_actor_meta(request)
-    audit = record_operation(
+    record_operation(
         action="superadmin.impersonate",
         actor_id=admin.user_id,
         actor_email=admin.email,
@@ -200,6 +293,7 @@ def impersonate_tenant(
     return ImpersonateResponse(
         session_id=str(session_id),
         expires_at=expires_at.isoformat(),
+        impersonation_token=impersonation_token,
         magic_link=magic_link,
         tenant_name=tenant.data.get("name"),
         target_user_id=target_user_id,

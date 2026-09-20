@@ -25,6 +25,10 @@ class Settings(BaseSettings):
     # Dedicated least-privilege Postgres connection for the superadmin Query Console.
     # It must point at a role with SELECT-only grants; never use the service role here.
     query_readonly_db_url: str = ""
+    superadmin_totp_encryption_key: str = ""
+    require_sudo_totp: bool = False
+    superadmin_alert_email: str = ""
+    gstin_validation_enabled: bool = True
     # Supabase Storage bucket for async import uploads (default matches common project setup).
     supabase_imports_bucket: str = "storage"
 

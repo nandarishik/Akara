@@ -131,6 +131,15 @@ def get_limit(plan: str, key: str) -> Any:
     return PLAN_LIMITS.get(plan, PLAN_LIMITS["free"]).get(key)
 
 
+def resolve_limit(tenant_ctx: Any, key: str) -> Any:
+    """Tenant feature_overrides win, then PLAN_LIMITS for the tenant plan."""
+    overrides = getattr(tenant_ctx, "feature_overrides", None) or {}
+    if key in overrides:
+        return overrides[key]
+    plan = getattr(tenant_ctx, "plan", None) or "free"
+    return PLAN_LIMITS.get(plan, PLAN_LIMITS["free"]).get(key)
+
+
 def is_feature_enabled(plan: str, feature: str, overrides: dict) -> bool:
     """Check if a feature is enabled for a plan.
 

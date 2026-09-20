@@ -225,7 +225,15 @@ def handle_subscription_halted_or_pending(sub: dict[str, Any]) -> bool:
     if email:
         send_payment_failed_email(email)
 
-    if not _dunning_sent(tenant["id"], 0):
+    if not _dunning_sent(tenant["id"], 0, now):
+        try:
+            _supa().table("dunning_sent_log").insert({
+                "tenant_id": tenant["id"],
+                "day": 0,
+                "past_due_at": now,
+            }).execute()
+        except Exception:
+            logger.warning("dunning_sent_log insert failed for tenant %s", tenant["id"])
         _supa().table("dunning_events").insert({
             "tenant_id": tenant["id"],
             "day_offset": 0,
@@ -289,7 +297,20 @@ def handle_payment_refunded(payment: dict[str, Any]) -> bool:
     return True
 
 
-def _dunning_sent(tenant_id: str, day_offset: int) -> bool:
+def _dunning_sent(tenant_id: str, day_offset: int, past_due_at: str | None = None) -> bool:
+    if past_due_at:
+        logged = (
+            _supa()
+            .table("dunning_sent_log")
+            .select("tenant_id")
+            .eq("tenant_id", tenant_id)
+            .eq("day", day_offset)
+            .eq("past_due_at", past_due_at)
+            .limit(1)
+            .execute()
+        )
+        if logged.data:
+            return True
     result = (
         _supa()
         .table("dunning_events")

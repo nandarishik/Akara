@@ -60,12 +60,16 @@ class TokenPayload(BaseModel):
     role: str | None = None
     aud: str | None = None
     jti: str | None = None
+    impersonated: bool = False
+    impersonation_session_id: str | None = None
 
 
 class AuthenticatedUser(BaseModel):
     user_id: UUID
     email: str | None
     role: str | None
+    impersonated: bool = False
+    impersonation_session_id: str | None = None
 
 
 _bearer = HTTPBearer()
@@ -165,10 +169,30 @@ def get_current_user(
 ) -> AuthenticatedUser:
     """FastAPI dependency: validates JWT, returns AuthenticatedUser."""
     payload = decode_supabase_jwt(credentials.credentials)
+    if payload.impersonated and payload.impersonation_session_id:
+        from app.core.tenant import get_supabase_service_client
+
+        row = (
+            get_supabase_service_client()
+            .table("impersonation_sessions")
+            .select("ended_at, expires_at")
+            .eq("id", payload.impersonation_session_id)
+            .maybe_single()
+            .execute()
+        )
+        data = row.data or {}
+        if data.get("ended_at"):
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Impersonation session ended",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
     user = AuthenticatedUser(
         user_id=UUID(payload.sub),
         email=payload.email,
         role=payload.role,
+        impersonated=payload.impersonated,
+        impersonation_session_id=payload.impersonation_session_id,
     )
     if payload.jti:
         from app.core.session_tracker import record_session

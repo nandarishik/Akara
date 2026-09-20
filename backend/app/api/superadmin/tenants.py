@@ -882,3 +882,30 @@ def delete_tenant(
         **meta,
     )
     return {"ok": True, "deleted_tenant_id": str(tenant_id), "audit": audit}
+
+
+class FeatureOverridesBody(SuperadminMutation):
+    overrides: dict[str, Any] = Field(default_factory=dict)
+
+
+@router.patch("/{tenant_id}/feature-overrides")
+@limiter.limit(ADMIN_WRITE_LIMIT)
+def patch_feature_overrides(
+    request: Request,
+    tenant_id: UUID,
+    body: FeatureOverridesBody,
+    admin: SudoCtx,
+    _: None = Depends(require_csrf),
+) -> dict[str, Any]:
+    from app.domain.superadmin.feature_overrides import apply_feature_overrides
+
+    return apply_feature_overrides(
+        request=request,
+        tenant_id=tenant_id,
+        overrides=body.overrides,
+        admin=admin,
+        reason=body.reason,
+        dry_run=body.dry_run,
+        operation_id=body.operation_id,
+    )
+

@@ -1,4 +1,4 @@
-# Railway uses: pip install uv && uv sync && uvicorn app.main:app --host 0.0.0.0 --port 
+# Railway uses: pip install uv && uv sync && uvicorn app.main:app --host 0.0.0.0 --port $PORT
 [project]
 name = "akara-backend"
 version = "0.1.0"
@@ -31,6 +31,7 @@ dependencies = [
     "opentelemetry-exporter-otlp-proto-http>=1.24.0",
     "opentelemetry-instrumentation-fastapi>=0.45b0",
     "opentelemetry-instrumentation-httpx>=0.45b0",
+    "pyotp>=2.9.0",
 ]
 
 [project.optional-dependencies]
@@ -65,9 +66,4 @@ asyncio_mode = "auto"
 testpaths = ["tests"]
 markers = [
     "integration: live tests against deployed API (requires TEST_TENANT_* tokens)",
-]
-
-[dependency-groups]
-dev = [
-    "import-linter>=2.15",
 ]
