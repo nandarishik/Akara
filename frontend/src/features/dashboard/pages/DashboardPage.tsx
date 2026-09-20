@@ -14,6 +14,8 @@ import {
 } from "lucide-react";
 import { useKPIs } from "@/features/dashboard/hooks/useKPIs";
 import { useSalesHeatmap } from "@/features/dashboard/hooks/useSalesHeatmap";
+import { useDashboardFlags } from "@/features/dashboard/hooks/useDashboardFlags";
+import { CafeDashboard } from "@/features/dashboard/pages/CafeDashboard";
 import { ProductZoneMatrix } from "@/shared/charts/composed/akara/ProductZoneMatrix";
 import { toNum, formatINR as fmtINR } from "@/lib/format";
 import { RevenueTrendChart } from "@/features/dashboard/components/RevenueTrendChart";
@@ -54,6 +56,16 @@ function getDateRange(period: string): [string, string] {
 const formatINR = fmtINR;
 
 export function DashboardPage() {
+  const { newDashboard } = useDashboardFlags();
+
+  if (newDashboard) {
+    return <CafeDashboard />;
+  }
+
+  return <FmcgDashboard />;
+}
+
+function FmcgDashboard() {
   const [period, setPeriod] = useState("30d");
   const [showWhatsAppNudge, setShowWhatsAppNudge] = useState(false);
   const [showWelcomeSlot, setShowWelcomeSlot] = useState(false);
