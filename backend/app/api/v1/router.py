@@ -15,6 +15,7 @@ from app.api.v1 import (
     health,
     kpi,
     marketing,
+    metrics,
     onboarding,
     public_routes,
     reports,
@@ -35,6 +36,7 @@ def _mount_customer_routers(target: APIRouter) -> None:
     target.include_router(copilot.router)
     target.include_router(conversations.router)
     target.include_router(kpi.router)
+    target.include_router(metrics.router)
     target.include_router(data.router)
     target.include_router(cafe_data.router)
     target.include_router(reports.router)
