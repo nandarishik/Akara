@@ -40,6 +40,10 @@ cp .env.example .env.local
 make dev-web           # from repo root, or: pnpm dev
 ```
 
+### Phase 4 migrations (030–032)
+
+Phase 4 adds `030_p04_roles_consent.sql`, `031_p04_team_invites.sql`, and `032_p04_active_sessions.sql` under `supabase/migrations/` (with matching files in `supabase/migrations/rollback/`). Apply them on your Supabase project when you are ready to exercise team invites, consent logging, and session management locally or on staging — they are **not** applied automatically by `make migrate` (that target only prints a hint). Team invite links use `/invite/accept?token=…` on the customer frontend.
+
 ## Docs layout
 
 | Path | Purpose |

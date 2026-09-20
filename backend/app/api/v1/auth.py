@@ -263,3 +263,48 @@ async def consent_accept(
             "ip_hash": ip_hash,
         }
     ).execute()
+
+
+class ConsentWriteRequest(BaseModel):
+    consent_type: str = Field(pattern="^(terms|privacy|marketing)$")
+    accepted: bool
+    source: str = Field(pattern="^(signup|reaccept_modal|settings)$")
+
+
+@router.post("/consent")
+@limiter.limit("20/minute")
+async def record_consent(
+    request: Request, body: ConsentWriteRequest, user: CurrentUser
+) -> dict[str, bool]:
+    if body.accepted is not True:
+        raise AkaraHTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            code="VALIDATION_ERROR",
+            message="Consent must be accepted",
+        )
+    client = get_supabase_service_client()
+    ip = request.client.host if request.client else "unknown"
+    ip_hash = hashlib.sha256(ip.encode()).hexdigest()
+    try:
+        client.table("consent_log").insert(
+            {
+                "user_id": str(user.user_id),
+                "consent_type": body.consent_type,
+                "accepted": True,
+                "source": body.source,
+                "version_tos": settings.terms_version,
+                "version_privacy": settings.privacy_version,
+                "ip_hash": ip_hash,
+            }
+        ).execute()
+    except Exception:
+        client.table("consent_log").insert(
+            {
+                "user_id": str(user.user_id),
+                "version_tos": settings.terms_version,
+                "version_privacy": settings.privacy_version,
+                "ai_processing": body.consent_type != "marketing",
+                "ip_hash": ip_hash,
+            }
+        ).execute()
+    return {"recorded": True}

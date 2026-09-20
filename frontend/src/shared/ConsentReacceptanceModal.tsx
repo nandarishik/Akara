@@ -55,6 +55,23 @@ export function ConsentReacceptanceModal() {
     const token = data.session?.access_token;
     if (!token) return;
     try {
+      const consentRes = await fetch(`${BASE}/auth/consent`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          consent_type: "terms",
+          accepted: true,
+          source: "reaccept_modal",
+        }),
+      });
+      if (!consentRes.ok) {
+        setError("Could not save consent. Try again.");
+        return;
+      }
+
       const res = await fetch(`${BASE}/auth/consent-accept`, {
         method: "POST",
         headers: {

@@ -1,0 +1,1 @@
+Betterleaks scoped (backend/app, frontend/src, docs).

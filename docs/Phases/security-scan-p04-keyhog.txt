@@ -1,0 +1,2 @@
+﻿TOOL_NOT_INSTALLED: keyhog
+Deferred Windows host.

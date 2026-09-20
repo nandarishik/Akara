@@ -1,110 +1,61 @@
 /**
- * OnboardingPage — Sprint Phase 2, Day 3
- * FireAI light auth — AuthLayout + shared Input + AkaraButton.
- * Mandatory 3-step wizard: business details → file upload → success.
+ * Phase 4 onboarding: workspace_setup → file_upload → processing (+ skip).
  */
-
 import { useEffect, useRef, useState } from "react"
 import type { ChangeEvent } from "react"
-import { useNavigate } from "react-router-dom"
+import { Link, useNavigate } from "react-router-dom"
 import { useAuth } from "@/features/auth/contexts/AuthContext"
 import { AuthLayout } from "@/shared/layout/AuthLayout"
 import { Input } from "@/shared/ui/input"
 import { Label } from "@/shared/ui/label"
 import { AkaraButton, GhostButton } from "@/shared/ui/GradientButton"
 import GlowSurfaceCard from "@/shared/ui/GlowSurfaceCard"
-import PageLoader from "@/shared/ui/PageLoader"
 import { cn } from "@/lib/utils"
-import { dismissSlot, isSlotDismissed, SLOT_KEYS } from "@/lib/promoSlots"
+import { useImportJobPoller } from "@/features/onboarding/hooks/useImportJobPoller"
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL ?? ""
-const ONBOARDING_STEP_KEY = "akara_onboarding_step"
 
-function readStoredStep(): 1 | 2 | 3 {
-  const raw = sessionStorage.getItem(ONBOARDING_STEP_KEY)
-  if (raw === "2") return 2
-  if (raw === "3") return 3
-  return 1
-}
+type Step = "workspace_setup" | "file_upload" | "processing"
 
 const SELECT_CLASS =
-  "flex h-10 w-full rounded-md border border-surface-border bg-surface-card px-3 py-2 text-sm text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-2"
-
-function ProgressDots({ step }: { step: 1 | 2 | 3 }) {
-  return (
-    <div className="flex items-center justify-center gap-3 mb-6" aria-label={`Step ${step} of 3`}>
-      {[1, 2, 3].map((i) => (
-        <div
-          key={i}
-          className={cn(
-            "w-3 h-3 rounded-full transition-colors",
-            i <= step ? "bg-accent" : "bg-surface-raised"
-          )}
-          aria-hidden="true"
-        />
-      ))}
-    </div>
-  )
-}
+  "flex h-10 w-full rounded-md border border-surface-border bg-surface-card px-3 py-2 text-sm text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400"
 
 export function OnboardingPage() {
   const { session, refreshProfile } = useAuth()
   const navigate = useNavigate()
+  const emailPrefix = (session?.user?.email ?? "workspace").split("@")[0] || "workspace"
 
-  const [step, setStepState] = useState<1 | 2 | 3>(() => readStoredStep())
+  const [step, setStep] = useState<Step>("workspace_setup")
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
+  const [showAdvanced, setShowAdvanced] = useState(false)
 
-  function setStep(next: 1 | 2 | 3) {
-    setStepState(next)
-    sessionStorage.setItem(ONBOARDING_STEP_KEY, String(next))
-  }
-
-  useEffect(() => {
-    void (async () => {
-      const token = session?.access_token
-      if (!token) return
-      await refreshProfile()
-      const stored = readStoredStep()
-      if (stored < 2) return
-      try {
-        const res = await fetch(`${API_BASE}/auth/me`, {
-          headers: { Authorization: `Bearer ${token}` },
-        })
-        if (!res.ok) return
-        const data = await res.json()
-        if (data.tenant_id) {
-          setStepState(stored)
-        } else {
-          sessionStorage.removeItem(ONBOARDING_STEP_KEY)
-        }
-      } catch {
-        // ignore — user stays on default step
-      }
-    })()
-  }, []) // eslint-disable-line react-hooks/exhaustive-deps -- restore once on mount
-
-  const companyDefault = (session?.user?.user_metadata?.company_name as string | undefined) ?? ""
-  const [companyName, setCompanyName] = useState(companyDefault)
-  const [industry, setIndustry] = useState("")
-  const [currency, setCurrency] = useState("INR")
+  const [workspaceName, setWorkspaceName] = useState(`${emailPrefix}'s Café`)
+  const [businessType, setBusinessType] = useState("cafe")
   const [language, setLanguage] = useState("en")
-  const [monthlyRevenue, setMonthlyRevenue] = useState("")
+  const [currency, setCurrency] = useState("INR")
+  const [timezone, setTimezone] = useState("Asia/Kolkata")
 
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [file, setFile] = useState<File | null>(null)
-  const [uploadProgress, setUploadProgress] = useState(0)
-  const [uploadStatus, setUploadStatus] = useState<"idle" | "uploading" | "done" | "error">("idle")
-  const [uploadResult, setUploadResult] = useState<{ rows: number; dateRange: string; zones: number } | null>(null)
-
-  const [slotIDismissed, setSlotIDismissed] = useState(
-    () => isSlotDismissed(SLOT_KEYS.I)
+  const [jobId, setJobId] = useState<string | null>(null)
+  const { result: job, error: pollError } = useImportJobPoller(
+    step === "processing" ? jobId : null,
   )
 
-  async function handleStep1() {
+  useEffect(() => {
+    if (job?.status === "completed") {
+      navigate(
+        "/copilot?q=" + encodeURIComponent("What were my top-selling products last week?"),
+        { replace: true },
+      )
+    }
+  }, [job?.status, navigate])
+
+  async function handleSetup() {
     setError("")
-    if (!companyName.trim() || !industry) {
-      setError("Please fill in all required fields")
+    if (!workspaceName.trim() || !businessType) {
+      setError("Please fill in workspace name and business type")
       return
     }
     setLoading(true)
@@ -117,21 +68,46 @@ export function OnboardingPage() {
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
         body: JSON.stringify({
-          company_name: companyName,
-          industry,
-          currency,
+          workspace_name: workspaceName.trim(),
+          company_name: workspaceName.trim(),
+          business_type: businessType,
+          industry: businessType,
           language,
-          monthly_revenue_range: monthlyRevenue || null,
+          currency,
+          timezone,
         }),
       })
       if (!res.ok) {
         const body = await res.json().catch(() => ({}))
         throw new Error(body?.detail?.message ?? `Setup failed: ${res.status}`)
       }
+      const data = (await res.json()) as { redirect_hint?: string }
       await refreshProfile()
-      setStep(2)
+      if (data.redirect_hint === "dashboard") {
+        navigate("/dashboard", { replace: true })
+        return
+      }
+      setStep("file_upload")
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Something went wrong. Please try again.")
+      setError(err instanceof Error ? err.message : "Setup failed")
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  async function handleSkip() {
+    setLoading(true)
+    setError("")
+    try {
+      const token = session?.access_token
+      await fetch(`${API_BASE}/onboarding/skip`, {
+        method: "POST",
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      })
+      await refreshProfile()
+      navigate("/dashboard", { replace: true })
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Skip failed")
     } finally {
       setLoading(false)
     }
@@ -140,326 +116,155 @@ export function OnboardingPage() {
   function handleFileSelect(e: ChangeEvent<HTMLInputElement>) {
     const f = e.target.files?.[0]
     if (!f) return
+    if (f.size > 50 * 1024 * 1024) {
+      setError("File must be under 50MB")
+      return
+    }
     setFile(f)
-    setUploadStatus("idle")
-    setUploadProgress(0)
-    setUploadResult(null)
+    setError("")
   }
 
   async function handleUpload() {
     if (!file) return
-    setUploadStatus("uploading")
-    setUploadProgress(10)
-
+    setLoading(true)
+    setError("")
     try {
-      const progressInterval = setInterval(() => {
-        setUploadProgress((p) => Math.min(p + 10, 80))
-      }, 400)
-
       const token = session?.access_token
       const formData = new FormData()
       formData.append("file", file)
-
-      const res = await fetch(`${API_BASE}/data/import`, {
+      const res = await fetch(`${API_BASE}/data/import/async`, {
         method: "POST",
         headers: token ? { Authorization: `Bearer ${token}` } : {},
         body: formData,
       })
-
-      clearInterval(progressInterval)
-      setUploadProgress(100)
-
       if (!res.ok) throw new Error(`Upload failed: ${res.status}`)
-      const data = await res.json()
-      setUploadResult({
-        rows: data.rows_inserted ?? 0,
-        dateRange: data.date_range ?? "—",
-        zones: data.zones ?? 0,
-      })
-      setUploadStatus("done")
-    } catch {
-      setUploadStatus("error")
-      setUploadProgress(0)
-    }
-  }
-
-  function handleSkip() {
-    setStep(3)
-  }
-
-  async function handleComplete() {
-    setLoading(true)
-    try {
-      const token = session?.access_token
-      await fetch(`${API_BASE}/auth/onboarding-complete`, {
-        method: "POST",
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
-      })
-      await refreshProfile()
-      sessionStorage.removeItem(ONBOARDING_STEP_KEY)
-      navigate("/dashboard", { replace: true })
-    } catch {
-      await refreshProfile()
-      sessionStorage.removeItem(ONBOARDING_STEP_KEY)
-      navigate("/dashboard", { replace: true })
+      const data = (await res.json()) as { job_id?: string; id?: string }
+      const id = data.job_id ?? data.id
+      if (!id) throw new Error("No job id returned")
+      setJobId(id)
+      setStep("processing")
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Upload failed")
     } finally {
       setLoading(false)
     }
   }
 
   return (
-    <AuthLayout
-      size="lg"
-      above={
-        <>
-          {step > 1 && step < 3 && (
-            <button
-              type="button"
-              className="mb-4 text-text-muted hover:text-accent text-sm font-medium"
-              onClick={() => setStep((step - 1) as 1 | 2 | 3)}
-            >
-              ← Back
-            </button>
-          )}
-          <ProgressDots step={step} />
-        </>
-      }
-    >
-      {loading && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#0a0a0a]/80 backdrop-blur-sm">
-          <PageLoader title="Setting up your business…" subtitle="" minHeight="min-h-0" />
-        </div>
-      )}
-      {step === 1 && (
-        <>
-          <div className="text-center mb-6">
-            <span className="text-5xl" aria-hidden="true">🏭</span>
-          </div>
-          <h1 className="text-2xl font-extrabold text-text-primary text-center mb-1">Tell us about your business</h1>
-          <p className="text-text-muted text-center mb-8 text-sm">So AKARA speaks your language from day one.</p>
-
-          <div className="space-y-4">
-            <div className="space-y-1.5">
-              <Label htmlFor="ob-company" className="text-text-secondary">
-                Company name <span className="text-red-500">*</span>
-              </Label>
-              <Input
-                id="ob-company"
-                type="text"
-                required
-                value={companyName}
-                onChange={(e) => setCompanyName(e.target.value)}
-              />
-            </div>
-
-            <div className="space-y-1.5">
-              <Label htmlFor="ob-industry" className="text-text-secondary">
-                Industry <span className="text-red-500">*</span>
-              </Label>
-              <select
-                id="ob-industry"
-                value={industry}
-                onChange={(e) => setIndustry(e.target.value)}
-                className={SELECT_CLASS}
-              >
-                <option value="">Select industry</option>
-                <option value="fmcg_distribution">FMCG Distribution</option>
-                <option value="restaurant_qsr">Restaurant / QSR</option>
-                <option value="pharma_distribution">Pharma Distribution</option>
-                <option value="industrial_distribution">Industrial Distribution</option>
-                <option value="retail_chain">Retail Chain</option>
-                <option value="other">Other</option>
-              </select>
-            </div>
-
-            <div className="space-y-1.5">
-              <Label htmlFor="ob-currency" className="text-text-secondary">Currency</Label>
-              <select id="ob-currency" value={currency} onChange={(e) => setCurrency(e.target.value)} className={SELECT_CLASS}>
-                <option value="INR">₹ INR — Indian Rupee</option>
-                <option value="USD">$ USD — US Dollar</option>
-                <option value="AED">AED — UAE Dirham</option>
-                <option value="GBP">£ GBP — British Pound</option>
-              </select>
-            </div>
-
-            <div className="space-y-1.5">
-              <Label htmlFor="ob-language" className="text-text-secondary">Language</Label>
-              <select id="ob-language" value={language} onChange={(e) => setLanguage(e.target.value)} className={SELECT_CLASS}>
-                <option value="en">English</option>
-                <option value="hi">Hindi</option>
-                <option value="hinglish">Hinglish</option>
-              </select>
-            </div>
-
-            <div className="space-y-1.5">
-              <Label htmlFor="ob-revenue" className="text-text-secondary">
-                Monthly revenue <span className="text-text-muted font-normal">(optional)</span>
-              </Label>
-              <select id="ob-revenue" value={monthlyRevenue} onChange={(e) => setMonthlyRevenue(e.target.value)} className={SELECT_CLASS}>
-                <option value="">Prefer not to say</option>
-                <option value="lt_1cr">Less than ₹1 Cr</option>
-                <option value="1_10cr">₹1–10 Cr</option>
-                <option value="10_50cr">₹10–50 Cr</option>
-                <option value="50_200cr">₹50–200 Cr</option>
-                <option value="gt_200cr">More than ₹200 Cr</option>
-              </select>
-            </div>
-          </div>
-
-          {error && <p className="text-sm text-red-600 mt-4" role="alert">{error}</p>}
-
-          <AkaraButton onClick={handleStep1} loading={loading} className="w-full mt-6">
-            Continue →
-          </AkaraButton>
-        </>
-      )}
-
-      {step === 2 && (
-        <>
-          <div className="text-center mb-6">
-            <span className="text-5xl" aria-hidden="true">📂</span>
-          </div>
-          <h1 className="text-2xl font-extrabold text-text-primary text-center mb-1">Import your sales data</h1>
-          <p className="text-text-muted text-center mb-2 text-sm">
-            Export from Tally: Gateway → Export Data → Sales Register. Or drag your Excel file.
-          </p>
-
-          {uploadStatus === "idle" && !file && (
-            <div
-              onClick={() => fileInputRef.current?.click()}
-              onDragOver={(e) => e.preventDefault()}
-              onDrop={(e) => {
-                e.preventDefault()
-                const f = e.dataTransfer.files?.[0]
-                if (f) { setFile(f); setUploadStatus("idle") }
-              }}
-              className="mt-6 border-2 border-dashed border-accent/40 rounded-xl p-10 text-center cursor-pointer hover:bg-accent-soft/50 transition-colors"
-              role="button"
-              aria-label="Click or drag to upload file"
-              tabIndex={0}
-              onKeyDown={(e) => e.key === "Enter" && fileInputRef.current?.click()}
-            >
-              <div className="text-4xl mb-3">📤</div>
-              <p className="font-semibold text-text-primary">Drop your CSV or Excel file here</p>
-              <p className="text-sm text-text-muted mt-1">or click to browse</p>
-              <p className="text-xs text-text-muted mt-3">Supported: .xlsx, .xls, .csv · Max 20MB</p>
-            </div>
-          )}
-
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept=".xlsx,.xls,.csv"
-            onChange={handleFileSelect}
-            className="hidden"
-            aria-label="Upload sales file"
-          />
-
-          {file && uploadStatus === "idle" && (
-            <div className="mt-6">
-              <div className="bg-surface-raised rounded-lg p-4 flex items-center justify-between mb-4">
-                <div>
-                  <p className="font-medium text-text-primary text-sm">{file.name}</p>
-                  <p className="text-xs text-text-muted">{(file.size / 1024 / 1024).toFixed(1)} MB</p>
-                </div>
-                <button className="text-text-muted hover:text-red-500 text-xs" onClick={() => setFile(null)}>Remove</button>
-              </div>
-              <AkaraButton onClick={handleUpload} className="w-full">
-                Start import →
-              </AkaraButton>
-            </div>
-          )}
-
-          {uploadStatus === "uploading" && (
-            <div className="mt-6">
-              <p className="text-sm text-text-muted mb-2 text-center">Analysing your data... (may take 30 seconds for large files)</p>
-              <div className="h-2 bg-surface-raised rounded-full overflow-hidden">
-                <div
-                  className="h-full bg-accent rounded-full transition-all duration-300"
-                  style={{ width: `${uploadProgress}%` }}
+    <AuthLayout size="lg">
+      <GlowSurfaceCard className="space-y-4 p-6">
+        {step === "workspace_setup" && (
+          <>
+            <h1 className="text-xl font-semibold text-text-primary">Set up your workspace</h1>
+            <div className="space-y-3">
+              <div>
+                <Label htmlFor="workspace_name">Workspace name</Label>
+                <Input
+                  id="workspace_name"
+                  value={workspaceName}
+                  onChange={(e) => setWorkspaceName(e.target.value)}
                 />
               </div>
-            </div>
-          )}
-
-          {uploadStatus === "done" && uploadResult && (
-            <div className="mt-6 text-center">
-              <div className="text-4xl mb-3">✅</div>
-              <p className="font-bold text-text-primary">{uploadResult.rows.toLocaleString("en-IN")} rows imported from {file?.name}</p>
-              {uploadResult.dateRange !== "—" && (
-                <p className="text-sm text-text-muted mt-1">
-                  Dates: {uploadResult.dateRange} · {uploadResult.zones} zones
-                </p>
-              )}
-              <AkaraButton onClick={() => setStep(3)} className="w-full mt-6">
-                See your dashboard →
-              </AkaraButton>
-            </div>
-          )}
-
-          {uploadStatus === "error" && (
-            <div className="mt-4 text-center">
-              <p className="text-red-600 text-sm mb-3">Upload failed. Please try again.</p>
-              <button onClick={() => { setUploadStatus("idle"); setFile(null) }} className="text-accent text-sm underline">
-                Try again
-              </button>
-            </div>
-          )}
-
-          <div className="mt-6 text-center">
-            <GhostButton type="button" onClick={handleSkip} className="text-sm">
-              Skip for now — explore with sample data
-            </GhostButton>
-          </div>
-        </>
-      )}
-
-      {step === 3 && (
-        <>
-          <div className="text-center mb-6">
-            <span className="text-6xl mb-2 inline-block">🎉</span>
-          </div>
-
-          <h1 className="text-2xl font-extrabold text-text-primary text-center mb-2">You&apos;re all set!</h1>
-          <p className="text-text-muted text-center mb-8 text-sm">Your dashboard is live. Here&apos;s what you can do:</p>
-
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-8">
-            {[
-              { icon: "📊", title: "Ask anything", desc: "Type any question about your sales" },
-              { icon: "📱", title: "WhatsApp brief", desc: "Add your number in Settings" },
-              { icon: "🔔", title: "Set alerts", desc: "Get notified when KPIs drop (Pro)" },
-            ].map((card) => (
-              <GlowSurfaceCard key={card.title} padding="sm" className="text-center">
-                <p className="text-2xl mb-2">{card.icon}</p>
-                <p className="text-xs font-bold text-text-primary">{card.title}</p>
-                <p className="text-xs text-text-muted mt-1">{card.desc}</p>
-              </GlowSurfaceCard>
-            ))}
-          </div>
-
-          {!slotIDismissed && (
-            <GlowSurfaceCard accent="blue" padding="sm" className="mb-6">
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <p className="font-semibold text-text-primary text-sm">👥 Invite your team</p>
-                  <p className="text-xs text-text-muted mt-0.5">Add team members and collaborate. Available on Pro & Business plans.</p>
-                </div>
-                <button
-                  onClick={() => { dismissSlot(SLOT_KEYS.I); setSlotIDismissed(true) }}
-                  className="text-text-muted hover:text-text-secondary flex-shrink-0"
-                  aria-label="Dismiss"
+              <div>
+                <Label htmlFor="business_type">Business type</Label>
+                <select
+                  id="business_type"
+                  className={SELECT_CLASS}
+                  value={businessType}
+                  onChange={(e) => setBusinessType(e.target.value)}
                 >
-                  ✕
-                </button>
+                  <option value="cafe">Café</option>
+                  <option value="restaurant">Restaurant</option>
+                  <option value="cloud_kitchen">Cloud kitchen</option>
+                  <option value="other">Other</option>
+                </select>
               </div>
-            </GlowSurfaceCard>
-          )}
+              <button
+                type="button"
+                className="text-xs text-accent underline"
+                onClick={() => setShowAdvanced((v) => !v)}
+              >
+                {showAdvanced ? "Hide" : "Advanced"} settings
+              </button>
+              {showAdvanced && (
+                <div className="grid gap-2 sm:grid-cols-3">
+                  <div>
+                    <Label>Language</Label>
+                    <Input value={language} onChange={(e) => setLanguage(e.target.value)} />
+                  </div>
+                  <div>
+                    <Label>Currency</Label>
+                    <Input value={currency} onChange={(e) => setCurrency(e.target.value)} />
+                  </div>
+                  <div>
+                    <Label>Timezone</Label>
+                    <Input value={timezone} onChange={(e) => setTimezone(e.target.value)} />
+                  </div>
+                </div>
+              )}
+            </div>
+            {error && <p className="text-sm text-red-500">{error}</p>}
+            <div className="flex flex-wrap gap-2">
+              <AkaraButton onClick={() => void handleSetup()} loading={loading}>
+                Continue
+              </AkaraButton>
+              <GhostButton onClick={() => void handleSkip()} disabled={loading}>
+                Skip for now
+              </GhostButton>
+            </div>
+          </>
+        )}
 
-          <AkaraButton onClick={handleComplete} loading={loading} size="lg" className="w-full">
-            Go to my dashboard →
-          </AkaraButton>
-        </>
-      )}
+        {step === "file_upload" && (
+          <>
+            <h1 className="text-xl font-semibold">Upload your sales file</h1>
+            <p className="text-sm text-text-muted">CSV or Excel (.csv, .xlsx, .xls) — max 50MB.</p>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".csv,.xlsx,.xls"
+              className="hidden"
+              onChange={handleFileSelect}
+            />
+            <AkaraButton variant="secondary" onClick={() => fileInputRef.current?.click()}>
+              {file ? file.name : "Choose file"}
+            </AkaraButton>
+            {error && <p className="text-sm text-red-500">{error}</p>}
+            <div className="flex gap-2">
+              <AkaraButton onClick={() => void handleUpload()} disabled={!file || loading} loading={loading}>
+                Upload & analyze
+              </AkaraButton>
+              <GhostButton onClick={() => void handleSkip()}>Skip for now</GhostButton>
+            </div>
+          </>
+        )}
+
+        {step === "processing" && (
+          <>
+            <h1 className="text-xl font-semibold">Processing import…</h1>
+            <p className={cn("text-sm text-text-muted")}>
+              Status: {job?.status ?? "queued"}
+              {pollError ? ` — ${pollError}` : ""}
+            </p>
+            {job?.status === "failed" && (
+              <div className="space-y-2">
+                <p className="text-sm text-red-500">{job.error ?? "Import failed"}</p>
+                <AkaraButton
+                  onClick={() => {
+                    setJobId(null)
+                    setStep("file_upload")
+                  }}
+                >
+                  Retry upload
+                </AkaraButton>
+              </div>
+            )}
+            <p className="text-xs text-text-muted">
+              Or <Link className="underline text-accent" to="/dashboard">go to dashboard</Link>
+            </p>
+          </>
+        )}
+      </GlowSurfaceCard>
     </AuthLayout>
   )
 }

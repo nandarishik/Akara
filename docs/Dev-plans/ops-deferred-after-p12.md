@@ -23,10 +23,26 @@
 | P03-OPS-011 | Swazz on staging; GitHub env secret isolation audit | Deferred |
 | P03-OPS-012 | Dual §28 sign-off for Phase 3 | Deferred |
 
-**Code land:** `main` @ `852d315` (2026-09-20). Integration order preserved: DEV2 then DEV1 `d922de8`.
+**Code land:** `main` @ `852d315` / Living tip `cdaded7` (2026-09-20). Integration order preserved: DEV2 then DEV1 `d922de8`.
 
 ---
 
-## Phase 4+ (append as each phase codes)
+## Phase 4 — Identity / tenancy / onboarding
 
-Rows for Phase 4 (`exports` bucket, apply 030–032, Swazz/ZAP on `/team` `/account` `/invite`, etc.) are added when Phase 4 coding starts.
+| ID | Item | Status |
+|---|---|---|
+| D2-P04-005 | Apply migrations 030–032 to `akara-dev` | Deferred |
+| D2-P04-006 | Apply migrations 030–032 to `akara-staging` | Deferred |
+| D2-P04-026 | Private Supabase `exports` bucket (staging + prod), 100MB, `application/json` | Deferred |
+| P04-OPS-JOINT-001 | Staging smoke: invite email → accept → sessions → export/delete | Deferred |
+| P04-OPS-JOINT-002 | Swazz CRITICAL=0 on `/team/*` and `/account/*` | Deferred |
+| P04-OPS-JOINT-003 | OWASP ZAP high=0 on `/invite/*` | Deferred |
+| P04-OPS-JOINT-004 | Live rlsgrid on Phase 4 tables (consent_log / team_invites / active_sessions) | Deferred |
+| P04-OPS-JOINT-005 | Dual §28 security-gate sign-off | Deferred |
+| P04-OPS-JOINT-006 | SendGrid invite / export-ready / deletion templates | Deferred |
+
+---
+
+## Later phases
+
+Append rows when Phases 5–12 coding starts.

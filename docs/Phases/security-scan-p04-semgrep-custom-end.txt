@@ -1,0 +1,54 @@
+﻿semgrep custom rule:
+semgrep :                
+At C:\Users\Admin\AppData\Local\Temp\ps-script-b96a8e32-b84b-46ef-a5e6-2a90c19ba94b.ps1:79 char:666
++ ... ; cd ..\..; semgrep --config .semgrep/rules/no-unverified-member-acce ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (               :String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+               
+ΓöîΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÉ
+Γöé Scan Status Γöé
+ΓööΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÿ
+  Scanning 47 files tracked by git with 1 Code rule:
+  Scanning 47 files.
+                
+                
+ΓöîΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÉ
+Γöé Scan Summary Γöé
+ΓööΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÿ
+Γ£à Scan completed successfully.
+ ΓÇó Findings: 3 (3 blocking)
+ ΓÇó Rules run: 1
+ ΓÇó Targets scanned: 47
+ ΓÇó Parsed lines: ~100.0%
+ ΓÇó Scan was limited to files tracked by git
+ ΓÇó For a detailed list of skipped files and lines, run semgrep with the --verbose flag
+Ran 1 rule on 47 files: 3 findings.
+                   
+                   
+ΓöîΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÉ
+Γöé 3 Code Findings Γöé
+ΓööΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÿ
+                              
+    backend\app\api\v1\team.py
+   Γ¥»Γ¥»Γ¥▒ semgrep.rules.no-unverified-member-access
+          Γ¥░Γ¥░ Blocking Γ¥▒Γ¥▒
+          Team member mutations must use get_team_member_verified
+                                                                 
+          467Γöå supa.table("profiles").update({"role":  
+               body.role}).eq("id", str(member_id)).eq(
+            Γï«Γöå----------------------------------------
+          507Γöå supa.table("profiles").update(
+          508Γöå     {
+          509Γöå         "membership_status": "suspended",
+          510Γöå         "tenant_id": None,
+          511Γöå     }
+          512Γöå ).eq("id", str(member_id)).eq("tenant_id",
+               str(tenant.tenant_id)).execute()          
+            Γï«Γöå----------------------------------------
+          576Γöå supa.table("profiles").update({"membership_status":
+               "active"}).eq(                                     
+          577Γöå     "id", str(member_id)
+          578Γöå ).eq("tenant_id", str(tenant.tenant_id)).execute()
+

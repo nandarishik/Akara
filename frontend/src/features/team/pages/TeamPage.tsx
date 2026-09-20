@@ -1,15 +1,16 @@
 import { useEffect, useState } from "react";
-import { Users } from "lucide-react";
+import { Crown, Users } from "lucide-react";
 
 import { apiFetch } from "@/lib/api";
+import { isAdmin } from "@/lib/auth-utils";
+import { useAuth } from "@/features/auth/contexts/AuthContext";
 import ProductPageLayout from "@/shared/layout/ProductPageLayout";
 import GlowSurfaceCard from "@/shared/ui/GlowSurfaceCard";
 import GlowCTAButton from "@/shared/ui/GlowCTAButton";
 import PageLoader from "@/shared/ui/PageLoader";
 import TeamSeatVisualizer, { buildSeatSlots } from "@/features/team/components/TeamSeatVisualizer";
+import { InviteMemberDialog } from "@/features/team/components/InviteMemberDialog";
 import { AkaraButton } from "@/shared/ui/GradientButton";
-import { Input } from "@/shared/ui/input";
-import { Label } from "@/shared/ui/label";
 import { Badge } from "@/shared/ui/badge";
 import { PlanGate } from "@/features/billing/components/PlanGate";
 import { useBilling } from "@/features/billing/hooks/useBilling";
@@ -34,18 +35,25 @@ type TeamPageProps = {
   embedded?: boolean;
 };
 
+function memberRoleLabel(role: string): string {
+  if (role === "owner") return "Owner";
+  if (role === "admin") return "Admin";
+  return "Viewer";
+}
+
 export function TeamPage({ embedded = false }: TeamPageProps) {
+  const { user, session } = useAuth();
+  const admin = isAdmin(user, session);
   const { data: usage } = useBilling();
   const [members, setMembers] = useState<Member[]>([]);
   const [invites, setInvites] = useState<Invite[]>([]);
-  const [email, setEmail] = useState("");
+  const [tenantMaxSeats, setTenantMaxSeats] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [showDowngradeModal, setShowDowngradeModal] = useState(false);
   const [selectedKeep, setSelectedKeep] = useState<Set<string>>(new Set());
 
-  const seatLimit = usage?.users_limit ?? 1;
+  const seatLimit = tenantMaxSeats ?? usage?.users_limit ?? 1;
   const activeMembers = members.filter((m) => m.membership_status === "active");
   const occupied = activeMembers.length + invites.length;
   const atSeatLimit = occupied >= seatLimit;
@@ -55,7 +63,7 @@ export function TeamPage({ embedded = false }: TeamPageProps) {
     try {
       const [m, i] = await Promise.all([
         apiFetch<Member[]>("/team/members"),
-        usage?.features.team_invites
+        usage?.features.team_invites && admin
           ? apiFetch<Invite[]>("/team/invites").catch(() => [])
           : Promise.resolve([]),
       ]);
@@ -70,26 +78,18 @@ export function TeamPage({ embedded = false }: TeamPageProps) {
   }
 
   useEffect(() => {
-    refresh();
-  }, [usage?.features.team_invites]);
+    apiFetch<{ max_seats?: number }>("/auth/me")
+      .then((me) => {
+        if (typeof me.max_seats === "number" && me.max_seats > 0) {
+          setTenantMaxSeats(me.max_seats);
+        }
+      })
+      .catch(() => undefined);
+  }, []);
 
-  async function handleInvite() {
-    if (!email.trim() || atSeatLimit) return;
-    setSaving(true);
-    setError("");
-    try {
-      await apiFetch("/team/invite", {
-        method: "POST",
-        body: JSON.stringify({ email: email.trim(), role: "user" }),
-      });
-      setEmail("");
-      await refresh();
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Invite failed");
-    } finally {
-      setSaving(false);
-    }
-  }
+  useEffect(() => {
+    void refresh();
+  }, [usage?.features.team_invites, admin]);
 
   async function resendInvite(id: string) {
     await apiFetch(`/team/invites/${id}/resend`, { method: "POST" });
@@ -145,43 +145,38 @@ export function TeamPage({ embedded = false }: TeamPageProps) {
             className="mx-auto"
           />
 
-          <GlowSurfaceCard className="space-y-4">
-            <div className="flex justify-between items-center">
-              <h2 className="font-semibold">Invite teammate</h2>
-              {seatLimit < activeMembers.length && (
-                <AkaraButton variant="secondary" size="sm" onClick={() => setShowDowngradeModal(true)}>
-                  Select seats after downgrade
-                </AkaraButton>
-              )}
-            </div>
-            <div className="flex gap-2">
-              <div className="flex-1">
-                <Label htmlFor="inviteEmail" className="sr-only">Email</Label>
-                <Input
-                  id="inviteEmail"
-                  type="email"
-                  placeholder="colleague@company.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  disabled={atSeatLimit}
-                />
+          {admin && (
+            <GlowSurfaceCard className="space-y-4">
+              <div className="flex justify-between items-center flex-wrap gap-2">
+                <h2 className="font-semibold">Invite teammate</h2>
+                {seatLimit < activeMembers.length && (
+                  <AkaraButton variant="secondary" size="sm" onClick={() => setShowDowngradeModal(true)}>
+                    Select seats after downgrade
+                  </AkaraButton>
+                )}
               </div>
-              <GlowCTAButton onClick={() => void handleInvite()} disabled={saving || atSeatLimit} size="sm" loading={saving}>
-                Send invite
-              </GlowCTAButton>
-            </div>
-            {atSeatLimit && (
-              <p className="text-xs text-amber-700">Seat limit reached — cancel a pending invite or upgrade.</p>
-            )}
-            {error && <p className="text-sm text-red-600">{error}</p>}
-          </GlowSurfaceCard>
+              <InviteMemberDialog disabled={atSeatLimit} onInvited={refresh} />
+              {atSeatLimit && (
+                <p className="text-xs text-amber-700">Seat limit reached — cancel a pending invite or upgrade.</p>
+              )}
+              {error && <p className="text-sm text-red-600">{error}</p>}
+            </GlowSurfaceCard>
+          )}
 
           <GlowSurfaceCard>
             <h2 className="font-semibold mb-3">Members</h2>
             <ul className="divide-y divide-white/10">
               {members.map((m) => (
                 <li key={m.id} className="py-3 flex flex-wrap justify-between gap-2 text-sm items-center">
-                  <span>{m.display_name || m.email}</span>
+                  <span className="flex items-center gap-2">
+                    {m.display_name || m.email}
+                    {m.role === "owner" && (
+                      <Badge variant="outline" className="text-xs gap-1">
+                        <Crown className="h-3 w-3" />
+                        Owner
+                      </Badge>
+                    )}
+                  </span>
                   <div className="flex items-center gap-2">
                     {m.membership_status === "seat_locked" && (
                       <Badge variant="outline" className="text-xs text-amber-700">seat locked</Badge>
@@ -193,7 +188,9 @@ export function TeamPage({ embedded = false }: TeamPageProps) {
                       <AkaraButton variant="secondary" size="sm" onClick={() => reactivateMember(m.id)}>
                         Reactivate
                       </AkaraButton>
-                    ) : (
+                    ) : m.role === "owner" ? (
+                      <Badge variant="outline" className="text-xs">{memberRoleLabel(m.role)}</Badge>
+                    ) : admin ? (
                       <select
                         className="text-xs border border-white/10 rounded px-2 py-1 bg-white/5"
                         value={m.role}
@@ -201,8 +198,10 @@ export function TeamPage({ embedded = false }: TeamPageProps) {
                         disabled={m.membership_status !== "active"}
                       >
                         <option value="admin">Admin</option>
-                        <option value="user">User</option>
+                        <option value="user">Viewer</option>
                       </select>
+                    ) : (
+                      <Badge variant="outline" className="text-xs">{memberRoleLabel(m.role)}</Badge>
                     )}
                   </div>
                 </li>
@@ -210,24 +209,29 @@ export function TeamPage({ embedded = false }: TeamPageProps) {
             </ul>
           </GlowSurfaceCard>
 
-          {invites.length > 0 && (
+          {admin && invites.length > 0 && (
             <GlowSurfaceCard>
               <h2 className="font-semibold mb-3">Pending invites</h2>
               <ul className="space-y-2">
                 {invites.map((inv) => (
-                  <li key={inv.id} className="flex justify-between items-center text-sm py-2">
-                    <span>{inv.email_normalized}</span>
-                    <div className="flex gap-2">
+                  <li key={inv.id} className="flex justify-between items-center text-sm py-2 gap-2">
+                    <span className="flex items-center gap-2 min-w-0">
+                      <span className="truncate">{inv.email_normalized}</span>
+                      <Badge variant="outline" className="text-xs shrink-0">
+                        {memberRoleLabel(inv.role)}
+                      </Badge>
+                    </span>
+                    <div className="flex gap-2 shrink-0">
                       <button type="button" className="text-accent text-xs hover:underline" onClick={() => void resendInvite(inv.id)}>
                         Resend
                       </button>
                       <button
-                      type="button"
-                      className="text-red-600 text-xs hover:underline"
-                      onClick={() => cancelInvite(inv.id)}
-                    >
-                      Cancel
-                    </button>
+                        type="button"
+                        className="text-red-600 text-xs hover:underline"
+                        onClick={() => cancelInvite(inv.id)}
+                      >
+                        Cancel
+                      </button>
                     </div>
                   </li>
                 ))}
