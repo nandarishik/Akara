@@ -158,6 +158,16 @@ class Settings(BaseSettings):
     import_mapping_timeout_hours: int = 24
 
     # -----------------------------------------------------------------------
+    # Connectors (Phase 7)
+    # -----------------------------------------------------------------------
+    connectors_enabled: bool = False
+    connector_master_key: str = ""
+    connector_tally_push_secret: str = ""
+    connector_sync_max_concurrent: int = 10
+    connector_sync_rate_limit_rps: int = 2
+    akara_connect_update_url: str = "https://connect.akara.app/updates/"
+
+    # -----------------------------------------------------------------------
     # Derived properties
     # -----------------------------------------------------------------------
 
