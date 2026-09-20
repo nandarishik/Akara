@@ -32,7 +32,7 @@ import GlowSurfaceCard from "@/shared/ui/GlowSurfaceCard";
 import { GlassIcon } from "@/shared/effects/GlassIcon";
 import type { GlassIconColor } from "@/shared/effects/GlassIcons";
 import { DASHBOARD_KPI_GLASS } from "@/lib/glassIconMap";
-import { DashboardEmptyState } from "@/shared/ui/EmptyState";
+import { DashboardEmptyState } from "@/features/dashboard/components/DashboardEmptyState";
 import { PromoDismissCard } from "@/shared/PromoDismissCard";
 import { dismissSlot, incrementVisitCount, isSlotDismissed, PLACEMENT_KEYS, SLOT_KEYS } from "@/lib/promoSlots";
 import { salesDataAgeDays } from "@/lib/dataFreshness";
