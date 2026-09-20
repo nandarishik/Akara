@@ -11,8 +11,11 @@ import {
   FileSpreadsheet,
   Lock,
   Upload,
+  Coffee,
+  ShieldAlert,
 } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
+import { Link } from "react-router-dom";
 
 import { useAuth } from "@/features/auth/contexts/AuthContext";
 import { isAdmin } from "@/lib/auth-utils";
@@ -34,6 +37,7 @@ import {
   type ImportResult,
   type SourceType,
 } from "@/features/data-import/components/DataUploadPanel";
+import { DataQualityWidget } from "@/features/data-import/components/DataQualityWidget";
 
 interface ImportJob {
   id: string;
@@ -41,13 +45,17 @@ interface ImportJob {
   source_type: string;
   file_size: number;
   estimated_rows: number;
-  status: "pending" | "queued" | "processing" | "completed" | "failed" | "cancelled";
+  status: "pending" | "queued" | "processing" | "completed" | "failed" | "cancelled" | string;
   progress_pct: number;
   rows_inserted?: number;
   rows_skipped?: number;
   error_message?: string;
   created_at: string;
   completed_at?: string;
+  import_type?: string | null;
+  quarantine_row_count?: number;
+  canonical_row_count?: number;
+  reconciliation_confirmed?: boolean | null;
 }
 
 const BASE = import.meta.env.VITE_API_BASE_URL as string;
@@ -420,6 +428,22 @@ export function DataPage() {
       </div>
 
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+        <div className="flex flex-wrap gap-3">
+          <GlowCTAButton size="sm" to="/data/upload">
+            <Coffee className="h-4 w-4 mr-1.5" />
+            Café import
+          </GlowCTAButton>
+          <Link
+            to="/data/quarantine"
+            className="inline-flex items-center gap-1.5 min-h-9 px-4 text-sm font-semibold rounded-full border border-white/15 text-white/80 hover:text-white hover:bg-white/5"
+          >
+            <ShieldAlert className="h-4 w-4" />
+            Quarantine
+          </Link>
+        </div>
+
+        <DataQualityWidget />
+
         {!isAdminUser && (
           <GlowSurfaceCard accent="amber" padding="sm" hover={false}>
             <div className="text-sm flex items-center gap-3">
@@ -543,7 +567,22 @@ export function DataPage() {
                       {" · "}
                       {(job.file_size / 1024 / 1024).toFixed(1)} MB
                       {" · "}
-                      <span className="capitalize">{job.source_type}</span>
+                      <span className="capitalize">{job.import_type ?? job.source_type}</span>
+                      {job.canonical_row_count != null && (
+                        <>
+                          {" · "}
+                          {job.canonical_row_count} canonical
+                        </>
+                      )}
+                      {job.quarantine_row_count != null && (
+                        <>
+                          {" · "}
+                          {job.quarantine_row_count === 0
+                            ? "✅ 0 quarantine"
+                            : `⚠️ ${job.quarantine_row_count} quarantine`}
+                        </>
+                      )}
+                      {job.status === "failed" && " · ❌"}
                     </p>
                   </div>
                   <div className="flex items-center gap-4 shrink-0">

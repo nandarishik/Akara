@@ -36,6 +36,7 @@ import { DashboardEmptyState } from "@/features/dashboard/components/DashboardEm
 import { PromoDismissCard } from "@/shared/PromoDismissCard";
 import { dismissSlot, incrementVisitCount, isSlotDismissed, PLACEMENT_KEYS, SLOT_KEYS } from "@/lib/promoSlots";
 import { salesDataAgeDays } from "@/lib/dataFreshness";
+import { DataQualityWidget } from "@/features/data-import/components/DataQualityWidget";
 
 function getDateRange(period: string): [string, string] {
   const end = new Date();
@@ -167,6 +168,8 @@ export function DashboardPage() {
           </div>
         </GlowSurfaceCard>
       )}
+
+      <DataQualityWidget />
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {isLoading ? (
