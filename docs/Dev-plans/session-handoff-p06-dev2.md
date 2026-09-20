@@ -1,40 +1,41 @@
 # Phase 6 DEV2 session handoff
 
-Branch (DEV2): `phase/06-dev-2-canonical-cafe-data`  
+Branch (DEV2): `phase/06-dev-2-canonical-cafe-data` @ `0cda7a5`  
+Integration: `phase/06-canonical-cafe-data` @ `a3fadbb`  
 Date: 2026-09-20
 
 ## Kickoff
 
 | Field | Value |
 |---|---|
-| `PHASE5_SHA` / base | `55d63e7` (`origin/main` after Phase 5 code land + esbuild hotfix; plan freeze listed `535e3de`) |
-| `PREV_P05_SHA` | `55d63e7` |
-| `LAST_N` (max migration on base) | `038` → Phase 6 migrations expected `039`–`047` from DEV1 split |
-| `API_PREFIX` | `""` (live DataPage uses `VITE_API_BASE_URL` + `/data/...` with no `/v1`) |
-| DEV1 | **Not a solo SHA.** Must path-split `74aa8eb` onto `phase/06-dev-1-canonical-cafe-data` (039–047 only). **Never merge `74aa8eb` tip.** |
+| `PHASE5_SHA` / base | `55d63e7` |
+| `API_PREFIX` | `""` |
+| `LAST_N` | `038` → `039`–`047` from DEV1 split |
+| DEV1 | `d0defea` on `phase/06-dev-1-canonical-cafe-data` (path-split `74aa8eb`; scrubbed 7–12) |
 | Merge order | **DEV1 first**, then DEV2 |
-| Integration branch | `phase/06-canonical-cafe-data` |
 
-## PC (kickoff)
-
-| Check | Result |
-|---|---|
-| Branch cut from `origin/main` | `55d63e7` |
-| Present: DataPage, DataUploadPanel, `/data` | Yes |
-| Absent: cafeImportApi, UploadWizard, QuarantinePage, outlets tab | Yes |
-| FMCG SOURCE_TABS intact | Yes |
-
-## Deliverables (fill as WPs land)
+## Deliverables
 
 | ID | Status |
 |---|---|
-| D2-P06-001–012 | In progress |
-| Vitest | pending |
-| DEV1 split + integrate | pending |
+| D2-P06-001–012 | Complete on live paths |
+| Vitest | 12 passed (cafe + DataPage + Dashboard) |
+| Migrations on integ | `038` then contiguous `039`–`047` (no `048+`) |
+
+## Post-merge verification (`a3fadbb`)
+
+| Check | Result |
+|---|---|
+| `test_phase06_cafe` | 4 passed |
+| frontend tsc | 0 errors |
+| vitest cafe/data/dashboard | 12 passed |
+| Bandit end | 0 High |
+| Cloudflare p06-run-1 | 0 confirmed; 5 needs_validation |
+| JWT/RLS | Partial |
 
 ## Deferred ops
 
-All D2-P06-OPS-001…006 → [`ops-deferred-after-p12.md`](ops-deferred-after-p12.md).
+All D2-P06-OPS-001…006 → `ops-deferred-after-p12.md`.
 
 ## PR
 

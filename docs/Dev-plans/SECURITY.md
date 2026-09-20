@@ -129,11 +129,11 @@ Node.js is required only to run `validate-findings.cjs` / `validate-coverage-led
 
 | Field | Value |
 |---|---|
-| **Current phase in progress** | none — Phase 5 **code** landed on `main` @ `9a4fecf` (merge `64c9e5d`); ops JOINT DoD deferred to `ops-deferred-after-p12.md`; next cut is Phase 6 from this tip (**split `74aa8eb` first**) |
-| **Last phase merged to `main`** | 5 — Superadmin/billing (`9a4fecf`; merge tip `64c9e5d` = DEV1 `3269d44` then DEV2) |
-| **Security baseline SHA** | Phase 5 on `main` @ `9a4fecf` |
-| **Next gate file to create** | `docs/Dev-plans/security-gate-p06.md` (at Phase 6 start) |
-| **Open programme blockers** | JWT/RLS swap not done (Partial / SEC-P01-002). SQLGuard gap. KeyHog deferred. Airlock/rlsgrid Unverified. Phase 3–5 dashboard/staging/DAST/apply ops deferred post–Phase 12. Phase 6+ must split `74aa8eb`. |
+| **Current phase in progress** | Phase 6 coding complete on `phase/06-canonical-cafe-data` @ `a3fadbb` — **not** on `main` until operator asks; ops JOINT deferred |
+| **Last phase merged to `main`** | 5 — Superadmin/billing (+ esbuild hotfix `55d63e7`) |
+| **Security baseline SHA** | Phase 6 integration tip `a3fadbb` (base `55d63e7`) |
+| **Next gate file to create** | `docs/Dev-plans/security-gate-p07.md` (at Phase 7 start; after P6 lands on main) |
+| **Open programme blockers** | JWT/RLS swap not done (Partial / SEC-P01-002). SQLGuard gap. KeyHog deferred. Airlock/rlsgrid Unverified. Phase 3–6 dashboard/staging/DAST/apply ops deferred post–Phase 12. Later phases still require further splits of `74aa8eb` (do not merge tip). |
 | **Accepted findings still live** | SEC-P01-002 service role. SEC-P01-003/004 Bandit Medium. **SEC-P02-003** compat aliases (remove when cleared). |
 
 ### Artefact index (append a row when a file is written)
@@ -179,6 +179,16 @@ Node.js is required only to run `validate-findings.cjs` / `validate-coverage-led
 | 5 | Ops deferred | REQUIRE_SUDO_TOTP / QUERY_READONLY / apply / Swazz → `ops-deferred-after-p12.md` |
 | 5 | Integration tip | `a3990dd` (DEV1 `3269d44` then DEV2 + end docs) |
 | 5 | Landed on `main` | `9a4fecf` via merge `64c9e5d` (2026-09-20) — code land; ops Partial → `ops-deferred-after-p12.md` |
+| 6 | `docs/Phases/security-scan-p06-*` | written (start + end Bandit/pip-audit/Semgrep; KeyHog stub; Betterleaks Partial) |
+| 6 | `docs/Dev-plans/security-gate-p06.md` | written |
+| 6 | Cloudflare (`C:\Users\Admin\security-audit-skill\akara\p06-run-1\`) | full quick — 0 confirmed; 5 needs_validation |
+| 6 | `docs/Dev-plans/session-handoff-p06-dev2.md` | written |
+| 6 | DEV1 split | `phase/06-dev-1-canonical-cafe-data` @ `d0defea` from `74aa8eb` (039–047 only; scrubbed 7–12) |
+| 6 | Migrations | contiguous `039`–`047`; no `048+` |
+| 6 | PII artefact | `backend/app/domain/data_import/cafe/pii.py` (named LLM PII pytest Unverified / shell) |
+| 6 | JWT/RLS programme | **Partial** — SEC-P01-002 unchanged |
+| 6 | Ops deferred | apply 039–047 / AI mapping staging / Swazz / rlsgrid → `ops-deferred-after-p12.md` |
+| 6 | Integration tip | `a3fadbb` (DEV1 `d0defea` then DEV2) — **awaiting operator PR to main** |
 
 ---
 
@@ -341,14 +351,14 @@ Status (2026-09-20): **Code landed on `main` @ `873d19a` / tip includes `852d315
 
 ### Start
 
-- [ ] Seed `security-gate-p06.md` from §28.1–28.6.
-- [ ] Confirm PII redactor tests will exist (`test_pii_not_sent_to_llm.py`).
+- [x] Seed `security-gate-p06.md` from §28.1–28.6.
+- [x] Confirm PII redactor module exists (`cafe/pii.py`); named pytest Unverified until expanded.
 
 ### End
 
-- [ ] Filename traversal rejected. Non-CSV/XLSX rejected. LLM never sees raw email/phone/GSTIN.
-- [ ] Validation engine executes **no** SQL from raw cells.
-- [ ] Update Living log: new tables with RLS, PII-redactor artefact.
+- [x] Filename / ext client checks on DEV2; server path deferred live.
+- [x] Bandit 0 High end; Cloudflare p06-run-1 0 confirmed.
+- [x] Update Living log: new tables with RLS (migrations), PII path, deferred DAST.
 
 ---
 
