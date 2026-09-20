@@ -1,7 +1,10 @@
 from __future__ import annotations
+
 from uuid import UUID
+
 from app.domain.connectors.base import SyncResult
 from app.domain.connectors.registry import ConnectorRegistry
+
 
 class SyncService:
     def __init__(self) -> None:

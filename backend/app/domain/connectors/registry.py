@@ -1,5 +1,7 @@
 from __future__ import annotations
+
 from app.domain.connectors.base import ConnectorBase
+
 
 class ConnectorRegistry:
     _types = frozenset({"petpooja", "tally", "google_sheets", "urban_piper"})
