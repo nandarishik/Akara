@@ -129,10 +129,10 @@ Node.js is required only to run `validate-findings.cjs` / `validate-coverage-led
 
 | Field | Value |
 |---|---|
-| **Current phase in progress** | Phase 8 coding-complete on `phase/08-semantic-metrics-dashboard` @ `da49afb` (PR/merge to `main` only when asked); next = Phase 9 cut from main after P8 land |
-| **Last phase merged to `main`** | 7 — Connector sync (`8cbc1d1`; Living note `716fc97`) |
-| **Security baseline SHA** | Phase 8 start = `716fc97`; end tip = `da49afb` |
-| **Next gate file to create** | `docs/Dev-plans/security-gate-p09.md` (after P8 lands on main) |
+| **Current phase in progress** | Ready for Phase 9 cut from `origin/main` @ `af26c85` (Phase 8 code land) |
+| **Last phase merged to `main`** | 8 — Semantic metrics (`af26c85`) |
+| **Security baseline SHA** | Phase 8 start = `716fc97`; land = `af26c85` |
+| **Next gate file to create** | `docs/Dev-plans/security-gate-p09.md` |
 | **Open programme blockers** | JWT/RLS swap not done (Partial / SEC-P01-002). SQLGuard gap. KeyHog deferred. Airlock/rlsgrid Unverified. Phase 3–8 dashboard/staging/DAST/apply ops deferred post–Phase 12. Later phases still require further splits of `74aa8eb` (do not merge tip). |
 | **Accepted findings still live** | SEC-P01-002 service role. SEC-P01-003/004 Bandit Medium. **SEC-P02-003** compat aliases (remove when cleared). |
 
@@ -215,7 +215,7 @@ Node.js is required only to run `validate-findings.cjs` / `validate-coverage-led
 | 8 | JWT/RLS programme | **Partial** — SEC-P01-002 unchanged |
 | 8 | Ops deferred | apply 052–055 / staging flags / MV refresh / two-tenant / Swazz / A/B → `ops-deferred-after-p12.md` |
 | 8 | Integration tip | `da49afb` (DEV1 `49f1b93` then DEV2 + end docs) |
-| 8 | Landed on `main` | **not yet** — PR/merge only when asked |
+| 8 | Landed on `main` | `af26c85` (2026-09-20) — code land; ops Partial → `ops-deferred-after-p12.md` |
 
 ---
 
