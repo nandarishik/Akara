@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 
 import LineSidebar from "@/shared/effects/LineSidebar";
@@ -13,6 +13,7 @@ import {
 import { isSuperadmin } from "@/lib/auth-utils";
 import { useAuth } from "@/features/auth/contexts/AuthContext";
 import { useBilling } from "@/features/billing/hooks/useBilling";
+import { getDataQuality } from "@/features/data-import/api/cafeImportApi";
 
 type Props = {
   onNavigate?: () => void;
@@ -21,7 +22,8 @@ type Props = {
 
 function buildNavEntries(
   showSuperadmin: boolean,
-  features: Record<string, boolean> | undefined
+  features: Record<string, boolean> | undefined,
+  quarantineCount: number,
 ): { labels: string[]; paths: string[]; locked: boolean[] } {
   const primary: AppNavItem[] = APP_NAV_ITEMS;
   const secondary: AppNavItem[] = [...APP_NAV_SECONDARY];
@@ -32,8 +34,13 @@ function buildNavEntries(
   const locked: boolean[] = [];
 
   for (const item of [...primary, ...secondary]) {
-    const isLocked = item.feature && features ? !features[item.feature as keyof typeof features] : false;
-    labels.push(isLocked ? `${item.label} 🔒` : item.label);
+    const isLocked =
+      item.feature && features ? !features[item.feature as keyof typeof features] : false;
+    let label = isLocked ? `${item.label} 🔒` : item.label;
+    if (item.to === "/data" && quarantineCount > 0) {
+      label = `${label} (${quarantineCount})`;
+    }
+    labels.push(label);
     paths.push(item.to);
     locked.push(!!isLocked);
   }
@@ -46,10 +53,17 @@ export default function AppLineSidebar({ onNavigate, className }: Props) {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { data: usage } = useBilling();
+  const [quarantineCount, setQuarantineCount] = useState(0);
+
+  useEffect(() => {
+    void getDataQuality()
+      .then((q) => setQuarantineCount(q.quarantine_unresolved ?? 0))
+      .catch(() => setQuarantineCount(0));
+  }, [location.pathname]);
 
   const { labels, paths, locked } = useMemo(
-    () => buildNavEntries(isSuperadmin(user), usage?.features),
-    [user, usage?.features]
+    () => buildNavEntries(isSuperadmin(user), usage?.features, quarantineCount),
+    [user, usage?.features, quarantineCount],
   );
 
   const activeIndex = useMemo(() => {
@@ -64,7 +78,7 @@ export default function AppLineSidebar({ onNavigate, className }: Props) {
       activeIndex={activeIndex}
       className={className}
       onItemClick={(index, label) => {
-        const cleanLabel = label.replace(" 🔒", "");
+        const cleanLabel = label.replace(" 🔒", "").replace(/\s\(\d+\)$/, "");
         if (locked[index]) return;
         const path = navLabelToPath(cleanLabel) ?? paths[index];
         if (path) {
