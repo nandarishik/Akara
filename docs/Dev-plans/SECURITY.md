@@ -129,9 +129,9 @@ Node.js is required only to run `validate-findings.cjs` / `validate-coverage-led
 
 | Field | Value |
 |---|---|
-| **Current phase in progress** | none — Phase 4 **code** ready on `phase/04-identity-tenancy-onboarding` @ `22219ae` (not yet on `main`); ops JOINT DoD deferred to `ops-deferred-after-p12.md`; next cut is Phase 5 from post-P4 `main` |
+| **Current phase in progress** | none — Phase 4 **code** ready on `phase/04-identity-tenancy-onboarding` @ `0626cee` (not yet on `main`); ops JOINT DoD deferred to `ops-deferred-after-p12.md`; next cut is Phase 5 from post-P4 `main` |
 | **Last phase merged to `main`** | 3 — Environments/CI/CD (`852d315`; merge tip `0dc2067` = DEV2 then DEV1 `d922de8`) |
-| **Security baseline SHA** | Phase 4 integration tip `22219ae` (DEV1 `b449b5f` + DEV2) |
+| **Security baseline SHA** | Phase 4 integration tip `0626cee` (DEV1 `b449b5f` + DEV2) |
 | **Next gate file to create** | `docs/Dev-plans/security-gate-p05.md` (at Phase 5 start) |
 | **Open programme blockers** | JWT/RLS swap not done (still Partial / SEC-P01-002). SQLGuard no `tenant_id` predicate. KeyHog still deferred on Windows. Airlock/rlsgrid live DB Unverified. Phase 3–4 dashboard/staging/DAST/apply ops deferred post–Phase 12 (`ops-deferred-after-p12.md`). |
 | **Accepted findings still live** | SEC-P01-002 service role. SEC-P01-003/004 Bandit Medium. **SEC-P02-003** compat aliases (remove Phase 5). |
@@ -167,7 +167,7 @@ Node.js is required only to run `validate-findings.cjs` / `validate-coverage-led
 | 4 | Custom Semgrep | `.semgrep/rules/no-unverified-member-access.yml` (DEV1); exit 0 on tip |
 | 4 | JWT/RLS | **Partial** — service role remains (SEC-P01-002); no swap on DEV2 |
 | 4 | Ops deferred | apply 030–032, exports bucket, Swazz/ZAP, live rlsgrid → `ops-deferred-after-p12.md` |
-| 4 | Integration tip | `22219ae` (DEV1 `b449b5f` then DEV2); **not on `main` until operator asks** |
+| 4 | Integration tip | `0626cee` (DEV1 `b449b5f` then DEV2 + end docs); **not on `main` until operator asks** |
 
 ---
 

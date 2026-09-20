@@ -1,7 +1,7 @@
 # Phase 4 security gate (`security-gate-p04.md`)
 
 Seeded from constitution §28 / SECURITY.md Phase 4. **Do not edit** constitution AC tables.
-Base SHA: `cdaded7` (`P04_PHASE3_BASE_SHA`). Integration: `phase/04-identity-tenancy-onboarding` @ `22219ae`.
+Base SHA: `cdaded7` (`P04_PHASE3_BASE_SHA`). Integration: `phase/04-identity-tenancy-onboarding` @ `0626cee`.
 DEV1: `b449b5f`. DEV2 tip merged: `ef6bb7a`. Date: 2026-09-20.
 
 ## Cloudflare

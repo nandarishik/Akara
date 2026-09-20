@@ -1,7 +1,7 @@
 # Phase 4 DEV2 session handoff
 
 Branch (DEV2): `phase/04-dev-2-identity-tenancy-onboarding` @ `ef6bb7a`  
-Integration: `phase/04-identity-tenancy-onboarding` @ `22219ae`  
+Integration: `phase/04-identity-tenancy-onboarding` @ `0626cee`  
 Date: 2026-09-20
 
 ## Kickoff
@@ -38,7 +38,7 @@ All D2-P04-005/006/026 + JOINT staging/DAST → [`ops-deferred-after-p12.md`](op
 | 027 backend/.env.example | DEV1 — skip; frontend `VITE_MAX_SESSION_HINT` only |
 | 028 getting-started | **Complete** |
 
-## Post-merge verification (`22219ae`)
+## Post-merge verification (`0626cee`)
 
 | Check | Result |
 |---|---|
@@ -59,7 +59,7 @@ DEV2 never edits backend Python, `ci.yml`, Semgrep, or `backend/.env.example`.
 
 ## HEAD
 
-Integration HEAD: `22219ae`  
+Integration HEAD: `0626cee`  
 DEV2 tip: `ef6bb7a`
 
 ## PR
