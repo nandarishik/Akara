@@ -15,6 +15,7 @@ from app.core.config import settings
 from app.core.cron_ping import ping_cron_health
 from app.workers import (
     account_deletion_worker,
+    account_export_worker,
     activation_emails,
     alert_evaluator,
     broadcast_scheduler,
@@ -96,6 +97,14 @@ def job_deletion() -> None:
     )()
 
 
+def job_export() -> None:
+    _isolated(
+        "account_export",
+        account_export_worker.run_export_cycle,
+        ping_success="account_export",
+    )()
+
+
 def register_jobs() -> schedule.Scheduler:
     global _registered
     if _registered:
@@ -107,6 +116,7 @@ def register_jobs() -> schedule.Scheduler:
     scheduler.every().day.at("06:30").do(job_broadcast)
     scheduler.every().day.at("08:00").do(job_activation)
     scheduler.every(5).minutes.do(job_deletion)
+    scheduler.every(5).minutes.do(job_export)
     _registered = True
     return scheduler
 

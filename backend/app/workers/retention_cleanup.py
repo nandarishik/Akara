@@ -150,6 +150,15 @@ def run(dry_run: bool = False) -> None:
                 )
                 errors += 1
 
+    try:
+        ttl = datetime.now(tz=UTC) - timedelta(days=30)
+        if not dry_run:
+            supa.table("active_sessions").delete().lt(
+                "last_seen_at", ttl.isoformat()
+            ).execute()
+    except Exception:
+        logger.debug("active_sessions TTL cleanup skipped")
+
     logger.info(
         "Retention cleanup DONE [%s]: total_rows=%d skipped_legal_hold=%d errors=%d",
         mode, total_deleted, skipped_legal_hold, errors,
