@@ -129,12 +129,12 @@ Node.js is required only to run `validate-findings.cjs` / `validate-coverage-led
 
 | Field | Value |
 |---|---|
-| **Current phase in progress** | none — Phase 5 **code** ready on `phase/05-superadmin-billing` @ `a3990dd` (not yet on `main`); ops deferred to `ops-deferred-after-p12.md`; next cut is Phase 6 from post-P5 `main` (split `74aa8eb` first) |
-| **Last phase merged to `main`** | 4 — Identity/tenancy/onboarding (`95ae73d`; merge tip `d66221e` / Living tip `73933d1`) |
-| **Security baseline SHA** | Phase 5 integration tip `a3990dd` (DEV1 `3269d44` + DEV2) |
+| **Current phase in progress** | none — Phase 5 **code** landed on `main` @ `9a4fecf` (merge `64c9e5d`); ops JOINT DoD deferred to `ops-deferred-after-p12.md`; next cut is Phase 6 from this tip (**split `74aa8eb` first**) |
+| **Last phase merged to `main`** | 5 — Superadmin/billing (`9a4fecf`; merge tip `64c9e5d` = DEV1 `3269d44` then DEV2) |
+| **Security baseline SHA** | Phase 5 on `main` @ `9a4fecf` |
 | **Next gate file to create** | `docs/Dev-plans/security-gate-p06.md` (at Phase 6 start) |
 | **Open programme blockers** | JWT/RLS swap not done (Partial / SEC-P01-002). SQLGuard gap. KeyHog deferred. Airlock/rlsgrid Unverified. Phase 3–5 dashboard/staging/DAST/apply ops deferred post–Phase 12. Phase 6+ must split `74aa8eb`. |
-| **Accepted findings still live** | SEC-P01-002 service role. SEC-P01-003/004 Bandit Medium. **SEC-P02-003** compat aliases (remove Phase 5). |
+| **Accepted findings still live** | SEC-P01-002 service role. SEC-P01-003/004 Bandit Medium. **SEC-P02-003** compat aliases (remove when cleared). |
 
 ### Artefact index (append a row when a file is written)
 
@@ -177,7 +177,8 @@ Node.js is required only to run `validate-findings.cjs` / `validate-coverage-led
 | 5 | Migrations | contiguous `029`–`038`; P4 `030`–`032` preserved; P5 `033`–`038` from DEV1 |
 | 5 | JWT/RLS programme | **Partial** — SEC-P01-002 unchanged |
 | 5 | Ops deferred | REQUIRE_SUDO_TOTP / QUERY_READONLY / apply / Swazz → `ops-deferred-after-p12.md` |
-| 5 | Integration tip | `a3990dd` — **not on `main` until operator asks** |
+| 5 | Integration tip | `a3990dd` (DEV1 `3269d44` then DEV2 + end docs) |
+| 5 | Landed on `main` | `9a4fecf` via merge `64c9e5d` (2026-09-20) — code land; ops Partial → `ops-deferred-after-p12.md` |
 
 ---
 
