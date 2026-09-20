@@ -168,6 +168,12 @@ class Settings(BaseSettings):
     akara_connect_update_url: str = "https://connect.akara.app/updates/"
 
     # -----------------------------------------------------------------------
+    # Café metrics / dashboard v2 (Phase 8)
+    # -----------------------------------------------------------------------
+    cafe_metrics_v2: bool = False
+    new_dashboard: bool = False
+
+    # -----------------------------------------------------------------------
     # Derived properties
     # -----------------------------------------------------------------------
 
