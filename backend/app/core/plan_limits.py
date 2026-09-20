@@ -47,7 +47,11 @@ PLAN_LIMITS: dict[str, dict[str, Any]] = {
             "api_keys": False,
             "ask_copilot_debrief": False,
             "alerts": False,
+            "cafe_import": False,
+            "ai_mapping": False,
+            "quarantine_ui": True,
         },
+        "max_upload_bytes": 10_000_000,
     },
     "pro": {
         "copilot_calls_per_month": 400,
@@ -74,7 +78,11 @@ PLAN_LIMITS: dict[str, dict[str, Any]] = {
             "api_keys": False,
             "ask_copilot_debrief": True,
             "alerts": True,
+            "cafe_import": False,
+            "ai_mapping": False,
+            "quarantine_ui": True,
         },
+        "max_upload_bytes": 50_000_000,
     },
     "business": {
         "copilot_calls_per_month": 800,
@@ -101,7 +109,11 @@ PLAN_LIMITS: dict[str, dict[str, Any]] = {
             "api_keys": True,
             "ask_copilot_debrief": True,
             "alerts": True,
+            "cafe_import": False,
+            "ai_mapping": False,
+            "quarantine_ui": True,
         },
+        "max_upload_bytes": 200_000_000,
     },
 }
 

@@ -7,6 +7,7 @@ from app.api.v1 import (
     alerts,
     auth,
     billing,
+    cafe_data,
     conversations,
     copilot,
     data,
@@ -35,6 +36,7 @@ def _mount_customer_routers(target: APIRouter) -> None:
     target.include_router(conversations.router)
     target.include_router(kpi.router)
     target.include_router(data.router)
+    target.include_router(cafe_data.router)
     target.include_router(reports.router)
     target.include_router(debrief.router)
     target.include_router(team.router)
