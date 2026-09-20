@@ -3,6 +3,7 @@ import { Link, useLocation, Outlet } from "react-router-dom";
 import { useAuth } from "@/features/auth/contexts/AuthContext";
 import { ErrorBoundary } from "@/shared/ErrorBoundary";
 import { ImpersonationBanner } from "@/shared/layout/ImpersonationBanner";
+import { TenantImpersonationBanner } from "@/shared/layout/TenantImpersonationBanner";
 import { MaintenanceOverlay, SystemBanner } from "@/shared/layout/SystemBanner";
 import AppLineSidebar from "@/shared/layout/AppLineSidebar";
 import ProfileDropdown from "@/shared/layout/ProfileDropdown";
@@ -217,6 +218,7 @@ export function AppShell() {
 
         <SystemBanner />
         <ImpersonationBanner />
+        <TenantImpersonationBanner />
         <MaintenanceOverlay />
 
         {usage && (
