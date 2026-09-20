@@ -438,3 +438,27 @@ def best_sales_sheet(file_content: bytes, filename: str) -> str | None:
     if not scored or scored[0].score <= 0:
         return sheets[0]
     return scored[0].sheet_name
+
+
+CAFE_ORDER_SIGNAL_COLS = {
+    "order time", "bill no", "covers", "pax", "channel", "order type",
+    "table no", "waiter", "payment mode", "bill amt", "web_billno",
+}
+CAFE_EXPENSE_SIGNAL_COLS = {"category", "amount", "expense date", "vendor"}
+CAFE_INVENTORY_SIGNAL_COLS = {"sku", "reorder", "item name", "quantity", "unit"}
+
+
+def classify_import_type(headers: list[str]) -> str:
+    from app.domain.data_import.cafe.column_aliases import norm
+
+    normalized = {norm(h) for h in headers}
+    order_hits = len(normalized & CAFE_ORDER_SIGNAL_COLS)
+    if order_hits >= 3:
+        return "cafe_orders"
+    expense_hits = len(normalized & CAFE_EXPENSE_SIGNAL_COLS)
+    if expense_hits >= 2 and ("category" in normalized or "amount" in normalized):
+        return "cafe_expenses"
+    inventory_hits = len(normalized & CAFE_INVENTORY_SIGNAL_COLS)
+    if inventory_hits >= 2:
+        return "cafe_inventory"
+    return "fmcg"

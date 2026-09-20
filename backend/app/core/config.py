@@ -148,6 +148,16 @@ class Settings(BaseSettings):
     max_seats_business: int = 25
 
     # -----------------------------------------------------------------------
+    # Café import (Phase 6)
+    # -----------------------------------------------------------------------
+    enable_ai_mapping: bool = False
+    ai_mapping_model: str = "openai/gpt-4o-mini"
+    ai_mapping_timeout_s: int = 15
+    ai_mapping_max_sample_rows: int = 3
+    import_batch_size: int = 500
+    import_mapping_timeout_hours: int = 24
+
+    # -----------------------------------------------------------------------
     # Derived properties
     # -----------------------------------------------------------------------
 

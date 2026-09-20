@@ -1,3 +1,4 @@
+import io
 import logging
 import uuid
 from datetime import UTC, datetime
@@ -835,3 +836,212 @@ async def retry_import_job(
     ).eq("id", job_id).execute()
 
     return {"status": "queued", "job_id": job_id}
+
+
+def _require_cafe_import(tenant: TenantCtx) -> None:
+    from app.core.plan_limits import is_feature_enabled
+
+    if not tenant.is_admin:
+        raise AkaraHTTPException(status_code=status.HTTP_403_FORBIDDEN, code="FORBIDDEN", message="Admins only")
+    if not is_feature_enabled(tenant.plan, "cafe_import", tenant.feature_overrides or {}):
+        raise AkaraHTTPException(status_code=status.HTTP_403_FORBIDDEN, code="FORBIDDEN", message="Cafe import is not enabled")
+
+
+def _cafe_headers(content: bytes, filename: str) -> list[str]:
+    import pandas as pd
+
+    if filename.lower().endswith(".csv"):
+        df = pd.read_csv(io.BytesIO(content), nrows=5)
+    else:
+        df = pd.read_excel(io.BytesIO(content), nrows=5)
+    return [str(c) for c in df.columns]
+
+
+@router.post("/imports/cafe-orders")
+@router.post("/imports/cafe-expenses")
+@router.post("/imports/cafe-inventory")
+@limiter.limit("10/minute")
+async def cafe_import_upload(
+    request: Request,
+    tenant: TenantCtx,
+    file: UploadFile = File(...),
+    import_type: str | None = Query(default=None),
+) -> dict:
+    import hashlib
+
+    from app.domain.data_import.cafe.mapping_service import AIMappingService
+    from app.domain.data_import.detector import classify_import_type
+
+    _require_cafe_import(tenant)
+    path_type = request.url.path.rstrip("/").split("/")[-1].replace("-", "_")
+    if path_type.startswith("cafe_"):
+        detected_path = path_type
+    else:
+        detected_path = "cafe_orders"
+    content = await file.read()
+    filename = file.filename or "upload.csv"
+    if import_type and import_type != detected_path:
+        raise AkaraHTTPException(status_code=422, code="VALIDATION_ERROR", message="import_type does not match path")
+    file_hash = hashlib.sha256(content).hexdigest()
+    supa = get_supabase_service_client()
+    existing = (
+        supa.table("import_jobs")
+        .select("id")
+        .eq("tenant_id", str(tenant.tenant_id))
+        .eq("source_file_hash", file_hash)
+        .eq("status", "completed")
+        .limit(1)
+        .execute()
+    )
+    if existing.data:
+        return {"status": "skipped", "existing_import_id": existing.data[0]["id"]}
+    headers = _cafe_headers(content, filename)
+    classified = classify_import_type(headers)
+    chosen = import_type or detected_path or classified
+    job_id = str(uuid.uuid4())
+    proposal = AIMappingService().propose(headers, {}, chosen)
+    supa.table("import_jobs").insert({
+        "id": job_id,
+        "tenant_id": str(tenant.tenant_id),
+        "status": "mapping_proposed",
+        "import_type": chosen,
+        "source_type": chosen,
+        "source_file_hash": file_hash,
+        "column_mapping": proposal,
+        "filename": filename,
+    }).execute()
+    return {"import_id": job_id, "status": "mapping_proposed", "import_type": chosen}
+
+
+@router.get("/imports/{import_id}/mapping-proposal")
+def cafe_mapping_proposal(import_id: str, tenant: TenantCtx) -> dict:
+    _require_cafe_import(tenant)
+    job = _get_cafe_job(import_id, tenant)
+    mapping = job.get("column_mapping") or {}
+    return {"import_id": import_id, **mapping, "status": job.get("status")}
+
+
+@router.post("/imports/{import_id}/mapping-confirm")
+def cafe_mapping_confirm(import_id: str, tenant: TenantCtx, body: dict = Body(...)) -> dict:
+    _require_cafe_import(tenant)
+    _get_cafe_job(import_id, tenant)
+    mappings = body.get("mappings") or []
+    raws = [m.get("raw_column") for m in mappings]
+    if len(raws) != len(set(raws)):
+        raise AkaraHTTPException(status_code=422, code="VALIDATION_ERROR", message="duplicate raw_column")
+    get_supabase_service_client().table("import_jobs").update({
+        "status": "mapping_confirmed",
+        "column_mapping": {**(body or {}), "status": "confirmed"},
+    }).eq("id", import_id).eq("tenant_id", str(tenant.tenant_id)).execute()
+    return {"import_id": import_id, "status": "mapping_confirmed"}
+
+
+@router.get("/imports/{import_id}/status")
+def cafe_import_status(import_id: str, tenant: TenantCtx) -> dict:
+    job = _get_cafe_job(import_id, tenant)
+    total = int(job.get("total_batches") or 0)
+    last = int(job.get("last_completed_batch") or 0)
+    progress = 0 if total <= 0 else int(100 * last / total)
+    return {
+        "import_id": import_id,
+        "status": job.get("status"),
+        "import_type": job.get("import_type"),
+        "last_completed_batch": last,
+        "total_batches": total,
+        "progress_pct": progress,
+        "canonical_row_count": job.get("canonical_row_count") or 0,
+        "quarantine_row_count": job.get("quarantine_row_count") or 0,
+        "error_message": job.get("error_message"),
+    }
+
+
+@router.get("/imports/{import_id}/reconciliation")
+def cafe_reconciliation(import_id: str, tenant: TenantCtx) -> dict:
+    job = _get_cafe_job(import_id, tenant)
+    totals = job.get("reconciliation_totals") or {}
+    return {
+        "import_id": import_id,
+        "order_count": totals.get("order_count", 0),
+        "total_amount": totals.get("total_amount", 0),
+        "currency": "INR",
+        "date_range_start": totals.get("date_range_start"),
+        "date_range_end": totals.get("date_range_end"),
+        "span_days": totals.get("span_days", 0),
+        "span_alert": bool(totals.get("span_days", 0) > 31),
+        "channels": totals.get("channels") or [],
+        "quarantine_row_count": job.get("quarantine_row_count") or 0,
+        "top_failure_types": totals.get("top_failure_types") or [],
+        "totals_delta_pct": totals.get("totals_delta_pct", 0),
+        "totals_flag": bool(totals.get("totals_delta_pct", 0) > 5),
+        "reconciliation_confirmed": bool(job.get("reconciliation_confirmed")),
+        "reconciliation_notes": job.get("reconciliation_notes"),
+    }
+
+
+@router.post("/imports/{import_id}/reconciliation/confirm")
+def cafe_reconciliation_confirm(import_id: str, tenant: TenantCtx, body: dict = Body(...)) -> dict:
+    job = _get_cafe_job(import_id, tenant)
+    if body.get("accepted") is False and body.get("action") == "undo":
+        get_supabase_service_client().table("canonical_orders").delete().eq("import_id", import_id).eq("tenant_id", str(tenant.tenant_id)).execute()
+        get_supabase_service_client().table("import_jobs").update({
+            "status": "undone",
+            "undone_at": datetime.now(UTC).isoformat(),
+        }).eq("id", import_id).execute()
+        return {"undone": True}
+    get_supabase_service_client().table("import_jobs").update({
+        "reconciliation_confirmed": True,
+        "reconciliation_notes": body.get("notes"),
+    }).eq("id", import_id).eq("tenant_id", str(tenant.tenant_id)).execute()
+    return {"accepted": True}
+
+
+@router.get("/imports/{import_id}/quarantine")
+def cafe_quarantine_list(import_id: str, tenant: TenantCtx, unresolved: bool = True) -> dict:
+    _get_cafe_job(import_id, tenant)
+    query = (
+        get_supabase_service_client()
+        .table("import_quarantine")
+        .select("id, row_number, failure_type, failure_reason, canonical_field, raw_row, resolved")
+        .eq("import_id", import_id)
+        .eq("tenant_id", str(tenant.tenant_id))
+    )
+    if unresolved:
+        query = query.eq("resolved", False)
+    rows = query.execute().data or []
+    return {"rows": rows, "unresolved_count": len([r for r in rows if not r.get("resolved")])}
+
+
+@router.post("/imports/{import_id}/quarantine/{row_id}/resubmit")
+def cafe_quarantine_resubmit(import_id: str, row_id: str, tenant: TenantCtx, body: dict = Body(...)) -> dict:
+    from uuid import UUID
+
+    from app.domain.data_import.cafe.quarantine import resubmit_quarantine_row
+
+    _get_cafe_job(import_id, tenant)
+    return resubmit_quarantine_row(UUID(row_id), tenant.tenant_id, body.get("corrected_values") or {})
+
+
+@router.post("/imports/{import_id}/quarantine/{row_id}/ignore")
+def cafe_quarantine_ignore(import_id: str, row_id: str, tenant: TenantCtx, body: dict = Body(default_factory=dict)) -> dict:
+    _get_cafe_job(import_id, tenant)
+    get_supabase_service_client().table("import_quarantine").update({
+        "resolved": True,
+        "resolution_notes": body.get("resolution_notes") or "ignored",
+    }).eq("id", row_id).eq("tenant_id", str(tenant.tenant_id)).execute()
+    return {"resolved": True}
+
+
+def _get_cafe_job(import_id: str, tenant: TenantCtx) -> dict:
+    row = (
+        get_supabase_service_client()
+        .table("import_jobs")
+        .select("*")
+        .eq("id", import_id)
+        .eq("tenant_id", str(tenant.tenant_id))
+        .maybe_single()
+        .execute()
+    )
+    if not row.data:
+        raise AkaraHTTPException(status_code=404, code="NOT_FOUND", message="Import not found")
+    return row.data
+
