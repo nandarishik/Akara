@@ -1,7 +1,7 @@
 # Phase 7 DEV2 session handoff
 
 Branch (DEV2): `phase/07-dev-2-connector-sync-platform` @ `04ee3fd`  
-Integration: `phase/07-connector-sync-platform` @ `71536ed`  
+Integration: `phase/07-connector-sync-platform` @ `878d938`  
 Date: 2026-09-20
 
 ## Kickoff
