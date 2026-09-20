@@ -1,7 +1,7 @@
 # Phase 6 DEV2 session handoff
 
 Branch (DEV2): `phase/06-dev-2-canonical-cafe-data` @ `0cda7a5`  
-Integration: `phase/06-canonical-cafe-data` @ `a3fadbb`  
+Integration: `phase/06-canonical-cafe-data` @ `69b2700`  
 Date: 2026-09-20
 
 ## Kickoff
@@ -22,7 +22,7 @@ Date: 2026-09-20
 | Vitest | 12 passed (cafe + DataPage + Dashboard) |
 | Migrations on integ | `038` then contiguous `039`–`047` (no `048+`) |
 
-## Post-merge verification (`a3fadbb`)
+## Post-merge verification (`69b2700`)
 
 | Check | Result |
 |---|---|
