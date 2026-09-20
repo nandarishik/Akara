@@ -1,0 +1,4 @@
+﻿Phase 7 start — Cloudflare security-audit guidance mode only.
+Companions: WEB-PROTOCOL-AND-AUTH, DATA-ISOLATION-AND-LIFECYCLE, SUPPLY-CHAIN-AND-RELEASE (agent updates).
+No findings.json at start. Full quick audit deferred to integration tip → p07-run-1.
+Focus areas: HMAC push headers, credential UX never re-display, agent outbound-only, AES-GCM at rest (DEV1).

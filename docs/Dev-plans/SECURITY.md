@@ -129,10 +129,10 @@ Node.js is required only to run `validate-findings.cjs` / `validate-coverage-led
 
 | Field | Value |
 |---|---|
-| **Current phase in progress** | none — Phase 6 **code** landed on `main` @ `8540e44`; next is Phase 7 (split `74aa8eb` for 048–051 first) |
-| **Last phase merged to `main`** | 6 — Canonical café data (`8540e44`; merge tip from `phase/06-canonical-cafe-data` @ `5d62dbe`) |
-| **Security baseline SHA** | Phase 6 on `main` @ `8540e44` |
-| **Next gate file to create** | `docs/Dev-plans/security-gate-p07.md` (at Phase 7 start) |
+| **Current phase in progress** | Phase 7 DEV2 on `phase/07-dev-2-connector-sync-platform` (base `2546a2f`); DEV1 path-split of `74aa8eb` for 048–051 required before integrate |
+| **Last phase merged to `main`** | 6 — Canonical café data (`8540e44`; Living note `2546a2f`) |
+| **Security baseline SHA** | Phase 7 start = `2546a2f` |
+| **Next gate file to create** | `docs/Dev-plans/security-gate-p07.md` (seeded) |
 | **Open programme blockers** | JWT/RLS swap not done (Partial / SEC-P01-002). SQLGuard gap. KeyHog deferred. Airlock/rlsgrid Unverified. Phase 3–6 dashboard/staging/DAST/apply ops deferred post–Phase 12. Later phases still require further splits of `74aa8eb` (do not merge tip). |
 | **Accepted findings still live** | SEC-P01-002 service role. SEC-P01-003/004 Bandit Medium. **SEC-P02-003** compat aliases (remove when cleared). |
 
