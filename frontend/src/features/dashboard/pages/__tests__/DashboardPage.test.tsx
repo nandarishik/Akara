@@ -2,12 +2,17 @@
  * DashboardPage smoke tests — render with mocked data hooks.
  */
 
+import React from "react";
 import { render, screen } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { MemoryRouter } from "react-router-dom";
 import { describe, expect, it, vi } from "vitest";
 
 import { DashboardPage } from "../DashboardPage";
+
+vi.mock("@/features/data-import/api/cafeImportApi", () => ({
+  getDataQuality: vi.fn().mockRejectedValue(new Error("404")),
+}));
 
 vi.mock("@/features/dashboard/hooks/useKPIs", () => ({
   useKPIs: vi.fn(() => ({
