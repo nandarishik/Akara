@@ -262,7 +262,7 @@ Compare Semgrep HIGH/CRITICAL counts to the previous gate. `sql_tool.py` finding
 
 **Label note:** constitution §21 calls Bandit L1 and Gitleaks L4. Keep those names in `security-gate-p03.md`.
 
-Status (2026-09-19): Integration tip `0dc2067` on `phase/03-environments-cicd` (DEV2 first, then DEV1 `d922de8`). Repo + CI YAML + scanners done. Dashboard/staging JOINT rows remain Unverified/BLOCKED. **Not merged to `main`.**
+Status (2026-09-20): **Code landed on `main` @ `873d19a` / tip includes `852d315`.** Integration order: DEV2 first, then DEV1 `d922de8` (`0dc2067`). Repo + CI YAML + scanners done. Dashboard/staging JOINT rows → [`ops-deferred-after-p12.md`](ops-deferred-after-p12.md).
 
 ### Start
 
