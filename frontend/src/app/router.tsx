@@ -43,6 +43,9 @@ const ForgotPasswordPage = React.lazy(() =>
 const ResetPasswordPage = React.lazy(() =>
   import("@/features/auth/pages/ResetPasswordPage").then((m) => ({ default: m.ResetPasswordPage }))
 )
+const InviteAcceptPage = React.lazy(() =>
+  import("@/features/auth/pages/InviteAcceptPage").then((m) => ({ default: m.InviteAcceptPage }))
+)
 
 // Lazy — customer bundles
 const DashboardPage = React.lazy(() =>
@@ -154,6 +157,7 @@ export function AppRouter() {
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />
           <Route path="/reset-password" element={<ResetPasswordPage />} />
           <Route path="/login" element={<LoginPage />} />
+          <Route path="/invite/accept" element={<InviteAcceptPage />} />
           <Route path="/privacy" element={<PrivacyPage />} />
           <Route path="/terms" element={<TermsPage />} />
           <Route path="/500" element={<ServerErrorPage />} />

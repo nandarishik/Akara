@@ -2,9 +2,10 @@ import { apiFetch } from "@/lib/api";
 
 export const INVITE_TOKEN_KEY = "akara_team_invite_token";
 
+/** Persist invite token from `?invite=` or `?token=` (Phase 4 email links). */
 export function persistInviteTokenFromSearch(search: string): string | null {
   const params = new URLSearchParams(search);
-  const token = params.get("invite")?.trim();
+  const token = (params.get("token") ?? params.get("invite"))?.trim();
   if (token) {
     sessionStorage.setItem(INVITE_TOKEN_KEY, token);
     return token;
@@ -21,9 +22,18 @@ export async function acceptPendingInvite(): Promise<{ ok: boolean; tenantId?: s
   if (!token) return { ok: false };
 
   try {
-    const res = await apiFetch<{ status: string; tenant_id: string }>("/team/accept", {
-      method: "POST",
-      body: JSON.stringify({ token }),
+    const res = await apiFetch<{ status?: string; joined?: boolean; tenant_id: string }>(
+      "/team/invite/accept",
+      {
+        method: "POST",
+        body: JSON.stringify({ token }),
+      },
+    ).catch(async () => {
+      // live wrapper
+      return apiFetch<{ status: string; tenant_id: string }>("/team/accept", {
+        method: "POST",
+        body: JSON.stringify({ token }),
+      });
     });
     clearInviteToken();
     return { ok: true, tenantId: res.tenant_id };
