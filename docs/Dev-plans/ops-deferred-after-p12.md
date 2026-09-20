@@ -58,6 +58,21 @@
 
 ---
 
+## Phase 6 — Canonical café data
+
+| ID | Item | Status |
+|---|---|---|
+| D2-P06-OPS-001 | Apply migrations 039–047 to `akara-dev` / `akara-staging` | Deferred |
+| D2-P06-OPS-002 | Staging `ENABLE_AI_MAPPING=true` + LLM keys out of band | Deferred |
+| D2-P06-OPS-003 | Staging smoke: café upload → mapping confirm → progress → recon → quarantine | Deferred |
+| D2-P06-OPS-004 | Live rlsgrid on `canonical_*` + `import_quarantine` | Deferred |
+| D2-P06-OPS-005 | Swazz/ZAP scoped to `/data/imports/*` and café upload | Deferred |
+| D2-P06-OPS-006 | Dual §28 sign-off | Deferred |
+
+**Code base at kickoff:** `main` @ `55d63e7`. DEV1 must be path-split from `74aa8eb` (039–047 only) before integrate.
+
+---
+
 ## Later phases
 
-Append rows when Phases 6–12 coding starts.
+Append rows when Phases 7–12 coding starts.
