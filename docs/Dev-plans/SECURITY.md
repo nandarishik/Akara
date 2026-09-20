@@ -129,11 +129,11 @@ Node.js is required only to run `validate-findings.cjs` / `validate-coverage-led
 
 | Field | Value |
 |---|---|
-| **Current phase in progress** | Phase 8 DEV2 on `phase/08-dev-2-semantic-metrics-dashboard` (base `716fc97`); DEV1 path-split of `74aa8eb` for 052–055 required before integrate |
+| **Current phase in progress** | Phase 8 coding-complete on `phase/08-semantic-metrics-dashboard` @ `da49afb` (PR/merge to `main` only when asked); next = Phase 9 cut from main after P8 land |
 | **Last phase merged to `main`** | 7 — Connector sync (`8cbc1d1`; Living note `716fc97`) |
-| **Security baseline SHA** | Phase 8 start = `716fc97` |
-| **Next gate file to create** | `docs/Dev-plans/security-gate-p08.md` (seeded) |
-| **Open programme blockers** | JWT/RLS swap not done (Partial / SEC-P01-002). SQLGuard gap. KeyHog deferred. Airlock/rlsgrid Unverified. Phase 3–6 dashboard/staging/DAST/apply ops deferred post–Phase 12. Later phases still require further splits of `74aa8eb` (do not merge tip). |
+| **Security baseline SHA** | Phase 8 start = `716fc97`; end tip = `da49afb` |
+| **Next gate file to create** | `docs/Dev-plans/security-gate-p09.md` (after P8 lands on main) |
+| **Open programme blockers** | JWT/RLS swap not done (Partial / SEC-P01-002). SQLGuard gap. KeyHog deferred. Airlock/rlsgrid Unverified. Phase 3–8 dashboard/staging/DAST/apply ops deferred post–Phase 12. Later phases still require further splits of `74aa8eb` (do not merge tip). |
 | **Accepted findings still live** | SEC-P01-002 service role. SEC-P01-003/004 Bandit Medium. **SEC-P02-003** compat aliases (remove when cleared). |
 
 ### Artefact index (append a row when a file is written)
@@ -202,6 +202,20 @@ Node.js is required only to run `validate-findings.cjs` / `validate-coverage-led
 | 7 | Ops deferred | apply 048–051 / Vault / Railway 5th / partnership / Swazz / rlsgrid / signed-update CA → `ops-deferred-after-p12.md` |
 | 7 | Integration tip | `f6733b0` (DEV1 `e904e74` then DEV2 + HMAC fix + end docs) |
 | 7 | Landed on `main` | `8cbc1d1` (2026-09-20) — code land; ops Partial → `ops-deferred-after-p12.md` |
+| 8 | `docs/Phases/security-scan-p08-*` | written (start + end Bandit/pip-audit/Semgrep; KeyHog/Betterleaks stubs; Trivy) |
+| 8 | `docs/Dev-plans/security-gate-p08.md` | written — S1–S5 Partial/Complete/N/A; Cube **N/A** (not adopted) |
+| 8 | Cloudflare (`C:\Users\Admin\security-audit-skill\akara\p08-run-1\`) | full quick — 0 confirmed; 5 needs_validation |
+| 8 | `docs/Dev-plans/session-handoff-p08-dev2.md` | written |
+| 8 | DEV1 split | `phase/08-dev-1-semantic-metrics-dashboard` @ `49f1b93` from `74aa8eb` (052–055 only; scrubbed 056+) |
+| 8 | Migrations | contiguous `052`–`055`; no `056+`; RLS on tenant metric tables |
+| 8 | Café HTTP | frozen `/kpi/summary|trends|channel|daypart|items|food-cost-alert|flags` + `/metrics`; gated by `CAFE_METRICS_V2` |
+| 8 | Dashboard v2 | `NEW_DASHBOARD` / `VITE_NEW_DASHBOARD`; FMCG path kept; `@visx` only |
+| 8 | Cube.js | **not adopted** → S4 N/A |
+| 8 | Cursor security-review | domain/kpi — 0 HIGH; Medium latent `require_feature` before GA |
+| 8 | JWT/RLS programme | **Partial** — SEC-P01-002 unchanged |
+| 8 | Ops deferred | apply 052–055 / staging flags / MV refresh / two-tenant / Swazz / A/B → `ops-deferred-after-p12.md` |
+| 8 | Integration tip | `da49afb` (DEV1 `49f1b93` then DEV2 + end docs) |
+| 8 | Landed on `main` | **not yet** — PR/merge only when asked |
 
 ---
 
@@ -398,9 +412,9 @@ Status (2026-09-20): **Code landed on `main` @ `873d19a` / tip includes `852d315
 
 ### Start / end
 
-- [ ] Two-tenant API test: A cannot see B revenue.
-- [ ] If Cube.js not adopted, mark S4 N/A with reason — do not invent a Cube deployment.
-- [ ] Update Living log: KPI tenant filter proof, Cube.js yes/no.
+- [x] Two-tenant API test: A cannot see B revenue. → **Unverified / deferred** (D2-P08-OPS-005); code Partial with TenantCtx + RLS on 053–055.
+- [x] If Cube.js not adopted, mark S4 N/A with reason — **N/A** (POC not adopted; no Cube deploy).
+- [x] Update Living log: KPI tenant filter proof, Cube.js yes/no.
 
 ---
 
