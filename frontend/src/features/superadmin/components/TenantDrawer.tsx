@@ -4,13 +4,13 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { ChevronDown, ChevronRight } from "lucide-react";
 
 import { AdminDrawer } from "@/features/superadmin/components/AdminDrawer";
-import { ConfirmDialog } from "@/features/superadmin/components/ConfirmDialog";
+import { DangerousActionDialog } from "@/features/superadmin/components/DangerousActionDialog";
 import { MutationReasonField } from "@/features/superadmin/components/MutationReasonField";
 import { Button } from "@/shared/ui/button";
 import { Input } from "@/shared/ui/input";
 import { Label } from "@/shared/ui/label";
 import { Badge } from "@/shared/ui/badge";
-import { sa } from "@/lib/api/superadmin";
+import { patchFeatureOverrides, sa } from "@/lib/api/superadmin";
 import { cn } from "@/lib/utils";
 
 const FEATURE_KEYS = [
@@ -23,6 +23,15 @@ const FEATURE_KEYS = [
   "tally_connector",
   "api_keys",
 ] as const;
+
+type DangerOp =
+  | { kind: "impersonate" }
+  | { kind: "wipe" }
+  | { kind: "delete" }
+  | { kind: "suspend" }
+  | { kind: "downgrade" }
+  | { kind: "manual_upgrade" }
+  | { kind: "features"; overrides: Record<string, number | boolean | unknown[]> };
 
 type Tab = "overview" | "plan" | "features" | "quota" | "billing" | "data" | "danger";
 
@@ -100,13 +109,9 @@ export function TenantDrawer({ tenantId, onClose, initialTab }: TenantDrawerProp
   const [bonusCopilot, setBonusCopilot] = useState("");
   const [expandedConvo, setExpandedConvo] = useState<string | null>(null);
   const [wipePreview, setWipePreview] = useState<Record<string, unknown> | null>(null);
-  const [confirm, setConfirm] = useState<{
-    title: string;
-    description: string;
-    phrase: string;
-    impactPreview?: React.ReactNode;
-    action: () => Promise<void>;
-  } | null>(null);
+  const [dangerOp, setDangerOp] = useState<DangerOp | null>(null);
+  const [dangerLoading, setDangerLoading] = useState(false);
+  const [overrideJson, setOverrideJson] = useState("{}");
   const [status, setStatus] = useState("");
 
   const reasonOk = reason.trim().length >= 10;
@@ -194,6 +199,7 @@ export function TenantDrawer({ tenantId, onClose, initialTab }: TenantDrawerProp
       setPlan(tenant.plan);
       setPlanStatus(tenant.plan_status);
       setFeatureOverrides(tenant.feature_overrides ?? {});
+      setOverrideJson(JSON.stringify(tenant.feature_overrides ?? {}, null, 2));
     }
   }, [tenant]);
 
@@ -201,6 +207,20 @@ export function TenantDrawer({ tenantId, onClose, initialTab }: TenantDrawerProp
 
   const limits = planLimits?.plans?.[plan] as Record<string, unknown> | undefined;
   const planFeatures = (limits?.features ?? {}) as Record<string, boolean>;
+  const knownOverrideKeys = (() => {
+    const keys = new Set<string>(FEATURE_KEYS);
+    for (const k of Object.keys(tenant?.feature_overrides ?? {})) keys.add(k);
+    if (limits) {
+      for (const [k, v] of Object.entries(limits)) {
+        if (k === "features" && v && typeof v === "object") {
+          for (const fk of Object.keys(v as Record<string, unknown>)) keys.add(fk);
+        } else if (typeof v === "number" || typeof v === "boolean") {
+          keys.add(k);
+        }
+      }
+    }
+    return Array.from(keys);
+  })();
   const copilotLimit =
     tenant?.copilot_limit ?? (limits?.copilot_calls_per_month as number | undefined) ?? 10;
   const rowsLimit = (limits?.rows_total as number | undefined) ?? 10_000;
@@ -210,16 +230,78 @@ export function TenantDrawer({ tenantId, onClose, initialTab }: TenantDrawerProp
     (timeline as { gstin?: string } | undefined)?.gstin ??
     null;
 
-  async function downgradePlan() {
-    if (!reasonOk || !tenant) return;
+  function nextPlanDown(current: string): string | null {
     const order = ["free", "pro", "business"];
-    const idx = order.indexOf(tenant.plan);
-    const next = idx > 0 ? order[idx - 1] : "free";
-    if (next === tenant.plan) return;
-    await sa.patchPlan(tenantId!, { plan: next, reason });
-    setPlan(next);
-    setStatus(`Downgraded to ${next}`);
-    await invalidate();
+    const idx = order.indexOf(current);
+    if (idx <= 0) return null;
+    return order[idx - 1];
+  }
+
+  async function handleDangerConfirm(dialogReason: string) {
+    if (!dangerOp || !tenantId) return;
+    setDangerLoading(true);
+    try {
+      if (dangerOp.kind === "impersonate") {
+        const r = await sa.impersonate(tenantId, dialogReason);
+        if (r.magic_link) window.open(r.magic_link, "_blank", "noopener,noreferrer");
+      } else if (dangerOp.kind === "wipe") {
+        await sa.wipeTenantData(tenantId, { reason: dialogReason });
+        setStatus("Tenant data wiped");
+        await invalidate();
+      } else if (dangerOp.kind === "delete" && tenant) {
+        await sa.deleteTenant(tenantId, {
+          reason: dialogReason,
+          confirm: `DELETE ${tenant.name}`,
+        });
+        onClose();
+        await invalidate();
+      } else if (dangerOp.kind === "suspend" && tenant) {
+        if (tenant.is_active) await sa.deactivateTenant(tenantId, dialogReason);
+        else await sa.activateTenant(tenantId, dialogReason);
+        await invalidate();
+      } else if (dangerOp.kind === "downgrade" && tenant) {
+        const next = nextPlanDown(tenant.plan);
+        if (!next) return;
+        await sa.patchPlan(tenantId, { plan: next, reason: dialogReason });
+        setPlan(next);
+        setStatus(`Downgraded to ${next}`);
+        await invalidate();
+      } else if (dangerOp.kind === "manual_upgrade") {
+        await sa.manualUpgrade(tenantId, {
+          plan: "pro",
+          reason: dialogReason,
+          clear_past_due: true,
+        });
+        setStatus("Manual upgrade applied");
+        await invalidate();
+      } else if (dangerOp.kind === "features") {
+        await patchFeatureOverrides(tenantId, dangerOp.overrides, dialogReason);
+        setStatus("Feature overrides updated");
+        await invalidate();
+      }
+      setDangerOp(null);
+    } catch (e) {
+      setStatus(e instanceof Error ? e.message : "Action failed");
+    } finally {
+      setDangerLoading(false);
+    }
+  }
+
+  function queueFeatureSave() {
+    let overrides: Record<string, number | boolean | unknown[]> = { ...featureOverrides };
+    try {
+      const fromJson = JSON.parse(overrideJson) as Record<string, unknown>;
+      overrides = { ...overrides };
+      for (const [k, v] of Object.entries(fromJson)) {
+        if (typeof v === "number" || typeof v === "boolean" || Array.isArray(v)) {
+          overrides[k] = v;
+        }
+      }
+    } catch {
+      setStatus("Invalid feature overrides JSON");
+      return;
+    }
+    setDangerOp({ kind: "features", overrides });
   }
 
   async function resendInvoice() {
@@ -258,13 +340,6 @@ export function TenantDrawer({ tenantId, onClose, initialTab }: TenantDrawerProp
     await invalidate();
   }
 
-  async function saveFeatures() {
-    if (!reasonOk) return;
-    await sa.patchFeatures(tenantId!, { features: featureOverrides, reason });
-    setStatus("Features updated");
-    await invalidate();
-  }
-
   async function addBonus() {
     if (!reasonOk || !bonusCopilot) return;
     await sa.patchQuota(tenantId!, {
@@ -300,13 +375,18 @@ export function TenantDrawer({ tenantId, onClose, initialTab }: TenantDrawerProp
 
   function toggleFeature(key: string) {
     const effective = featureEffective(key);
-    setFeatureOverrides((prev) => ({ ...prev, [key]: !effective }));
+    setFeatureOverrides((prev) => {
+      const next = { ...prev, [key]: !effective };
+      setOverrideJson(JSON.stringify(next, null, 2));
+      return next;
+    });
   }
 
   function clearFeatureOverride(key: string) {
     setFeatureOverrides((prev) => {
       const next = { ...prev };
       delete next[key];
+      setOverrideJson(JSON.stringify(next, null, 2));
       return next;
     });
   }
@@ -340,12 +420,7 @@ export function TenantDrawer({ tenantId, onClose, initialTab }: TenantDrawerProp
               type="button"
               variant="outline"
               size="sm"
-              disabled={!reasonOk}
-              onClick={() =>
-                void sa.impersonate(tenantId, reason).then((r) => {
-                  if (r.magic_link) window.open(r.magic_link, "_blank", "noopener,noreferrer");
-                })
-              }
+              onClick={() => setDangerOp({ kind: "impersonate" })}
             >
               Impersonate
             </Button>
@@ -362,15 +437,7 @@ export function TenantDrawer({ tenantId, onClose, initialTab }: TenantDrawerProp
               type="button"
               variant="outline"
               size="sm"
-              disabled={!reasonOk}
-              onClick={() =>
-                void sa
-                  .manualUpgrade(tenantId, { plan: "pro", reason, clear_past_due: true })
-                  .then(() => {
-                    setStatus("Manual upgrade applied");
-                    void invalidate();
-                  })
-              }
+              onClick={() => setDangerOp({ kind: "manual_upgrade" })}
             >
               Manual upgrade
             </Button>
@@ -378,8 +445,8 @@ export function TenantDrawer({ tenantId, onClose, initialTab }: TenantDrawerProp
               type="button"
               variant="outline"
               size="sm"
-              disabled={!reasonOk || tenant?.plan === "free"}
-              onClick={() => void downgradePlan()}
+              disabled={tenant?.plan === "free"}
+              onClick={() => setDangerOp({ kind: "downgrade" })}
             >
               Downgrade plan
             </Button>
@@ -633,47 +700,62 @@ export function TenantDrawer({ tenantId, onClose, initialTab }: TenantDrawerProp
           )}
 
           {tab === "features" && (
-            <div className="space-y-2">
-              {FEATURE_KEYS.map((key) => {
-                const effective = featureEffective(key);
-                const overridden = featureOverridden(key);
-                const planDefault = !!planFeatures[key];
-                return (
-                  <div key={key} className="flex items-center justify-between gap-2 text-xs">
-                    <div>
-                      <span className="capitalize">{key.replace(/_/g, " ")}</span>
-                      <span className="text-sa-muted ml-1">
-                        (plan: {planDefault ? "on" : "off"})
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      {overridden && (
+            <div className="space-y-3">
+              <p className="text-xs text-sa-muted">
+                Overrides apply on top of plan defaults. Known keys from plan limits and current
+                overrides.
+              </p>
+              {knownOverrideKeys
+                .filter((key) => typeof planFeatures[key] === "boolean" || FEATURE_KEYS.includes(key as (typeof FEATURE_KEYS)[number]) || typeof featureOverrides[key] === "boolean")
+                .map((key) => {
+                  const effective = featureEffective(key);
+                  const overridden = featureOverridden(key);
+                  const planDefault = !!planFeatures[key];
+                  return (
+                    <div key={key} className="flex items-center justify-between gap-2 text-xs">
+                      <div>
+                        <span className="capitalize">{key.replace(/_/g, " ")}</span>
+                        <span className="text-sa-muted ml-1">
+                          (plan: {planDefault ? "on" : "off"})
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        {overridden && (
+                          <button
+                            type="button"
+                            className="text-sa-muted hover:text-sa-text"
+                            onClick={() => clearFeatureOverride(key)}
+                            title="Reset to plan default"
+                          >
+                            ↺
+                          </button>
+                        )}
                         <button
                           type="button"
-                          className="text-sa-muted hover:text-sa-text"
-                          onClick={() => clearFeatureOverride(key)}
-                          title="Reset to plan default"
+                          className={cn(
+                            "rounded px-2 py-0.5 min-w-[44px]",
+                            overridden
+                              ? "bg-sa-accent/30 text-sa-accent"
+                              : "bg-sa-raised text-sa-muted",
+                          )}
+                          onClick={() => toggleFeature(key)}
                         >
-                          ↺
+                          {effective ? "ON" : "OFF"}
                         </button>
-                      )}
-                      <button
-                        type="button"
-                        className={cn(
-                          "rounded px-2 py-0.5 min-w-[44px]",
-                          overridden
-                            ? "bg-sa-accent/30 text-sa-accent"
-                            : "bg-sa-raised text-sa-muted",
-                        )}
-                        onClick={() => toggleFeature(key)}
-                      >
-                        {effective ? "ON" : "OFF"}
-                      </button>
+                      </div>
                     </div>
-                  </div>
-                );
-              })}
-              <Button type="button" size="sm" disabled={!reasonOk} onClick={() => void saveFeatures()}>
+                  );
+                })}
+              <div>
+                <Label className="text-xs">Overrides JSON (limits + features)</Label>
+                <textarea
+                  className="mt-1 w-full rounded border border-sa-border bg-sa-raised p-2 text-xs font-mono min-h-[100px]"
+                  value={overrideJson}
+                  onChange={(e) => setOverrideJson(e.target.value)}
+                  spellCheck={false}
+                />
+              </div>
+              <Button type="button" size="sm" onClick={queueFeatureSave}>
                 Save overrides
               </Button>
             </div>
@@ -861,21 +943,7 @@ export function TenantDrawer({ tenantId, onClose, initialTab }: TenantDrawerProp
                 type="button"
                 variant="outline"
                 size="sm"
-                disabled={!reasonOk}
-                onClick={() =>
-                  setConfirm({
-                    title: tenant.is_active ? "Suspend tenant" : "Activate tenant",
-                    description: tenant.is_active
-                      ? "Users will not be able to log in."
-                      : "Restore tenant access.",
-                    phrase: "CONFIRM",
-                    action: async () => {
-                      if (tenant.is_active) await sa.deactivateTenant(tenantId!, reason);
-                      else await sa.activateTenant(tenantId!, reason);
-                      await invalidate();
-                    },
-                  })
-                }
+                onClick={() => setDangerOp({ kind: "suspend" })}
               >
                 {tenant.is_active ? "Suspend tenant" : "Activate tenant"}
               </Button>
@@ -884,23 +952,7 @@ export function TenantDrawer({ tenantId, onClose, initialTab }: TenantDrawerProp
                 variant="outline"
                 size="sm"
                 className="text-amber-400"
-                disabled={!reasonOk}
-                onClick={() =>
-                  setConfirm({
-                    title: "Wipe tenant data",
-                    description: "Deletes sales data but keeps the account.",
-                    phrase: "CONFIRM",
-                    impactPreview: wipePreview ? (
-                      <pre className="text-xs whitespace-pre-wrap">
-                        {JSON.stringify(wipePreview, null, 2)}
-                      </pre>
-                    ) : undefined,
-                    action: async () => {
-                      await sa.wipeTenantData(tenantId!, { reason });
-                      await invalidate();
-                    },
-                  })
-                }
+                onClick={() => setDangerOp({ kind: "wipe" })}
               >
                 Wipe data
               </Button>
@@ -908,22 +960,7 @@ export function TenantDrawer({ tenantId, onClose, initialTab }: TenantDrawerProp
                 type="button"
                 variant="destructive"
                 size="sm"
-                disabled={!reasonOk}
-                onClick={() =>
-                  setConfirm({
-                    title: "Delete tenant",
-                    description: "Permanent. All users and data removed.",
-                    phrase: `DELETE ${tenant.name}`,
-                    action: async () => {
-                      await sa.deleteTenant(tenantId!, {
-                        reason,
-                        confirm: `DELETE ${tenant.name}`,
-                      });
-                      onClose();
-                      await invalidate();
-                    },
-                  })
-                }
+                onClick={() => setDangerOp({ kind: "delete" })}
               >
                 Delete tenant
               </Button>
@@ -932,20 +969,54 @@ export function TenantDrawer({ tenantId, onClose, initialTab }: TenantDrawerProp
         </div>
       </AdminDrawer>
 
-      {confirm && (
-        <ConfirmDialog
-          open
-          onOpenChange={() => setConfirm(null)}
-          title={confirm.title}
-          description={confirm.description}
-          confirmPhrase={confirm.phrase}
-          impactPreview={confirm.impactPreview}
-          onConfirm={async () => {
-            await confirm.action();
-            setConfirm(null);
-          }}
-        />
-      )}
+      <DangerousActionDialog
+        open={!!dangerOp}
+        onOpenChange={(open) => {
+          if (!open) setDangerOp(null);
+        }}
+        title={
+          dangerOp?.kind === "impersonate"
+            ? "Impersonate tenant"
+            : dangerOp?.kind === "wipe"
+              ? "Wipe tenant data"
+              : dangerOp?.kind === "delete"
+                ? "Delete tenant"
+                : dangerOp?.kind === "suspend"
+                  ? tenant?.is_active
+                    ? "Suspend tenant"
+                    : "Activate tenant"
+                  : dangerOp?.kind === "downgrade"
+                    ? "Force plan downgrade"
+                    : dangerOp?.kind === "manual_upgrade"
+                      ? "Force plan upgrade"
+                      : dangerOp?.kind === "features"
+                        ? "Apply feature overrides"
+                        : "Confirm action"
+        }
+        summary={
+          dangerOp?.kind === "impersonate"
+            ? `Open a support session as ${tenant?.name ?? "this tenant"}. Actions are audited.`
+            : dangerOp?.kind === "wipe"
+              ? "Deletes sales data but keeps the account. This cannot be undone without a restore."
+              : dangerOp?.kind === "delete"
+                ? `Permanently delete ${tenant?.name ?? "this tenant"}. All users and data removed.`
+                : dangerOp?.kind === "suspend"
+                  ? tenant?.is_active
+                    ? "Users will not be able to log in."
+                    : "Restore tenant access."
+                  : dangerOp?.kind === "downgrade"
+                    ? `Move ${tenant?.name ?? "tenant"} down from ${tenant?.plan ?? "current"} plan.`
+                    : dangerOp?.kind === "manual_upgrade"
+                      ? `Manually upgrade ${tenant?.name ?? "tenant"} to Pro and clear past due.`
+                      : dangerOp?.kind === "features"
+                        ? "Patch tenant feature_overrides via the overrides API."
+                        : ""
+        }
+        minReasonLength={dangerOp?.kind === "delete" || dangerOp?.kind === "wipe" ? 20 : 10}
+        irreversible={dangerOp?.kind === "delete" || dangerOp?.kind === "wipe"}
+        loading={dangerLoading}
+        onConfirm={handleDangerConfirm}
+      />
     </>
   );
 }
