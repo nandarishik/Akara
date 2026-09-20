@@ -9,6 +9,7 @@ import AppLineSidebar from "@/shared/layout/AppLineSidebar";
 import ProfileDropdown from "@/shared/layout/ProfileDropdown";
 import DarkMeshBackground from "@/shared/effects/DarkMeshBackground";
 import { useBilling } from "@/features/billing/hooks/useBilling";
+import { useConnectorsEnabled } from "@/features/connectors/hooks/useConnectorsEnabled";
 import { UsageBanner, PastDueBanner, TrialWarning } from "@/features/billing/components";
 import { GlowCTALink } from "@/shared/ui/GlowCTAButton";
 import { APP_NAV_ITEMS } from "@/lib/appNav";
@@ -39,6 +40,10 @@ export function AppShell() {
   const [avatarSeed, setAvatarSeed] = useState<string | null>(() => readCachedAvatarSeed());
   const [displayName, setDisplayName] = useState<string | null>(() => readCachedDisplayName());
   const { data: usage } = useBilling();
+  const { enabled: connectorsEnabled } = useConnectorsEnabled();
+  const mobileNavItems = APP_NAV_ITEMS.filter(
+    (item) => item.to !== "/connectors" || connectorsEnabled,
+  ).slice(0, 5);
 
   useEffect(() => {
     if (!user?.id) return;
@@ -169,7 +174,7 @@ export function AppShell() {
       <div className="fixed bottom-0 inset-x-0 z-30 lg:hidden">
         <nav className="mx-3 mb-3 rounded-2xl bg-[#0a0a0a]/95 border border-white/10 backdrop-blur-md pb-[env(safe-area-inset-bottom)]">
           <div className="flex items-center justify-around py-2">
-            {APP_NAV_ITEMS.slice(0, 5).map(({ to, shortLabel, icon: Icon }) => {
+            {mobileNavItems.map(({ to, shortLabel, icon: Icon }) => {
               const isActive = location.pathname.startsWith(to);
               const glass = APP_NAV_GLASS[to] ?? { color: "blue" as const, icon: Icon };
               const NavIcon = glass.icon;

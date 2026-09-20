@@ -13,6 +13,7 @@ import {
 import { isSuperadmin } from "@/lib/auth-utils";
 import { useAuth } from "@/features/auth/contexts/AuthContext";
 import { useBilling } from "@/features/billing/hooks/useBilling";
+import { useConnectorsEnabled } from "@/features/connectors/hooks/useConnectorsEnabled";
 import { getDataQuality } from "@/features/data-import/api/cafeImportApi";
 
 type Props = {
@@ -24,8 +25,11 @@ function buildNavEntries(
   showSuperadmin: boolean,
   features: Record<string, boolean> | undefined,
   quarantineCount: number,
+  connectorsEnabled: boolean,
 ): { labels: string[]; paths: string[]; locked: boolean[] } {
-  const primary: AppNavItem[] = APP_NAV_ITEMS;
+  const primary: AppNavItem[] = APP_NAV_ITEMS.filter(
+    (item) => item.to !== "/connectors" || connectorsEnabled,
+  );
   const secondary: AppNavItem[] = [...APP_NAV_SECONDARY];
   if (showSuperadmin) secondary.push(APP_NAV_SUPERADMIN);
 
@@ -53,6 +57,7 @@ export default function AppLineSidebar({ onNavigate, className }: Props) {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { data: usage } = useBilling();
+  const { enabled: connectorsEnabled } = useConnectorsEnabled();
   const [quarantineCount, setQuarantineCount] = useState(0);
 
   useEffect(() => {
@@ -62,8 +67,9 @@ export default function AppLineSidebar({ onNavigate, className }: Props) {
   }, [location.pathname]);
 
   const { labels, paths, locked } = useMemo(
-    () => buildNavEntries(isSuperadmin(user), usage?.features, quarantineCount),
-    [user, usage?.features, quarantineCount],
+    () =>
+      buildNavEntries(isSuperadmin(user), usage?.features, quarantineCount, connectorsEnabled),
+    [user, usage?.features, quarantineCount, connectorsEnabled],
   );
 
   const activeIndex = useMemo(() => {
