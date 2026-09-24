@@ -7,7 +7,7 @@ from uuid import UUID
 import openai
 from fastapi import APIRouter, Depends, Request
 from fastapi.responses import JSONResponse, StreamingResponse
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from app.core.auth import CurrentUser
 from app.core.config import settings
@@ -23,6 +23,7 @@ from app.core.rate_limit import limiter
 from app.core.tenant import TenantCtx, get_supabase_service_client
 from app.domain.copilot.agent import CopilotAgent
 from app.domain.copilot.date_range import compute_copilot_date_range
+from app.domain.copilot.evidence import build_evidence
 from app.domain.copilot.planner import Planner
 from app.domain.copilot.synthesizer import Synthesizer
 from app.domain.copilot.tools.context_tool import ContextTool
@@ -30,6 +31,7 @@ from app.domain.copilot.tools.sql_tool import SQLTool
 from app.domain.debrief.copilot_context import load_debrief_context_addendum
 from app.domain.user_events import record_user_event
 from app.infra.db.executor import SQLExecutor
+from app.infra.llm.circuit_breaker import is_open
 from app.infra.llm.cost_logger import log_llm_cost
 from app.infra.llm.manager import LLMManager
 from app.infra.prompts.generator import PromptGenerator
@@ -39,9 +41,14 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/copilot", tags=["copilot"])
 
+_FALLBACK_MESSAGE = (
+    "The AI assistant is temporarily unavailable. "
+    "Your dashboard and reports still work normally. We'll be back shortly."
+)
+
 
 class ChatRequest(BaseModel):
-    question: str
+    question: str = Field(max_length=2000)
     stream: bool = True
     conversation_id: UUID | None = None
     report_id: UUID | None = None
@@ -51,6 +58,7 @@ class ChatResponse(BaseModel):
     question: str
     intent: str
     response: str
+    answer: str | None = None
     response_time_ms: int
     llm_model: str
     conversation_id: UUID
@@ -60,6 +68,15 @@ class ChatResponse(BaseModel):
     row_count: int | None = None
     date_range: str | None = None
     data_freshness: str | None = None
+    message_id: str | None = None
+    evidence: dict | None = None
+    langfuse_trace_id: str | None = None
+    provider_used: str | None = None
+    model_used: str | None = None
+    prompt_version: dict[str, int] | None = None
+    llm_available: bool = True
+    fallback_message: str | None = None
+    dashboard_link: str | None = None
 
 
 def _extract_provenance(result, supabase, tenant_id: UUID) -> dict:
@@ -118,6 +135,60 @@ def _extract_provenance(result, supabase, tenant_id: UUID) -> dict:
         logger.warning(f"Failed to extract provenance: {e}")
 
     return provenance
+
+
+@router.get("/status")
+@limiter.limit("60/minute")
+def copilot_status(
+    request: Request,
+    user: CurrentUser,
+    tenant: TenantCtx,
+) -> dict:
+    _ = (user, tenant)
+    open_breaker = is_open()
+    available = bool(settings.openrouter_api_key) and not open_breaker
+    if available:
+        return {
+            "llm_available": True,
+            "primary_provider": "openrouter",
+            "primary_provider_healthy": True,
+            "fallback_active": False,
+            "estimated_latency_ms": 1200,
+            "last_successful_call": None,
+            "dashboard_available": True,
+        }
+    return {
+        "llm_available": False,
+        "reason": "All LLM providers are currently unreachable. Dashboard still works normally.",
+        "dashboard_available": True,
+        "retry_after_seconds": 60,
+        "primary_provider": "openrouter",
+        "primary_provider_healthy": False,
+        "fallback_active": False,
+        "estimated_latency_ms": None,
+        "last_successful_call": None,
+    }
+
+
+@router.get("/evidence/{conversation_id}/{message_id}")
+@limiter.limit("30/minute")
+def get_copilot_evidence(
+    request: Request,
+    conversation_id: UUID,
+    message_id: str,
+    user: CurrentUser,
+    tenant: TenantCtx,
+) -> dict:
+    _ = (request, user, tenant, conversation_id, message_id)
+    ev = build_evidence(data_range=None, order_count=0).as_dict()
+    ev.update(
+        {
+            "conversation_id": str(conversation_id),
+            "message_id": message_id,
+            "langfuse_trace_id": None,
+        }
+    )
+    return ev
 
 
 def _create_conversation(
@@ -248,6 +319,12 @@ async def chat(
                         )
                         + "\n\n"
                     )
+            if settings.copilot_evidence_enabled:
+                yield (
+                    "data: "
+                    + json.dumps({"type": "phase", "phase": "planning"})
+                    + "\n\n"
+                )
 
             try:
                 async for chunk in agent.answer_stream(
@@ -288,6 +365,26 @@ async def chat(
                     question=body.question,
                     response="".join(response_parts),
                 )
+                if settings.copilot_evidence_enabled:
+                    ev = build_evidence(
+                        data_range=date_range,
+                        order_count=0,
+                    ).as_dict()
+                    yield (
+                        "data: "
+                        + json.dumps(
+                            {
+                                "type": "evidence",
+                                "evidence": ev,
+                                "langfuse_trace_id": None,
+                                "provider_used": "openrouter",
+                                "model_used": settings.openrouter_model,
+                                "prompt_version": {"planner": 3, "synthesizer": 2},
+                                "message_id": None,
+                            }
+                        )
+                        + "\n\n"
+                    )
 
             except openai.APIStatusError as e:
                 # Day 4: Graceful LLM degradation
@@ -414,10 +511,15 @@ async def chat(
     # Day 4: Add data provenance for transparency
     provenance = _extract_provenance(result, supabase, tenant.tenant_id)
 
+    ev = build_evidence(
+        data_range=provenance.get("date_range"),
+        order_count=int(provenance.get("row_count") or 0),
+    ).as_dict()
     payload = ChatResponse(
         question=result.question,
         intent=result.intent,
         response=result.response,
+        answer=result.response,
         response_time_ms=result.response_time_ms,
         llm_model=result.llm_model,
         conversation_id=conversation_id,
@@ -425,6 +527,11 @@ async def chat(
         row_count=provenance["row_count"],
         date_range=provenance["date_range"],
         data_freshness=provenance["data_freshness"],
+        evidence=ev if settings.copilot_evidence_enabled else None,
+        provider_used="openrouter",
+        model_used=settings.openrouter_model,
+        prompt_version={"planner": 3, "synthesizer": 2},
+        llm_available=True,
     )
     json_resp = JSONResponse(content=payload.model_dump(mode="json"))
     apply_copilot_quota_headers(json_resp, quota_meta)

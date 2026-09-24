@@ -1,0 +1,4 @@
+﻿Phase 9 start — Cloudflare security-audit guidance mode only.
+Companions: WEB-PROTOCOL-AND-AUTH, DATA-ISOLATION-AND-LIFECYCLE (LLM surfaces).
+No findings.json at start. Full quick audit deferred to integration tip → p09-run-1.
+Focus: prompt injection, sqlglot stream+non-stream, Langfuse PII (tenant UUID only), cache tenant_id.

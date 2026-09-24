@@ -74,3 +74,58 @@ def validate_sql(query: str) -> None:
         raise SQLGuardError("Session and row-security manipulation is not permitted")
 
     logger.debug("SQL guard passed for query: %.80s", stripped)
+
+
+class GuardResult:
+    """Phase 9 sqlglot-shaped result. ok=False does not raise."""
+
+    def __init__(self, ok: bool, reason: str = "") -> None:
+        self.ok = ok
+        self.reason = reason
+
+
+def add_row_limit(sql: str, limit: int = 1000) -> str:
+    stripped = sql.rstrip().rstrip(";")
+    if re.search(r"\bLIMIT\b", stripped, re.IGNORECASE):
+        return stripped
+    return f"{stripped} LIMIT {int(limit)}"
+
+
+def _guard_with_sqlglot(sql: str) -> GuardResult:
+    try:
+        import sqlglot
+        from sqlglot import exp
+    except ImportError:
+        return GuardResult(False, "sqlglot_not_installed")
+
+    try:
+        statements = sqlglot.parse(sql, dialect="postgres")
+    except Exception as exc:
+        return GuardResult(False, f"SQL parse error: {exc}")
+
+    if len(statements) != 1:
+        return GuardResult(False, "Multiple statements not allowed")
+    stmt = statements[0]
+    if not isinstance(stmt, exp.Select):
+        return GuardResult(False, f"Only SELECT statements allowed; got {type(stmt).__name__}")
+
+    dangerous = {"pg_read_file", "pg_ls_dir", "copy", "lo_export", "pg_sleep"}
+    for func in stmt.find_all(exp.Anonymous, exp.Func):
+        name = (getattr(func, "name", None) or "").lower()
+        if name in dangerous:
+            return GuardResult(False, f"Function '{func.name}' is not allowed")
+    return GuardResult(True, "")
+
+
+def guard_sql(sql: str) -> GuardResult:
+    """SELECT-only guard. Prefers sqlglot AST, then always apply validate_sql."""
+    ast = _guard_with_sqlglot(sql)
+    if ast.reason != "sqlglot_not_installed" and not ast.ok:
+        return ast
+    try:
+        validate_sql(sql)
+    except SQLGuardError as exc:
+        return GuardResult(False, str(exc))
+    if ast.ok:
+        return GuardResult(True, "sqlglot+regex")
+    return GuardResult(True, "regex_fallback")

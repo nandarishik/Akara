@@ -2,6 +2,7 @@
  * CopilotPage smoke tests — render with mocked chat hooks.
  */
 
+import React from "react";
 import { render, screen } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { MemoryRouter } from "react-router-dom";
@@ -13,11 +14,21 @@ vi.mock("@/features/copilot/hooks/useCopilot", () => ({
   useCopilot: vi.fn(() => ({
     messages: [],
     isStreaming: false,
+    streamPhase: null,
     conversationId: null,
     sendMessage: vi.fn(),
     loadConversation: vi.fn(),
     startNewConversation: vi.fn(),
+    cancelStream: vi.fn(),
     error: null,
+  })),
+}));
+
+vi.mock("@/features/copilot/hooks/useCopilotStatus", () => ({
+  useCopilotStatus: vi.fn(() => ({
+    status: { llm_available: true, dashboard_available: true },
+    refresh: vi.fn(),
+    llmAvailable: true,
   })),
 }));
 

@@ -101,10 +101,26 @@
 | D2-P08-OPS-006 | Swazz/ZAP scoped to `/kpi/*` and `/metrics`; live rlsgrid on new tables | Deferred |
 | D2-P08-OPS-007 | 10% A/B then GA; dual §28 S1–S5 sign-off | Deferred |
 
-**Code base at kickoff:** `main` @ `716fc97` (`PHASE7_SHA`). DEV1 must be path-split from `74aa8eb` (052–055 only; scrub 056+) before integrate.
+**Code base at kickoff:** `main` @ `716fc97` (`PHASE7_SHA`). DEV1 must be path-split from `74aa8eb` (052–055 only; scrub 056+) before integrate. Code landed on `main` @ `af26c85` / Living note `b1b30f8`.
+
+---
+
+## Phase 9 — Copilot LLM platform
+
+| ID | Item | Status |
+|---|---|---|
+| D2-P09-OPS-001 | Apply migrations 056–058 to `akara-dev` / `akara-staging` | Deferred |
+| D2-P09-OPS-002 | Provision Langfuse Cloud keys + Railway `LANGFUSE_*`; Legal/DPDP note before prod traces | Deferred |
+| D2-P09-OPS-003 | Provision `OPENAI_API_KEY` / `ANTHROPIC_API_KEY` fallbacks; flip LiteLLM flags on staging | Deferred |
+| D2-P09-OPS-004 | `TEST_TENANT_JWT` secret for Promptfoo CI; first staging `make run-cafe-benchmark` ≥75% | Deferred |
+| D2-P09-OPS-005 | Garak CI against synthetic model; block on `promptinject`/`dan` VULNERABLE or `leakreplay` HIGH | Deferred |
+| D2-P09-OPS-006 | sqlglot A/B 10% then cutover; retire regex guard at 9d | Deferred |
+| D2-P09-OPS-007 | Weekly eval worker + dual §28 S1–S7 / L6 sign-off | Deferred |
+
+**Code base at kickoff:** `main` @ `b1b30f8` (`PHASE8_SHA`). DEV1 must be path-split from `74aa8eb` (056–058 only; scrub 059+) before integrate.
 
 ---
 
 ## Later phases
 
-Append rows when Phases 9–12 coding starts.
+Append rows when Phases 10–12 coding starts.

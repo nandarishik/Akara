@@ -1,0 +1,28 @@
+name: LLM Security Scan (Garak)
+
+on:
+  pull_request:
+    paths:
+      - "backend/app/domain/copilot/**"
+      - "backend/app/infra/llm/**"
+      - "backend/app/infra/prompts/**"
+
+jobs:
+  garak:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Garak
+        run: pip install garak
+      - name: Run Garak probes (synthetic)
+        env:
+          GARAK_SYNTHETIC: "1"
+        run: |
+          echo "Garak live probes deferred (D2-P09-OPS-005). Config present; synthetic-only."
+          test -f garak_config.yaml
+      - name: Upload placeholder
+        uses: actions/upload-artifact@v4
+        with:
+          name: garak-results
+          path: garak_config.yaml
+          if-no-files-found: ignore

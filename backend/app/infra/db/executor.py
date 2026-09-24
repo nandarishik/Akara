@@ -3,7 +3,7 @@ from uuid import UUID
 
 from supabase import Client
 
-from app.infra.db.guard import validate_sql
+from app.infra.db.guard import SQLGuardError, guard_sql, validate_sql
 
 logger = logging.getLogger(__name__)
 
@@ -31,7 +31,11 @@ class SQLExecutor:
         Execute a SELECT query. Validates with SQLGuard first.
         Returns up to _MAX_ROWS rows.
         """
-        validate_sql(query)
+        gated = guard_sql(query)
+        if not gated.ok:
+            raise SQLGuardError(gated.reason or "SQL rejected by guard")
+        if gated.reason == "regex_fallback":
+            validate_sql(query)
 
         logger.info("Executing SQL for tenant %s: %.100s", tenant_id, query)
 

@@ -174,6 +174,16 @@ class Settings(BaseSettings):
     new_dashboard: bool = False
 
     # -----------------------------------------------------------------------
+    # Copilot / LLM platform (Phase 9)
+    # -----------------------------------------------------------------------
+    copilot_evidence_enabled: bool = True
+    openai_api_key: str = ""
+    anthropic_api_key: str = ""
+    langfuse_secret_key: str = ""
+    langfuse_public_key: str = ""
+    langfuse_host: str = "https://cloud.langfuse.com"
+
+    # -----------------------------------------------------------------------
     # Derived properties
     # -----------------------------------------------------------------------
 

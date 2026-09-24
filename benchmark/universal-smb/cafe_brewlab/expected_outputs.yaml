@@ -1,0 +1,349 @@
+- id: cafe_q01
+  expected_fact: "total revenue"
+  expected_number: null
+  numeric_tolerance_pct: 1.0
+  must_disclose_forecast: false
+  must_say_no_expense_data: false
+
+- id: cafe_q02
+  expected_fact: "total revenue"
+  expected_number: null
+  numeric_tolerance_pct: 1.0
+  must_disclose_forecast: false
+  must_say_no_expense_data: false
+
+- id: cafe_q03
+  expected_fact: "total revenue"
+  expected_number: null
+  numeric_tolerance_pct: 1.0
+  must_disclose_forecast: false
+  must_say_no_expense_data: false
+
+- id: cafe_q04
+  expected_fact: "total revenue"
+  expected_number: null
+  numeric_tolerance_pct: 1.0
+  must_disclose_forecast: false
+  must_say_no_expense_data: false
+
+- id: cafe_q05
+  expected_fact: "total revenue"
+  expected_number: null
+  numeric_tolerance_pct: 1.0
+  must_disclose_forecast: false
+  must_say_no_expense_data: false
+
+- id: cafe_q06
+  expected_fact: "total revenue"
+  expected_number: null
+  numeric_tolerance_pct: 1.0
+  must_disclose_forecast: false
+  must_say_no_expense_data: false
+
+- id: cafe_q07
+  expected_fact: "total revenue"
+  expected_number: null
+  numeric_tolerance_pct: 1.0
+  must_disclose_forecast: false
+  must_say_no_expense_data: false
+
+- id: cafe_q08
+  expected_fact: "total revenue"
+  expected_number: null
+  numeric_tolerance_pct: 1.0
+  must_disclose_forecast: false
+  must_say_no_expense_data: false
+
+- id: cafe_q09
+  expected_fact: "food cost"
+  expected_number: null
+  numeric_tolerance_pct: 1.0
+  must_disclose_forecast: false
+  must_say_no_expense_data: false
+
+- id: cafe_q10
+  expected_fact: "food cost"
+  expected_number: null
+  numeric_tolerance_pct: 1.0
+  must_disclose_forecast: false
+  must_say_no_expense_data: false
+
+- id: cafe_q11
+  expected_fact: "food cost"
+  expected_number: null
+  numeric_tolerance_pct: 1.0
+  must_disclose_forecast: false
+  must_say_no_expense_data: false
+
+- id: cafe_q12
+  expected_fact: "food cost"
+  expected_number: null
+  numeric_tolerance_pct: 1.0
+  must_disclose_forecast: false
+  must_say_no_expense_data: false
+
+- id: cafe_q13
+  expected_fact: "food cost"
+  expected_number: null
+  numeric_tolerance_pct: 1.0
+  must_disclose_forecast: false
+  must_say_no_expense_data: false
+
+- id: cafe_q14
+  expected_fact: "food cost"
+  expected_number: null
+  numeric_tolerance_pct: 1.0
+  must_disclose_forecast: false
+  must_say_no_expense_data: false
+
+- id: cafe_q15
+  expected_fact: "channel"
+  expected_number: null
+  numeric_tolerance_pct: 1.0
+  must_disclose_forecast: false
+  must_say_no_expense_data: false
+
+- id: cafe_q16
+  expected_fact: "channel"
+  expected_number: null
+  numeric_tolerance_pct: 1.0
+  must_disclose_forecast: false
+  must_say_no_expense_data: false
+
+- id: cafe_q17
+  expected_fact: "channel"
+  expected_number: null
+  numeric_tolerance_pct: 1.0
+  must_disclose_forecast: false
+  must_say_no_expense_data: false
+
+- id: cafe_q18
+  expected_fact: "channel"
+  expected_number: null
+  numeric_tolerance_pct: 1.0
+  must_disclose_forecast: false
+  must_say_no_expense_data: false
+
+- id: cafe_q19
+  expected_fact: "channel"
+  expected_number: null
+  numeric_tolerance_pct: 1.0
+  must_disclose_forecast: false
+  must_say_no_expense_data: false
+
+- id: cafe_q20
+  expected_fact: "channel"
+  expected_number: null
+  numeric_tolerance_pct: 1.0
+  must_disclose_forecast: false
+  must_say_no_expense_data: false
+
+- id: cafe_q21
+  expected_fact: "daypart"
+  expected_number: null
+  numeric_tolerance_pct: 1.0
+  must_disclose_forecast: false
+  must_say_no_expense_data: false
+
+- id: cafe_q22
+  expected_fact: "daypart"
+  expected_number: null
+  numeric_tolerance_pct: 1.0
+  must_disclose_forecast: false
+  must_say_no_expense_data: false
+
+- id: cafe_q23
+  expected_fact: "daypart"
+  expected_number: null
+  numeric_tolerance_pct: 1.0
+  must_disclose_forecast: false
+  must_say_no_expense_data: false
+
+- id: cafe_q24
+  expected_fact: "daypart"
+  expected_number: null
+  numeric_tolerance_pct: 1.0
+  must_disclose_forecast: false
+  must_say_no_expense_data: false
+
+- id: cafe_q25
+  expected_fact: "daypart"
+  expected_number: null
+  numeric_tolerance_pct: 1.0
+  must_disclose_forecast: false
+  must_say_no_expense_data: false
+
+- id: cafe_q26
+  expected_fact: "item"
+  expected_number: null
+  numeric_tolerance_pct: 1.0
+  must_disclose_forecast: false
+  must_say_no_expense_data: false
+
+- id: cafe_q27
+  expected_fact: "item"
+  expected_number: null
+  numeric_tolerance_pct: 1.0
+  must_disclose_forecast: false
+  must_say_no_expense_data: false
+
+- id: cafe_q28
+  expected_fact: "item"
+  expected_number: null
+  numeric_tolerance_pct: 1.0
+  must_disclose_forecast: false
+  must_say_no_expense_data: false
+
+- id: cafe_q29
+  expected_fact: "item"
+  expected_number: null
+  numeric_tolerance_pct: 1.0
+  must_disclose_forecast: false
+  must_say_no_expense_data: false
+
+- id: cafe_q30
+  expected_fact: "item"
+  expected_number: null
+  numeric_tolerance_pct: 1.0
+  must_disclose_forecast: false
+  must_say_no_expense_data: false
+
+- id: cafe_q31
+  expected_fact: "item"
+  expected_number: null
+  numeric_tolerance_pct: 1.0
+  must_disclose_forecast: false
+  must_say_no_expense_data: false
+
+- id: cafe_q32
+  expected_fact: "trend"
+  expected_number: null
+  numeric_tolerance_pct: 1.0
+  must_disclose_forecast: false
+  must_say_no_expense_data: false
+
+- id: cafe_q33
+  expected_fact: "trend"
+  expected_number: null
+  numeric_tolerance_pct: 1.0
+  must_disclose_forecast: false
+  must_say_no_expense_data: false
+
+- id: cafe_q34
+  expected_fact: "trend"
+  expected_number: null
+  numeric_tolerance_pct: 1.0
+  must_disclose_forecast: false
+  must_say_no_expense_data: false
+
+- id: cafe_q35
+  expected_fact: "trend"
+  expected_number: null
+  numeric_tolerance_pct: 1.0
+  must_disclose_forecast: false
+  must_say_no_expense_data: false
+
+- id: cafe_q36
+  expected_fact: "trend"
+  expected_number: null
+  numeric_tolerance_pct: 1.0
+  must_disclose_forecast: false
+  must_say_no_expense_data: false
+
+- id: cafe_q37
+  expected_fact: "trend"
+  expected_number: null
+  numeric_tolerance_pct: 1.0
+  must_disclose_forecast: false
+  must_say_no_expense_data: false
+
+- id: cafe_q38
+  expected_fact: "discount"
+  expected_number: null
+  numeric_tolerance_pct: 1.0
+  must_disclose_forecast: false
+  must_say_no_expense_data: false
+
+- id: cafe_q39
+  expected_fact: "discount"
+  expected_number: null
+  numeric_tolerance_pct: 1.0
+  must_disclose_forecast: false
+  must_say_no_expense_data: false
+
+- id: cafe_q40
+  expected_fact: "discount"
+  expected_number: null
+  numeric_tolerance_pct: 1.0
+  must_disclose_forecast: false
+  must_say_no_expense_data: false
+
+- id: cafe_q41
+  expected_fact: "discount"
+  expected_number: null
+  numeric_tolerance_pct: 1.0
+  must_disclose_forecast: false
+  must_say_no_expense_data: false
+
+- id: cafe_q42
+  expected_fact: "labour"
+  expected_number: null
+  numeric_tolerance_pct: 1.0
+  must_disclose_forecast: false
+  must_say_no_expense_data: false
+
+- id: cafe_q43
+  expected_fact: "labour"
+  expected_number: null
+  numeric_tolerance_pct: 1.0
+  must_disclose_forecast: false
+  must_say_no_expense_data: false
+
+- id: cafe_q44
+  expected_fact: "labour"
+  expected_number: null
+  numeric_tolerance_pct: 1.0
+  must_disclose_forecast: false
+  must_say_no_expense_data: false
+
+- id: cafe_q45
+  expected_fact: "labour"
+  expected_number: null
+  numeric_tolerance_pct: 1.0
+  must_disclose_forecast: false
+  must_say_no_expense_data: false
+
+- id: cafe_q46
+  expected_fact: "labour"
+  expected_number: null
+  numeric_tolerance_pct: 1.0
+  must_disclose_forecast: false
+  must_say_no_expense_data: false
+
+- id: cafe_q47
+  expected_fact: "expense"
+  expected_number: null
+  numeric_tolerance_pct: 1.0
+  must_disclose_forecast: false
+  must_say_no_expense_data: false
+
+- id: cafe_q48
+  expected_fact: "expense"
+  expected_number: null
+  numeric_tolerance_pct: 1.0
+  must_disclose_forecast: false
+  must_say_no_expense_data: false
+
+- id: cafe_q49
+  expected_fact: "historical"
+  expected_number: null
+  numeric_tolerance_pct: 1.0
+  must_disclose_forecast: false
+  must_say_no_expense_data: false
+
+- id: cafe_q50
+  expected_fact: "historical"
+  expected_number: null
+  numeric_tolerance_pct: 1.0
+  must_disclose_forecast: false
+  must_say_no_expense_data: false

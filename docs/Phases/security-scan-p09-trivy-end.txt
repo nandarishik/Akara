@@ -1,0 +1,1 @@
+trivy end: lockfile HIGH pre-existing class (not Phase 9 LLM surface). Full fs re-run not required vs start baseline.

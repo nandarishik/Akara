@@ -1,0 +1,1 @@
+﻿trivy start: see end scan on integration tip; lockfile HIGH pre-existing class
