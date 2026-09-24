@@ -1,0 +1,299 @@
+- id: cafe_q01
+  category: revenue
+  question: "What was my total revenue last week?"
+  tags:
+    - revenue
+
+- id: cafe_q02
+  category: revenue
+  question: "What was my total revenue yesterday?"
+  tags:
+    - revenue
+
+- id: cafe_q03
+  category: revenue
+  question: "What was my total revenue last month?"
+  tags:
+    - revenue
+
+- id: cafe_q04
+  category: revenue
+  question: "How much revenue did I make this week so far?"
+  tags:
+    - revenue
+
+- id: cafe_q05
+  category: revenue
+  question: "Compare this week revenue to last week."
+  tags:
+    - revenue
+
+- id: cafe_q06
+  category: revenue
+  question: "What is my revenue for the last 7 days?"
+  tags:
+    - revenue
+
+- id: cafe_q07
+  category: revenue
+  question: "What is my revenue for the last 30 days?"
+  tags:
+    - revenue
+
+- id: cafe_q08
+  category: revenue
+  question: "Which day last week had the highest revenue?"
+  tags:
+    - revenue
+
+- id: cafe_q09
+  category: food_cost
+  question: "What was my food cost percentage last week?"
+  tags:
+    - food_cost
+
+- id: cafe_q10
+  category: food_cost
+  question: "Is my food cost above 30 percent?"
+  tags:
+    - food_cost
+
+- id: cafe_q11
+  category: food_cost
+  question: "What is my food cost for yesterday?"
+  tags:
+    - food_cost
+
+- id: cafe_q12
+  category: food_cost
+  question: "How has food cost percent changed week over week?"
+  tags:
+    - food_cost
+
+- id: cafe_q13
+  category: food_cost
+  question: "What is my average food cost percent this month?"
+  tags:
+    - food_cost
+
+- id: cafe_q14
+  category: food_cost
+  question: "Do I have expense data for food cost?"
+  tags:
+    - food_cost
+
+- id: cafe_q15
+  category: channel
+  question: "What percent of revenue came from Swiggy last week?"
+  tags:
+    - channel
+
+- id: cafe_q16
+  category: channel
+  question: "Break down revenue by channel for last week."
+  tags:
+    - channel
+
+- id: cafe_q17
+  category: channel
+  question: "How much did Zomato contribute last month?"
+  tags:
+    - channel
+
+- id: cafe_q18
+  category: channel
+  question: "What is dine-in versus delivery revenue split?"
+  tags:
+    - channel
+
+- id: cafe_q19
+  category: channel
+  question: "Which channel had the most orders yesterday?"
+  tags:
+    - channel
+
+- id: cafe_q20
+  category: channel
+  question: "What share of orders came from online channels?"
+  tags:
+    - channel
+
+- id: cafe_q21
+  category: daypart
+  question: "How does lunch revenue compare to dinner?"
+  tags:
+    - daypart
+
+- id: cafe_q22
+  category: daypart
+  question: "Which daypart has the highest order count?"
+  tags:
+    - daypart
+
+- id: cafe_q23
+  category: daypart
+  question: "What is breakfast revenue for last week?"
+  tags:
+    - daypart
+
+- id: cafe_q24
+  category: daypart
+  question: "Show daypart breakdown for last 7 days."
+  tags:
+    - daypart
+
+- id: cafe_q25
+  category: daypart
+  question: "Is afternoon slower than lunch on weekdays?"
+  tags:
+    - daypart
+
+- id: cafe_q26
+  category: item
+  question: "What are my top 5 items by revenue last week?"
+  tags:
+    - item
+
+- id: cafe_q27
+  category: item
+  question: "Which item sold the most units yesterday?"
+  tags:
+    - item
+
+- id: cafe_q28
+  category: item
+  question: "What are my bottom 5 items by revenue?"
+  tags:
+    - item
+
+- id: cafe_q29
+  category: item
+  question: "Which item has the highest contribution margin?"
+  tags:
+    - item
+
+- id: cafe_q30
+  category: item
+  question: "What is revenue for cold coffee last week?"
+  tags:
+    - item
+
+- id: cafe_q31
+  category: item
+  question: "List top items on weekends versus weekdays."
+  tags:
+    - item
+
+- id: cafe_q32
+  category: trend
+  question: "How does this week compare to last week for revenue?"
+  tags:
+    - trend
+
+- id: cafe_q33
+  category: trend
+  question: "Is order volume trending up over the last 30 days?"
+  tags:
+    - trend
+
+- id: cafe_q34
+  category: trend
+  question: "Show the 7-day revenue trend."
+  tags:
+    - trend
+
+- id: cafe_q35
+  category: trend
+  question: "Show the 30-day revenue trend."
+  tags:
+    - trend
+
+- id: cafe_q36
+  category: trend
+  question: "Did AOV increase week over week?"
+  tags:
+    - trend
+
+- id: cafe_q37
+  category: trend
+  question: "Are weekends stronger than weekdays for revenue?"
+  tags:
+    - trend
+
+- id: cafe_q38
+  category: discount_refund
+  question: "How much was given in discounts last week?"
+  tags:
+    - discount_refund
+
+- id: cafe_q39
+  category: discount_refund
+  question: "What is my refund rate last month?"
+  tags:
+    - discount_refund
+
+- id: cafe_q40
+  category: discount_refund
+  question: "Which channel has the highest discount share?"
+  tags:
+    - discount_refund
+
+- id: cafe_q41
+  category: discount_refund
+  question: "Are refunds rising compared to last week?"
+  tags:
+    - discount_refund
+
+- id: cafe_q42
+  category: labour
+  question: "What is my labour cost percentage last week?"
+  tags:
+    - labour
+
+- id: cafe_q43
+  category: labour
+  question: "Is labour cost above target?"
+  tags:
+    - labour
+
+- id: cafe_q44
+  category: labour
+  question: "How has labour cost percent changed week over week?"
+  tags:
+    - labour
+
+- id: cafe_q45
+  category: labour
+  question: "What was labour cost yesterday?"
+  tags:
+    - labour
+
+- id: cafe_q46
+  category: labour
+  question: "Compare labour cost to revenue last month."
+  tags:
+    - labour
+
+- id: cafe_q47
+  category: edge_null
+  question: "I do not have expense data - what can you still tell me?"
+  tags:
+    - edge_null
+
+- id: cafe_q48
+  category: edge_null
+  question: "What happens if there are zero orders yesterday?"
+  tags:
+    - edge_null
+
+- id: cafe_q49
+  category: ambiguous
+  question: "How am I doing?"
+  tags:
+    - ambiguous
+
+- id: cafe_q50
+  category: ambiguous
+  question: "Is this forecast or historical data?"
+  tags:
+    - ambiguous

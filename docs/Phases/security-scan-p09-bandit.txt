@@ -1,0 +1,188 @@
+﻿bandit : [main]	INFO	profile include tests: None
+At C:\Users\Admin\AppData\Local\Temp\ps-script-2945963d-f886-40cd-a9b1-9ca2d5dead56.ps1:86 char:85
++ ... idance.txt; bandit -r backend/app/domain/copilot backend/app/infra/ll ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: ([main]	INFO	profile include tests: None:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+[main]	INFO	profile exclude tests: None
+[main]	INFO	cli include tests: None
+[main]	INFO	cli exclude tests: None
+[main]	INFO	running on Python 3.12.10
+Run started:2026-09-20 15:56:41.502105+00:00
+
+Test results:
+>> Issue: [B608:hardcoded_sql_expressions] Possible SQL injection vector through string-based query construction.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-89 (https://cwe.mitre.org/data/definitions/89.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html
+   Location: backend/app/domain/copilot\channel_queries.py:30:10
+29	    return (
+30	        f"SELECT COUNT(DISTINCT {COL_INVOICE}) AS order_count "
+31	        f"FROM {SALES_DATA_TABLE} "
+32	        f"WHERE tenant_id = :tenant_id "
+33	        f"AND {COL_DATE} BETWEEN :start_date AND :end_date "
+34	        f"AND route ILIKE '%{route_value}%'"
+35	    )
+
+--------------------------------------------------
+>> Issue: [B608:hardcoded_sql_expressions] Possible SQL injection vector through string-based query construction.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-89 (https://cwe.mitre.org/data/definitions/89.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html
+   Location: backend/app/domain/copilot\channel_queries.py:40:10
+39	    return (
+40	        f"SELECT SUM({amount_col}) AS total_revenue "
+41	        f"FROM {SALES_DATA_TABLE} "
+42	        f"WHERE tenant_id = :tenant_id "
+43	        f"AND {COL_DATE} BETWEEN :start_date AND :end_date "
+44	        f"AND route ILIKE '%{route_value}%'"
+45	    )
+
+--------------------------------------------------
+>> Issue: [B608:hardcoded_sql_expressions] Possible SQL injection vector through string-based query construction.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-89 (https://cwe.mitre.org/data/definitions/89.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html
+   Location: backend/app/domain/copilot\channel_queries.py:50:10
+49	    return (
+50	        f"SELECT COUNT(*) AS customer_count FROM ("
+51	        f"SELECT party_name FROM {SALES_DATA_TABLE} "
+52	        f"WHERE tenant_id = :tenant_id "
+53	        f"AND {COL_DATE} BETWEEN :start_date AND :end_date "
+54	        f"GROUP BY party_name "
+55	        f"HAVING COUNT(DISTINCT {COL_INVOICE}) > {threshold}"
+56	        f") AS frequent"
+57	    )
+
+--------------------------------------------------
+>> Issue: [B608:hardcoded_sql_expressions] Possible SQL injection vector through string-based query construction.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-89 (https://cwe.mitre.org/data/definitions/89.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html
+   Location: backend/app/domain/copilot\channel_queries.py:62:10
+61	    return (
+62	        f"SELECT product_name, SUM(net_amount) AS total_revenue "
+63	        f"FROM {SALES_DATA_TABLE} "
+64	        f"WHERE tenant_id = :tenant_id "
+65	        f"AND {COL_DATE} BETWEEN :start_date AND :end_date "
+66	        f"AND product_group ILIKE '%{group_keyword}%' "
+67	        f"GROUP BY product_name "
+68	        f"ORDER BY total_revenue DESC "
+69	        f"LIMIT {limit}"
+70	    )
+
+--------------------------------------------------
+>> Issue: [B608:hardcoded_sql_expressions] Possible SQL injection vector through string-based query construction.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-89 (https://cwe.mitre.org/data/definitions/89.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html
+   Location: backend/app/domain/copilot\fallback_queries.py:17:10
+16	    return (
+17	        f"SELECT {COL_PRODUCT}, "
+18	        f"SUM({COL_REVENUE}) AS revenue, "
+19	        f"SUM({COL_QUANTITY}) AS quantity "
+20	        f"FROM {SALES_DATA_TABLE} "
+21	        f"WHERE tenant_id = :tenant_id "
+22	        f"AND {COL_DATE} BETWEEN :start_date AND :end_date "
+23	        f"AND {COL_PRODUCT} IS NOT NULL AND {COL_PRODUCT} != '' "
+24	        f"GROUP BY {COL_PRODUCT} "
+25	        f"ORDER BY revenue DESC "
+26	        f"LIMIT {limit}"
+27	    )
+
+--------------------------------------------------
+>> Issue: [B608:hardcoded_sql_expressions] Possible SQL injection vector through string-based query construction.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-89 (https://cwe.mitre.org/data/definitions/89.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html
+   Location: backend/app/domain/copilot\fallback_queries.py:32:10
+31	    return (
+32	        f"SELECT SUM({COL_REVENUE}) AS total_revenue, "
+33	        f"COUNT(DISTINCT {COL_INVOICE}) AS order_count, "
+34	        f"COUNT(DISTINCT {COL_PARTY}) AS unique_parties "
+35	        f"FROM {SALES_DATA_TABLE} "
+36	        f"WHERE tenant_id = :tenant_id "
+37	        f"AND {COL_DATE} BETWEEN :start_date AND :end_date"
+38	    )
+
+--------------------------------------------------
+>> Issue: [B608:hardcoded_sql_expressions] Possible SQL injection vector through string-based query construction.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-89 (https://cwe.mitre.org/data/definitions/89.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html
+   Location: backend/app/domain/copilot\fallback_queries.py:43:10
+42	    return (
+43	        f"SELECT {COL_PARTY}, {COL_CITY}, "
+44	        f"SUM({COL_REVENUE}) AS revenue, "
+45	        f"SUM({COL_QUANTITY}) AS quantity "
+46	        f"FROM {SALES_DATA_TABLE} "
+47	        f"WHERE tenant_id = :tenant_id "
+48	        f"AND {COL_DATE} BETWEEN :start_date AND :end_date "
+49	        f"GROUP BY {COL_PARTY}, {COL_CITY} "
+50	        f"ORDER BY revenue DESC "
+51	        f"LIMIT {limit}"
+52	    )
+
+--------------------------------------------------
+>> Issue: [B608:hardcoded_sql_expressions] Possible SQL injection vector through string-based query construction.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-89 (https://cwe.mitre.org/data/definitions/89.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html
+   Location: backend/app/domain/copilot\planner.py:29:19
+28	
+29	_PLAN_SYSTEM = f"""
+30	You are a data analytics planning assistant for a sales analytics platform.
+31	Given a user question, you must output a JSON plan with SQL queries to answer it.
+32	
+33	Output ONLY valid JSON in this exact format:
+34	{{
+35	  "intent": "brief description of what the user wants",
+36	  "steps": [
+37	    {{
+38	      "step_id": 1,
+39	      "description": "what this step computes",
+40	      "sql": "SELECT ... FROM {SALES_DATA_TABLE} WHERE tenant_id = :tenant_id AND ..."
+41	    }}
+42	  ],
+43	  "requires_context": [],
+44	  "response_format": "table"
+45	}}
+46	
+47	Rules:
+48	- Always filter by tenant_id = :tenant_id (parameterized, never hardcoded UUIDs)
+49	- Always filter by invoice_date using :start_date and :end_date from the provided date range
+50	- Only use tables listed in schema context: {SALES_DATA_TABLE} and optionally {COMPANION_DATA_TABLE}
+51	- Maximum 3 SQL steps
+52	- Parse LIMIT from the user's question when they say "top N"; otherwise omit LIMIT or use a reasonable default
+53	- For greetings or chitchat with no data question, return "steps": []
+54	- sales_data is LINE-ITEM level (one row per product/service line). For orders/bills/jobs/visits use COUNT(DISTINCT invoice_number), NOT COUNT(*)
+55	- Filter order channels (dine-in, swiggy, zomato, OTC, insurance, etc.) on route ΓÇö NOT product_category unless categories are populated
+56	- For repeat customers/patients: GROUP BY party_name, count DISTINCT invoice_number (or DISTINCT invoice_date for visit frequency)
+57	- Average discount %: SUM(discount_amount) / NULLIF(SUM(gross_amount), 0) * 100
+58	- Only reference columns listed in schema context; extra POS fields may be in raw_data JSONB (e.g. raw_data->>'cashier')
+59	- Do NOT invent columns (e.g. final_bill, order_type) ΓÇö use mapped columns from schema context
+60	- Cross-file metrics: query {COMPANION_DATA_TABLE} filtered by dataset_type and record_date
+61	- Invoice mismatch detection: GROUP BY invoice_number, compare SUM(total_amount) consistently (line-level exports)
+62	"""
+63	
+
+--------------------------------------------------
+
+Code scanned:
+	Total lines of code: 1356
+	Total lines skipped (#nosec): 0
+	Total potential issues skipped due to specifically being disabled (e.g., #nosec BXXX): 0
+
+Run metrics:
+	Total issues (by severity):
+		Undefined: 0
+		Low: 0
+		Medium: 8
+		High: 0
+	Total issues (by confidence):
+		Undefined: 0
+		Low: 8
+		Medium: 0
+		High: 0
+Files skipped (0):
