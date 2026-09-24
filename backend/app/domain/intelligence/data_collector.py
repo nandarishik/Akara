@@ -81,19 +81,23 @@ def frames_from_rows(
     }
 
 
-def collect_for_tenant(_tenant_id: UUID, client: Any | None = None) -> dict[str, Any]:
+def collect_for_tenant(tenant_id: UUID, client: Any | None = None) -> dict[str, Any]:
     """Load last 90d orders + menu + 7d forecasts/anomalies + weather + festivals.
 
     When ``client`` is None, returns empty frames (tests inject frames_from_rows).
     Weather cache miss → weather None (playbook returns []).
+    Tenant-owned tables are always filtered by ``tenant_id`` (service-role client
+    bypasses RLS). ``festival_calendar`` and ``weather_cache`` are global.
     """
     if client is None:
         return frames_from_rows(orders=[], items=[])
+    tid = str(tenant_id)
     today = date.today()
     start = today - timedelta(days=90)
     orders = (
         client.table("canonical_orders")
         .select("id,order_time,channel,location_id,total_amount")
+        .eq("tenant_id", tid)
         .gte("order_time", start.isoformat())
         .execute()
         .data
@@ -105,15 +109,24 @@ def collect_for_tenant(_tenant_id: UUID, client: Any | None = None) -> dict[str,
         items = (
             client.table("canonical_order_items")
             .select("order_id,item_name,quantity,unit_price,line_total,category")
+            .eq("tenant_id", tid)
             .in_("order_id", order_ids)
             .execute()
             .data
             or []
         )
-    menu = client.table("menu_items").select("*").execute().data or []
+    menu = (
+        client.table("menu_items")
+        .select("*")
+        .eq("tenant_id", tid)
+        .execute()
+        .data
+        or []
+    )
     forecasts = (
         client.table("forecasts")
         .select("*")
+        .eq("tenant_id", tid)
         .gte("forecast_date", today.isoformat())
         .lte("forecast_date", (today + timedelta(days=7)).isoformat())
         .execute()
@@ -124,6 +137,7 @@ def collect_for_tenant(_tenant_id: UUID, client: Any | None = None) -> dict[str,
         anomalies = (
             client.table("alert_anomalies")
             .select("*")
+            .eq("tenant_id", tid)
             .gte("detected_at", (today - timedelta(days=7)).isoformat())
             .execute()
             .data

@@ -64,8 +64,22 @@ CREATE POLICY recommendations_tenant_isolation ON public.recommendations
 DROP POLICY IF EXISTS recommendations_tenant_update ON public.recommendations;
 CREATE POLICY recommendations_tenant_update ON public.recommendations
     FOR UPDATE
-    USING (tenant_id = public.get_my_tenant_id())
-    WITH CHECK (tenant_id = public.get_my_tenant_id());
+    USING (
+        tenant_id = public.get_my_tenant_id()
+        AND EXISTS (
+            SELECT 1 FROM public.profiles
+            WHERE id = auth.uid()
+              AND role IN ('admin', 'owner')
+        )
+    )
+    WITH CHECK (
+        tenant_id = public.get_my_tenant_id()
+        AND EXISTS (
+            SELECT 1 FROM public.profiles
+            WHERE id = auth.uid()
+              AND role IN ('admin', 'owner')
+        )
+    );
 CREATE POLICY recommendations_no_client_insert ON public.recommendations
     FOR INSERT
     WITH CHECK (false);
