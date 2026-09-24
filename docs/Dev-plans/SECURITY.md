@@ -129,11 +129,11 @@ Node.js is required only to run `validate-findings.cjs` / `validate-coverage-led
 
 | Field | Value |
 |---|---|
-| **Current phase in progress** | Phase 9 coding-complete on `phase/09-copilot-llm-platform` (PR/merge to `main` only when asked); next = Phase 10 cut from main after P9 land |
-| **Last phase merged to `main`** | 8 — Semantic metrics (`af26c85`; Living note `b1b30f8`) |
-| **Security baseline SHA** | Phase 9 start = `b1b30f8`; integration tip includes DEV1 `8d90647` + DEV2 `f5bb38e` |
-| **Next gate file to create** | `docs/Dev-plans/security-gate-p10.md` (after P9 lands on main) |
-| **Open programme blockers** | JWT/RLS swap not done (Partial / SEC-P01-002). SQLGuard gap. KeyHog deferred. Airlock/rlsgrid Unverified. Phase 3–8 dashboard/staging/DAST/apply ops deferred post–Phase 12. Later phases still require further splits of `74aa8eb` (do not merge tip). |
+| **Current phase in progress** | Ready for Phase 10 cut from `origin/main` @ `909290b` (Phase 9 code land) |
+| **Last phase merged to `main`** | 9 — Copilot LLM platform (`909290b`) |
+| **Security baseline SHA** | Phase 9 start = `b1b30f8`; land = `909290b` (DEV1 `8d90647` + DEV2 `f5bb38e`) |
+| **Next gate file to create** | `docs/Dev-plans/security-gate-p10.md` |
+| **Open programme blockers** | JWT/RLS swap not done (Partial / SEC-P01-002). SQLGuard gap. KeyHog deferred. Airlock/rlsgrid Unverified. Phase 3–9 dashboard/staging/DAST/apply/Langfuse/Garak/Promptfoo ops deferred post–Phase 12. Later phases still require further splits of `74aa8eb` (do not merge tip). |
 | **Accepted findings still live** | SEC-P01-002 service role. SEC-P01-003/004 Bandit Medium. **SEC-P02-003** compat aliases (remove when cleared). |
 
 ### Artefact index (append a row when a file is written)
@@ -230,7 +230,7 @@ Node.js is required only to run `validate-findings.cjs` / `validate-coverage-led
 | 9 | JWT/RLS programme | **Partial** — SEC-P01-002 unchanged |
 | 9 | Ops deferred | apply 056–058 / Langfuse / fallback keys / TEST_TENANT_JWT / Garak / Promptfoo ≥75% / sqlglot A/B → `ops-deferred-after-p12.md` |
 | 9 | Integration tip | DEV1 `8d90647` then DEV2 `f5bb38e` + end docs |
-| 9 | Landed on `main` | **not yet** — PR/merge only when asked |
+| 9 | Landed on `main` | `909290b` (2026-09-24) — code land; ops Partial → `ops-deferred-after-p12.md` |
 
 ---
 
@@ -438,6 +438,8 @@ Status (2026-09-20): **Code landed on `main` @ `873d19a` / tip includes `852d315
 **Adds:** Garak probes (`promptinject`, `dan`, `encoding`, `leakreplay`, `latentinjection`, `xss`) on copilot/llm/prompts paths; Promptfoo ≥75% golden; **sqlglot** SQL guard (50-case unit + stream and non-stream); user text never interpolated into system prompt; max 2,000 char user message; Langfuse traces = UUID `tenant_id` only + email masking; LiteLLM cache key **must** include `tenant_id`; no credentials in prompts (cross-check Phase 7). Cursor `security-review` still on `domain/copilot/` + `infra/llm/` alongside Garak.
 
 Garak `promptinject`/`dan` VULNERABLE or `leakreplay` HIGH → merge blocked.
+
+Status (2026-09-24): **Code landed on `main` @ `909290b`.** Integration: DEV1 `8d90647` then DEV2 `f5bb38e`. Garak/Promptfoo/Langfuse live Unverified. Dual §28 S1–S7 / L6 sign-off **not** Complete (ops Partial) → [`ops-deferred-after-p12.md`](ops-deferred-after-p12.md).
 
 ### Start / end
 

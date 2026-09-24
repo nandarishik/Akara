@@ -117,7 +117,7 @@
 | D2-P09-OPS-006 | sqlglot A/B 10% then cutover; retire regex guard at 9d | Deferred |
 | D2-P09-OPS-007 | Weekly eval worker + dual §28 S1–S7 / L6 sign-off | Deferred |
 
-**Code base at kickoff:** `main` @ `b1b30f8` (`PHASE8_SHA`). DEV1 must be path-split from `74aa8eb` (056–058 only; scrub 059+) before integrate.
+**Code base at kickoff:** `main` @ `b1b30f8` (`PHASE8_SHA`). DEV1 must be path-split from `74aa8eb` (056–058 only; scrub 059+) before integrate. Code landed on `main` @ `909290b`.
 
 ---
 
