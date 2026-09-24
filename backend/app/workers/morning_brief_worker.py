@@ -7,6 +7,7 @@ from datetime import UTC, date, datetime
 from typing import Any
 from uuid import UUID
 
+from app.core.plan_limits import is_feature_enabled
 from app.core.tenant import get_supabase_service_client
 from app.domain.intelligence.morning_brief import (
     SYSTEM_PROMPT,
@@ -100,6 +101,31 @@ def run_morning_brief_worker() -> dict[str, Any]:
         if not tid:
             continue
         try:
+            tenant_row = (
+                supa.table("tenants")
+                .select("plan, feature_overrides")
+                .eq("id", tid)
+                .maybe_single()
+                .execute()
+                .data
+            )
+            plan = (tenant_row or {}).get("plan") or "free"
+            overrides = (tenant_row or {}).get("feature_overrides") or {}
+            if not is_feature_enabled(plan, "morning_brief", overrides):
+                continue
+            pref_row = (
+                supa.table("profiles")
+                .select("preferences")
+                .eq("id", profile["id"])
+                .maybe_single()
+                .execute()
+                .data
+            )
+            prefs = (pref_row or {}).get("preferences") or {}
+            if prefs.get("morning_brief_enabled") is False or prefs.get(
+                "email_morning_brief_enabled"
+            ) is False:
+                continue
             assemble_preview(str(tid))
             # Per-recipient send stays on existing MorningBriefService
             user = None

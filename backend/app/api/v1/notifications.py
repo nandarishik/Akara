@@ -2,9 +2,10 @@
 
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, Request
+from fastapi import APIRouter, Depends, Request, status
 from pydantic import BaseModel, ConfigDict
 
+from app.core.errors import AkaraHTTPException
 from app.core.rate_limit import limiter
 from app.core.tenant import (
     TenantContext,
@@ -74,6 +75,12 @@ async def put_prefs(
     body: NotificationPreferencesPut,
     tenant: TenantContext = Depends(get_tenant_context),
 ) -> dict:
+    if not tenant.is_admin:
+        raise AkaraHTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            code="FORBIDDEN",
+            message="Admins only",
+        )
     payload = body.model_dump()
     supa = get_supabase_service_client()
     supa.table("tenant_profiles").upsert(

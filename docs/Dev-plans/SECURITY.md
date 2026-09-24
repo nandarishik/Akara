@@ -129,10 +129,10 @@ Node.js is required only to run `validate-findings.cjs` / `validate-coverage-led
 
 | Field | Value |
 |---|---|
-| **Current phase in progress** | Ready for Phase 10 cut from `origin/main` @ `746a829` (Phase 9 Living note) |
+| **Current phase in progress** | Phase 10 coding-complete on `phase/10-intelligence-signals` (not ready for 11 until land) |
 | **Last phase merged to `main`** | 9 — Copilot LLM platform (`909290b`; Living note `746a829`) |
-| **Security baseline SHA** | Phase 9 start = `b1b30f8`; land = `909290b`; Living note = `746a829` |
-| **Next gate file to create** | `docs/Dev-plans/security-gate-p10.md` |
+| **Security baseline SHA** | Phase 10 start = `45ce4ad`; integrate = `phase/10-intelligence-signals`; land = pending |
+| **Next gate file to create** | `docs/Dev-plans/security-gate-p11.md` |
 | **Open programme blockers** | JWT/RLS swap not done (Partial / SEC-P01-002). SQLGuard gap. KeyHog deferred. Airlock/rlsgrid Unverified. Phase 3–9 dashboard/staging/DAST/apply/Langfuse/Garak/Promptfoo ops deferred post–Phase 12. Later phases still require further splits of `74aa8eb` (do not merge tip). |
 | **Accepted findings still live** | SEC-P01-002 service role. SEC-P01-003/004 Bandit Medium. **SEC-P02-003** compat aliases (remove when cleared). |
 
@@ -231,6 +231,18 @@ Node.js is required only to run `validate-findings.cjs` / `validate-coverage-led
 | 9 | Ops deferred | apply 056–058 / Langfuse / fallback keys / TEST_TENANT_JWT / Garak / Promptfoo ≥75% / sqlglot A/B → `ops-deferred-after-p12.md` |
 | 9 | Integration tip | DEV1 `8d90647` then DEV2 `f5bb38e` + end docs |
 | 9 | Landed on `main` | `909290b` (2026-09-24) — code land; ops Partial → `ops-deferred-after-p12.md` |
+| 10 | `docs/Phases/security-scan-p10-*` | written (start + end Bandit/pip-audit; KeyHog/Betterleaks stubs; Trivy Partial; Semgrep start 0 / end PATH miss) |
+| 10 | `docs/Dev-plans/security-gate-p10.md` | written — S-P10-001 Partial (live rlsgrid Unverified); S-002–005 Complete (code) |
+| 10 | Cloudflare (`C:\Users\Admin\security-audit-skill\akara\p10-run-1\`) | full quick — 0 confirmed; 5 needs_validation |
+| 10 | `docs/Dev-plans/session-handoff-p10-dev1.md` / `session-handoff-p10-dev2.md` | written |
+| 10 | DEV1 | `phase/10-dev-1-intelligence-signals` @ `cc0b746` (059–061 complete, not 74aa8eb shells) |
+| 10 | DEV2 | `phase/10-dev-2-intelligence-signals` @ `805f0bc` (UI only) |
+| 10 | Migrations | contiguous `059`–`061`; no `062+`; RLS on `forecasts` / `alert_anomalies` / `tenant_profiles` |
+| 10 | Cron | intelligence worker 20:30 forecast / 21:30 alerts / 01:30 brief UTC; alerts removed from cron_business |
+| 10 | Cursor security-review | domain/intelligence + workers — 0 HIGH; Medium plan/consent gated on tip |
+| 10 | JWT/RLS programme | **Partial** — SEC-P01-002 unchanged |
+| 10 | Ops deferred | apply 059–061 / Open-Meteo / rlsgrid / Zaptilo / dual §28 → `ops-deferred-after-p12.md` |
+| 10 | Integration tip | DEV1 `cc0b746` then DEV2 `20714b9` + end docs (not landed) |
 
 ---
 
@@ -453,11 +465,13 @@ Status (2026-09-24): **Code landed on `main` @ `909290b`.** Integration: DEV1 `8
 
 **Adds:** RLS `forecasts` + `alert_anomalies` (live helper `get_my_tenant_id()` / `profiles`, **not** `user_profiles`); Open-Meteo values parameterised (JSONB stored, never interpolated); worker routes require `X-Service-Key`; morning-brief item names framed as **data not instructions**; no secrets in worker logs.
 
+Status (2026-09-24): coding-complete on `phase/10-intelligence-signals` (not landed; dual §28 not Complete).
+
 ### Start / end
 
-- [ ] Seed `security-gate-p10.md` S-P10-001–005.
-- [ ] Malicious `item_name` injection test for morning brief.
-- [ ] Update Living log: new RLS tables, service-key routes.
+- [x] Seed `security-gate-p10.md` S-P10-001–005.
+- [x] Malicious `item_name` injection test for morning brief.
+- [x] Update Living log: new RLS tables, service-key routes.
 
 ---
 

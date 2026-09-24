@@ -1,0 +1,1 @@
+Partial: betterleaks CLI present; end used help-only (subcommand required). Full dir/git scan deferred. TOOL_NOT_INSTALLED: betterleaks-dir-not-run
