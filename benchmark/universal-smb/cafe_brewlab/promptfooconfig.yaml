@@ -1,0 +1,32 @@
+# yaml-language-server: $schema=https://promptfoo.dev/config-schema.json
+description: Akara café BrewLab copilot golden eval (Phase 9)
+
+prompts:
+  - "{{question}}"
+
+providers:
+  - id: http
+    config:
+      url: http://localhost:8000/copilot/chat
+      method: POST
+      headers:
+        Content-Type: application/json
+        Authorization: "Bearer {{env.TEST_TENANT_JWT}}"
+      body:
+        question: "{{question}}"
+        stream: false
+        conversation_id: null
+      transformResponse: |
+        (json) => json.answer || json.response || JSON.stringify(json)
+
+tests: file://questions.yaml
+
+defaultTest:
+  assert:
+    - type: javascript
+      value: |
+        // expected_fact may be injected via merge_eval when DEV1 file exists
+        const fact = context.vars.expected_fact;
+        if (!fact) { return true; }
+        const text = (output || '').toString().toLowerCase();
+        return text.includes(String(fact).toLowerCase());
