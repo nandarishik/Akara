@@ -3,6 +3,7 @@
  * Phase 2 Day 1: verify core variants, loading state, disabled state
  */
 
+import React from 'react'
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, it, expect, vi } from 'vitest'

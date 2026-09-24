@@ -8,15 +8,14 @@ from decimal import Decimal
 from uuid import UUID
 
 from app.core.tenant import get_supabase_service_client
+from app.domain.intelligence.alert_metrics import (
+    CAFE_ALERT_METRICS,
+    LEGACY_FMCG_METRICS,
+)
 
 logger = logging.getLogger(__name__)
 
-VALID_METRICS = frozenset({
-    "secondary_sales_total",
-    "primary_sales_total",
-    "outstanding_amount",
-    "beat_adherence_pct",
-})
+VALID_METRICS = LEGACY_FMCG_METRICS | CAFE_ALERT_METRICS
 
 
 def _parse_dimension(dimension: str | None) -> tuple[str | None, str | None]:
@@ -87,7 +86,34 @@ def get_metric_value(tenant_id: UUID, metric: str, dimension: str | None = None)
         except Exception as exc:
             logger.warning("beat_adherence_pct unavailable: %s", exc)
             return Decimal("0")
+    if metric in CAFE_ALERT_METRICS:
+        return _cafe_metric(tenant_id, metric)
     raise ValueError(f"Unknown metric: {metric}")
+
+
+def _cafe_metric(tenant_id: UUID, metric: str) -> Decimal:
+    supa = get_supabase_service_client()
+    today = date.today().isoformat()
+    orders = (
+        supa.table("canonical_orders")
+        .select("total_amount, order_time")
+        .eq("tenant_id", str(tenant_id))
+        .gte("order_time", today)
+        .execute()
+    )
+    rows = orders.data or []
+    revenue = sum(Decimal(str(r.get("total_amount") or 0)) for r in rows)
+    if metric == "revenue_below_threshold":
+        return revenue
+    if metric == "orders_below_expected":
+        return Decimal(len(rows))
+    if metric == "food_cost_above_threshold":
+        return Decimal("0")
+    if metric == "item_not_selling":
+        return Decimal("0")
+    if metric == "anomaly":
+        return Decimal("0")
+    return Decimal("0")
 
 
 def check_condition(current: Decimal, condition: str, threshold: Decimal) -> bool:

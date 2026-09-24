@@ -18,6 +18,19 @@ def test_cron_intelligence_monday_schedule() -> None:
     assert dtime(2, 30) in times
 
 
+def test_cron_intelligence_daily_p10_schedule() -> None:
+    jobs = worker.scheduler.jobs
+    daily = [
+        j
+        for j in jobs
+        if getattr(j, "start_day", None) is None and j.at_time is not None
+    ]
+    times = {j.at_time for j in daily}
+    assert dtime(20, 30) in times
+    assert dtime(21, 30) in times
+    assert dtime(1, 30) in times
+
+
 def test_snapshot_failure_does_not_block_founder_brief(monkeypatch) -> None:
     called = {"founder": False}
     pings: list[dict[str, str]] = []

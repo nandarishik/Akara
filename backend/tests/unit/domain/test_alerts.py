@@ -3,13 +3,12 @@
 from __future__ import annotations
 
 from unittest.mock import MagicMock, patch
-from uuid import UUID
 
 import pytest
 from fastapi.testclient import TestClient
 
-from tests.conftest import TENANT_PRO, USER_PRO
 from tests.api.test_billing_endpoint import _make_tenant_supa
+from tests.conftest import TENANT_PRO, USER_PRO
 
 
 @pytest.fixture
@@ -46,8 +45,8 @@ def _alerts_supa(existing_count: int = 0):
     insert_mock = MagicMock()
     insert_mock.execute.return_value = MagicMock(data=[{
         "id": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
-        "name": "Low secondary sales",
-        "metric": "secondary_sales_total",
+        "name": "Daily revenue floor",
+        "metric": "revenue_below_threshold",
         "condition": "below",
         "threshold": 50000,
         "dimension": None,
@@ -82,14 +81,14 @@ def test_create_alert_pro(mock_ctx, mock_alerts, authed_pro_client):
     res = authed_pro_client.post(
         "/alerts",
         json={
-            "name": "Low secondary sales",
-            "metric": "secondary_sales_total",
+            "name": "Daily revenue floor",
+            "metric": "revenue_below_threshold",
             "condition": "below",
             "threshold": 50000,
         },
     )
     assert res.status_code == 201, res.text
-    assert res.json()["metric"] == "secondary_sales_total"
+    assert res.json()["metric"] == "revenue_below_threshold"
 
 
 def test_check_condition():

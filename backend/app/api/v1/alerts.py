@@ -17,7 +17,7 @@ from app.core.tenant import (
     get_supabase_service_client,
     get_tenant_context,
 )
-from app.domain.alerts.metrics import VALID_METRICS
+from app.domain.intelligence.alert_metrics import CAFE_ALERT_METRICS
 
 router = APIRouter(prefix="/alerts", tags=["alerts"])
 
@@ -30,6 +30,11 @@ class AlertCreate(BaseModel):
     dimension: str | None = None
     delivery: list[str] = Field(default_factory=lambda: ["email"])
     cooldown_hours: int = Field(default=24, ge=1, le=168)
+    escalation_level: str = "daily_digest"
+    channel_email: bool = True
+    channel_whatsapp: bool = False
+    channel_in_app: bool = True
+    anomaly_detection: bool = False
 
 
 class AlertUpdate(BaseModel):
@@ -38,6 +43,10 @@ class AlertUpdate(BaseModel):
     dimension: str | None = None
     is_active: bool | None = None
     cooldown_hours: int | None = Field(default=None, ge=1, le=168)
+    escalation_level: str | None = None
+    channel_email: bool | None = None
+    channel_whatsapp: bool | None = None
+    channel_in_app: bool | None = None
 
 
 class AlertOut(BaseModel):
@@ -51,6 +60,10 @@ class AlertOut(BaseModel):
     cooldown_hours: int
     is_active: bool
     last_triggered: str | None
+    escalation_level: str | None = None
+    channel_email: bool | None = None
+    channel_whatsapp: bool | None = None
+    channel_in_app: bool | None = None
 
 
 def _require_alerts_feature(
@@ -75,6 +88,61 @@ def _count_alerts(tenant_id: UUID) -> int:
         .execute()
     )
     return result.count or 0
+
+
+class AlertHistoryItem(BaseModel):
+    id: UUID
+    metric: str
+    metric_label: str
+    value: float
+    threshold: float
+    channel: str
+    escalation_level: str
+    timestamp: str
+
+
+METRIC_LABELS = {
+    "revenue_below_threshold": "Daily revenue falls below ₹X",
+    "food_cost_above_threshold": "Food cost ratio exceeds X%",
+    "orders_below_expected": "Order count falls below X",
+    "item_not_selling": "Item not sold for 3+ days",
+    "anomaly": "Unusual pattern detected (AI)",
+}
+
+
+@router.get("/history")
+@limiter.limit("30/minute")
+async def alert_history(
+    request: Request,
+    tenant: TenantContext = Depends(_require_alerts_feature),
+) -> dict:
+    supa = get_supabase_service_client()
+    rows = (
+        supa.table("alert_trigger_events")
+        .select("*")
+        .eq("tenant_id", str(tenant.tenant_id))
+        .order("created_at", desc=True)
+        .limit(100)
+        .execute()
+        .data
+        or []
+    )
+    items = []
+    for r in rows:
+        metric = r.get("metric") or ""
+        items.append(
+            {
+                "id": r["id"],
+                "metric": metric,
+                "metric_label": METRIC_LABELS.get(metric, metric),
+                "value": float(r.get("metric_value") or 0),
+                "threshold": float(r.get("threshold") or 0),
+                "channel": r.get("channel") or "email",
+                "escalation_level": r.get("escalation_level") or "daily_digest",
+                "timestamp": r.get("created_at"),
+            }
+        )
+    return {"items": items}
 
 
 @router.get("", response_model=list[AlertOut])
@@ -115,7 +183,7 @@ async def create_alert(
     body: AlertCreate,
     tenant: TenantContext = Depends(_require_alerts_feature),
 ) -> AlertOut:
-    if body.metric not in VALID_METRICS:
+    if body.metric not in CAFE_ALERT_METRICS:
         raise AkaraHTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             code="VALIDATION_ERROR",
@@ -142,6 +210,11 @@ async def create_alert(
         "delivery": body.delivery,
         "cooldown_hours": body.cooldown_hours,
         "is_active": True,
+        "escalation_level": body.escalation_level,
+        "channel_email": body.channel_email,
+        "channel_whatsapp": body.channel_whatsapp,
+        "channel_in_app": body.channel_in_app,
+        "anomaly_detection": body.anomaly_detection,
     }
     result = supa.table("tenant_alerts").insert(row).execute()
     if not result.data:
@@ -163,6 +236,17 @@ async def create_alert(
         is_active=True,
         last_triggered=None,
     )
+
+
+@router.put("/{alert_id}", response_model=AlertOut)
+@limiter.limit("30/minute")
+async def put_alert(
+    request: Request,
+    alert_id: UUID,
+    body: AlertUpdate,
+    tenant: TenantContext = Depends(_require_alerts_feature),
+) -> AlertOut:
+    return await update_alert(request, alert_id, body, tenant)
 
 
 @router.patch("/{alert_id}", response_model=AlertOut)
@@ -200,6 +284,14 @@ async def update_alert(
         update["is_active"] = body.is_active
     if body.cooldown_hours is not None:
         update["cooldown_hours"] = body.cooldown_hours
+    if body.escalation_level is not None:
+        update["escalation_level"] = body.escalation_level
+    if body.channel_email is not None:
+        update["channel_email"] = body.channel_email
+    if body.channel_whatsapp is not None:
+        update["channel_whatsapp"] = body.channel_whatsapp
+    if body.channel_in_app is not None:
+        update["channel_in_app"] = body.channel_in_app
 
     supa.table("tenant_alerts").update(update).eq("id", str(alert_id)).execute()
     refreshed = (

@@ -87,6 +87,123 @@ class WeeklyDebriefEngine:
 
         return data
 
+    def cafe_additives(
+        self,
+        tenant_id: UUID,
+        week_start: date,
+        week_end: date,
+        metrics: WeekMetrics,
+    ) -> tuple[dict[str, float | None], list[dict[str, str]]]:
+        cafe_rev = self._sum_canonical_revenue(tenant_id, week_start, week_end)
+        prior_start = week_start - timedelta(days=7)
+        prior_end = week_start - timedelta(days=1)
+        cafe_prior = self._sum_canonical_revenue(tenant_id, prior_start, prior_end)
+        if cafe_rev is not None and cafe_prior is not None:
+            food, prior_food = self._food_cost_pair(
+                tenant_id, week_start, week_end, prior_start, prior_end
+            )
+            trend = compute_trend_vs_previous_period(
+                cafe_rev, cafe_prior, food, prior_food
+            )
+        else:
+            trend = compute_trend_vs_previous_period(
+                metrics.revenue, metrics.prior_revenue
+            )
+        actions = self._collect_recommended_actions(tenant_id, week_start, week_end)
+        return trend, actions
+
+    def _sum_canonical_revenue(
+        self, tenant_id: UUID, start: date, end: date
+    ) -> int | None:
+        try:
+            res = (
+                self._sb.table("canonical_orders")
+                .select("total_amount")
+                .eq("tenant_id", str(tenant_id))
+                .gte("order_time", start.isoformat())
+                .lte("order_time", f"{end.isoformat()}T23:59:59")
+                .execute()
+            )
+            rows = res.data or []
+            if len(rows) < 7:
+                return None
+            return _sum_amount(rows)
+        except Exception:
+            return None
+
+    def _food_cost_pair(
+        self,
+        tenant_id: UUID,
+        week_start: date,
+        week_end: date,
+        prior_start: date,
+        prior_end: date,
+    ) -> tuple[float | None, float | None]:
+        try:
+            this = self._sum_food_cost(tenant_id, week_start, week_end)
+            prior = self._sum_food_cost(tenant_id, prior_start, prior_end)
+            return this, prior
+        except Exception:
+            return None, None
+
+    def _sum_food_cost(self, tenant_id: UUID, start: date, end: date) -> float | None:
+        res = (
+            self._sb.table("canonical_expenses")
+            .select("amount")
+            .eq("tenant_id", str(tenant_id))
+            .eq("category", "food_cost")
+            .gte("expense_date", start.isoformat())
+            .lte("expense_date", end.isoformat())
+            .execute()
+        )
+        rows = res.data or []
+        if not rows:
+            return None
+        return float(_sum_amount(rows))
+
+    def _collect_recommended_actions(
+        self, tenant_id: UUID, week_start: date, week_end: date
+    ) -> list[dict[str, str]]:
+        events: list[dict] = []
+        anomalies: list[dict] = []
+        spikes: list[dict] = []
+        try:
+            events = (
+                self._sb.table("alert_trigger_events")
+                .select("metric, metric_name")
+                .eq("tenant_id", str(tenant_id))
+                .gte("created_at", week_start.isoformat())
+                .lte("created_at", f"{week_end.isoformat()}T23:59:59")
+                .limit(10)
+                .execute()
+            ).data or []
+        except Exception:
+            events = []
+        try:
+            anomalies = (
+                self._sb.table("alert_anomalies")
+                .select("metric_name, is_outlier")
+                .eq("tenant_id", str(tenant_id))
+                .gte("detected_at", week_start.isoformat())
+                .lte("detected_at", week_end.isoformat())
+                .limit(10)
+                .execute()
+            ).data or []
+        except Exception:
+            anomalies = []
+        try:
+            spikes = (
+                self._sb.table("forecasts")
+                .select("item_id, predicted_revenue")
+                .eq("tenant_id", str(tenant_id))
+                .gte("forecast_date", week_end.isoformat())
+                .limit(5)
+                .execute()
+            ).data or []
+        except Exception:
+            spikes = []
+        return build_recommended_actions(events, anomalies, spikes)
+
     def _fetch_range(
         self, tenant_id: UUID, start: date, end: date
     ) -> list[dict]:
@@ -335,6 +452,64 @@ class WeeklyDebriefEngine:
 
         top = sorted(party_amt.items(), key=lambda x: x[1], reverse=True)[:5]
         return [OutstandingParty(party=p, amount=a) for p, a in top]
+
+
+def compute_trend_vs_previous_period(
+    revenue: int,
+    prior_revenue: int,
+    food_cost: float | None = None,
+    prior_food_cost: float | None = None,
+) -> dict[str, float | None]:
+    def _wow(cur: float, prior: float) -> float:
+        if prior == 0:
+            return 0.0
+        return round(100.0 * (cur - prior) / prior, 1)
+
+    food = None
+    if food_cost is not None and prior_food_cost is not None:
+        food = _wow(food_cost, prior_food_cost)
+    return {
+        "revenue_wow_pct": _wow(float(revenue), float(prior_revenue)),
+        "food_cost_wow_pct": food,
+    }
+
+
+def build_recommended_actions(
+    alert_events: list[dict],
+    anomalies: list[dict],
+    forecast_spikes: list[dict],
+) -> list[dict[str, str]]:
+    actions: list[dict[str, str]] = []
+    for ev in alert_events:
+        metric = str(ev.get("metric") or ev.get("metric_name") or "alert")
+        actions.append(
+            {
+                "title": f"Review {metric.replace('_', ' ')}",
+                "detail": "Triggered this week",
+            }
+        )
+        if len(actions) >= 3:
+            return actions[:3]
+    for an in anomalies:
+        if an.get("is_outlier"):
+            actions.append(
+                {
+                    "title": "Investigate unusual pattern",
+                    "detail": str(an.get("metric_name") or "anomaly"),
+                }
+            )
+        if len(actions) >= 3:
+            return actions[:3]
+    for fc in forecast_spikes:
+        actions.append(
+            {
+                "title": f"Prep for demand spike: {fc.get('item_id', 'item')}",
+                "detail": "Forecast above recent average",
+            }
+        )
+        if len(actions) >= 3:
+            break
+    return actions[:3]
 
 
 def format_inr(amount: int) -> str:

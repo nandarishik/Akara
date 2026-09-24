@@ -43,6 +43,10 @@ vi.mock("@/shared/charts/composed/akara/ProductZoneMatrix", () => ({
   ProductZoneMatrix: () => <div data-testid="product-zone-matrix" />,
 }));
 
+vi.mock("@/features/alerts/components/AlertHistoryWidget", () => ({
+  AlertHistoryWidget: () => <div data-testid="alert-history" />,
+}));
+
 function renderPage() {
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false } },

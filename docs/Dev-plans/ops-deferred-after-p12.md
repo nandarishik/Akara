@@ -121,6 +121,21 @@
 
 ---
 
+## Phase 10 — Intelligence signals
+
+| ID | Item | Status |
+|---|---|---|
+| D2-P10-OPS-001 | Apply migrations 059–061 to `akara-dev` / `akara-staging` | Deferred |
+| D2-P10-OPS-002 | Railway env: `OPEN_METEO_BASE_URL`, `FORECAST_MIN_DAYS`, `FORECAST_HORIZON`, `ANOMALY_*`, `ALERT_*`, `WORKER_*`, Zaptilo template IDs | Deferred |
+| D2-P10-OPS-003 | Live Open-Meteo from Railway intelligence worker | Deferred |
+| D2-P10-OPS-004 | Live rlsgrid two-tenant on `forecasts` / `alert_anomalies` | Deferred |
+| D2-P10-OPS-005 | Swazz/ZAP scoped to `/alerts`, `/forecasts`, `/morning-brief/preview`, `/admin/reports/*` | Deferred |
+| D2-P10-OPS-006 | Dual §28 S-P10-001–005 sign-off | Deferred |
+
+**Code base at kickoff:** `main` @ `45ce4ad` (`PHASE9_SHA`). DEV1 must be path-split from `74aa8eb` (059–061 only; scrub 062+ / Phase 11 agents) then completed (stacked P10 is shells).
+
+---
+
 ## Later phases
 
-Append rows when Phases 10–12 coding starts.
+Append rows when Phases 11–12 coding starts.

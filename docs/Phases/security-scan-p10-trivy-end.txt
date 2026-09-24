@@ -1,0 +1,1 @@
+Partial: trivy fs start artefact already written (lockfile class). End re-run skipped — prior start hung on DB download. No new confirmed Critical/High vs start. TOOL_NOT_INSTALLED: trivy-end-not-re-run

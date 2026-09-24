@@ -70,6 +70,18 @@ class Settings(BaseSettings):
     zaptilo_api_key: str = ""
     zaptilo_sender_number: str = ""
     whatsapp_sends_enabled: bool = False
+    zaptilo_morning_brief_template_id: str = ""
+    zaptilo_alert_template_id: str = ""
+    zaptilo_debrief_summary_template_id: str = ""
+    open_meteo_base_url: str = "https://api.open-meteo.com/v1"
+    forecast_min_days: int = 14
+    forecast_horizon: int = 7
+    anomaly_contamination: float = 0.1
+    anomaly_min_training_days: int = 30
+    alert_immediate_revenue_drop_pct: float = 50
+    alert_food_cost_threshold: float = 0.35
+    worker_max_retries: int = 3
+    worker_retry_base_seconds: int = 30
 
     # -----------------------------------------------------------------------
     # Cloudflare Turnstile (CAPTCHA — required before Day 3 signup goes live)

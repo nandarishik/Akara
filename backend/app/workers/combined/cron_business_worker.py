@@ -111,7 +111,6 @@ def register_jobs() -> schedule.Scheduler:
         return scheduler
     scheduler.every().day.at("03:00").do(job_retention)
     scheduler.every().day.at("04:00").do(job_dunning)
-    scheduler.every().day.at("05:00").do(job_alerts)
     scheduler.every().day.at("06:00").do(job_content)
     scheduler.every().day.at("06:30").do(job_broadcast)
     scheduler.every().day.at("08:00").do(job_activation)
