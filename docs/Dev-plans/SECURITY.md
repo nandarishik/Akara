@@ -129,9 +129,9 @@ Node.js is required only to run `validate-findings.cjs` / `validate-coverage-led
 
 | Field | Value |
 |---|---|
-| **Current phase in progress** | Phase 10 coding-complete on `phase/10-intelligence-signals` (not ready for 11 until land) |
-| **Last phase merged to `main`** | 9 — Copilot LLM platform (`909290b`; Living note `746a829`) |
-| **Security baseline SHA** | Phase 10 start = `45ce4ad`; integrate = `phase/10-intelligence-signals`; land = pending |
+| **Current phase in progress** | Ready for Phase 11 cut from `origin/main` after this land (split `74aa8eb` P11-only) |
+| **Last phase merged to `main`** | 10 — Intelligence signals (`0cb97a5`; Living note pending pin) |
+| **Security baseline SHA** | Phase 10 start = `45ce4ad`; land = `0cb97a5` |
 | **Next gate file to create** | `docs/Dev-plans/security-gate-p11.md` |
 | **Open programme blockers** | JWT/RLS swap not done (Partial / SEC-P01-002). SQLGuard gap. KeyHog deferred. Airlock/rlsgrid Unverified. Phase 3–9 dashboard/staging/DAST/apply/Langfuse/Garak/Promptfoo ops deferred post–Phase 12. Later phases still require further splits of `74aa8eb` (do not merge tip). |
 | **Accepted findings still live** | SEC-P01-002 service role. SEC-P01-003/004 Bandit Medium. **SEC-P02-003** compat aliases (remove when cleared). |
@@ -242,7 +242,8 @@ Node.js is required only to run `validate-findings.cjs` / `validate-coverage-led
 | 10 | Cursor security-review | domain/intelligence + workers — 0 HIGH; Medium plan/consent gated on tip |
 | 10 | JWT/RLS programme | **Partial** — SEC-P01-002 unchanged |
 | 10 | Ops deferred | apply 059–061 / Open-Meteo / rlsgrid / Zaptilo / dual §28 → `ops-deferred-after-p12.md` |
-| 10 | Integration tip | DEV1 `cc0b746` then DEV2 `20714b9` + end docs (not landed) |
+| 10 | Integration tip | DEV1 `cc0b746` then DEV2 `20714b9` + end docs |
+| 10 | Landed on `main` | `0cb97a5` (2026-09-24) — code land; ops Partial → `ops-deferred-after-p12.md` |
 
 ---
 
@@ -465,7 +466,7 @@ Status (2026-09-24): **Code landed on `main` @ `909290b`.** Integration: DEV1 `8
 
 **Adds:** RLS `forecasts` + `alert_anomalies` (live helper `get_my_tenant_id()` / `profiles`, **not** `user_profiles`); Open-Meteo values parameterised (JSONB stored, never interpolated); worker routes require `X-Service-Key`; morning-brief item names framed as **data not instructions**; no secrets in worker logs.
 
-Status (2026-09-24): coding-complete on `phase/10-intelligence-signals` (not landed; dual §28 not Complete).
+Status (2026-09-24): **Code landed on `main` @ `0cb97a5`.** Dual §28 not Complete; ops → [`ops-deferred-after-p12.md`](ops-deferred-after-p12.md).
 
 ### Start / end
 
