@@ -27,3 +27,12 @@
 ## Ops
 
 Phase 9 rows → `ops-deferred-after-p12.md` (D2-P09-OPS-001..007).
+
+## DEV2 coding complete (`4c4c3b0`+)
+
+- `check_gate.py`: fixture 80% exits 0, 60% exits 1.
+- `questions.yaml`: exactly 50 ids (`cafe_q01`–`cafe_q50`); tail truncated (2 edge_null + 2 ambiguous).
+- Frontend: status poll 30s, outage banner source of truth, evidence footer, stream `phase`/`evidence`, 30s abort, input disabled when `llm_available===false`.
+- Tests: `tsc -b` 0; vitest copilot **12 passed**. Flake: CopilotPage test stderr `Expected onClick listener to be a function, instead got object` (MobileNav mock) — test still passes.
+- Playwright e2e: smoke specs added (`copilot-evidence`, `copilot-outage`). Playwright MCP localhost QA **not run** this session (Vite not started).
+- Promptfoo CI: artifact-only; skips clearly when `TEST_TENANT_JWT` missing.
