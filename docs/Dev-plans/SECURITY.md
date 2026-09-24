@@ -130,8 +130,8 @@ Node.js is required only to run `validate-findings.cjs` / `validate-coverage-led
 | Field | Value |
 |---|---|
 | **Current phase in progress** | Ready for Phase 11 cut from `origin/main` after this land (split `74aa8eb` P11-only) |
-| **Last phase merged to `main`** | 10 — Intelligence signals (`0cb97a5`; Living note pending pin) |
-| **Security baseline SHA** | Phase 10 start = `45ce4ad`; land = `0cb97a5` |
+| **Last phase merged to `main`** | 10 — Intelligence signals (`0cb97a5`; Living note `61a4d7b`) |
+| **Security baseline SHA** | Phase 10 start = `45ce4ad`; land = `0cb97a5`; Living note = `61a4d7b` |
 | **Next gate file to create** | `docs/Dev-plans/security-gate-p11.md` |
 | **Open programme blockers** | JWT/RLS swap not done (Partial / SEC-P01-002). SQLGuard gap. KeyHog deferred. Airlock/rlsgrid Unverified. Phase 3–9 dashboard/staging/DAST/apply/Langfuse/Garak/Promptfoo ops deferred post–Phase 12. Later phases still require further splits of `74aa8eb` (do not merge tip). |
 | **Accepted findings still live** | SEC-P01-002 service role. SEC-P01-003/004 Bandit Medium. **SEC-P02-003** compat aliases (remove when cleared). |
