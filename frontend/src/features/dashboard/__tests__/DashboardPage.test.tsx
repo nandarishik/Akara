@@ -26,6 +26,10 @@ vi.mock("@/features/alerts/components/AlertHistoryWidget", () => ({
   AlertHistoryWidget: () => <div data-testid="alert-history" />,
 }));
 
+vi.mock("@/features/actions/components/PendingActionsMount", () => ({
+  PendingActionsMount: () => <div data-testid="pending-actions" />,
+}));
+
 vi.mock("@/features/dashboard/components/DashboardEmptyState", () => ({
   DashboardEmptyState: () => <div data-testid="empty">Empty</div>,
 }));

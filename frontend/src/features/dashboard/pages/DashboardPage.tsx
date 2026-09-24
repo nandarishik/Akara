@@ -40,6 +40,7 @@ import { dismissSlot, incrementVisitCount, isSlotDismissed, PLACEMENT_KEYS, SLOT
 import { salesDataAgeDays } from "@/lib/dataFreshness";
 import { DataQualityWidget } from "@/features/data-import/components/DataQualityWidget";
 import { AlertHistoryWidget } from "@/features/alerts/components/AlertHistoryWidget";
+import { PendingActionsMount } from "@/features/actions/components/PendingActionsMount";
 
 function getDateRange(period: string): [string, string] {
   const end = new Date();
@@ -184,6 +185,7 @@ function FmcgDashboard() {
 
       <DataQualityWidget />
       <AlertHistoryWidget />
+      <PendingActionsMount />
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {isLoading ? (
