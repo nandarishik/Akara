@@ -1,0 +1,31 @@
+﻿uvx :                
+At C:\Users\Admin\AppData\Local\Temp\ps-script-3348fb9c-69f4-42a6-85ba-21f5c30046b9.ps1:79 char:45
++ ... ct -Last 5; uvx --from semgrep semgrep --config p/python --config p/f ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (               :String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+               
+ΓöîΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÉ
+Γöé Scan Status Γöé
+ΓööΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÿ
+  Scanning 22 files tracked by git with 185 Code rules:
+  Scanning 22 files with 151 python rules.
+                
+                
+ΓöîΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÉ
+Γöé Scan Summary Γöé
+ΓööΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÿ
+Γ£à Scan completed successfully.
+ ΓÇó Findings: 0 (0 blocking)
+ ΓÇó Rules run: 151
+ ΓÇó Targets scanned: 22
+ ΓÇó Parsed lines: ~100.0%
+ ΓÇó Scan was limited to files tracked by git
+ ΓÇó For a detailed list of skipped files and lines, run semgrep with the --verbose flag
+Ran 151 rules on 22 files: 0 findings.
+(need more rules? `semgrep login` for additional free Semgrep Registry rules)
+
+If Semgrep missed a finding, please send us feedback to let us know!
+See https://semgrep.dev/docs/reporting-false-negatives/
+{"version":"1.177.0","results":[],"errors":[],"paths":{"scanned":["backend\\app\\api\\v1\\copilot.py","backend\\app\\domain\\copilot\\__init__.py","backend\\app\\domain\\copilot\\agent.py","backend\\app\\domain\\copilot\\channel_queries.py","backend\\app\\domain\\copilot\\date_range.py","backend\\app\\domain\\copilot\\evidence.py","backend\\app\\domain\\copilot\\fallback_queries.py","backend\\app\\domain\\copilot\\guardrails\\__init__.py","backend\\app\\domain\\copilot\\guardrails\\checks.py","backend\\app\\domain\\copilot\\pii_redactor.py","backend\\app\\domain\\copilot\\planner.py","backend\\app\\domain\\copilot\\synthesizer.py","backend\\app\\domain\\copilot\\tools\\__init__.py","backend\\app\\domain\\copilot\\tools\\context_tool.py","backend\\app\\domain\\copilot\\tools\\sql_tool.py","backend\\app\\infra\\db\\guard.py","backend\\app\\infra\\llm\\__init__.py","backend\\app\\infra\\llm\\circuit_breaker.py","backend\\app\\infra\\llm\\cost_logger.py","backend\\app\\infra\\llm\\cost_tracker.py","backend\\app\\infra\\llm\\manager.py","backend\\app\\infra\\llm\\openrouter.py"]},"time":{"rules":[],"rules_parse_time":0.793266773223877,"profiling_times":{"config_time":3.707550048828125,"core_time":67.13830614089966,"ignores_time":0.0020170211791992188,"total_time":70.90339589118958},"parsing_time":{"total_time":0.0,"per_file_time":{"mean":0.0,"std_dev":0.0},"very_slow_stats":{"time_ratio":0.0,"count_ratio":0.0},"very_slow_files":[]},"scanning_time":{"total_time":9.521718978881836,"per_file_time":{"mean":0.4328054081309925,"std_dev":0.21728735680075817},"very_slow_stats":{"time_ratio":0.21279300910654644,"count_ratio":0.045454545454545456},"very_slow_files":[{"fpath":"backend\\app\\api\\v1\\copilot.py","ftime":2.0261552333831787}]},"matching_time":{"total_time":0.0,"per_file_and_rule_time":{"mean":0.0,"std_dev":0.0},"very_slow_stats":{"time_ratio":0.0,"count_ratio":0.0},"very_slow_rules_on_files":[]},"tainting_time":{"total_time":0.0,"per_def_and_rule_time":{"mean":0.0,"std_dev":0.0},"very_slow_stats":{"time_ratio":0.0,"count_ratio":0.0},"very_slow_rules_on_defs":[]},"fixpoint_timeouts":[],"prefiltering":{"project_level_time":0.0,"file_level_time":0.0,"rules_with_project_prefilters_ratio":0.0,"rules_with_file_prefilters_ratio":0.9933774834437086,"rules_selected_ratio":0.03461770018061409,"rules_matched_ratio":0.03461770018061409},"targets":[],"total_bytes":0,"max_memory_bytes":430562432},"engine_requested":"OSS","skipped_rules":[],"profiling_results":[]}

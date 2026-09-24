@@ -129,10 +129,10 @@ Node.js is required only to run `validate-findings.cjs` / `validate-coverage-led
 
 | Field | Value |
 |---|---|
-| **Current phase in progress** | Phase 9 DEV2 on `phase/09-dev-2-copilot-llm-platform` (base `b1b30f8`); DEV1 path-split of `74aa8eb` for 056–058 required before integrate |
+| **Current phase in progress** | Phase 9 coding-complete on `phase/09-copilot-llm-platform` (PR/merge to `main` only when asked); next = Phase 10 cut from main after P9 land |
 | **Last phase merged to `main`** | 8 — Semantic metrics (`af26c85`; Living note `b1b30f8`) |
-| **Security baseline SHA** | Phase 9 start = `b1b30f8` |
-| **Next gate file to create** | `docs/Dev-plans/security-gate-p09.md` (seeded) |
+| **Security baseline SHA** | Phase 9 start = `b1b30f8`; integration tip includes DEV1 `8d90647` + DEV2 `f5bb38e` |
+| **Next gate file to create** | `docs/Dev-plans/security-gate-p10.md` (after P9 lands on main) |
 | **Open programme blockers** | JWT/RLS swap not done (Partial / SEC-P01-002). SQLGuard gap. KeyHog deferred. Airlock/rlsgrid Unverified. Phase 3–8 dashboard/staging/DAST/apply ops deferred post–Phase 12. Later phases still require further splits of `74aa8eb` (do not merge tip). |
 | **Accepted findings still live** | SEC-P01-002 service role. SEC-P01-003/004 Bandit Medium. **SEC-P02-003** compat aliases (remove when cleared). |
 
@@ -216,6 +216,21 @@ Node.js is required only to run `validate-findings.cjs` / `validate-coverage-led
 | 8 | Ops deferred | apply 052–055 / staging flags / MV refresh / two-tenant / Swazz / A/B → `ops-deferred-after-p12.md` |
 | 8 | Integration tip | `da49afb` (DEV1 `49f1b93` then DEV2 + end docs) |
 | 8 | Landed on `main` | `af26c85` (2026-09-20) — code land; ops Partial → `ops-deferred-after-p12.md` |
+| 9 | `docs/Phases/security-scan-p09-*` | written (start + end Bandit/pip-audit/Semgrep; KeyHog/Betterleaks stubs; Trivy) |
+| 9 | `docs/Dev-plans/security-gate-p09.md` | written — S1–S7/L6 Partial; Garak/Promptfoo/Langfuse deferred |
+| 9 | Cloudflare (`C:\Users\Admin\security-audit-skill\akara\p09-run-1\`) | full quick — 0 confirmed; 5 needs_validation |
+| 9 | `docs/Dev-plans/session-handoff-p09-dev2.md` | written |
+| 9 | DEV1 split | `phase/09-dev-1-copilot-llm-platform` @ `8d90647` from `74aa8eb` (056–058 only; scrubbed 059+) |
+| 9 | Migrations | contiguous `056`–`058`; no `059+`; RLS on `llm_cost_log_v2` |
+| 9 | Café HTTP | frozen `/copilot/status`, `/copilot/evidence/...`, chat evidence + SSE phase/evidence; body `question` max 2000 |
+| 9 | sqlglot | optional import; `validate_sql` always after AST; A/B deferred |
+| 9 | Langfuse | **not wired** (keys in settings only); PII policy = UUID tenant_id when enabled |
+| 9 | Garak / Promptfoo | workflows present; live % Unverified; `check_gate` + 50 questions on tip |
+| 9 | Cursor security-review | domain/copilot + infra/llm — 0 HIGH; Medium sqlglot-skip-regex **fixed** |
+| 9 | JWT/RLS programme | **Partial** — SEC-P01-002 unchanged |
+| 9 | Ops deferred | apply 056–058 / Langfuse / fallback keys / TEST_TENANT_JWT / Garak / Promptfoo ≥75% / sqlglot A/B → `ops-deferred-after-p12.md` |
+| 9 | Integration tip | DEV1 `8d90647` then DEV2 `f5bb38e` + end docs |
+| 9 | Landed on `main` | **not yet** — PR/merge only when asked |
 
 ---
 
@@ -426,9 +441,9 @@ Garak `promptinject`/`dan` VULNERABLE or `leakreplay` HIGH → merge blocked.
 
 ### Start / end
 
-- [ ] Seed `security-gate-p09.md` L6 + S1–S5.
-- [ ] Guard on **both** stream and non-stream (Phase 1 stream warning is not a substitute for sqlglot).
-- [ ] Update Living log: Garak report path, Promptfoo %, sqlglot on/off, Langfuse PII policy.
+- [x] Seed `security-gate-p09.md` L6 + S1–S7.
+- [x] Guard on **both** stream and non-stream via `SQLExecutor` → `guard_sql` + `validate_sql`.
+- [x] Update Living log: Garak path `garak.yml` (synthetic); Promptfoo % Unverified; sqlglot optional+regex; Langfuse not wired.
 
 ---
 

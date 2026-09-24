@@ -118,12 +118,14 @@ def _guard_with_sqlglot(sql: str) -> GuardResult:
 
 
 def guard_sql(sql: str) -> GuardResult:
-    """SELECT-only guard. Prefers sqlglot AST; falls back to validate_sql."""
+    """SELECT-only guard. Prefers sqlglot AST, then always apply validate_sql."""
     ast = _guard_with_sqlglot(sql)
-    if ast.reason != "sqlglot_not_installed":
+    if ast.reason != "sqlglot_not_installed" and not ast.ok:
         return ast
     try:
         validate_sql(sql)
     except SQLGuardError as exc:
         return GuardResult(False, str(exc))
+    if ast.ok:
+        return GuardResult(True, "sqlglot+regex")
     return GuardResult(True, "regex_fallback")
