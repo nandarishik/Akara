@@ -132,10 +132,25 @@
 | D2-P10-OPS-005 | Swazz/ZAP scoped to `/alerts`, `/forecasts`, `/morning-brief/preview`, `/admin/reports/*` | Deferred |
 | D2-P10-OPS-006 | Dual §28 S-P10-001–005 sign-off | Deferred |
 
-**Code base at kickoff:** `main` @ `45ce4ad` (`PHASE9_SHA`). DEV1 must be path-split from `74aa8eb` (059–061 only; scrub 062+ / Phase 11 agents) then completed (stacked P10 is shells).
+**Code base at kickoff:** `main` @ `45ce4ad` (`PHASE9_SHA`). DEV1 must be path-split from `74aa8eb` (059–061 only; scrub 062+ / Phase 11 agents) then completed (stacked P10 is shells). Code landed on `main` @ `0cb97a5` / Living note `61a4d7b` / pin `8cbb542`.
+
+---
+
+## Phase 11 — Decision engine
+
+| ID | Item | Status |
+|---|---|---|
+| D2-P11-OPS-001 | Apply migrations 062–066 to `akara-dev` / `akara-staging` | Deferred |
+| D2-P11-OPS-002 | Railway env: `DECISION_ENGINE_ENABLED`, `DECISION_ENGINE_MODEL`, `DECISION_ENGINE_MAX_RECS_PER_TENANT=10`, `CONFIDENCE_*`, `MAX_EXPECTED_IMPACT_INR=500000`, commission defaults | Deferred |
+| D2-P11-OPS-003 | Live rlsgrid two-tenant on `recommendations` (accept → 404) | Deferred |
+| D2-P11-OPS-004 | Staging soak of decision engine + outcome clock | Deferred |
+| D2-P11-OPS-005 | DeepTeam live / Langfuse spans (package absent — do not add) | Deferred |
+| D2-P11-OPS-006 | Dual §28 S-P11-001–005 sign-off | Deferred |
+
+**Code base at kickoff:** `main` @ `8cbb542` (`PHASE10_SHA`). DEV1 must be path-split from `74aa8eb` (062–066 + agents/playbooks only; scrub 067+ / Phase 12) then completed (stacked P11 is shells).
 
 ---
 
 ## Later phases
 
-Append rows when Phases 11–12 coding starts.
+Append rows when Phase 12 coding starts.

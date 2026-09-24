@@ -47,6 +47,10 @@ vi.mock("@/features/alerts/components/AlertHistoryWidget", () => ({
   AlertHistoryWidget: () => <div data-testid="alert-history" />,
 }));
 
+vi.mock("@/features/actions/components/PendingActionsMount", () => ({
+  PendingActionsMount: () => <div data-testid="pending-actions" />,
+}));
+
 function renderPage() {
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false } },

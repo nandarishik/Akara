@@ -112,6 +112,9 @@ const AlertSettingsPage = React.lazy(() =>
 const AlertHistoryPage = React.lazy(() =>
   import("@/features/alerts/pages/AlertHistoryPage").then((m) => ({ default: m.AlertHistoryPage }))
 )
+const ActionQueuePage = React.lazy(() =>
+  import("@/features/actions/pages/ActionQueuePage").then((m) => ({ default: m.ActionQueuePage }))
+)
 const NotificationPreferencesPage = React.lazy(() =>
   import("@/features/settings/pages/NotificationPreferencesPage").then((m) => ({
     default: m.NotificationPreferencesPage,
@@ -244,6 +247,7 @@ export function AppRouter() {
               <Route path="/billing" element={<BillingPage />} />
               <Route path="/alerts" element={<AlertsPage />} />
               <Route path="/alerts/history" element={<AlertHistoryPage />} />
+              <Route path="/actions" element={<ActionQueuePage />} />
               <Route path="/admin/tenants" element={<Navigate to="/superadmin/tenants" replace />} />
               <Route path="/admin/users" element={<Navigate to="/superadmin/users" replace />} />
             </Route>
