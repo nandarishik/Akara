@@ -8,6 +8,7 @@ import {
   BarChart3,
   TrendingUp,
   Bell,
+  ListChecks,
   Settings,
   CreditCard,
   Shield,
@@ -29,6 +30,7 @@ export const APP_NAV_ITEMS: AppNavItem[] = [
   { to: "/reports", label: "Reports", icon: BarChart2, shortLabel: "Reports", feature: null },
   { to: "/debrief", label: "Debrief", icon: BarChart3, shortLabel: "Debrief", feature: null },
   { to: "/alerts", label: "Alerts", icon: Bell, shortLabel: "Alerts", feature: "alerts" },
+  { to: "/actions", label: "Actions", icon: ListChecks, shortLabel: "Act", feature: null },
   { to: "/simulator", label: "Simulator", icon: TrendingUp, shortLabel: "Sim", feature: "simulator" },
 ];
 

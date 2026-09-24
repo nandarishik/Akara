@@ -29,6 +29,8 @@ def test_cron_intelligence_daily_p10_schedule() -> None:
     assert dtime(20, 30) in times
     assert dtime(21, 30) in times
     assert dtime(1, 30) in times
+    assert dtime(22, 30) in times
+    assert dtime(23, 30) in times
 
 
 def test_snapshot_failure_does_not_block_founder_brief(monkeypatch) -> None:

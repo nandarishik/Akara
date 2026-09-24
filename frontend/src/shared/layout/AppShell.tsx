@@ -41,9 +41,11 @@ export function AppShell() {
   const [displayName, setDisplayName] = useState<string | null>(() => readCachedDisplayName());
   const { data: usage } = useBilling();
   const { enabled: connectorsEnabled } = useConnectorsEnabled();
+  const mobilePinned = new Set(["/dashboard", "/copilot", "/data", "/actions", "/alerts"]);
   const mobileNavItems = APP_NAV_ITEMS.filter(
-    (item) => item.to !== "/connectors" || connectorsEnabled,
-  ).slice(0, 5);
+    (item) =>
+      mobilePinned.has(item.to) && (item.to !== "/connectors" || connectorsEnabled),
+  );
 
   useEffect(() => {
     if (!user?.id) return;

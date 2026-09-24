@@ -34,6 +34,7 @@ def include_superadmin_routers() -> None:
         overview,
         plan,
         quota,
+        recommendations,
         reports,
         security,
         sudo,
@@ -67,4 +68,6 @@ def include_superadmin_routers() -> None:
     router.include_router(ai_control.router)
     router.include_router(templates_control.router)
     router.include_router(jobs.router)
+    router.include_router(recommendations.router)
+    router.include_router(recommendations.weights_router)
     _mounted = True

@@ -1,0 +1,28 @@
+Phase 11 Cloudflare security-audit — GUIDANCE MODE ONLY
+Date: 2026-09-24
+Base: origin/main @ 8cbb542
+Skill: .cursor/skills/security-audit/SKILL.md
+Companions loaded: AI-AND-LLM.md, DATA-ISOLATION-AND-LIFECYCLE.md
+Full six-phase audit: NOT run. No findings.json. No output directory.
+
+Trust boundaries this phase will touch (map only):
+
+1. Tenant isolation (DATA-ISOLATION)
+   - recommendations RLS via get_my_tenant_id() / profiles
+   - GET/POST /actions/{id} must 404 other tenant (not 403)
+   - INSERT service-role only; tenant UPDATE limited to lifecycle columns
+   - A tenant field on the row is not isolation — query + RLS + API filter must all bind tenant
+
+2. LLM / POS injection (AI-AND-LLM)
+   - Analyst is deterministic (no LLM)
+   - Decision + Reviewer consume item_name / POS text as DATA not instructions
+   - Prompt injection alone is not a finding; need a sink (SQL, other tenant, auto-apply)
+   - extra='forbid' rejects auto_apply / execute_sql — structured output is parsing, not authorization
+   - Approval-first: no auto-execute; owner Accept is the action binding
+
+3. Financial advice surface
+   - Impact cap ₹5 lakh + note (S-P11-005)
+   - GST disclaimer exact "Consult your CA" (S-P11-003)
+   - No customer-facing causal language; statistical_note required
+
+Do not probe Railway / Vercel / production. Runtime exploits stay needs_validation (no OS sandbox).
