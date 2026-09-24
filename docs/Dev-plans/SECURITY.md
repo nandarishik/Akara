@@ -129,11 +129,11 @@ Node.js is required only to run `validate-findings.cjs` / `validate-coverage-led
 
 | Field | Value |
 |---|---|
-| **Current phase in progress** | Ready for Phase 11 cut from `origin/main` after this land (split `74aa8eb` P11-only) |
+| **Current phase in progress** | Phase 11 coding-complete on `phase/11-decision-engine` — ready for 12 **only after land** (split `74aa8eb` P12-only; do not merge tip) |
 | **Last phase merged to `main`** | 10 — Intelligence signals (`0cb97a5`; Living note `61a4d7b`) |
-| **Security baseline SHA** | Phase 10 start = `45ce4ad`; land = `0cb97a5`; Living note = `61a4d7b` |
-| **Next gate file to create** | `docs/Dev-plans/security-gate-p11.md` |
-| **Open programme blockers** | JWT/RLS swap not done (Partial / SEC-P01-002). SQLGuard gap. KeyHog deferred. Airlock/rlsgrid Unverified. Phase 3–9 dashboard/staging/DAST/apply/Langfuse/Garak/Promptfoo ops deferred post–Phase 12. Later phases still require further splits of `74aa8eb` (do not merge tip). |
+| **Security baseline SHA** | Phase 11 start = `8cbb542`; integration = `phase/11-decision-engine` (DEV1 `54812a3` then DEV2 `e70f471` + isolation follow-up). Phase 10 land = `0cb97a5` / Living `61a4d7b` |
+| **Next gate file to create** | `docs/Dev-plans/security-gate-p12.md` |
+| **Open programme blockers** | JWT/RLS swap not done (Partial / SEC-P01-002). SQLGuard gap. KeyHog deferred. Airlock/rlsgrid Unverified. Phase 3–11 apply/DAST/Langfuse/Garak/Promptfoo/DeepTeam/rlsgrid ops deferred post–Phase 12. Later phases still require further splits of `74aa8eb` (do not merge tip). Dual §28 S-P11-001–005 not Complete. |
 | **Accepted findings still live** | SEC-P01-002 service role. SEC-P01-003/004 Bandit Medium. **SEC-P02-003** compat aliases (remove when cleared). |
 
 ### Artefact index (append a row when a file is written)
@@ -244,6 +244,20 @@ Node.js is required only to run `validate-findings.cjs` / `validate-coverage-led
 | 10 | Ops deferred | apply 059–061 / Open-Meteo / rlsgrid / Zaptilo / dual §28 → `ops-deferred-after-p12.md` |
 | 10 | Integration tip | DEV1 `cc0b746` then DEV2 `20714b9` + end docs |
 | 10 | Landed on `main` | `0cb97a5` (2026-09-24) — code land; ops Partial → `ops-deferred-after-p12.md` |
+| 11 | `docs/Phases/security-scan-p11-*` | written (start + end Bandit/pip-audit; KeyHog/Semgrep stubs; Betterleaks end no leaks on P11 paths; Trivy Partial) |
+| 11 | `docs/Dev-plans/security-gate-p11.md` | written — S-P11-001/002 Partial (live Unverified); S-003–005 Complete (code) |
+| 11 | Cloudflare (`C:\Users\Admin\security-audit-skill\akara\p11-run-1\`) | full quick — 0 confirmed; 5 needs_validation |
+| 11 | `docs/Dev-plans/session-handoff-p11-dev1.md` / `session-handoff-p11-dev2.md` | written |
+| 11 | DEV1 | `phase/11-dev-1-decision-engine` @ `54812a3` (062–066 complete, not 74aa8eb shells) |
+| 11 | DEV2 | `phase/11-dev-2-decision-engine` @ `e70f471` (UI only) |
+| 11 | Migrations | contiguous `062`–`066`; no `067+`; RLS on `recommendations` / playbook_weights / festival_calendar / recommendation_notifications / menu_items |
+| 11 | Cron | intelligence worker + 22:30 decision / 23:30 outcome UTC; railway JSON docs only (no 5th service) |
+| 11 | Tests | `backend/tests/security/test_decision_engine_security.py`; impact cap `MAX_EXPECTED_IMPACT_INR=500000` |
+| 11 | Cursor security-review | domain/intelligence + playbooks + actions.py — 0 HIGH after tenant-filter + admin UPDATE |
+| 11 | JWT/RLS programme | **Partial** — SEC-P01-002 unchanged |
+| 11 | Ops deferred | apply 062–066 / Railway env / rlsgrid / soak / DeepTeam / dual §28 → `ops-deferred-after-p12.md` |
+| 11 | Integration tip | DEV1 `54812a3` then DEV2 `e70f471` + isolation `4549b40` + end docs on `phase/11-decision-engine` |
+| 11 | Landed on `main` | **not yet** — PR only when asked |
 
 ---
 
@@ -480,11 +494,13 @@ Status (2026-09-24): **Code landed on `main` @ `0cb97a5`.** Dual §28 not Comple
 
 **Adds:** RLS + API 404 on cross-tenant accept; DeepTeam / pytest-native injection via POS `item_name`; GST disclaimer “Consult your CA”; Pydantic `extra='forbid'` on LLM JSON (reject `auto_apply` / `execute_sql`); cap `expected_impact_max` (₹5 lakh/month Phase 11).
 
+Status (2026-09-24): **Coding-complete on `phase/11-decision-engine`.** Dual §28 not Complete; ops → [`ops-deferred-after-p12.md`](ops-deferred-after-p12.md). Do not tick constitution §28.
+
 ### Start / end
 
-- [ ] Seed `security-gate-p11.md` S-P11-001–005.
-- [ ] Cross-tenant accept → 404. Injection → normal rec or filtered. Extra fields → not stored.
-- [ ] Update Living log: DeepTeam/pytest security file path, impact cap constant.
+- [x] Seed `security-gate-p11.md` S-P11-001–005.
+- [x] Cross-tenant accept → 404. Injection → normal rec or filtered. Extra fields → not stored.
+- [x] Update Living log: DeepTeam/pytest security file path, impact cap constant.
 
 ---
 
