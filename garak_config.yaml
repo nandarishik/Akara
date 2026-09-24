@@ -1,0 +1,12 @@
+# Synthetic-only Garak config (Phase 9). Do not point at production or live tenants.
+model_type: rest
+model_name: akara_copilot_synthetic
+probes:
+  - promptinject
+  - dan
+  - encoding
+  - leakreplay
+  - latentinjection
+  - xss
+generations: 5
+note: live run deferred to ops-deferred-after-p12.md D2-P09-OPS-005
