@@ -82,6 +82,22 @@ class Settings(BaseSettings):
     alert_food_cost_threshold: float = 0.35
     worker_max_retries: int = 3
     worker_retry_base_seconds: int = 30
+    decision_engine_enabled: bool = True
+    decision_engine_max_recs_per_tenant: int = 10
+    decision_engine_dedup_window_days: int = 30
+    decision_engine_expiry_days: int = 30
+    outcome_measurement_window_days: int = 14
+    playbook_weight_alpha: float = 0.3
+    playbook_weight_min: float = 0.5
+    playbook_weight_max: float = 2.0
+    swiggy_default_commission_pct: float = 25
+    zomato_default_commission_pct: float = 22
+    confidence_high_threshold: float = 0.70
+    confidence_medium_threshold: float = 0.40
+    decision_engine_model: str = "openai/gpt-4o-mini-2024-07-18"
+    decision_engine_max_tokens_per_call: int = 1000
+    decision_engine_temperature: float = 0.3
+    max_expected_impact_inr: float = 500000
 
     # -----------------------------------------------------------------------
     # Cloudflare Turnstile (CAPTCHA — required before Day 3 signup goes live)
