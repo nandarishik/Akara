@@ -376,6 +376,17 @@ export function SettingsPage() {
         <p className="text-sm text-text-secondary mt-1">
           Profile, notifications, team, and account rights.
         </p>
+        <div className="mt-3 flex flex-wrap gap-3 text-sm">
+          <Link to="/settings/alerts" className="text-accent hover:underline">
+            Café alert rules
+          </Link>
+          <Link to="/settings/notifications" className="text-accent hover:underline">
+            Alert channel matrix
+          </Link>
+          <Link to="/settings/morning-brief" className="text-accent hover:underline">
+            Morning brief preview
+          </Link>
+        </div>
       </div>
 
       <div className="flex gap-1 border-b border-white/10 pb-1 overflow-x-auto flex-nowrap -mx-1 px-1">
