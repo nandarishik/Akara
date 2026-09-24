@@ -32,6 +32,8 @@ dependencies = [
     "opentelemetry-instrumentation-fastapi>=0.45b0",
     "opentelemetry-instrumentation-httpx>=0.45b0",
     "pyotp>=2.9.0",
+    "statsforecast>=1.7.0",
+    "pyod>=2.0.0",
 ]
 
 [project.optional-dependencies]

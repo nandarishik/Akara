@@ -10,6 +10,8 @@ from decimal import Decimal
 from app.core.cron_ping import ping_cron_health
 from app.core.tenant import get_supabase_service_client
 from app.domain.alerts.metrics import check_condition, get_metric_value
+from app.domain.intelligence.alert_metrics import skip_reason_for_metric
+from app.domain.intelligence.anomaly import detect_iforest
 from app.infra.notifications import send_alert_triggered_email
 
 logger = logging.getLogger(__name__)
@@ -59,6 +61,12 @@ def evaluate_alerts() -> dict[str, int]:
         alert_id = alert["id"]
         tenant_id = alert["tenant_id"]
         try:
+            skip = skip_reason_for_metric(str(alert.get("metric") or ""))
+            if skip == "legacy_fmcg_metric":
+                logger.info("skip_reason=legacy_fmcg_metric alert=%s", alert_id)
+                skipped += 1
+                continue
+
             if _in_cooldown(alert):
                 skipped += 1
                 continue
@@ -158,7 +166,52 @@ async def alert_evaluator_loop(interval_seconds: int = 86400) -> None:
 
 
 def run_alert_evaluator_cycle() -> dict[str, int]:
-    return evaluate_alerts()
+    stats = evaluate_alerts()
+    try:
+        _evaluate_anomalies()
+    except Exception:
+        logger.exception("pyod anomaly pass failed")
+    return stats
+
+
+def _evaluate_anomalies() -> None:
+    supa = get_supabase_service_client()
+    tenants = supa.table("tenants").select("id").execute().data or []
+    for tenant in tenants:
+        tid = tenant["id"]
+        try:
+            rows = (
+                supa.table("canonical_orders")
+                .select("order_time, total_amount")
+                .eq("tenant_id", tid)
+                .execute()
+                .data
+                or []
+            )
+            by_day: dict[str, float] = {}
+            for row in rows:
+                day = str(row.get("order_time") or "")[:10]
+                if day:
+                    by_day[day] = by_day.get(day, 0.0) + float(row.get("total_amount") or 0)
+            values = [by_day[k] for k in sorted(by_day)]
+            result = detect_iforest(values)
+            if not result:
+                logger.info("skip_reason=insufficient_data tenant=%s", tid)
+                continue
+            last_day = sorted(by_day)[-1]
+            supa.table("alert_anomalies").upsert(
+                {
+                    "tenant_id": tid,
+                    "location_id": None,
+                    "metric_name": "revenue",
+                    "detected_at": last_day,
+                    "score": result["score"],
+                    "is_outlier": result["is_outlier"],
+                    "series_days": result["series_days"],
+                }
+            ).execute()
+        except Exception:
+            logger.exception("anomaly tenant failed tenant=%s", tid)
 
 
 if __name__ == "__main__":

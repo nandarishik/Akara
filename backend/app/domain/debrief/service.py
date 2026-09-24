@@ -115,6 +115,11 @@ class WeeklyDebriefService:
         metadata["generated_at"] = datetime.now(UTC).isoformat()
         if manual:
             metadata["manual_trigger"] = True
+        trend, actions = self._engine.cafe_additives(
+            tenant_id, computed.week_start, computed.week_end, computed.week_metrics
+        )
+        metadata["trend_comparison"] = trend
+        metadata["recommended_actions"] = actions
 
         title = f"Weekly Debrief — {computed.week_start.strftime('%d %b')} – {computed.week_end.strftime('%d %b %Y')}"
         insert = (

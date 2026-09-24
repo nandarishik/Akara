@@ -220,3 +220,27 @@ async def trigger_weekly_debrief_for_tenant(
         whatsapp_delivery=result.whatsapp_delivery,
         message=result.message,
     )
+
+
+@router.post("/forecast-refresh")
+@limiter.limit(BROADCAST_LIMIT)
+def trigger_forecast_refresh(
+    request: Request,
+    x_service_key: str | None = Header(default=None),
+) -> dict:
+    _authorize(x_service_key, request)
+    from app.workers.forecast_worker import run_forecast_worker
+
+    return run_forecast_worker(n_jobs=1)
+
+
+@router.post("/alert-evaluation")
+@limiter.limit(BROADCAST_LIMIT)
+def trigger_alert_evaluation(
+    request: Request,
+    x_service_key: str | None = Header(default=None),
+) -> dict:
+    _authorize(x_service_key, request)
+    from app.workers.alert_evaluator import run_alert_evaluator_cycle
+
+    return run_alert_evaluator_cycle()

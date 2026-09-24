@@ -35,6 +35,7 @@ CRON_TASKS = frozenset({
     "revenue_snapshot",
     "broadcast_scheduler",
     "content_scheduler",
+    "forecast_worker",
 })
 
 
@@ -177,7 +178,13 @@ def _run_task(task_name: str) -> None:
 
             details = run_weekly_debrief_cycle()
         elif task_name == "morning_brief":
-            details = {"message": "morning_brief requires per-tenant trigger via /reports/morning-brief"}
+            from app.workers.morning_brief_worker import run_morning_brief_worker
+
+            details = run_morning_brief_worker()
+        elif task_name == "forecast_worker":
+            from app.workers.forecast_worker import run_forecast_worker
+
+            details = run_forecast_worker(n_jobs=1)
         elif task_name == "founder_brief":
             from app.workers.founder_brief import run_founder_brief
 
@@ -351,3 +358,50 @@ def system_health(
         "environment": settings.environment,
         "timestamp": datetime.now(UTC).isoformat(),
     }
+
+
+@router.get("/worker-runs")
+@limiter.limit(ADMIN_READ_LIMIT)
+def list_worker_runs(request: Request, _admin: SuperAdmin) -> dict:
+    supa = get_supabase_service_client()
+    rows = (
+        supa.table("worker_runs")
+        .select("*")
+        .order("started_at", desc=True)
+        .limit(50)
+        .execute()
+        .data
+        or []
+    )
+    return {"items": rows}
+
+
+@router.get("/worker-runs/{worker_name}")
+@limiter.limit(ADMIN_READ_LIMIT)
+def worker_run_history(request: Request, worker_name: str, _admin: SuperAdmin) -> dict:
+    supa = get_supabase_service_client()
+    rows = (
+        supa.table("worker_runs")
+        .select("*")
+        .eq("worker_name", worker_name)
+        .order("started_at", desc=True)
+        .limit(50)
+        .execute()
+        .data
+        or []
+    )
+    return {"items": rows}
+
+
+@router.get("/forecasts/coverage")
+@limiter.limit(ADMIN_READ_LIMIT)
+def forecast_coverage(request: Request, _admin: SuperAdmin) -> dict:
+    supa = get_supabase_service_client()
+    tenants = supa.table("tenants").select("id", count="exact").execute()
+    forecasts = (
+        supa.table("forecasts").select("tenant_id").execute().data or []
+    )
+    covered = {r["tenant_id"] for r in forecasts}
+    total = tenants.count or 0
+    pct = (len(covered) / total * 100) if total else 0
+    return {"tenant_count": total, "with_forecasts": len(covered), "coverage_pct": pct}

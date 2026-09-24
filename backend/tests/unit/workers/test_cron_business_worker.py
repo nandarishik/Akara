@@ -5,12 +5,12 @@ from datetime import time as dtime
 from app.workers.combined import cron_business_worker as worker
 
 
-def test_cron_business_schedules_all_seven_jobs() -> None:
+def test_cron_business_schedules_jobs_without_alerts() -> None:
     jobs = worker.scheduler.jobs
     at_times = {j.at_time for j in jobs if j.at_time is not None}
     assert dtime(3, 0) in at_times
     assert dtime(4, 0) in at_times
-    assert dtime(5, 0) in at_times
+    assert dtime(5, 0) not in at_times
     assert dtime(6, 0) in at_times
     assert dtime(6, 30) in at_times
     assert dtime(8, 0) in at_times

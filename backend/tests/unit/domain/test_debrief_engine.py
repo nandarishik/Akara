@@ -90,3 +90,20 @@ def test_idempotency_key_format():
     week_start, week_end = _week_bounds()
     key = f"{week_start.isoformat()}_{week_end.isoformat()}"
     assert len(key.split("_")) == 2
+
+
+def test_trend_vs_previous_period():
+    from app.domain.debrief.engine import compute_trend_vs_previous_period
+
+    trend = compute_trend_vs_previous_period(110, 100, 40, 32)
+    assert trend["revenue_wow_pct"] == 10.0
+    assert trend["food_cost_wow_pct"] == 25.0
+
+
+def test_recommended_actions_cap_three():
+    from app.domain.debrief.engine import build_recommended_actions
+
+    events = [{"metric": "revenue_below_threshold"}] * 5
+    actions = build_recommended_actions(events, [{"is_outlier": True, "metric_name": "x"}], [])
+    assert len(actions) == 3
+    assert actions[0]["title"]
