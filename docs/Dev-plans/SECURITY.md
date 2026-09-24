@@ -257,7 +257,7 @@ Node.js is required only to run `validate-findings.cjs` / `validate-coverage-led
 | 11 | JWT/RLS programme | **Partial** — SEC-P01-002 unchanged |
 | 11 | Ops deferred | apply 062–066 / Railway env / rlsgrid / soak / DeepTeam / dual §28 → `ops-deferred-after-p12.md` |
 | 11 | Integration tip | DEV1 `54812a3` then DEV2 `e70f471` + isolation `4549b40` + end docs on `phase/11-decision-engine` |
-| 11 | Landed on `main` | **not yet** — PR only when asked |
+| 11 | Landed on `main` | `f55abc6` (2026-09-24) — code land; ops Partial → `ops-deferred-after-p12.md` |
 
 ---
 
