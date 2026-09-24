@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { useCopilot } from "@/features/copilot/hooks/useCopilot";
+import { useCopilotStatus } from "@/features/copilot/hooks/useCopilotStatus";
 import { useConversations } from "@/features/copilot/hooks/useConversations";
 import { useBilling } from "@/features/billing/hooks/useBilling";
 import {
@@ -22,6 +23,8 @@ import {
 } from "@/lib/api/billing";
 import CopilotStrandsLoader from "@/features/copilot/components/CopilotStrandsLoader";
 import AITextLoading from "@/features/copilot/components/AITextLoading";
+import { AIOutageBanner } from "@/features/copilot/components/AIOutageBanner";
+import { CopilotEvidence } from "@/features/copilot/components/CopilotEvidence";
 import GlowCTAButton from "@/shared/ui/GlowCTAButton";
 import ShimmerSkeleton from "@/shared/ui/ShimmerSkeleton";
 import { Textarea } from "@/shared/ui/textarea";
@@ -56,12 +59,15 @@ export function CopilotPage() {
   const {
     messages,
     isStreaming,
+    streamPhase,
     conversationId,
     sendMessage,
     loadConversation,
     startNewConversation,
+    cancelStream,
     error,
   } = useCopilot();
+  const { status: llmStatus, llmAvailable } = useCopilotStatus();
   const { conversations, loading: conversationsLoading, refetch } = useConversations();
   const { data: usage } = useBilling();
   const [input, setInput] = useState(
@@ -70,9 +76,12 @@ export function CopilotPage() {
   const [feedbackStates, setFeedbackStates] = useState<
     Record<string, "positive" | "negative" | null>
   >({});
-  const [connectionStatus, setConnectionStatus] = useState<
-    "connected" | "disconnected" | "reconnecting"
-  >("connected");
+  const connectionStatus: "connected" | "disconnected" | "reconnecting" = !llmAvailable
+    ? "disconnected"
+    : error?.includes("429") || error?.includes("RATE_LIMITED")
+      ? "reconnecting"
+      : "connected";
+  const inputDisabled = isStreaming || !llmAvailable;
   const [showHistory, setShowHistory] = useState(false);
   const [showDemoSlot, setShowDemoSlot] = useState(false);
   const openMobileNav = useMobileNav();
@@ -100,18 +109,6 @@ export function CopilotPage() {
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
-
-  useEffect(() => {
-    if (error) {
-      if (error.includes("503") || error.includes("timeout") || error.includes("ai_unavailable")) {
-        setConnectionStatus("disconnected");
-      } else if (error.includes("429") || error.includes("RATE_LIMITED")) {
-        setConnectionStatus("reconnecting");
-      }
-    } else {
-      setConnectionStatus("connected");
-    }
-  }, [error]);
 
   useEffect(() => {
     if (isSlotDismissed(SLOT_KEYS.F)) return;
@@ -160,7 +157,7 @@ export function CopilotPage() {
 
   async function handleSend(text?: string) {
     const q = (text ?? input).trim();
-    if (!q || isStreaming) return;
+    if (!q || isStreaming || !llmAvailable) return;
     setInput("");
     await sendMessage(q, debriefReportId ?? null);
     setTimeout(() => refetch(), 600);
@@ -229,11 +226,7 @@ export function CopilotPage() {
           </GlowCTAButton>
         </div>
 
-        {connectionStatus === "disconnected" && (
-          <div className="mt-3 rounded-lg border border-amber-400/30 bg-amber-400/10 px-3 py-2 text-xs text-amber-200">
-            AI is temporarily unavailable. Your dashboard and data still work — try again in a few minutes.
-          </div>
-        )}
+        <AIOutageBanner status={llmStatus} />
 
         {showDemoSlot && (
           <div className="mt-3">
@@ -353,8 +346,8 @@ export function CopilotPage() {
                       key={prompt}
                       type="button"
                       onClick={() => handleSend(prompt)}
-                      disabled={isStreaming}
-                      className="px-3 py-2 text-sm rounded-full border border-white/15 bg-white/5 text-white/70 hover:border-[#03B3C3]/50 hover:text-[#03B3C3] transition-colors"
+                      disabled={inputDisabled}
+                      className="px-3 py-2 text-sm rounded-full border border-white/15 bg-white/5 text-white/70 hover:border-[#03B3C3]/50 hover:text-[#03B3C3] transition-colors disabled:opacity-40"
                     >
                       {prompt}
                     </button>
@@ -405,6 +398,9 @@ export function CopilotPage() {
                       ) : m.streaming ? (
                         <span className="text-white/40">…</span>
                       ) : null}
+                      {m.role === "assistant" && !m.streaming && m.evidence ? (
+                        <CopilotEvidence evidence={m.evidence} />
+                      ) : null}
                       {m.role === "assistant" && !m.streaming && m.content && (
                         <div className="mt-3 pt-2 border-t border-white/10 flex gap-2">
                           <button
@@ -447,8 +443,18 @@ export function CopilotPage() {
                       icon={<Bot className="h-3.5 w-3.5" />}
                       label="AKARA"
                     />
-                    <div className="rounded-xl px-4 py-3 bg-[#0a0a0a]/80 border border-white/10 text-white/60 text-sm flex items-center min-w-[200px]">
+                    <div className="rounded-xl px-4 py-3 bg-[#0a0a0a]/80 border border-white/10 text-white/60 text-sm flex flex-col gap-1 min-w-[200px]">
                       <AITextLoading compact />
+                      {streamPhase ? (
+                        <span className="text-[11px] text-white/40 capitalize">{streamPhase}…</span>
+                      ) : null}
+                      <button
+                        type="button"
+                        className="text-[11px] text-[#03B3C3] underline-offset-2 hover:underline self-start"
+                        onClick={() => cancelStream()}
+                      >
+                        Cancel
+                      </button>
                     </div>
                   </div>
                 )}
@@ -489,11 +495,11 @@ export function CopilotPage() {
                 placeholder="Ask about your revenue, orders, customers…"
                 rows={1}
                 className="resize-none min-h-[44px] max-h-32 flex-1 bg-white/5 border-white/15 text-white placeholder:text-white/35"
-                disabled={isStreaming || connectionStatus === "disconnected"}
+                disabled={inputDisabled}
               />
               <GlowCTAButton
                 onClick={() => handleSend()}
-                disabled={!input.trim() || isStreaming}
+                disabled={!input.trim() || inputDisabled}
                 size="sm"
                 className="h-11 w-11 p-0 shrink-0"
               >
