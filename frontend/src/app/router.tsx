@@ -106,6 +106,22 @@ const BillingPage = React.lazy(() =>
 const AlertsPage = React.lazy(() =>
   import("@/features/alerts/pages/AlertsPage").then((m) => ({ default: m.AlertsPage }))
 )
+const AlertSettingsPage = React.lazy(() =>
+  import("@/features/alerts/pages/AlertSettingsPage").then((m) => ({ default: m.AlertSettingsPage }))
+)
+const AlertHistoryPage = React.lazy(() =>
+  import("@/features/alerts/pages/AlertHistoryPage").then((m) => ({ default: m.AlertHistoryPage }))
+)
+const NotificationPreferencesPage = React.lazy(() =>
+  import("@/features/settings/pages/NotificationPreferencesPage").then((m) => ({
+    default: m.NotificationPreferencesPage,
+  }))
+)
+const MorningBriefSettingsPage = React.lazy(() =>
+  import("@/features/settings/pages/MorningBriefSettingsPage").then((m) => ({
+    default: m.MorningBriefSettingsPage,
+  }))
+)
 const PrivacyPage = React.lazy(() =>
   import("@/features/legal/pages/PrivacyPage").then((m) => ({ default: m.PrivacyPage }))
 )
@@ -222,8 +238,12 @@ export function AppRouter() {
               <Route path="/settings" element={<SettingsPage />} />
               <Route path="/settings/team" element={<SettingsTeamPage />} />
               <Route path="/settings/outlets" element={<OutletSettingsPage />} />
+              <Route path="/settings/alerts" element={<AlertSettingsPage />} />
+              <Route path="/settings/notifications" element={<NotificationPreferencesPage />} />
+              <Route path="/settings/morning-brief" element={<MorningBriefSettingsPage />} />
               <Route path="/billing" element={<BillingPage />} />
               <Route path="/alerts" element={<AlertsPage />} />
+              <Route path="/alerts/history" element={<AlertHistoryPage />} />
               <Route path="/admin/tenants" element={<Navigate to="/superadmin/tenants" replace />} />
               <Route path="/admin/users" element={<Navigate to="/superadmin/users" replace />} />
             </Route>

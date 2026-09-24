@@ -31,6 +31,9 @@ import {
   impactFromItem,
   sanitizeDebriefNarrative,
 } from "@/features/debrief/lib/debriefMetrics";
+import type { RecommendedAction, TrendComparison } from "@/features/intelligence/api/types";
+import { RecommendedActionsList } from "./RecommendedActionsList";
+import { TrendComparisonCard } from "./TrendComparisonCard";
 
 export type DebriefItem = {
   title: string;
@@ -62,6 +65,8 @@ export type DebriefMetadata = {
     trend_90d?: string;
     projection_note?: string;
   };
+  trend_comparison?: TrendComparison;
+  recommended_actions?: RecommendedAction[];
   insights?: {
     week_metrics?: {
       revenue: number;
@@ -389,6 +394,16 @@ export function DebriefReportView({
           <h2 className="text-xl sm:text-2xl lg:text-[1.65rem] font-bold text-text-primary mt-4 leading-snug max-w-3xl">
             {safeMeta.headline}
           </h2>
+          {safeMeta.trend_comparison && (
+            <div className="mt-4">
+              <TrendComparisonCard trend={safeMeta.trend_comparison} />
+            </div>
+          )}
+          {safeMeta.recommended_actions && safeMeta.recommended_actions.length > 0 && (
+            <div className="mt-3">
+              <RecommendedActionsList actions={safeMeta.recommended_actions} />
+            </div>
+          )}
 
           <div className="mt-6 grid grid-cols-2 lg:grid-cols-4 gap-3">
             <KpiTile

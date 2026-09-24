@@ -1,0 +1,6 @@
+Phase 10 start — Cloudflare security-audit guidance mode only.
+Companions: AI-AND-LLM, DATA-ISOLATION-AND-LIFECYCLE, RESOURCE-EXHAUSTION-AND-AVAILABILITY.
+No findings.json at start. Full quick audit deferred to integration tip → p10-run-1.
+Focus: forecast/alert_anomalies RLS (live helper, not user_profiles); Open-Meteo JSONB never interpolated;
+X-Service-Key on /admin/reports/forecast-refresh and morning-brief; item_name as data not instructions;
+no secrets in worker logs; no 5th Railway service; AutoARIMA n_jobs=1 (RAM).

@@ -1,4 +1,14 @@
 import { apiFetch } from "@/lib/api";
+import {
+  METRIC_LABELS,
+  type CafeMetric,
+} from "@/features/intelligence/api/types";
+import {
+  createAlert as createCafeAlert,
+  deleteAlert as deleteCafeAlert,
+  fetchAlerts as fetchCafeAlerts,
+  updateAlert as updateCafeAlert,
+} from "@/features/intelligence/api/intelligenceApi";
 
 export type AlertSummary = {
   id: string;
@@ -21,38 +31,45 @@ export type AlertCreatePayload = {
   dimension?: string | null;
 };
 
-const METRIC_LABELS: Record<string, string> = {
-  secondary_sales_total: "Secondary sales total",
-  primary_sales_total: "Primary sales total",
-  outstanding_amount: "Outstanding amount",
-  beat_adherence_pct: "Beat adherence %",
-};
-
 export function metricLabel(metric: string): string {
-  return METRIC_LABELS[metric] ?? metric;
+  return METRIC_LABELS[metric as CafeMetric] ?? metric;
 }
 
 export async function fetchAlerts(): Promise<AlertSummary[]> {
-  return apiFetch<AlertSummary[]>("/alerts");
+  return fetchCafeAlerts();
 }
 
 export async function createAlert(payload: AlertCreatePayload): Promise<AlertSummary> {
-  return apiFetch<AlertSummary>("/alerts", {
-    method: "POST",
-    body: JSON.stringify(payload),
+  return createCafeAlert({
+    name: payload.name,
+    metric: payload.metric as CafeMetric,
+    condition: payload.condition,
+    threshold: payload.threshold,
+    escalation_level: "daily_digest",
+    channel_email: true,
+    channel_whatsapp: false,
+    channel_in_app: true,
   });
 }
 
 export async function updateAlert(
   id: string,
-  patch: Partial<Pick<AlertSummary, "name" | "threshold" | "is_active">>
+  patch: Partial<Pick<AlertSummary, "name" | "threshold" | "is_active">>,
+): Promise<AlertSummary> {
+  return updateCafeAlert(id, patch);
+}
+
+export async function deleteAlert(id: string): Promise<void> {
+  await deleteCafeAlert(id);
+}
+
+/** @deprecated Prefer intelligenceApi.updateAlert (PUT). Kept for type imports. */
+export async function patchAlertLegacy(
+  id: string,
+  patch: Partial<Pick<AlertSummary, "name" | "threshold" | "is_active">>,
 ): Promise<AlertSummary> {
   return apiFetch<AlertSummary>(`/alerts/${id}`, {
     method: "PATCH",
     body: JSON.stringify(patch),
   });
-}
-
-export async function deleteAlert(id: string): Promise<void> {
-  await apiFetch<void>(`/alerts/${id}`, { method: "DELETE" });
 }

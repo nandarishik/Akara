@@ -39,6 +39,7 @@ import { PromoDismissCard } from "@/shared/PromoDismissCard";
 import { dismissSlot, incrementVisitCount, isSlotDismissed, PLACEMENT_KEYS, SLOT_KEYS } from "@/lib/promoSlots";
 import { salesDataAgeDays } from "@/lib/dataFreshness";
 import { DataQualityWidget } from "@/features/data-import/components/DataQualityWidget";
+import { AlertHistoryWidget } from "@/features/alerts/components/AlertHistoryWidget";
 
 function getDateRange(period: string): [string, string] {
   const end = new Date();
@@ -182,6 +183,7 @@ function FmcgDashboard() {
       )}
 
       <DataQualityWidget />
+      <AlertHistoryWidget />
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {isLoading ? (
